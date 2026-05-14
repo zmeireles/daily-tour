@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "tasks-prod": {
+      "type": "stdio",
+      "command": "bash",
+      "args": ["/media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/start.sh"],
+      "env": {
+        "POSTGRES_HOST": "127.0.0.1",
+        "POSTGRES_PORT": "15432",
+        "POSTGRES_USER": "ccuser",
+        "POSTGRES_PASSWORD": "<PASTE_FROM_CC_PLATFORM_MCP_JSON>",
+        "POSTGRES_DB": "cc_prod",
+        "TASKS_USER": "claude",
+        "TASKS_ENV": "prod"
+      }
+    },
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<PASTE_FROM_CC_PLATFORM_MCP_JSON>"
+      }
+    }
+  }
+}
