@@ -1,0 +1,17 @@
+# Copy to .lefthook-local.yml (gitignored) to disable hooks during exploration.
+# pre-commit:
+#   commands:
+#     gitleaks-staged:
+#       skip: true
+#     prettier-staged:
+#       skip: true
+#     eslint-staged:
+#       skip: true
+# commit-msg:
+#   commands:
+#     conventional-commit:
+#       skip: true
+# pre-push:
+#   commands:
+#     typecheck:
+#       skip: true

@@ -1,0 +1,83 @@
+# lefthook.yml — Git hook manager for Daily Tour monorepo
+#
+# INSTALL GITLEAKS (required for secret scanning):
+#   Linux (apt):  sudo apt install gitleaks
+#   macOS:        brew install gitleaks
+#   Manual:       https://github.com/gitleaks/gitleaks/releases (grab the binary for your OS)
+#
+# HOOKS AUTO-INSTALL:
+#   pnpm install  →  runs `prepare` script  →  runs `lefthook install`
+#   You can also run: pnpm exec lefthook install
+#
+# LOCAL OVERRIDES (opt-out without editing this file):
+#   cp .lefthook-local.example.yml .lefthook-local.yml
+#   Edit .lefthook-local.yml to skip individual commands (it is gitignored).
+
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks-staged:
+      # Soft-skip if gitleaks is not on PATH — CI (T-0.1.4) is the hard gate.
+      # Install gitleaks first (see top of this file).
+      run: |
+        if ! command -v gitleaks >/dev/null 2>&1; then
+          echo "[lefthook] WARNING: gitleaks not found on PATH — skipping secret scan."
+          echo "[lefthook] Install gitleaks to enable local secret scanning (see lefthook.yml header)."
+          exit 0
+        fi
+        gitleaks protect --staged --redact -v --config .gitleaks.toml
+      fail_text: |
+        Secret scan failed. If gitleaks is not installed, install it (see lefthook.yml header).
+        If a real secret was detected, remove it from the staged files before committing.
+
+    prettier-staged:
+      # Source nvm so non-interactive hook shells pick up the .nvmrc-pinned Node.
+      # Falls through gracefully if nvm isn't installed (engine-strict will then
+      # catch a wrong Node loudly, which is the right behaviour).
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm exec prettier --check --ignore-unknown {staged_files}
+      fail_text: "Run `pnpm exec prettier --write {staged_files}` to fix formatting."
+
+    eslint-staged:
+      # NOTE: No eslint.config.js exists at root yet. Individual packages (PWA, BFF)
+      # will add their own eslint.config.js in T-0.4.0 / T-0.4.2. Until then this
+      # command will no-op or skip because eslint finds no applicable config.
+      glob: "*.{js,jsx,ts,tsx}"
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm exec eslint --no-warn-ignored {staged_files}
+      fail_text: "Fix ESLint errors before committing."
+
+commit-msg:
+  commands:
+    conventional-commit:
+      # Validates Conventional Commits format:
+      #   <type>[optional scope]: <description>
+      # Allowed types: feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert
+      #
+      # Skips:
+      #   - Merge commits (message starts with "Merge ")
+      #   - cs-agent auto-commit fallback ("feat: agent work on ...")
+      run: |
+        msg=$(cat {1})
+        # Skip merge commits
+        echo "$msg" | grep -qE "^Merge " && exit 0
+        # Skip cs-agent auto-commit fallback
+        echo "$msg" | grep -qE "^feat: agent work on " && exit 0
+        # Validate conventional commit format
+        echo "$msg" | grep -qE "^(feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert)(\([^)]+\))?: .+" && exit 0
+        echo "[lefthook] ERROR: Commit message does not follow Conventional Commits format."
+        echo "[lefthook] Expected: <type>[optional scope]: <description>"
+        echo "[lefthook] Example:  feat(auth): add token validation"
+        echo "[lefthook] Allowed types: feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert"
+        exit 1
+      fail_text: "Commit message must follow Conventional Commits format."
+
+pre-push:
+  commands:
+    typecheck:
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm typecheck
+      fail_text: "Fix TypeScript errors before pushing. Ensure your shell uses Node from .nvmrc (run `nvm use`)."
