@@ -12,13 +12,13 @@
 
 | Phase | Slices | Tasks | Done | In Progress | Ready | Blocked |
 |-------|--------|-------|------|-------------|-------|---------|
-| 0 — Foundation | 4 | 14 | 1 | 0 | 3 | 10 |
+| 0 — Foundation | 4 | 14 | 2 | 0 | 2 | 10 |
 | 1 — Guest Landing & Catalog v1 | 7 | 25 | 0 | 0 | 0 | 25 |
 | 2 — Discovery & Search | 4 | 11 | 0 | 0 | 0 | 11 |
 | 3 — Daily Tour Planner | 5 | 16 | 0 | 0 | 0 | 16 |
 | 4 — Chat & Reservation Drafting | 5 | 15 | 0 | 0 | 0 | 15 |
 | 5 — Hardening & Growth | 6 | 17 | 0 | 0 | 0 | 17 |
-| **Total** | **31** | **98** | **1** | **0** | **3** | **94** |
+| **Total** | **31** | **98** | **2** | **0** | **2** | **94** |
 
 ---
 
@@ -34,14 +34,11 @@
 - **deps**: none
 - **blocks**: T-0.1.2, T-0.1.3, T-0.1.4, T-0.2.0, T-0.3.0
 
-#### 🟢 T-0.1.2 — Shared TS config + ESLint 9 flat + Prettier 3
+#### ✅ T-0.1.2 — Shared TS config + ESLint 9 flat + Prettier 3
+> **Resolved 2026-05-14 via [PR #2](https://github.com/zmeireles/daily-tour/pull/2).** 14 files (+2473 / −1, lock-heavy). Profile: claude-sonnet-yolo. cs-agent: `t0-1-2`. Follow-up commit bumped `.nvmrc` to 22.22.3 (eslint-visitor-keys dep) and synced lockfile.
 - **owns**: `packages/shared-config/**`, `.prettierrc`, `.prettierignore`
 - **deps**: T-0.1.1
-- **parallel-with**: T-0.1.3, T-0.1.4
 - **blocks**: T-0.2.0, every Node service init
-- **acceptance**:
-  - `packages/shared-config/eslint.base.js`, `tsconfig.base.json`, `prettier.config.js` exported.
-  - Running `pnpm lint` from root passes on empty workspace.
 
 #### 🟢 T-0.1.3 — Pre-commit (lefthook + gitleaks)
 - **owns**: `lefthook.yml`, `.gitleaks.toml`, `.gitignore`

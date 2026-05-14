@@ -39,6 +39,27 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 2 — 2026-05-14 — T-0.1.2 (sequential)
+
+| Agent | Task ID | Branch | Profile | Scope | Status |
+|-------|---------|--------|---------|-------|--------|
+| t0-1-2 | T-0.1.2 | jmeireles/t0-1-2 | claude-sonnet-yolo | shared-config + Prettier (+ Node bump follow-up) | Done |
+
+#### Agent: t0-1-2 (T-0.1.2)
+- **Started**: ~18:05
+- **Finished**: ~18:28 (agent ~10 m + orchestrator install/verify/fix-up ~13 m)
+- **Predicted time**: 40 m
+- **Actual time**: ~23 m total
+- **Complexity**: Low–Medium (transitive-dep version pin surfaced)
+- **LOC changed**: +222 / −0 (agent) + 2 files (.nvmrc, pnpm-lock) +2251 / −1 (orchestrator follow-up)
+- **Commit verified**: ✅ `62de7bd` (agent auto-commit), `0d3536e` (orchestrator fix-up)
+- **PR**: [#2](https://github.com/zmeireles/daily-tour/pull/2) (merged)
+- **Acceptance**: all 14 criteria met after fix-up. shared-config exports resolve via subpath map; pnpm lint/typecheck green.
+- **Issues**:
+  1. Agent created files but did not run `pnpm install` before session closed → cs-agent autocommit fallback fired with generic message ("agent work on t0-1-2 (auto-committed by closer)"). **Lesson**: future prompts must list `pnpm install` as a numbered step.
+  2. `.nvmrc` 22.11.0 from T-0.1.1 was too conservative — `eslint-visitor-keys@5.0.1` (pulled by typescript-eslint v8) requires Node ≥22.13. Bumped to 22.22.3 in fix-up commit.
+- **Decisions made on the fly**: kept root `tsconfig.base.json` (T-0.1.1) as canonical base; shared-config provides per-runtime presets that extend it. Subpath exports map (`./eslint/node`, `./tsconfig/react`, etc.) for clean downstream imports.
+
 ### Wave 1 — 2026-05-14 — T-0.1.1 (sequential)
 
 | Agent | Task ID | Branch | Profile | Scope | Status |
