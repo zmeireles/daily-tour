@@ -3,3 +3,7 @@
 temp/prompt-*.md
 temp/screenshots/
 .mcp.json
+
+# Node / Turborepo
+node_modules/
+.turbo/
