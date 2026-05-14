@@ -7,3 +7,31 @@ temp/screenshots/
 # Node / Turborepo
 node_modules/
 .turbo/
+
+# Environment files (keep .env.example and .env*.example committed)
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+
+# Caches
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# cs-agent housekeeping marker
+.cs-agent-autocommitted
+
+# Lefthook local overrides (never commit; .lefthook-local.example.yml IS committed)
+lefthook-local.yml
+.lefthook-local.yml

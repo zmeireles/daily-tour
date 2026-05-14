@@ -1,0 +1,43 @@
+title = "Daily Tour gitleaks config"
+
+[extend]
+# Use the default ruleset as the base; add project-specific overrides below.
+useDefault = true
+
+[allowlist]
+description = "Project-level allowlist"
+
+paths = [
+  # pnpm lockfile can contain hashes that look like secrets
+  "pnpm-lock.yaml",
+  # Vitest / Jest snapshots often contain base64-encoded content
+  ".*\\.snap$",
+  # Docs directory — markdown files often show example tokens
+  "docs/.*",
+  # .mcp.json.template contains placeholder strings, not real secrets
+  "\\.mcp\\.json\\.template$",
+]
+
+regexes = [
+  # Allow .mcp.json.template placeholder strings such as:
+  #   <PASTE_FROM_CC_PLATFORM_MCP_JSON>
+  #   <YOUR_API_KEY_HERE>
+  "<[A-Z_]+>",
+]
+
+# Project-specific rule: catch hardcoded Daily Tour reservation tokens (dt_ prefix).
+# These tokens are issued in T-1.0.x and must never be committed outside test files or docs.
+[[rules]]
+id = "daily-tour-test-token"
+description = "Daily Tour reservation token (dt_ prefix) outside allowed locations"
+regex = '''dt_[A-Za-z0-9_-]{20,}'''
+tags = ["daily-tour", "token"]
+
+  [rules.allowlist]
+  description = "Allow dt_ tokens only inside test files and docs"
+  paths = [
+    "docs/.*",
+    ".*\\.test\\.(js|ts|jsx|tsx)$",
+    ".*\\.spec\\.(js|ts|jsx|tsx)$",
+    ".*__tests__.*",
+  ]
