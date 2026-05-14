@@ -31,7 +31,12 @@ pre-commit:
         If a real secret was detected, remove it from the staged files before committing.
 
     prettier-staged:
-      run: pnpm exec prettier --check --ignore-unknown {staged_files}
+      # Source nvm so non-interactive hook shells pick up the .nvmrc-pinned Node.
+      # Falls through gracefully if nvm isn't installed (engine-strict will then
+      # catch a wrong Node loudly, which is the right behaviour).
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm exec prettier --check --ignore-unknown {staged_files}
       fail_text: "Run `pnpm exec prettier --write {staged_files}` to fix formatting."
 
     eslint-staged:
@@ -39,7 +44,9 @@ pre-commit:
       # will add their own eslint.config.js in T-0.4.0 / T-0.4.2. Until then this
       # command will no-op or skip because eslint finds no applicable config.
       glob: "*.{js,jsx,ts,tsx}"
-      run: pnpm exec eslint --no-warn-ignored {staged_files}
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm exec eslint --no-warn-ignored {staged_files}
       fail_text: "Fix ESLint errors before committing."
 
 commit-msg:
@@ -70,5 +77,7 @@ commit-msg:
 pre-push:
   commands:
     typecheck:
-      run: pnpm typecheck
-      fail_text: "Fix TypeScript errors before pushing."
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm typecheck
+      fail_text: "Fix TypeScript errors before pushing. Ensure your shell uses Node from .nvmrc (run `nvm use`)."
