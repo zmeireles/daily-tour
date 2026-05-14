@@ -1,0 +1,17 @@
+# Daily Tour — Code Owners
+#
+# Reference: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Syntax (one rule per line; later rules override earlier ones for the same path):
+#   <path-glob>   @user1 @user2 @org/team
+#
+# As the team grows, add per-directory rules above the global catch-all, e.g.:
+#   /apps/pwa/        @zmeireles @frontend-team
+#   /services/bff/    @zmeireles @backend-team
+#   /docs/            @zmeireles @docs-team
+#   /infra/           @zmeireles @devops-team
+#
+# A user must have write access to the repo to be a valid code owner.
+
+# Global owner — required reviewer for every PR until per-area owners are set.
+*   @zmeireles

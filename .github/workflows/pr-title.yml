@@ -1,0 +1,51 @@
+# Daily Tour — Pull Request Title Linter
+#
+# Validates that the PR title follows Conventional Commits format, matching
+# the prefix list enforced locally by lefthook.yml (commit-msg hook). This
+# keeps the squash-merge commit message clean.
+#
+# Bot PRs (dependabot, renovate) follow their own title conventions and are
+# accepted as-is — their titles are configured in their respective configs.
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  semantic-pr-title:
+    name: Validate PR title (Conventional Commits)
+    runs-on: ubuntu-24.04
+    # Skip for known bots — they have their own title patterns.
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'renovate[bot]'
+    steps:
+      - name: Check title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Mirrors the allowed types in lefthook.yml's commit-msg hook.
+          types: |
+            feat
+            fix
+            chore
+            docs
+            refactor
+            test
+            perf
+            build
+            ci
+            style
+            revert
+          # Scopes are optional at this stage of the project; revisit when
+          # the team grows and per-area ownership stabilises.
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            must start with a lowercase character.
