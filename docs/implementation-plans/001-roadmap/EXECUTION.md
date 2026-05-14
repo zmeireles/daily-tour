@@ -39,4 +39,21 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
-_(Empty — first wave will be Phase 0, Slice 0.1. Run T-0.1.1 first, then 0.A wave.)_
+### Wave 1 — 2026-05-14 — T-0.1.1 (sequential)
+
+| Agent | Task ID | Branch | Profile | Scope | Status |
+|-------|---------|--------|---------|-------|--------|
+| t0-1-1 | T-0.1.1 | jmeireles/t0-1-1 | claude-yolo | repo-root scaffold (10 files) | Done |
+
+#### Agent: t0-1-1 (T-0.1.1)
+- **Started**: ~17:34
+- **Finished**: ~17:42 (~8 min wall + 5 min orchestrator verification)
+- **Predicted time**: 45 m
+- **Actual time**: ~8 m
+- **Complexity**: Low
+- **LOC changed**: +218 / −0 across 10 files
+- **Commit verified**: ✅ `685dfcd`
+- **PR**: [#1](https://github.com/zmeireles/daily-tour/pull/1) (merged)
+- **Acceptance**: all 11 criteria met. `pnpm install` deterministic; `engine-strict=true` correctly rejects Node ≠22; Turborepo 2.x `tasks` schema; TS strict + `noUncheckedIndexedAccess` + `verbatimModuleSyntax`.
+- **Issues**: cs-agent launch initially failed with `can't find pane: 1.1` when name contained dots. Renamed `t-0.1.1` → `t0-1-1` and relaunched cleanly. Lesson: cs-agent names must be hyphen-only, never dotted.
+- **Decisions made on the fly**: turbo.json uses `ui: "tui"` for richer terminal output; `globalDependencies` includes `tsconfig.base.json`, `.npmrc`, `.nvmrc`. No deviations from prompt.

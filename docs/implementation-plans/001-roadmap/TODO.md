@@ -12,13 +12,13 @@
 
 | Phase | Slices | Tasks | Done | In Progress | Ready | Blocked |
 |-------|--------|-------|------|-------------|-------|---------|
-| 0 — Foundation | 4 | 14 | 0 | 0 | 1 | 13 |
+| 0 — Foundation | 4 | 14 | 1 | 0 | 3 | 10 |
 | 1 — Guest Landing & Catalog v1 | 7 | 25 | 0 | 0 | 0 | 25 |
 | 2 — Discovery & Search | 4 | 11 | 0 | 0 | 0 | 11 |
 | 3 — Daily Tour Planner | 5 | 16 | 0 | 0 | 0 | 16 |
 | 4 — Chat & Reservation Drafting | 5 | 15 | 0 | 0 | 0 | 15 |
 | 5 — Hardening & Growth | 6 | 17 | 0 | 0 | 0 | 17 |
-| **Total** | **31** | **98** | **0** | **0** | **1** | **97** |
+| **Total** | **31** | **98** | **1** | **0** | **3** | **94** |
 
 ---
 
@@ -28,18 +28,13 @@
 
 ### Slice 0.1 — Repo skeleton, tooling, CI
 
-#### 🟢 T-0.1.1 — Initialise monorepo (pnpm + Turborepo) [opus]
+#### ✅ T-0.1.1 — Initialise monorepo (pnpm + Turborepo) [opus]
+> **Resolved 2026-05-14 via [PR #1](https://github.com/zmeireles/daily-tour/pull/1).** 10 files, +218/−0. Profile: claude-yolo (Opus). cs-agent: `t0-1-1`.
 - **owns**: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `.nvmrc`, `.npmrc`, `pnpm-lock.yaml`, `tsconfig.base.json`, `tsconfig.json`, `.editorconfig`
 - **deps**: none
 - **blocks**: T-0.1.2, T-0.1.3, T-0.1.4, T-0.2.0, T-0.3.0
-- **acceptance**:
-  - `pnpm install` succeeds on Node 22.
-  - `pnpm-workspace.yaml` declares `apps/*`, `services/*`, `packages/*`.
-  - `turbo.json` has pipelines for `dev`, `build`, `test`, `lint`, `typecheck`.
-  - `.nvmrc` pins Node 22 LTS.
-- **prompt sketch**: scaffold a pnpm + Turborepo monorepo, no apps/services yet, just the workspace + base tsconfig + turbo pipelines. Use exact versions: pnpm 9, Turborepo 2.x.
 
-#### ⬜ T-0.1.2 — Shared TS config + ESLint 9 flat + Prettier 3
+#### 🟢 T-0.1.2 — Shared TS config + ESLint 9 flat + Prettier 3
 - **owns**: `packages/shared-config/**`, `.prettierrc`, `.prettierignore`
 - **deps**: T-0.1.1
 - **parallel-with**: T-0.1.3, T-0.1.4
@@ -48,7 +43,7 @@
   - `packages/shared-config/eslint.base.js`, `tsconfig.base.json`, `prettier.config.js` exported.
   - Running `pnpm lint` from root passes on empty workspace.
 
-#### ⬜ T-0.1.3 — Pre-commit (lefthook + gitleaks)
+#### 🟢 T-0.1.3 — Pre-commit (lefthook + gitleaks)
 - **owns**: `lefthook.yml`, `.gitleaks.toml`, `.gitignore`
 - **deps**: T-0.1.1
 - **parallel-with**: T-0.1.2, T-0.1.4
@@ -57,7 +52,7 @@
   - Commit with a fake `AKIA...` AWS key in any file is blocked.
   - `.gitignore` covers `node_modules`, `.env*` (except `.env.example`), `dist`, `.turbo`, `coverage`.
 
-#### ⬜ T-0.1.4 — GitHub Actions CI (lint, typecheck, test, audit) [opus]
+#### 🟢 T-0.1.4 — GitHub Actions CI (lint, typecheck, test, audit) [opus]
 - **owns**: `.github/workflows/ci.yml`, `.github/workflows/security.yml`, `.github/dependabot.yml` OR `renovate.json`
 - **deps**: T-0.1.1
 - **parallel-with**: T-0.1.2, T-0.1.3
