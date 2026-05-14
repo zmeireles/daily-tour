@@ -30,8 +30,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # turbo's affected-graph filter needs the PR base ref to diff against.
-          fetch-depth: 2
+          # turbo's affected-graph filter (--filter=...[origin/main]) needs the
+          # base ref reachable from HEAD. fetch-depth: 0 fetches full history;
+          # for a small monorepo this is <1s on GitHub-hosted runners. A
+          # shallow clone errors with "unknown revision 'origin/main'" because
+          # the ref isn't materialised.
+          fetch-depth: 0
 
       # Activate pnpm via the packageManager field BEFORE setup-node so that
       # setup-node's `cache: pnpm` step can resolve the pnpm store path.
