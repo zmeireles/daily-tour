@@ -1,0 +1,48 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:weekends"],
+  "timezone": "Europe/Lisbon",
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Group all lint/format tooling (eslint + prettier) into one PR.",
+      "groupName": "lint/format tooling",
+      "matchPackageNames": ["/^eslint/", "/^prettier/", "/^@eslint//", "/^typescript-eslint/"]
+    },
+    {
+      "description": "Group all test tooling (vitest, testing-library, playwright) into one PR.",
+      "groupName": "test tooling",
+      "matchPackageNames": [
+        "/^vitest/",
+        "/^@vitest//",
+        "/^@testing-library//",
+        "/^playwright/",
+        "/^@playwright//"
+      ]
+    },
+    {
+      "description": "Auto-merge patch + minor devDependency updates after green CI. Major updates always require manual review.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
+    },
+    {
+      "description": "Pin Docker base images to their digest — preempts the Phase 0.3 hardening work.",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "pinDigests": true
+    },
+    {
+      "description": "n8n updates require manual review due to its CVE cadence (see docs/exploration/04-tech-stack.md §6).",
+      "matchPackageNames": ["n8nio/n8n", "n8n"],
+      "enabled": false
+    }
+  ]
+}
