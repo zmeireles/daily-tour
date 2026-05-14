@@ -7,11 +7,12 @@
 ```markdown
 ### Wave N — <YYYY-MM-DD>
 
-| Agent | Task ID | Branch | Profile | Scope | Status |
-|-------|---------|--------|---------|-------|--------|
+| Agent | Task ID | Branch       | Profile            | Scope   | Status              |
+| ----- | ------- | ------------ | ------------------ | ------- | ------------------- |
 | name  | T-x.y.z | t-x.y.z-slug | claude-sonnet-yolo | <files> | Running/Done/Failed |
 
 #### Agent: <name> (T-x.y.z)
+
 - **Started**: HH:MM
 - **Finished**: HH:MM
 - **Predicted time**: 30–60 m
@@ -39,13 +40,38 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 4 — 2026-05-14 — T-0.1.4 (sequential) — closes Slice 0.1
+
+| Agent  | Task ID | Branch           | Profile     | Scope                                                       | Status |
+| ------ | ------- | ---------------- | ----------- | ----------------------------------------------------------- | ------ |
+| t0-1-4 | T-0.1.4 | jmeireles/t0-1-4 | claude-yolo | GH Actions CI + security + PR title + Renovate + CODEOWNERS | Done   |
+
+#### Agent: t0-1-4 (T-0.1.4)
+
+- **Started**: ~19:30
+- **Finished**: ~19:58 (agent ~13 m + orchestrator verify/fix + CI iteration ~15 m)
+- **Predicted time**: 50 m
+- **Actual time**: ~28 m total
+- **Complexity**: Medium–High (multi-workflow + Renovate + CodeQL)
+- **LOC changed**: +348 / −0 (agent) + 1 file +6 / −2 (orchestrator fetch-depth fix)
+- **Commit verified**: ✅ `b8bc0d7` (agent auto-commit), `a95f5bd` (orchestrator)
+- **PR**: [#4](https://github.com/zmeireles/daily-tour/pull/4) (merged, all 6 CI checks green on its own PR)
+- **Acceptance**: every workflow file + Renovate + CODEOWNERS + PR template criteria met. CI ran green on PR #4 after fixes.
+- **Issues**:
+  1. cs-agent autocommit fallback fired again (third Sonnet/Opus session this run with same symptom). Did NOT introduce scope errors this time. **Pattern**: most cs-agent sessions end before the commit step. Mitigation: tolerate the auto-commit, fix message at squash-merge via PR title.
+  2. First CI run failed on the new CI (the meta-test) for two reasons caught by the new workflows:
+     - `fetch-depth: 2` left `origin/main` unmaterialised → turbo `--filter=...[origin/main]` errored "unknown revision". Bumped to `fetch-depth: 0` (full history; <1s on a small monorepo).
+     - PR title `T-0.1.4:` rejected by `pr-title.yml` (no conventional prefix). Renamed to `ci: …`. **Lesson**: orchestrator PR titles must follow the same Conventional-Commits gate as commit messages.
+- **Decisions made on the fly**: pinned actions to major (`@v4`, `@v3`, `@v2`) — Renovate will update digests. Trivy + Python CodeQL both deferred with TODO comments naming the unlock task (T-0.4.4 / T-2.0.x). n8n updates explicitly disabled in Renovate config with reference to [`04-tech-stack.md §6`](../../exploration/04-tech-stack.md).
+
 ### Wave 3 — 2026-05-14 — T-0.1.3 (sequential)
 
-| Agent | Task ID | Branch | Profile | Scope | Status |
-|-------|---------|--------|---------|-------|--------|
-| t0-1-3 | T-0.1.3 | jmeireles/t0-1-3 | claude-sonnet-yolo | lefthook + gitleaks + .gitignore broaden | Done |
+| Agent  | Task ID | Branch           | Profile            | Scope                                    | Status |
+| ------ | ------- | ---------------- | ------------------ | ---------------------------------------- | ------ |
+| t0-1-3 | T-0.1.3 | jmeireles/t0-1-3 | claude-sonnet-yolo | lefthook + gitleaks + .gitignore broaden | Done   |
 
 #### Agent: t0-1-3 (T-0.1.3)
+
 - **Started**: ~18:40
 - **Finished**: ~19:02 (agent ~12 m + orchestrator verify/fix ~10 m)
 - **Predicted time**: 35 m
@@ -62,11 +88,12 @@ When an agent reports "done", before marking the task ✅:
 
 ### Wave 2 — 2026-05-14 — T-0.1.2 (sequential)
 
-| Agent | Task ID | Branch | Profile | Scope | Status |
-|-------|---------|--------|---------|-------|--------|
-| t0-1-2 | T-0.1.2 | jmeireles/t0-1-2 | claude-sonnet-yolo | shared-config + Prettier (+ Node bump follow-up) | Done |
+| Agent  | Task ID | Branch           | Profile            | Scope                                            | Status |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------ | ------ |
+| t0-1-2 | T-0.1.2 | jmeireles/t0-1-2 | claude-sonnet-yolo | shared-config + Prettier (+ Node bump follow-up) | Done   |
 
 #### Agent: t0-1-2 (T-0.1.2)
+
 - **Started**: ~18:05
 - **Finished**: ~18:28 (agent ~10 m + orchestrator install/verify/fix-up ~13 m)
 - **Predicted time**: 40 m
@@ -83,11 +110,12 @@ When an agent reports "done", before marking the task ✅:
 
 ### Wave 1 — 2026-05-14 — T-0.1.1 (sequential)
 
-| Agent | Task ID | Branch | Profile | Scope | Status |
-|-------|---------|--------|---------|-------|--------|
-| t0-1-1 | T-0.1.1 | jmeireles/t0-1-1 | claude-yolo | repo-root scaffold (10 files) | Done |
+| Agent  | Task ID | Branch           | Profile     | Scope                         | Status |
+| ------ | ------- | ---------------- | ----------- | ----------------------------- | ------ |
+| t0-1-1 | T-0.1.1 | jmeireles/t0-1-1 | claude-yolo | repo-root scaffold (10 files) | Done   |
 
 #### Agent: t0-1-1 (T-0.1.1)
+
 - **Started**: ~17:34
 - **Finished**: ~17:42 (~8 min wall + 5 min orchestrator verification)
 - **Predicted time**: 45 m

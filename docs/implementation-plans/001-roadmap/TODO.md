@@ -10,15 +10,15 @@
 
 ## Progress Summary
 
-| Phase | Slices | Tasks | Done | In Progress | Ready | Blocked |
-|-------|--------|-------|------|-------------|-------|---------|
-| 0 — Foundation | 4 | 14 | 3 | 0 | 1 | 10 |
-| 1 — Guest Landing & Catalog v1 | 7 | 25 | 0 | 0 | 0 | 25 |
-| 2 — Discovery & Search | 4 | 11 | 0 | 0 | 0 | 11 |
-| 3 — Daily Tour Planner | 5 | 16 | 0 | 0 | 0 | 16 |
-| 4 — Chat & Reservation Drafting | 5 | 15 | 0 | 0 | 0 | 15 |
-| 5 — Hardening & Growth | 6 | 17 | 0 | 0 | 0 | 17 |
-| **Total** | **31** | **98** | **3** | **0** | **1** | **94** |
+| Phase                           | Slices | Tasks  | Done  | In Progress | Ready | Blocked |
+| ------------------------------- | ------ | ------ | ----- | ----------- | ----- | ------- |
+| 0 — Foundation                  | 4      | 14     | 4     | 0           | 3     | 7       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25     | 0     | 0           | 0     | 25      |
+| 2 — Discovery & Search          | 4      | 11     | 0     | 0           | 0     | 11      |
+| 3 — Daily Tour Planner          | 5      | 16     | 0     | 0           | 0     | 16      |
+| 4 — Chat & Reservation Drafting | 5      | 15     | 0     | 0           | 0     | 15      |
+| 5 — Hardening & Growth          | 6      | 17     | 0     | 0           | 0     | 17      |
+| **Total**                       | **31** | **98** | **4** | **0**       | **3** | **91**  |
 
 ---
 
@@ -29,24 +29,33 @@
 ### Slice 0.1 — Repo skeleton, tooling, CI
 
 #### ✅ T-0.1.1 — Initialise monorepo (pnpm + Turborepo) [opus]
+
 > **Resolved 2026-05-14 via [PR #1](https://github.com/zmeireles/daily-tour/pull/1).** 10 files, +218/−0. Profile: claude-yolo (Opus). cs-agent: `t0-1-1`.
+
 - **owns**: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `.nvmrc`, `.npmrc`, `pnpm-lock.yaml`, `tsconfig.base.json`, `tsconfig.json`, `.editorconfig`
 - **deps**: none
 - **blocks**: T-0.1.2, T-0.1.3, T-0.1.4, T-0.2.0, T-0.3.0
 
 #### ✅ T-0.1.2 — Shared TS config + ESLint 9 flat + Prettier 3
+
 > **Resolved 2026-05-14 via [PR #2](https://github.com/zmeireles/daily-tour/pull/2).** 14 files (+2473 / −1, lock-heavy). Profile: claude-sonnet-yolo. cs-agent: `t0-1-2`. Follow-up commit bumped `.nvmrc` to 22.22.3 (eslint-visitor-keys dep) and synced lockfile.
+
 - **owns**: `packages/shared-config/**`, `.prettierrc`, `.prettierignore`
 - **deps**: T-0.1.1
 - **blocks**: T-0.2.0, every Node service init
 
 #### ✅ T-0.1.3 — Pre-commit (lefthook + gitleaks)
+
 > **Resolved 2026-05-14 via [PR #3](https://github.com/zmeireles/daily-tour/pull/3).** 6 files (+278 / −5 across 2 commits). Profile: claude-sonnet-yolo. Follow-up commit patched hooks to self-source nvm.
+
 - **owns**: `lefthook.yml`, `.gitleaks.toml`, `.gitignore`, `package.json` (additive), `pnpm-lock.yaml`, `.lefthook-local.example.yml`
 - **deps**: T-0.1.1
 - **blocks**: every later commit (hooks now fire on every push from this repo)
 
-#### 🟢 T-0.1.4 — GitHub Actions CI (lint, typecheck, test, audit) [opus]
+#### ✅ T-0.1.4 — GitHub Actions CI (lint, typecheck, test, audit) [opus]
+
+> **Resolved 2026-05-14 via [PR #4](https://github.com/zmeireles/daily-tour/pull/4).** 6 files (+354 / −2 across 2 commits). Profile: claude-yolo (Opus). Follow-up commit bumped `fetch-depth` to 0 after observing turbo's affected-graph need full git history. **Slice 0.1 complete.**
+
 - **owns**: `.github/workflows/ci.yml`, `.github/workflows/security.yml`, `.github/dependabot.yml` OR `renovate.json`
 - **deps**: T-0.1.1
 - **parallel-with**: T-0.1.2, T-0.1.3
@@ -59,7 +68,8 @@
 
 ### Slice 0.2 — Shared packages & contracts
 
-#### ⬜ T-0.2.0 — `packages/shared-types` with zod + ts types scaffold
+#### 🟢 T-0.2.0 — `packages/shared-types` with zod + ts types scaffold
+
 - **owns**: `packages/shared-types/**`
 - **deps**: T-0.1.1, T-0.1.2
 - **blocks**: every BFF and service that uses contracts (T-0.3.x, T-1.x.x)
@@ -68,7 +78,8 @@
   - Each namespace exports a zod schema + inferred TS type.
   - Build emits `dist/` consumable by Node + browser.
 
-#### ⬜ T-0.2.1 — `packages/shared-otel` (Node OTel SDK helper)
+#### 🟢 T-0.2.1 — `packages/shared-otel` (Node OTel SDK helper)
+
 - **owns**: `packages/shared-otel/**`
 - **deps**: T-0.1.1, T-0.1.2
 - **parallel-with**: T-0.2.0
@@ -78,7 +89,8 @@
   - Auto-instruments `http`, `fastify`, `pg`, `amqplib`.
   - Honours `OTEL_EXPORTER_OTLP_ENDPOINT` env.
 
-#### ⬜ T-0.2.2 — Python shared `daily_tour_common` package (FastAPI base + pydantic models + otel)
+#### 🟢 T-0.2.2 — Python shared `daily_tour_common` package (FastAPI base + pydantic models + otel)
+
 - **owns**: `services/_python_common/**` OR `packages/python-common/**`
 - **deps**: T-0.1.1
 - **parallel-with**: T-0.2.0, T-0.2.1
@@ -93,6 +105,7 @@
 ### Slice 0.3 — Docker Compose infra stack
 
 #### ⬜ T-0.3.0 — Compose base: Postgres 17 + pgvector 0.8.2, Redis, RabbitMQ 4.3, MinIO [opus]
+
 - **owns**: `infra/compose/docker-compose.base.yml`, `infra/postgres/init/00-extensions.sql`, `infra/postgres/init/01-schemas.sql`, `.env.example`
 - **deps**: T-0.1.1
 - **blocks**: T-0.3.1, T-0.3.2, T-0.3.3, every service that touches DB
@@ -105,6 +118,7 @@
   - All exposed ports documented; only RabbitMQ mgmt + MinIO console accessible on host.
 
 #### ⬜ T-0.3.1 — Compose overlay: Traefik v3 + ACME staging
+
 - **owns**: `infra/compose/docker-compose.traefik.yml`, `infra/traefik/**`
 - **deps**: T-0.3.0
 - **parallel-with**: T-0.3.2, T-0.3.3
@@ -114,6 +128,7 @@
   - Dashboard reachable on `traefik.localhost` behind basic-auth.
 
 #### ⬜ T-0.3.2 — Compose overlay: Authentik 2026.2.2+
+
 - **owns**: `infra/compose/docker-compose.authentik.yml`, `infra/authentik/**`
 - **deps**: T-0.3.0, T-0.3.1
 - **acceptance**:
@@ -123,6 +138,7 @@
   - Never exposed on raw `:9000` — labeled to internal network only.
 
 #### ⬜ T-0.3.3 — Compose overlay: n8n ≥1.123.26 (LTS) behind Authentik
+
 - **owns**: `infra/compose/docker-compose.n8n.yml`, `infra/n8n/**`
 - **deps**: T-0.3.0, T-0.3.2
 - **acceptance**:
@@ -135,6 +151,7 @@
 ### Slice 0.4 — PWA shell + BFF skeleton + Stitch tokens
 
 #### ⬜ T-0.4.0 — PWA scaffold (Vite 6.4.2 + React 19 + TS + Tailwind v4) [opus]
+
 - **owns**: `apps/pwa/**` (except `src/locales/`, `src/lib/api/` reserved for later)
 - **deps**: T-0.1.1, T-0.1.2
 - **blocks**: T-0.4.2, T-1.0.x, T-1.2.x
@@ -147,6 +164,7 @@
   - Playwright configured; one trivial passing test.
 
 #### ⬜ T-0.4.1 — Stitch MCP design tokens → `@theme` block [opus]
+
 - **owns**: `apps/pwa/src/styles/tokens.css`, `apps/pwa/src/styles/globals.css`, `docs/design/**`
 - **deps**: T-0.4.0
 - **blocks**: T-1.0.x, T-1.2.x
@@ -157,6 +175,7 @@
   - Dark theme variables under `[data-theme="dark"]` populated.
 
 #### ⬜ T-0.4.2 — BFF skeleton (Fastify v5.8.5 on Node 22) [opus]
+
 - **owns**: `services/bff/**`
 - **deps**: T-0.1.1, T-0.1.2, T-0.2.0, T-0.2.1
 - **blocks**: T-1.0.1, T-1.2.0
@@ -169,6 +188,7 @@
   - Dockerfile (multi-stage) builds to `<200 MB` image.
 
 #### ⬜ T-0.4.3 — Compose overlay: bff + pwa-static (nginx) [opus]
+
 - **owns**: `infra/compose/docker-compose.app.yml`
 - **deps**: T-0.3.1, T-0.4.0, T-0.4.2
 - **blocks**: T-0.4.4
@@ -177,6 +197,7 @@
   - Hot-reload dev flow documented: `pnpm dev` for PWA + BFF natively, Compose runs the rest.
 
 #### 🔒 T-0.4.4 — End-to-end smoke + CI deploy gate to QA VPS [opus] — **BLOCKED: QA VPS not yet acquired**
+
 - **owns**: `.github/workflows/deploy-qa.yml`, `scripts/deploy.sh`
 - **deps**: T-0.4.3, T-0.1.4
 - **blocked-on**: infra acquisition (Ubuntu 24 QA VPS per `IDEA.md` "Architecture > Generic"). Track in [`docs/ai/backlog.md`](../../ai/backlog.md). Resume this task once host + SSH key + DNS are ready.
@@ -196,6 +217,7 @@
 ### Slice 1.0 — Reservation token & access (FR-AC-01..05)
 
 #### ⬜ T-1.0.0 — Drizzle schema: `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`
+
 - **owns**: `services/token-svc/src/db/schema.ts`, `services/token-svc/drizzle/migrations/0001_init.sql`
 - **deps**: T-0.2.0, T-0.3.0
 - **blocks**: T-1.0.1, T-1.0.2
@@ -205,6 +227,7 @@
   - Seed script loads 1 guesthouse + 2 reservations + 2 guests for dev.
 
 #### ⬜ T-1.0.1 — `token-svc` Fastify service: issue / revoke / exchange endpoints
+
 - **owns**: `services/token-svc/**` (except `src/db/schema.ts` from T-1.0.0)
 - **deps**: T-0.4.2, T-1.0.0
 - **blocks**: T-1.0.2
@@ -216,6 +239,7 @@
   - Listens on `:8088`.
 
 #### ⬜ T-1.0.2 — BFF token-exchange middleware + Redis JTI cache
+
 - **owns**: `services/bff/src/plugins/auth.ts`, `services/bff/src/lib/redis.ts`
 - **deps**: T-1.0.1, T-0.3.0
 - **blocks**: T-1.2.0
@@ -227,6 +251,7 @@
   - Integration test uses Testcontainers for Postgres + Redis.
 
 #### ⬜ T-1.0.3 — PWA: token-URL router + auth state (Zustand)
+
 - **owns**: `apps/pwa/src/routes/r.$token.tsx`, `apps/pwa/src/lib/auth/**`, `apps/pwa/src/store/session.ts`
 - **deps**: T-0.4.0, T-1.0.2
 - **blocks**: T-1.2.0
@@ -241,7 +266,8 @@
 
 ### Slice 1.1 — Catalog data model + 28-place seed (FR-CAT-01..04)
 
-#### ⬜ T-1.1.0 — Drizzle schema: catalog.* tables + actions/wishes seed
+#### ⬜ T-1.1.0 — Drizzle schema: catalog.\* tables + actions/wishes seed
+
 - **owns**: `services/catalog-svc/src/db/schema.ts`, `services/catalog-svc/drizzle/migrations/0001_init.sql`, `services/catalog-svc/seeds/actions-wishes.sql`
 - **deps**: T-0.2.0, T-0.3.0
 - **blocks**: T-1.1.1, T-1.1.2
@@ -251,6 +277,7 @@
   - 6 actions + ~30 wishes seeded per [`05-tourism-domain.md §3`](../../exploration/05-tourism-domain.md).
 
 #### ⬜ T-1.1.1 — `catalog-svc` Fastify CRUD: places, guesthouses, owner-profile
+
 - **owns**: `services/catalog-svc/**` (except `src/db/schema.ts` from T-1.1.0)
 - **deps**: T-0.4.2, T-1.1.0, T-0.2.0
 - **blocks**: T-1.1.2, T-1.2.0, T-1.3.0
@@ -262,6 +289,7 @@
   - Listens on `:8081`.
 
 #### ⬜ T-1.1.2 — 28-place seed fixture loader
+
 - **owns**: `services/catalog-svc/seeds/places-sao-miguel.sql`, `services/catalog-svc/seeds/load.ts`
 - **deps**: T-1.1.0, T-1.1.1
 - **blocks**: T-1.2.1, every later place-aware task
@@ -275,6 +303,7 @@
 ### Slice 1.2 — PWA Home + Action drill-down list (FR-DSC-01..05, FR-PUB)
 
 #### ⬜ T-1.2.0 — BFF aggregator: `GET /v1/discover?action=<>&loc=...&km=...`
+
 - **owns**: `services/bff/src/routes/discover.ts`, `services/bff/src/lib/catalog-client.ts`
 - **deps**: T-1.0.2, T-1.1.1
 - **blocks**: T-1.2.1
@@ -285,6 +314,7 @@
   - p95 < 300 ms with 28-place seed.
 
 #### ⬜ T-1.2.1 — PWA: Home with 6 Action tiles + locale-auto + theme-auto
+
 - **owns**: `apps/pwa/src/routes/_authed.index.tsx`, `apps/pwa/src/features/home/**`, `apps/pwa/src/lib/theme/**`, `apps/pwa/src/lib/locale/**`
 - **deps**: T-0.4.0, T-0.4.1, T-1.0.3
 - **parallel-with**: T-1.2.2
@@ -297,6 +327,7 @@
   - "Plan my day" + "Message João" entries below the fold (stubbed routes for now).
 
 #### ⬜ T-1.2.2 — PWA: PlaceCard + ActionGroupHeader + LocationToggle + RangeSlider components
+
 - **owns**: `apps/pwa/src/components/place-card.tsx`, `apps/pwa/src/components/action-group-header.tsx`, `apps/pwa/src/components/location-toggle.tsx`, `apps/pwa/src/components/range-slider.tsx`, `apps/pwa/src/components/__tests__/**`
 - **deps**: T-0.4.0, T-0.4.1
 - **parallel-with**: T-1.2.1
@@ -308,6 +339,7 @@
   - RangeSlider supports discrete steps `[1,3,5,10,25]`, debounced 250 ms.
 
 #### ⬜ T-1.2.3 — PWA: Action drill-down route (`/a/:action`) with grouped-by-wish list
+
 - **owns**: `apps/pwa/src/routes/_authed.a.$action.tsx`, `apps/pwa/src/features/discover/**`
 - **deps**: T-1.2.0, T-1.2.1, T-1.2.2
 - **blocks**: T-1.3.0
@@ -324,6 +356,7 @@
 ### Slice 1.3 — Place Detail page (FR-PDT-01..04)
 
 #### ⬜ T-1.3.0 — BFF: `GET /v1/places/:id` hydrated payload
+
 - **owns**: `services/bff/src/routes/places.ts`
 - **deps**: T-1.1.1, T-1.0.2
 - **blocks**: T-1.3.2
@@ -332,6 +365,7 @@
   - p95 < 200 ms.
 
 #### ⬜ T-1.3.1 — PWA: Map setup (MapLibre GL JS + PMTiles + custom MapPin)
+
 - **owns**: `apps/pwa/src/lib/map/**`, `apps/pwa/src/components/map-pin.tsx`, `apps/pwa/src/components/map-view.tsx`
 - **deps**: T-0.4.0
 - **parallel-with**: T-1.3.0
@@ -342,6 +376,7 @@
   - `MapView` accepts `{center, zoom, pins[]}`; `prefers-reduced-motion` disables fly-to.
 
 #### ⬜ T-1.3.2 — PWA: Place Detail route (`/p/:id`) with gallery + map + actions
+
 - **owns**: `apps/pwa/src/routes/_authed.p.$id.tsx`, `apps/pwa/src/features/place-detail/**`
 - **deps**: T-1.3.0, T-1.3.1, T-1.2.2
 - **blocks**: T-1.7.0 (smoke test)
@@ -357,6 +392,7 @@
 ### Slice 1.4 — Media service + MinIO upload pipeline (supports FR-CAT-02, FR-PDT)
 
 #### ⬜ T-1.4.0 — `media-svc` Fastify: pre-signed PUT + GET + asset registry
+
 - **owns**: `services/media-svc/**`
 - **deps**: T-0.4.2, T-0.3.0, T-0.2.0
 - **blocks**: T-1.6.2 (backoffice media upload)
@@ -368,6 +404,7 @@
   - Listens on `:8087`.
 
 #### ⬜ T-1.4.1 — Image transcode worker (sharp → multiple sizes + AVIF/WebP)
+
 - **owns**: `services/media-svc/src/workers/transcode.ts`
 - **deps**: T-1.4.0
 - **acceptance**:
@@ -380,6 +417,7 @@
 ### Slice 1.5 — Public landing (FR-PUB-01..03)
 
 #### ⬜ T-1.5.0 — PWA: Public landing route `/`
+
 - **owns**: `apps/pwa/src/routes/index.tsx`, `apps/pwa/src/features/public-landing/**`
 - **deps**: T-0.4.0, T-0.4.1, T-1.1.2 (to render sample places)
 - **acceptance**:
@@ -394,6 +432,7 @@
 ### Slice 1.6 — Owner backoffice MVP (FR-BO-01..03)
 
 #### ⬜ T-1.6.0 — Authentik realm + OIDC provider for owner-app [opus]
+
 - **owns**: `infra/authentik/exports/owner-app-realm.yaml`, `services/bff/src/plugins/authentik.ts`
 - **deps**: T-0.3.2, T-0.4.2
 - **blocks**: T-1.6.1
@@ -403,6 +442,7 @@
   - `route.config.auth = 'owner'` middleware enforces the audience.
 
 #### ⬜ T-1.6.1 — PWA: Backoffice shell at `/admin` (Authentik-protected)
+
 - **owns**: `apps/pwa/src/routes/admin.tsx`, `apps/pwa/src/routes/admin.**`, `apps/pwa/src/features/backoffice/**`
 - **deps**: T-1.6.0, T-1.2.2
 - **blocks**: T-1.6.2, T-1.6.3
@@ -411,6 +451,7 @@
   - Dashboard shell with nav: Guesthouses, Places, Reservations, Profile.
 
 #### ⬜ T-1.6.2 — Backoffice: Place CRUD with media upload
+
 - **owns**: `apps/pwa/src/features/backoffice/places/**`
 - **deps**: T-1.6.1, T-1.1.1, T-1.4.0
 - **acceptance**:
@@ -420,6 +461,7 @@
   - i18n fields (EN + pt-PT) entered as separate tabs.
 
 #### ⬜ T-1.6.3 — Backoffice: Owner profile + Guesthouse CRUD
+
 - **owns**: `apps/pwa/src/features/backoffice/profile/**`, `apps/pwa/src/features/backoffice/guesthouses/**`
 - **deps**: T-1.6.1, T-1.1.1
 - **parallel-with**: T-1.6.2
@@ -432,6 +474,7 @@
 ### Slice 1.7 — i18n + theme + PWA install (FR-XC-01..04)
 
 #### ⬜ T-1.7.0 — i18n bundles + namespaces (en, pt-PT)
+
 - **owns**: `apps/pwa/src/locales/en/**`, `apps/pwa/src/locales/pt-PT/**`, `apps/pwa/src/lib/i18n/**`
 - **deps**: T-1.2.3, T-1.3.2, T-1.5.0
 - **acceptance**:
@@ -441,6 +484,7 @@
   - Translation files validated by a CI check (no missing keys per locale).
 
 #### ⬜ T-1.7.1 — PWA install + service worker + offline shell (Workbox `generateSW`)
+
 - **owns**: `apps/pwa/vite.config.ts` (PWA config block), `apps/pwa/public/manifest.webmanifest`, `apps/pwa/src/lib/pwa/**`
 - **deps**: T-1.2.3, T-1.3.2, T-1.5.0
 - **acceptance**:
@@ -462,6 +506,7 @@
 ### Slice 2.0 — Embedding pipeline & pgvector store (FR-DSC-06)
 
 #### ⬜ T-2.0.0 — `search-svc` skeleton (FastAPI 0.136 + SQLAlchemy 2 async) [opus]
+
 - **owns**: `services/search-svc/**`
 - **deps**: T-0.2.2, T-0.3.0, T-1.1.0
 - **blocks**: T-2.0.1, T-2.1.0
@@ -471,6 +516,7 @@
   - Listens to RabbitMQ for `place.published` / `place.approved`.
 
 #### ⬜ T-2.0.1 — Embeddings: `catalog.place_embedding` table + worker (Anthropic/OpenAI embedding model)
+
 - **owns**: `services/search-svc/src/embeddings/**`, `services/search-svc/alembic/versions/0001_place_embedding.py`
 - **deps**: T-2.0.0
 - **blocks**: T-2.1.0
@@ -480,6 +526,7 @@
   - HNSW index built; query helper `top_k(text, k)` returns ranked place IDs.
 
 #### ⬜ T-2.0.2 — Backfill: embed all 28 seeded places
+
 - **owns**: `services/search-svc/scripts/backfill.py`
 - **deps**: T-2.0.1, T-1.1.2
 - **acceptance**:
@@ -491,6 +538,7 @@
 ### Slice 2.1 — Hybrid query endpoint (FR-DSC-02, FR-DSC-06)
 
 #### ⬜ T-2.1.0 — `search-svc` `/query` endpoint: SQL geo + tag filter ∩ vector re-rank
+
 - **owns**: `services/search-svc/src/api/query.py`
 - **deps**: T-2.0.1, T-2.0.2
 - **blocks**: T-2.1.1
@@ -502,6 +550,7 @@
   - p95 < 250 ms for 28-place catalog (target 100 ms on larger).
 
 #### ⬜ T-2.1.1 — BFF `/v1/discover` switches from naive sort to search-svc hybrid
+
 - **owns**: `services/bff/src/routes/discover.ts`
 - **deps**: T-2.1.0
 - **acceptance**:
@@ -513,6 +562,7 @@
 ### Slice 2.2 — UX: Host's picks + vehicle toggle (FR-DSC-07, FR-DSC-08)
 
 #### ⬜ T-2.2.0 — Catalog: `place.is_hosts_pick` column + backoffice toggle
+
 - **owns**: `services/catalog-svc/drizzle/migrations/0002_hosts_pick.sql`, `services/catalog-svc/src/routes/places.ts` (additive), `apps/pwa/src/features/backoffice/places/**` (additive — flag pickers ONLY; do not touch other backoffice files)
 - **deps**: T-1.6.2
 - **blocks**: T-2.2.1
@@ -521,6 +571,7 @@
   - Backoffice has a toggle on the place edit form.
 
 #### ⬜ T-2.2.1 — PWA: Host's picks ribbon at the top of grouped lists
+
 - **owns**: `apps/pwa/src/features/discover/hosts-picks-ribbon.tsx`, `apps/pwa/src/routes/_authed.a.$action.tsx` (additive only)
 - **deps**: T-2.2.0, T-1.2.3
 - **acceptance**:
@@ -528,6 +579,7 @@
   - Distinct visual treatment (per [`02-ui-design-system.md`](../../exploration/02-ui-design-system.md) — use a subtle tea-green border + "Host's pick" badge).
 
 #### ⬜ T-2.2.2 — PWA: Vehicle-aware toggle + filter
+
 - **owns**: `apps/pwa/src/store/preferences.ts`, `apps/pwa/src/features/discover/vehicle-toggle.tsx`, `apps/pwa/src/routes/_authed.a.$action.tsx` (additive)
 - **deps**: T-1.2.3, T-2.1.1
 - **acceptance**:
@@ -547,6 +599,7 @@
 ### Slice 3.0 — Planner service skeleton + RAG (FR-TUR-01..07)
 
 #### ⬜ T-3.0.0 — `planner-svc` skeleton (FastAPI + Anthropic SDK + OpenAI SDK) [opus]
+
 - **owns**: `services/planner-svc/**`
 - **deps**: T-0.2.2, T-0.3.0, T-2.0.1
 - **blocks**: T-3.0.1
@@ -556,6 +609,7 @@
   - Per-request cost logged to `planner.llm_call_log` table.
 
 #### ⬜ T-3.0.1 — Prompt assembler + RAG retrieval (uses search-svc) [opus]
+
 - **owns**: `services/planner-svc/src/prompt/**`, `services/planner-svc/src/rag.py`
 - **deps**: T-3.0.0, T-2.1.0
 - **blocks**: T-3.0.2
@@ -565,6 +619,7 @@
   - Structured-output JSON schema enforced.
 
 #### ⬜ T-3.0.2 — Server-side validators: place_id provenance + travel-time sanity [opus]
+
 - **owns**: `services/planner-svc/src/validators/**`
 - **deps**: T-3.0.1
 - **blocks**: T-3.0.3
@@ -575,6 +630,7 @@
   - Unit tests cover hallucination rejection and travel-time bound rejection.
 
 #### ⬜ T-3.0.3 — `POST /v1/tour-plans` async flow with RabbitMQ `tour.requested/completed` [opus]
+
 - **owns**: `services/planner-svc/src/api/plans.py`, `services/bff/src/routes/tour-plans.ts`, `services/planner-svc/src/workers/plan_worker.py`
 - **deps**: T-3.0.2
 - **blocks**: T-3.1.0
@@ -588,6 +644,7 @@
 ### Slice 3.1 — PWA Daily Tour UI
 
 #### ⬜ T-3.1.0 — PWA: Daily Tour form + voice input (FR-TUR-01)
+
 - **owns**: `apps/pwa/src/routes/_authed.tour.tsx`, `apps/pwa/src/features/tour/form/**`, `apps/pwa/src/components/voice-input-button.tsx`
 - **deps**: T-3.0.3, T-1.2.2
 - **blocks**: T-3.1.1
@@ -597,6 +654,7 @@
   - Submit returns plan ID; WS subscribes for status.
 
 #### ⬜ T-3.1.1 — PWA: DailyTourTimeline component (FR-TUR-02, FR-TUR-06)
+
 - **owns**: `apps/pwa/src/components/daily-tour-timeline.tsx`, `apps/pwa/src/features/tour/timeline/**`
 - **deps**: T-3.1.0
 - **blocks**: T-3.1.2
@@ -607,6 +665,7 @@
   - Streamed status: pending → retrieving → planning → validating → done.
 
 #### ⬜ T-3.1.2 — PWA: Daily Tour failure fallback (FR-TUR-08)
+
 - **owns**: `apps/pwa/src/features/tour/fallback.tsx`
 - **deps**: T-3.1.1
 - **acceptance**:
@@ -618,6 +677,7 @@
 ### Slice 3.2 — Weather-aware planning (FR-TUR-05, FR-PDT-07)
 
 #### ⬜ T-3.2.0 — IPMA Azores forecast client + cache
+
 - **owns**: `services/planner-svc/src/weather.py`, `services/planner-svc/src/cache.py`
 - **deps**: T-3.0.0
 - **blocks**: T-3.2.1, T-3.2.2
@@ -626,6 +686,7 @@
   - Helper `is_rainy(loc, when) -> bool`.
 
 #### ⬜ T-3.2.1 — Planner: rainy-slot swap to indoor pool
+
 - **owns**: `services/planner-svc/src/validators/weather.py`, `services/planner-svc/src/prompt/**` (additive)
 - **deps**: T-3.2.0, T-3.0.2
 - **acceptance**:
@@ -633,6 +694,7 @@
   - Validator rejects outdoor-only places in rainy slots; planner retries with restricted set.
 
 #### ⬜ T-3.2.2 — BFF: `weather_ok_today` enrichment on `/v1/places/:id`
+
 - **owns**: `services/bff/src/routes/places.ts` (additive)
 - **deps**: T-3.2.0
 - **acceptance**:
@@ -644,6 +706,7 @@
 ### Slice 3.3 — Drive-time & OSRM (FR-TUR-04)
 
 #### ⬜ T-3.3.0 — OSRM Compose overlay OR Distance Matrix client
+
 - **owns**: `infra/compose/docker-compose.osrm.yml` OR `services/planner-svc/src/distance.py`
 - **deps**: T-0.3.0 OR T-3.0.0
 - **acceptance**:
@@ -651,6 +714,7 @@
   - Helper `route(a, b) -> {km, duration_min}`.
 
 #### ⬜ T-3.3.1 — Planner validator uses real drive times
+
 - **owns**: `services/planner-svc/src/validators/travel.py`
 - **deps**: T-3.3.0, T-3.0.2
 - **acceptance**:
@@ -662,6 +726,7 @@
 ### Slice 3.4 — Share & telemetry (FR-TUR-09, FR-TUR-10)
 
 #### ⬜ T-3.4.0 — PWA: Share tour link (token-stripped)
+
 - **owns**: `apps/pwa/src/features/tour/share.tsx`, `services/bff/src/routes/tour-plans.ts` (additive)
 - **deps**: T-3.1.1
 - **acceptance**:
@@ -669,6 +734,7 @@
   - PDF export (client-side `html2pdf` or similar) for car-dashboard print.
 
 #### ⬜ T-3.4.1 — Telemetry: "started stop" event + analytics table
+
 - **owns**: `services/bff/src/routes/telemetry.ts`, `services/catalog-svc/drizzle/migrations/0003_telemetry.sql` OR a dedicated `audit.telemetry` table
 - **deps**: T-3.1.1, T-1.0.2
 - **acceptance**:
@@ -688,6 +754,7 @@
 ### Slice 4.0 — chat-hub skeleton + driver interface (FR-CHT-01)
 
 #### ⬜ T-4.0.0 — `chat-hub` Fastify service skeleton with driver interface [opus]
+
 - **owns**: `services/chat-hub/**`
 - **deps**: T-0.4.2, T-0.3.0
 - **blocks**: T-4.0.1, T-4.1.0
@@ -697,6 +764,7 @@
   - In-memory driver registered for in-app channel.
 
 #### ⬜ T-4.0.1 — Schemas: `chat.chat_thread`, `chat.message`, `chat.channel_binding`
+
 - **owns**: `services/chat-hub/src/db/schema.ts`, `services/chat-hub/drizzle/migrations/0001_init.sql`
 - **deps**: T-4.0.0
 - **blocks**: T-4.1.0
@@ -709,6 +777,7 @@
 ### Slice 4.1 — In-app chat (WebSocket via BFF)
 
 #### ⬜ T-4.1.0 — BFF WebSocket `/v1/chat` multiplexed channel [opus]
+
 - **owns**: `services/bff/src/routes/ws.ts`, `services/bff/src/lib/chat-client.ts`
 - **deps**: T-4.0.1, T-1.0.2
 - **blocks**: T-4.1.1
@@ -718,6 +787,7 @@
   - Cross-instance fanout via Redis pub/sub (stub OK in v1 single-instance).
 
 #### ⬜ T-4.1.1 — PWA: Guest chat UI (FR-CHT-01..04)
+
 - **owns**: `apps/pwa/src/routes/_authed.chat.tsx`, `apps/pwa/src/features/chat/**`, `apps/pwa/src/components/chat-bubble.tsx`
 - **deps**: T-4.1.0, T-1.2.2
 - **acceptance**:
@@ -728,6 +798,7 @@
   - Playwright: send a message, owner replies (via stubbed inbound endpoint), guest sees it.
 
 #### ⬜ T-4.1.2 — Backoffice: Owner chat inbox (FR-BO-06)
+
 - **owns**: `apps/pwa/src/features/backoffice/chat/**`
 - **deps**: T-4.1.0, T-1.6.1
 - **acceptance**:
@@ -739,6 +810,7 @@
 ### Slice 4.2 — Telegram driver (FR-CHT-05)
 
 #### ⬜ T-4.2.0 — Telegram driver module
+
 - **owns**: `services/chat-hub/src/drivers/telegram.ts`
 - **deps**: T-4.0.0
 - **blocks**: T-4.2.1
@@ -748,6 +820,7 @@
   - Normalises `tg.Message` → internal `Message` shape.
 
 #### ⬜ T-4.2.1 — Owner-side Telegram bot setup + linking flow
+
 - **owns**: `services/chat-hub/src/api/link-telegram.ts`, `apps/pwa/src/features/backoffice/channels/telegram.tsx`
 - **deps**: T-4.2.0, T-1.6.3
 - **acceptance**:
@@ -759,6 +832,7 @@
 ### Slice 4.3 — WhatsApp deep-link (FR-CHT-06)
 
 #### ⬜ T-4.3.0 — WhatsApp `wa.me` deep-link generator + opt-out copy
+
 - **owns**: `services/chat-hub/src/drivers/whatsapp-link.ts`
 - **deps**: T-4.0.0
 - **acceptance**:
@@ -770,6 +844,7 @@
 ### Slice 4.4 — AI reservation drafting (FR-PDT-05)
 
 #### ⬜ T-4.4.0 — Planner-svc endpoint: `POST /v1/draft-reservation`
+
 - **owns**: `services/planner-svc/src/api/draft_reservation.py`
 - **deps**: T-3.0.0
 - **acceptance**:
@@ -778,6 +853,7 @@
   - Output validated by zod schema on BFF side.
 
 #### ⬜ T-4.4.1 — PWA: "Reserve via Agent" → preview → send (dry-run preview)
+
 - **owns**: `apps/pwa/src/features/place-detail/reserve-via-agent.tsx`
 - **deps**: T-4.4.0, T-1.3.2, T-4.3.0
 - **acceptance**:
@@ -799,6 +875,7 @@
 ### Slice 5.0 — Offline catalog cache (FR-XC-06)
 
 #### ⬜ T-5.0.0 — Service worker: place + map tile caching strategy
+
 - **owns**: `apps/pwa/src/lib/pwa/cache-strategies.ts`, `apps/pwa/vite.config.ts` (additive PWA block)
 - **deps**: T-1.7.1
 - **acceptance**:
@@ -809,6 +886,7 @@
 ### Slice 5.1 — Locale expansion (FR-XC-01, FR-XC-02)
 
 #### ⬜ T-5.1.0 — Add de + es locales
+
 - **owns**: `apps/pwa/src/locales/de/**`, `apps/pwa/src/locales/es/**`
 - **deps**: T-1.7.0
 - **parallel-with**: T-5.1.1
@@ -817,6 +895,7 @@
   - CI missing-keys check passes for de + es.
 
 #### ⬜ T-5.1.1 — Add fr + pt-BR locales
+
 - **owns**: `apps/pwa/src/locales/fr/**`, `apps/pwa/src/locales/pt-BR/**`
 - **deps**: T-1.7.0
 - **parallel-with**: T-5.1.0
@@ -824,6 +903,7 @@
   - Same as T-5.1.0 for fr + pt-BR.
 
 #### ⬜ T-5.1.2 — Place description translation workflow (LLM-drafted + owner review queue)
+
 - **owns**: `services/catalog-svc/src/translations/**`, `apps/pwa/src/features/backoffice/translations/**`
 - **deps**: T-1.6.2, T-5.1.0, T-5.1.1
 - **acceptance**:
@@ -833,6 +913,7 @@
 ### Slice 5.2 — Accessibility audit (NFR §5.2)
 
 #### ⬜ T-5.2.0 — axe-core integration + per-route a11y tests
+
 - **owns**: `apps/pwa/e2e/a11y.spec.ts`
 - **deps**: every Phase 1–4 PWA route
 - **acceptance**:
@@ -841,6 +922,7 @@
   - WCAG 2.2 AA confirmed for: token landing, action drill-down, place detail, tour timeline, chat, public landing, backoffice dashboard.
 
 #### ⬜ T-5.2.1 — Manual a11y review report (focus order, screen-reader, color contrast)
+
 - **owns**: `docs/a11y/audit-2026.md`
 - **deps**: T-5.2.0
 - **acceptance**:
@@ -849,6 +931,7 @@
 ### Slice 5.3 — Performance budgets (NFR §5.1)
 
 #### ⬜ T-5.3.0 — Lighthouse-CI in pipeline
+
 - **owns**: `.github/workflows/lighthouse.yml`, `lighthouserc.json`
 - **deps**: T-1.7.1
 - **acceptance**:
@@ -858,6 +941,7 @@
 ### Slice 5.4 — Observability dashboards (NFR §5.6)
 
 #### ⬜ T-5.4.0 — Loki + Promtail + Grafana Compose overlay
+
 - **owns**: `infra/compose/docker-compose.observability.yml`, `infra/observability/**`
 - **deps**: T-0.4.4
 - **blocks**: T-5.4.1
@@ -866,6 +950,7 @@
   - All services already emit OTel (T-0.2.1, T-0.2.2); Prom scrapes `/metrics`.
 
 #### ⬜ T-5.4.1 — Grafana dashboards: RED, RabbitMQ, Postgres, host
+
 - **owns**: `infra/observability/grafana/dashboards/**`
 - **deps**: T-5.4.0
 - **acceptance**:
@@ -874,6 +959,7 @@
 ### Slice 5.5 — Post-stay review loop (FR-XC-07)
 
 #### ⬜ T-5.5.0 — Post-checkout review push (web push + email fallback)
+
 - **owns**: `services/notif-svc/**` (skeleton if not already), `services/notif-svc/src/templates/post-stay.ts`
 - **deps**: T-1.0.1
 - **acceptance**:
@@ -881,6 +967,7 @@
   - Pushes a "Rate the places you visited" prompt with deep-link.
 
 #### ⬜ T-5.5.1 — Lightweight in-app rating UI
+
 - **owns**: `apps/pwa/src/routes/_authed.review.tsx`, `apps/pwa/src/features/review/**`
 - **deps**: T-5.5.0
 - **acceptance**:
@@ -890,6 +977,7 @@
 ### Slice 5.6 — WhatsApp Business API (FR-CHT-07)
 
 #### ⬜ T-5.6.0 — Meta Business verification + BSP onboarding (process doc)
+
 - **owns**: `docs/operations/whatsapp-business-onboarding.md`
 - **deps**: none (calendar)
 - **acceptance**:
@@ -897,6 +985,7 @@
   - List of required business documents, template-message strategy, expected timeline.
 
 #### ⬜ T-5.6.1 — WhatsApp Business API driver in chat-hub
+
 - **owns**: `services/chat-hub/src/drivers/whatsapp-cloud.ts`
 - **deps**: T-4.0.0, T-5.6.0 (calendar)
 - **acceptance**:
@@ -1074,21 +1163,21 @@ flowchart LR
 
 Run `cs-agent launch` for tasks in the same wave only if their `owns:` scopes are disjoint. Typical safe parallel waves:
 
-| Wave | Tasks | Why safe |
-|------|-------|----------|
-| 0.A | T-0.1.2, T-0.1.3, T-0.1.4 | Different files, all after T-0.1.1. |
-| 0.B | T-0.2.0, T-0.2.1, T-0.2.2 | Different `packages/*`. |
-| 0.C | T-0.3.1, T-0.3.2 (then T-0.3.3) | T-0.3.1 owns Traefik dir; T-0.3.2 owns Authentik dir. |
-| 0.D | T-0.4.0, T-0.4.2 | PWA vs BFF; no shared files. |
-| 1.A | T-1.0.0, T-1.1.0 | Different services' schemas. |
-| 1.B | T-1.0.1, T-1.1.1, T-1.4.0 | Different services. |
-| 1.C | T-1.2.1, T-1.2.2 | Different PWA dirs; both add new files, no edits to shared. |
-| 1.D | T-1.3.0, T-1.3.1 | BFF route vs PWA map lib. |
-| 1.E | T-1.6.2, T-1.6.3 | Backoffice sub-features in different dirs. |
-| 2.A | T-2.2.0 + T-3.0.0 (across phases) | Different services. |
-| 3.A | T-3.2.0, T-3.3.0 | Different planner sub-modules. |
-| 4.A | T-4.2.0, T-4.3.0 | Different drivers. |
-| 5.A | T-5.1.0, T-5.1.1 | Different locales. |
+| Wave | Tasks                             | Why safe                                                    |
+| ---- | --------------------------------- | ----------------------------------------------------------- |
+| 0.A  | T-0.1.2, T-0.1.3, T-0.1.4         | Different files, all after T-0.1.1.                         |
+| 0.B  | T-0.2.0, T-0.2.1, T-0.2.2         | Different `packages/*`.                                     |
+| 0.C  | T-0.3.1, T-0.3.2 (then T-0.3.3)   | T-0.3.1 owns Traefik dir; T-0.3.2 owns Authentik dir.       |
+| 0.D  | T-0.4.0, T-0.4.2                  | PWA vs BFF; no shared files.                                |
+| 1.A  | T-1.0.0, T-1.1.0                  | Different services' schemas.                                |
+| 1.B  | T-1.0.1, T-1.1.1, T-1.4.0         | Different services.                                         |
+| 1.C  | T-1.2.1, T-1.2.2                  | Different PWA dirs; both add new files, no edits to shared. |
+| 1.D  | T-1.3.0, T-1.3.1                  | BFF route vs PWA map lib.                                   |
+| 1.E  | T-1.6.2, T-1.6.3                  | Backoffice sub-features in different dirs.                  |
+| 2.A  | T-2.2.0 + T-3.0.0 (across phases) | Different services.                                         |
+| 3.A  | T-3.2.0, T-3.3.0                  | Different planner sub-modules.                              |
+| 4.A  | T-4.2.0, T-4.3.0                  | Different drivers.                                          |
+| 5.A  | T-5.1.0, T-5.1.1                  | Different locales.                                          |
 
 If a task in TODO.md is missing from the matrix, default to **sequential** until a maintainer adds a safe pairing.
 
