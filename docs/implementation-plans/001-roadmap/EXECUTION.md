@@ -39,6 +39,27 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 3 — 2026-05-14 — T-0.1.3 (sequential)
+
+| Agent | Task ID | Branch | Profile | Scope | Status |
+|-------|---------|--------|---------|-------|--------|
+| t0-1-3 | T-0.1.3 | jmeireles/t0-1-3 | claude-sonnet-yolo | lefthook + gitleaks + .gitignore broaden | Done |
+
+#### Agent: t0-1-3 (T-0.1.3)
+- **Started**: ~18:40
+- **Finished**: ~19:02 (agent ~12 m + orchestrator verify/fix ~10 m)
+- **Predicted time**: 35 m
+- **Actual time**: ~22 m total
+- **Complexity**: Medium (non-interactive-shell nvm issue surfaced)
+- **LOC changed**: +265 / −1 (agent) + 1 file +13 / −4 (orchestrator nvm fix-up)
+- **Commit verified**: ✅ `20e905b` (agent), `39f0766` (orchestrator)
+- **PR**: [#3](https://github.com/zmeireles/daily-tour/pull/3) (merged)
+- **Acceptance**: all 11 criteria met after fix-up. lefthook installs on `pnpm install`; pre-commit + commit-msg + pre-push all wired; gitleaks system binary detected (`/usr/bin/gitleaks`) and runs cleanly.
+- **Issues**:
+  1. pre-push hook (`pnpm typecheck`) blocked the first `cs-agent push` because hook shells don't source nvm — pnpm ran under Node 25 and engine-strict bit. Patched each hook to `. ~/.nvm/nvm.sh && nvm use --silent` first; graceful fall-through if nvm absent. **Lesson**: every hook script that uses pnpm must self-activate nvm.
+- **Decisions made on the fly**: Conventional-Commits regex explicitly skips merge commits and the cs-agent autocommit-fallback pattern, so we don't hard-block on cs-agent quirks. gitleaks allowlist covers `.mcp.json.template` placeholders and adds a custom `dt_` token rule for future T-1.0.x reservations.
+- **Improvements vs T-0.1.2**: agent ran `pnpm install` this round (lesson baked into prompt), so no lock-sync follow-up needed.
+
 ### Wave 2 — 2026-05-14 — T-0.1.2 (sequential)
 
 | Agent | Task ID | Branch | Profile | Scope | Status |

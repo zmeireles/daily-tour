@@ -12,13 +12,13 @@
 
 | Phase | Slices | Tasks | Done | In Progress | Ready | Blocked |
 |-------|--------|-------|------|-------------|-------|---------|
-| 0 — Foundation | 4 | 14 | 2 | 0 | 2 | 10 |
+| 0 — Foundation | 4 | 14 | 3 | 0 | 1 | 10 |
 | 1 — Guest Landing & Catalog v1 | 7 | 25 | 0 | 0 | 0 | 25 |
 | 2 — Discovery & Search | 4 | 11 | 0 | 0 | 0 | 11 |
 | 3 — Daily Tour Planner | 5 | 16 | 0 | 0 | 0 | 16 |
 | 4 — Chat & Reservation Drafting | 5 | 15 | 0 | 0 | 0 | 15 |
 | 5 — Hardening & Growth | 6 | 17 | 0 | 0 | 0 | 17 |
-| **Total** | **31** | **98** | **2** | **0** | **2** | **94** |
+| **Total** | **31** | **98** | **3** | **0** | **1** | **94** |
 
 ---
 
@@ -40,14 +40,11 @@
 - **deps**: T-0.1.1
 - **blocks**: T-0.2.0, every Node service init
 
-#### 🟢 T-0.1.3 — Pre-commit (lefthook + gitleaks)
-- **owns**: `lefthook.yml`, `.gitleaks.toml`, `.gitignore`
+#### ✅ T-0.1.3 — Pre-commit (lefthook + gitleaks)
+> **Resolved 2026-05-14 via [PR #3](https://github.com/zmeireles/daily-tour/pull/3).** 6 files (+278 / −5 across 2 commits). Profile: claude-sonnet-yolo. Follow-up commit patched hooks to self-source nvm.
+- **owns**: `lefthook.yml`, `.gitleaks.toml`, `.gitignore`, `package.json` (additive), `pnpm-lock.yaml`, `.lefthook-local.example.yml`
 - **deps**: T-0.1.1
-- **parallel-with**: T-0.1.2, T-0.1.4
-- **acceptance**:
-  - `lefthook install` registers hooks.
-  - Commit with a fake `AKIA...` AWS key in any file is blocked.
-  - `.gitignore` covers `node_modules`, `.env*` (except `.env.example`), `dist`, `.turbo`, `coverage`.
+- **blocks**: every later commit (hooks now fire on every push from this repo)
 
 #### 🟢 T-0.1.4 — GitHub Actions CI (lint, typecheck, test, audit) [opus]
 - **owns**: `.github/workflows/ci.yml`, `.github/workflows/security.yml`, `.github/dependabot.yml` OR `renovate.json`
