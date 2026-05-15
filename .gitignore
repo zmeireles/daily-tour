@@ -35,3 +35,6 @@ Thumbs.db
 # Lefthook local overrides (never commit; .lefthook-local.example.yml IS committed)
 lefthook-local.yml
 .lefthook-local.yml
+
+# Traefik ACME storage — permissions must be 600; never commit
+infra/traefik/acme/acme.json
