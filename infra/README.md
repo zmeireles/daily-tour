@@ -67,7 +67,8 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 - **RabbitMQ** — `dt.events` topic exchange with day-1 queues (`place.*`, `tour.*`, `message.*`, `notification.*`, `reservation.*`). `dt.dlx` dead-letter exchange. Definitions loaded declaratively from `rabbitmq/definitions.json`.
 - **MinIO** — object storage for media. Three buckets seeded by `minio-init` one-shot service: `media-place`, `media-owner`, `media-tour`. The `public/` prefix is anonymously readable so the PWA can pull place hero images without signed URLs.
 - **Traefik** — reverse proxy and TLS terminator (v3.2). Routes incoming HTTP/HTTPS traffic to application services by hostname (e.g. `app.localhost`) using Docker label discovery (`traefik.enable=true`). ACME staging issuer handles certificate provisioning in dev/QA; the live issuer activates in Phase 5 with a real public domain. The dashboard (`:8080`) is protected by basic-auth and is **dev/QA only — never expose it in production**. Future services opt in by adding `traefik.http.*` labels; existing base-stack services (Postgres, Redis, RabbitMQ, MinIO) stay internal-only.
-- **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.localhost`. The `authentik-forward-auth@file` middleware is **defined-but-commented** in Traefik's dynamic config — it activates when T-0.3.3 (n8n) or T-1.6.x (owner backoffice) creates the required Proxy Provider binding on the embedded outpost (the bare server returns 404 on `/outpost.goauthentik.io/auth/traefik` until that binding exists).
+- **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.localhost`. The `authentik-forward-auth@file` middleware is **defined-but-commented** in Traefik's dynamic config — it activates when T-0.3.4 or T-1.6.x creates the required Proxy Provider binding on the embedded outpost (the bare server returns 404 on `/outpost.goauthentik.io/auth/traefik` until that binding exists).
+- **n8n** — workflow automation. Owns the ingest scheduling, owner-approval reminders, daily digests, and low-code integrations described in [`03-architecture.md §2`](../docs/exploration/03-architecture.md). Pinned to LTS line `>=1.123.26` per the CVE floor in [`04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md). Runs SQLite-backed in dev/QA (single container, no separate DB). Reachable via Traefik at `http://n8n.localhost`. Protected by **built-in basic auth** for now; Authentik forward-auth integration lands in a follow-up task once the Authentik Proxy Provider is wired to the embedded outpost. Never expose n8n's UI to the public internet — even with Authentik, keep host bindings on `127.0.0.1`.
 
 ## Ports (host bindings, all on 127.0.0.1)
 
@@ -84,15 +85,16 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 | MinIO Console | 9001 | 127.0.0.1:9001 | admin UI |
 | Authentik | 9000 (internal) | — | No host bind; Traefik routes `http://auth.localhost` → `authentik-server:9000` |
 | authentik-postgres | 5432 (internal) | — | No host bind; internal to `dt_internal` network only |
+| n8n | 5678 (internal) | — | No host bind; Traefik routes `http://n8n.localhost` → `dt_n8n:5678` |
 
 All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth.
 
 ## Authentik on first boot
 
-**Add to `/etc/hosts`** (needed for browser and curl to resolve `auth.localhost`):
+**Add to `/etc/hosts`** (needed for browser and curl to resolve local service hostnames):
 
 ```
-127.0.0.1 auth.localhost
+127.0.0.1 auth.localhost n8n.localhost app.localhost api.localhost traefik.localhost
 ```
 
 **Bring up the full stack**:
@@ -103,13 +105,14 @@ docker compose --env-file dev-environment \
   -f infra/compose/docker-compose.base.yml \
   -f infra/compose/docker-compose.traefik.yml \
   -f infra/compose/docker-compose.authentik.yml \
+  -f infra/compose/docker-compose.n8n.yml \
   up -d
 ```
 
-**Wait ≥3 min** for Authentik to migrate its DB on first boot (no blueprints to apply yet; see below):
+**Wait ≥3 min** for Authentik to migrate its DB on first boot and n8n to initialize:
 
 ```bash
-docker compose --env-file dev-environment -f ... ps  # wait until all 8 services healthy
+docker compose --env-file dev-environment -f ... ps  # wait until all 9 services healthy
 ```
 
 **Verify health**:
@@ -142,7 +145,9 @@ Until then, to bring up the provider manually:
 
 ### Forward-auth (currently 404)
 
-The Authentik embedded outpost at `/outpost.goauthentik.io/auth/traefik` returns 404 until a **Proxy Provider** is bound to it. T-0.3.3 (n8n) or T-1.6.x (owner backoffice) own that wiring + uncommenting the `authentik-forward-auth` middleware block in `traefik/dynamic/middlewares.yml`.
+The Authentik embedded outpost at `/outpost.goauthentik.io/auth/traefik` returns 404 until a **Proxy Provider** is bound to it. T-0.3.4 or T-1.6.x own that wiring + uncommenting the `authentik-forward-auth` middleware block in `traefik/dynamic/middlewares.yml`.
+
+**n8n (T-0.3.3)** ships with built-in basic auth instead of Authentik forward-auth. The integration is deferred to the same follow-up task that creates the Authentik Proxy Provider + binds it to the embedded outpost.
 
 ## Nuke + reseed (DATA LOSS)
 
@@ -183,6 +188,9 @@ Phase 5 (T-5.4.x observability + sizing) introduces a secrets-manager bootstrap 
 | MinIO bucket-init fails after a clean install | Container reached `up` before MinIO was healthy | The `depends_on: condition: service_healthy` guard should prevent this. If it slips, re-run `docker compose up minio-init`. |
 | pt_PT.UTF-8 collation missing | `locale-gen` failed in postgres Dockerfile build | Set `LANG=en_US.UTF-8` in `.env` and accept the slightly weaker sort for now. Re-attempt the build with `--no-cache` if you have apt-get connectivity. |
 | Containers fight for the same port | Another stack on the host bound 5432/6379/etc | Edit the `ports:` entries in `docker-compose.base.yml` (use `:5432` instead of `:5432:5432` to disable host exposure, or pick a different host port). |
+| n8n login fails | `N8N_BASIC_AUTH_USER` or `N8N_BASIC_AUTH_PASSWORD` mismatch | Check values in `dev-environment`; restart with `docker compose ... restart n8n`. |
+| n8n cannot save credentials | `N8N_ENCRYPTION_KEY` changed between runs | Restore the same key in `dev-environment`, or wipe the volume: `docker compose down -v` + `up -d`. |
+| n8n workflow state lost after restart | Volume `dt_n8n_data` was removed | Workflow state persists via named volume `/home/node/.n8n`. Ensure you use `down` not `down -v`. Backups are operator's responsibility (Phase 5 adds automated backup). |
 
 ## See also
 
