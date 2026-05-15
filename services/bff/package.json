@@ -1,0 +1,39 @@
+{
+  "name": "@daily-tour/bff",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf dist node_modules .turbo coverage"
+  },
+  "dependencies": {
+    "@daily-tour/shared-otel": "workspace:*",
+    "@daily-tour/shared-types": "workspace:*",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/jwt": "^9.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "fastify": "^5.8.5",
+    "fastify-plugin": "^5.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@daily-tour/shared-config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}
