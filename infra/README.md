@@ -87,6 +87,50 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 
 All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth.
 
+## Authentik on first boot
+
+**Add to `/etc/hosts`** (needed for browser and curl to resolve `auth.localhost`):
+
+```
+127.0.0.1 auth.localhost
+```
+
+**Bring up the full stack**:
+
+```bash
+cp .env.example dev-environment  # fill in secrets
+docker compose --env-file dev-environment \
+  -f infra/compose/docker-compose.base.yml \
+  -f infra/compose/docker-compose.traefik.yml \
+  -f infra/compose/docker-compose.authentik.yml \
+  up -d
+```
+
+**Wait ≥90 s** for Authentik to migrate its DB and apply blueprints:
+
+```bash
+# Watch the worker apply blueprints
+docker logs -f dt_authentik_worker 2>&1 | grep -i blueprint
+```
+
+**Verify**:
+
+```bash
+# Authentik health (should return 200)
+curl -sH "Host: auth.localhost" -o /dev/null -w "%{http_code}\n" http://127.0.0.1:80/-/health/live/
+
+# Check OIDC provider was created (requires AUTHENTIK_BOOTSTRAP_TOKEN)
+AK_TOKEN=$(grep AUTHENTIK_BOOTSTRAP_TOKEN dev-environment | cut -d= -f2)
+curl -sH "Host: auth.localhost" \
+     -H "Authorization: Bearer $AK_TOKEN" \
+     http://127.0.0.1:80/api/v3/providers/oauth2/ | jq '.results[].name'
+# → "owner-app"
+```
+
+**Open the UI**: `http://auth.localhost` → login with `akadmin` / `$AUTHENTIK_BOOTSTRAP_PASSWORD`.
+
+Verify under **Applications → Providers** that the `owner-app` OIDC provider exists.
+
 ## Nuke + reseed (DATA LOSS)
 
 ```bash
