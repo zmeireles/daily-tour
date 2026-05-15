@@ -12,13 +12,13 @@
 
 | Phase                           | Slices | Tasks  | Done  | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------ | ----- | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 14     | 6     | 0           | 1     | 7       |
+| 0 — Foundation                  | 4      | 14     | 7     | 0           | 1     | 6       |
 | 1 — Guest Landing & Catalog v1  | 7      | 25     | 0     | 0           | 0     | 25      |
 | 2 — Discovery & Search          | 4      | 11     | 0     | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16     | 0     | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15     | 0     | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17     | 0     | 0           | 0     | 17      |
-| **Total**                       | **31** | **98** | **6** | **0**       | **1** | **91**  |
+| **Total**                       | **31** | **98** | **7** | **0**       | **1** | **90**  |
 
 ---
 
@@ -93,7 +93,9 @@
   - Auto-instruments `http`, `fastify`, `pg`, `amqplib`.
   - Honours `OTEL_EXPORTER_OTLP_ENDPOINT` env.
 
-#### 🟢 T-0.2.2 — Python shared `daily_tour_common` package (FastAPI base + pydantic models + otel)
+#### ✅ T-0.2.2 — Python shared `daily_tour_common` package (FastAPI base + pydantic models + otel)
+
+> **Resolved 2026-05-15 via [PR #7](https://github.com/zmeireles/daily-tour/pull/7).** 21 files (+1906 / −0 across 2 commits). Profile: claude-sonnet-yolo. 26 pytest tests pass; ruff clean; mypy strict clean. Orchestrator added the missing README and committed the agent's uncommitted `pydantic[email]` bump. **Slice 0.2 complete (T-0.2.0 + T-0.2.1 + T-0.2.2).**
 
 - **owns**: `services/_python_common/**` OR `packages/python-common/**`
 - **deps**: T-0.1.1
@@ -108,7 +110,7 @@
 
 ### Slice 0.3 — Docker Compose infra stack
 
-#### ⬜ T-0.3.0 — Compose base: Postgres 17 + pgvector 0.8.2, Redis, RabbitMQ 4.3, MinIO [opus]
+#### 🟢 T-0.3.0 — Compose base: Postgres 17 + pgvector 0.8.2, Redis, RabbitMQ 4.3, MinIO [opus]
 
 - **owns**: `infra/compose/docker-compose.base.yml`, `infra/postgres/init/00-extensions.sql`, `infra/postgres/init/01-schemas.sql`, `.env.example`
 - **deps**: T-0.1.1
