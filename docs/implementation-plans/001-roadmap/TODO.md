@@ -12,13 +12,13 @@
 
 | Phase                           | Slices | Tasks  | Done  | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------ | ----- | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 14     | 5     | 0           | 2     | 7       |
+| 0 — Foundation                  | 4      | 14     | 6     | 0           | 1     | 7       |
 | 1 — Guest Landing & Catalog v1  | 7      | 25     | 0     | 0           | 0     | 25      |
 | 2 — Discovery & Search          | 4      | 11     | 0     | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16     | 0     | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15     | 0     | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17     | 0     | 0           | 0     | 17      |
-| **Total**                       | **31** | **98** | **5** | **0**       | **2** | **91**  |
+| **Total**                       | **31** | **98** | **6** | **0**       | **1** | **91**  |
 
 ---
 
@@ -80,7 +80,9 @@
   - Each namespace exports a zod schema + inferred TS type.
   - Build emits `dist/` consumable by Node + browser.
 
-#### 🟢 T-0.2.1 — `packages/shared-otel` (Node OTel SDK helper)
+#### ✅ T-0.2.1 — `packages/shared-otel` (Node OTel SDK helper)
+
+> **Resolved 2026-05-15 via [PR #6](https://github.com/zmeireles/daily-tour/pull/6).** 16 files (+2511 / −259 across 3 commits). Profile: claude-sonnet-yolo. Mid-stream CVE fix bumped OTel 0.57 → 0.218 line; bonus commit aligned local lefthook hooks with CI gates (audit + tests + lint-affected in parallel pre-push).
 
 - **owns**: `packages/shared-otel/**`
 - **deps**: T-0.1.1, T-0.1.2

@@ -40,6 +40,38 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 6 — 2026-05-15 — T-0.2.1 (sequential)
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                        | Status |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------ | ------ |
+| t0-2-1 | T-0.2.1 | jmeireles/t0-2-1 | claude-sonnet-yolo | shared-otel (Node OTel SDK helper) + lefthook ↔ CI alignment | Done   |
+
+#### Agent: t0-2-1 (T-0.2.1)
+
+- **Started**: 2026-05-15 ~15:10
+- **Finished**: agent ~25 m; orchestrator CVE + alignment fix-ups ~30 m
+- **Predicted time**: 55 m
+- **Actual time**: ~55 m total
+- **Complexity**: Medium (agent work) + Medium (CVE remediation surfaced API surface change)
+- **LOC changed**: +2511 / −259 across 16 files (across 3 commits on the branch)
+- **Commits**:
+  - ✅ `b9c0416` — agent's clean conventional commit
+  - ✅ `9fe19f5` — orchestrator CVE fix-up (OTel 0.57 → 0.218 line + Resource→resourceFromAttributes + fastify split)
+  - ✅ `5f47ea9` — orchestrator lefthook alignment (audit/tests/lint-affected pre-push, subject-case in commit-msg)
+- **PR**: [#6](https://github.com/zmeireles/daily-tour/pull/6) (merged, all 6 CI checks green)
+- **Acceptance**: 4 exports (`initOtel`, `readOtelConfig`, `registerShutdownHooks`, `VERSION`); 9 tests pass (mocked SDK); turbo 3/3 green; `pnpm audit --prod --audit-level=high` clean after the bump.
+- **Issues**:
+  1. Agent picked OTel `0.57.x` line — a 5-month-old version. Transitively pulled `@opentelemetry/exporter-prometheus <0.217.0` which has [GHSA-q7rr-3cgh-j5r3](https://github.com/advisories/GHSA-q7rr-3cgh-j5r3) HIGH (prometheus exporter crash via malformed HTTP). CI's `pnpm audit --prod --audit-level=high` job failed correctly. **Fix**: bumped all OTel deps to the `0.218.x` line (current latest), which required handling two API breaking changes: `new Resource(...)` → `resourceFromAttributes(...)` factory, and fastify being dropped from `auto-instrumentations-node@0.76` bundle (added `@opentelemetry/instrumentation-fastify` as a direct dep and register manually alongside the auto set). Test mocks updated for both.
+  2. PR title slip — I set `feat(shared-otel): Node ...` (capital N). pr-title.yml's `subjectPattern: ^(?![A-Z]).+$` correctly rejected it. Renamed to `feat(shared-otel): add Node ...`.
+  3. Initial commit blocked by lefthook eslint-staged hook because bare `eslint` finds no root `eslint.config.js`. Same workaround T-0.2.0 used (`.lefthook-local.yml` gitignored opt-out) unblocked, then permanent fix in commit `5f47ea9`.
+- **Lessons applied** (from previous waves):
+  - Pushed BEFORE killing the worktree this time. Branch reached origin safely.
+  - Agent's clean self-commit confirmed the trend continues (pnpm install + conventional message both in the first commit).
+- **New lesson**: **CI's `pnpm audit` is now mirrored by a local pre-push hook so HIGH+ CVEs in deps are caught before the push, not 60 s into the runner.** Same for `lint-affected` (via turbo) and `tests`. Wall time for the parallel pre-push gate: ~2 s.
+- **Decisions made on the fly (orchestrator)**:
+  - When agent's `auto-instrumentations-node@0.76` dropped fastify from its bundle, opted for the explicit-direct-dep approach over silently losing fastify coverage. Acceptance criterion preserved.
+  - `commit-msg` validator gains a step-2 subject-case check (`^[A-Z]` → reject) matching pr-title.yml. Two-step validation: type-scope-colon shape first, lowercase-subject second.
+
 ### Wave 5 — 2026-05-15 — T-0.2.0 (sequential) — opens Slice 0.2
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                      | Status |
