@@ -25,7 +25,13 @@ vi.mock("@opentelemetry/sdk-metrics", () => ({
 }));
 
 vi.mock("@opentelemetry/resources", () => ({
-  Resource: vi.fn().mockImplementation(() => ({})),
+  // OTel 2.x removed the Resource class in favour of a factory function.
+  resourceFromAttributes: vi.fn().mockReturnValue({}),
+}));
+
+vi.mock("@opentelemetry/instrumentation-fastify", () => ({
+  // Fastify dropped from auto-instrumentations-node 0.76; we register it separately.
+  FastifyInstrumentation: vi.fn().mockImplementation(() => ({})),
 }));
 
 function clearEnv() {
