@@ -4,9 +4,13 @@
 # low-code integrations. Pinned to LTS floor >=1.123.26 per the CVSS 10.0 RCE floor
 # in docs/exploration/04-tech-stack.md §6.
 #
-# Auth: built-in basic auth for dev/QA. Authentik forward-auth is deferred to a
-# follow-up task (T-0.3.4 / T-1.6.x) once the Authentik Proxy Provider is bound
-# to the embedded outpost (bare forward-auth returns 404 until then).
+# Auth: n8n's built-in **User Management** (N8N_BASIC_AUTH_* was removed in v0.184).
+# First boot serves the owner-setup wizard at http://n8n.localhost/setup — the first
+# user becomes owner and unlocks the UI for that user only. Document the wizard step
+# in infra/README.md. Authentik forward-auth integration is deferred to a follow-up
+# task (T-0.3.4 / T-1.6.x) once Authentik's Proxy Provider is bound to the embedded
+# outpost (bare forward-auth returns 404 until then). Host bindings stay on
+# 127.0.0.1 throughout — defense-in-depth via Docker network isolation + Traefik.
 #
 # Persistence: SQLite-backed in dev/QA via named volume dt_n8n_data. Phase 5
 # migrates to a dedicated Postgres DB (role `n8n` already exists in
@@ -47,9 +51,8 @@ services:
       N8N_PROTOCOL: http
       N8N_EDITOR_BASE_URL: http://n8n.localhost
       WEBHOOK_URL: http://n8n.localhost/
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
-      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:?N8N_BASIC_AUTH_PASSWORD missing}
+      # N8N_BASIC_AUTH_* env vars were removed in n8n v0.184 — first-boot owner
+      # setup wizard at /setup is the auth path. Document this in README.
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY missing}
       GENERIC_TIMEZONE: UTC
       TZ: UTC
