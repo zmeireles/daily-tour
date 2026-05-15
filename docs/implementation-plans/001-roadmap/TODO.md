@@ -12,13 +12,13 @@
 
 | Phase                           | Slices | Tasks  | Done  | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------ | ----- | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 14     | 4     | 0           | 3     | 7       |
+| 0 — Foundation                  | 4      | 14     | 5     | 0           | 2     | 7       |
 | 1 — Guest Landing & Catalog v1  | 7      | 25     | 0     | 0           | 0     | 25      |
 | 2 — Discovery & Search          | 4      | 11     | 0     | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16     | 0     | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15     | 0     | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17     | 0     | 0           | 0     | 17      |
-| **Total**                       | **31** | **98** | **4** | **0**       | **3** | **91**  |
+| **Total**                       | **31** | **98** | **5** | **0**       | **2** | **91**  |
 
 ---
 
@@ -68,7 +68,9 @@
 
 ### Slice 0.2 — Shared packages & contracts
 
-#### 🟢 T-0.2.0 — `packages/shared-types` with zod + ts types scaffold
+#### ✅ T-0.2.0 — `packages/shared-types` with zod + ts types scaffold
+
+> **Resolved 2026-05-15 via [PR #5](https://github.com/zmeireles/daily-tour/pull/5).** 29 files (+2606 / −61). Profile: claude-sonnet-yolo. 14 entity zod schemas + 10 enums + i18n helpers + 50 tests. Note: first PR where the Security workflow hit a GitHub backend flake (queued 14m12s, surfaced as "Internal server error"). Re-ran via `gh run rerun` — clean second time.
 
 - **owns**: `packages/shared-types/**`
 - **deps**: T-0.1.1, T-0.1.2

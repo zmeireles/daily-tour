@@ -40,6 +40,33 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 5 — 2026-05-15 — T-0.2.0 (sequential) — opens Slice 0.2
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                      | Status |
+| ------ | ------- | ---------------- | ------------------ | ---------------------------------------------------------- | ------ |
+| t0-2-0 | T-0.2.0 | jmeireles/t0-2-0 | claude-sonnet-yolo | shared-types (14 entity zod schemas + 10 enums + 50 tests) | Done   |
+
+#### Agent: t0-2-0 (T-0.2.0)
+
+- **Started**: 2026-05-14 ~22:04
+- **Finished**: agent ~30 m (idled afterwards waiting for input); orchestrator rescue + push next day
+- **Predicted time**: 75 m
+- **Actual time**: agent ~30 m + orchestrator verify + GH-flake retry ~30 m
+- **Complexity**: High (largest task so far — 14 schemas + tests + tsup + tsconfig-eslint workaround)
+- **LOC changed**: +2606 / −61 across 29 files (1540 in lockfile)
+- **Commit verified**: ✅ `22fc364` — proper conventional message, agent self-committed
+- **PR**: [#5](https://github.com/zmeireles/daily-tour/pull/5) (merged)
+- **Acceptance**: all 14 entity schemas + helpers + VERSION constant + 50 tests (46 runtime + 4 type-level via `expectTypeOf`). tsup ESM build emits `dist/index.d.ts` 34.93 KB. `pnpm exec turbo run build typecheck test --filter=@daily-tour/shared-types` → 3/3 successful in 2.6 s.
+- **Issues**:
+  1. cs-agent tmux session went idle at the end-of-work prompt and showed as "running 8h38m past estimate" until the orchestrator inspected. Wasn't stuck — just waiting for orchestrator input. **Lesson**: agent prompts that don't end with a clear "stop here" instruction may idle; the cs-agent status `+8h38m` delta is the tell.
+  2. Orchestrator killed the cs-agent session BEFORE pushing the branch. Worktree dir was removed; the `jmeireles/t0-2-0` branch + commit survived in the main repo and was pushed manually. **Lesson**: never `cs-agent kill <name>` before `cs-agent push <name>` — the kill cleans the worktree but the branch is still in the main repo's refs, so it's recoverable via direct `git push`.
+  3. GitHub Actions Security workflow on PR #5 hit a backend flake — all 3 jobs queued 14m12s, never started, surfaced as "Internal server error. Correlation ID: c95fb93d…". Same workflow file ran green on the push-to-main and on the rerun. `gh run rerun 25907136770` fixed it. **Lesson**: workflow-as-failed without job logs ≈ runner-allocation flake — always re-run before investigating the YAML.
+- **Decisions made on the fly (by the agent, carried in the commit body)**:
+  - Added sibling `tsconfig.eslint.json` because typescript-eslint can't follow pnpm symlinks through `@daily-tour/shared-config/tsconfig/node → ../../tsconfig.base.json`. Build/typecheck use the npm-package-based tsconfig; ESLint uses the direct-path one.
+  - Created `.lefthook-local.yml` (gitignored) to skip `eslint-staged` pre-commit until per-package ESLint configs land in T-0.4.0 / T-0.4.2.
+  - Top-level schemas use `.strict()` to force deliberate schema evolution.
+  - tsup ESM-only (no CJS) — every consumer is `type: module`.
+
 ### Wave 4 — 2026-05-14 — T-0.1.4 (sequential) — closes Slice 0.1
 
 | Agent  | Task ID | Branch           | Profile     | Scope                                                       | Status |
