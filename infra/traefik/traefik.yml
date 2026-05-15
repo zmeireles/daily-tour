@@ -3,16 +3,15 @@
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Entrypoints
+#
+# Dev/QA runs on plain HTTP — the websecure entrypoint has no TLS
+# certificate configured (ACME staging requires a real public domain to
+# issue). Phase 5 hardening (T-5.x) re-introduces the web→websecure
+# redirect once a real domain + cert resolver is in place.
 # ─────────────────────────────────────────────────────────────────────────────
 entryPoints:
   web:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-          permanent: false   # 302 during dev; flip to true in Phase 5
   websecure:
     address: ":443"
 
@@ -33,6 +32,11 @@ providers:
 api:
   dashboard: true
   insecure: false             # dashboard is routed behind dashboard-auth middleware
+
+# Ping handler is required for the container healthcheck (`traefik healthcheck`).
+# When `ping: {}` is omitted, the binary exits with
+# "please enable `ping` to use health check" and the container flips to unhealthy.
+ping: {}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Certificate resolvers — LE staging only in dev/QA
