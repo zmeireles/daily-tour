@@ -23,6 +23,9 @@ paths = [
   # Traefik dashboard htpasswd is a bcrypt of the dev placeholder
   # TRAEFIK_DASHBOARD_PASSWORD. Rotated per infra/README.md.
   "infra/traefik/dashboard-users$",
+  # Authentik blueprints contain placeholder client_secret literals
+  # that match AUTHENTIK_OWNER_APP_CLIENT_SECRET in .env.example.
+  "infra/authentik/blueprints/.*\\.yaml$",
 ]
 
 regexes = [

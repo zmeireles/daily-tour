@@ -67,6 +67,7 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 - **RabbitMQ** — `dt.events` topic exchange with day-1 queues (`place.*`, `tour.*`, `message.*`, `notification.*`, `reservation.*`). `dt.dlx` dead-letter exchange. Definitions loaded declaratively from `rabbitmq/definitions.json`.
 - **MinIO** — object storage for media. Three buckets seeded by `minio-init` one-shot service: `media-place`, `media-owner`, `media-tour`. The `public/` prefix is anonymously readable so the PWA can pull place hero images without signed URLs.
 - **Traefik** — reverse proxy and TLS terminator (v3.2). Routes incoming HTTP/HTTPS traffic to application services by hostname (e.g. `app.localhost`) using Docker label discovery (`traefik.enable=true`). ACME staging issuer handles certificate provisioning in dev/QA; the live issuer activates in Phase 5 with a real public domain. The dashboard (`:8080`) is protected by basic-auth and is **dev/QA only — never expose it in production**. Future services opt in by adding `traefik.http.*` labels; existing base-stack services (Postgres, Redis, RabbitMQ, MinIO) stay internal-only.
+- **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.localhost`. The `authentik-forward-auth@file` middleware in Traefik's dynamic config protects downstream services; each service opts in via a `traefik.http.routers.<name>.middlewares` label.
 
 ## Ports (host bindings, all on 127.0.0.1)
 
@@ -81,6 +82,8 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 | RabbitMQ Management | 15672 | 127.0.0.1:15672 | admin UI |
 | MinIO S3 API | 9000 | 127.0.0.1:9000 | service-to-service |
 | MinIO Console | 9001 | 127.0.0.1:9001 | admin UI |
+| Authentik | 9000 (internal) | — | No host bind; Traefik routes `http://auth.localhost` → `authentik-server:9000` |
+| authentik-postgres | 5432 (internal) | — | No host bind; internal to `dt_internal` network only |
 
 All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth.
 

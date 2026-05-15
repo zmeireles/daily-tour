@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────────────────
+# owner-app bootstrap blueprint
+#
+# Loaded automatically on first boot by the Authentik worker from /blueprints/custom.
+# Idempotent across restarts — safe to leave in place permanently.
+# Bootstrap admin (akadmin) password is set via AUTHENTIK_BOOTSTRAP_PASSWORD env var.
+# OIDC client secret is read from AUTHENTIK_OWNER_APP_CLIENT_SECRET env var.
+#
+# If the blueprint is not applied automatically, check:
+#   docker logs dt_authentik_worker | grep -i blueprint
+# Then restart the worker: docker compose restart authentik-worker
+#
+# If !Find tags fail (e.g. authorization flow slug differs), edit the slug below
+# and restart the worker. The flow slugs are visible in the UI under Flows.
+# ─────────────────────────────────────────────────────────────────────────
+
+version: 1
+metadata:
+  name: owner-app
+  labels:
+    blueprints.goauthentik.io/instantiate: "true"
+
+entries:
+  # ───── Signing key ────────────────────────────────────────────────────────
+  # The default self-signed cert is auto-created by Authentik on first boot.
+  # This entry just creates a blueprint reference; no attributes are modified.
+  - model: authentik_crypto.certificatekeypair
+    state: present
+    identifiers:
+      name: authentik Self-signed Certificate
+    id: default-cert
+    attrs: {}
+
+  # ───── OAuth2 / OIDC provider ─────────────────────────────────────────────
+  - model: authentik_providers_oauth2.oauth2provider
+    state: present
+    identifiers:
+      name: owner-app
+    id: owner-app-provider
+    attrs:
+      client_id: daily-tour-bff
+      client_secret: !Env AUTHENTIK_OWNER_APP_CLIENT_SECRET
+      signing_key: !KeyOf default-cert
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      redirect_uris:
+        - matching_mode: strict
+          url: "http://localhost:8080/callback"
+        - matching_mode: strict
+          url: "http://localhost:5173/auth/callback"
+        - matching_mode: strict
+          url: "https://app.localhost/auth/callback"
+      sub_mode: hashed_user_id
+      include_claims_in_id_token: true
+      # Standard OIDC scopes: openid (sub/iss/iat), email, profile (name/given/family).
+      # For a groups claim, add a custom ScopeMapping in the UI or extend this list
+      # with goauthentik.io/providers/oauth2/scope-entitlements if available.
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, "goauthentik.io/providers/oauth2/scope-openid"]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, "goauthentik.io/providers/oauth2/scope-email"]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, "goauthentik.io/providers/oauth2/scope-profile"]]
+
+  # ───── Application ────────────────────────────────────────────────────────
+  - model: authentik_core.application
+    state: present
+    identifiers:
+      slug: owner-app
+    id: owner-app-application
+    attrs:
+      name: Owner Backoffice
+      provider: !KeyOf owner-app-provider
+      slug: owner-app
+
+  # ───── owners group ───────────────────────────────────────────────────────
+  - model: authentik_core.group
+    state: present
+    identifiers:
+      name: owners
+    id: owners-group
+    attrs:
+      is_superuser: false
+      # akadmin is created by AUTHENTIK_BOOTSTRAP_PASSWORD before blueprints run.
+      users:
+        - !Find [authentik_core.user, [username, akadmin]]

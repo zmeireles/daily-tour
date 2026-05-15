@@ -1,0 +1,155 @@
+# Daily Tour — Authentik overlay
+#
+# Authentik 2026.2.2 OIDC identity provider + dedicated Postgres.
+# Architecture note: Authentik gets its own PG container (dt_authentik_postgres)
+# per docs/exploration/03-architecture.md §4 — 3rd-party services keep their own DBs.
+#
+# Compose on top of the base + Traefik overlays:
+#   docker compose \
+#     --env-file dev-environment \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     -f infra/compose/docker-compose.authentik.yml \
+#     up -d
+#
+# See infra/README.md "Authentik on first boot" for the setup walkthrough.
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+volumes:
+  dt_authentik_postgres_data:
+    name: dt_authentik_postgres_data
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Authentik-dedicated Postgres 16 — separate from the main cluster per
+  # docs/exploration/03-architecture.md §4 ("3rd parties get their own DBs").
+  # Authentik supports up to Postgres 16 stable as of 2026.2.x.
+  # ─────────────────────────────────────────────────────────────────────────
+  authentik-postgres:
+    image: postgres:16-alpine
+    container_name: dt_authentik_postgres
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AUTHENTIK_PG_PASSWORD:?}
+      POSTGRES_DB: authentik
+    volumes:
+      - dt_authentik_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authentik -d authentik"]
+      interval: 5s
+      timeout: 3s
+      start_period: 20s
+      retries: 12
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Authentik server — OIDC API + admin UI.
+  # Pinned to 2026.2.2 per docs/exploration/04-tech-stack.md §3 CVE floor.
+  # Bumped by Renovate. Reachable via Traefik at http://auth.localhost.
+  # Blueprints in /blueprints/custom are applied by the worker on first boot.
+  # ─────────────────────────────────────────────────────────────────────────
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.2.2
+    container_name: dt_authentik_server
+    restart: unless-stopped
+    command: server
+    networks:
+      - dt_internal
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?}
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASSWORD:?}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_REDIS__PASSWORD: ${REDIS_PASSWORD:?}
+      AUTHENTIK_REDIS__PREFIX: "authentik:"
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:?}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:?}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@example.local}
+      AUTHENTIK_EMAIL__FROM: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@example.local}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      # Needed by the owner-app.yaml blueprint (applied by the worker).
+      AUTHENTIK_OWNER_APP_CLIENT_SECRET: ${AUTHENTIK_OWNER_APP_CLIENT_SECRET:?}
+    volumes:
+      - ../authentik/blueprints:/blueprints/custom:ro
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9000/-/health/live/"]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 8
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.rule=Host(`auth.localhost`)"
+      - "traefik.http.routers.authentik.entrypoints=web"
+      - "traefik.http.routers.authentik.service=authentik"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1.0"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Authentik worker — applies blueprints, sends email, handles long-running
+  # background tasks. Same image as server; different entrypoint command.
+  # No HTTP surface; no Traefik labels.
+  # ─────────────────────────────────────────────────────────────────────────
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.2.2
+    container_name: dt_authentik_worker
+    restart: unless-stopped
+    command: worker
+    networks:
+      - dt_internal
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?}
+      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASSWORD:?}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_REDIS__PASSWORD: ${REDIS_PASSWORD:?}
+      AUTHENTIK_REDIS__PREFIX: "authentik:"
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:?}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:?}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@example.local}
+      AUTHENTIK_EMAIL__FROM: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@example.local}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      # Required by owner-app.yaml blueprint: !Env AUTHENTIK_OWNER_APP_CLIENT_SECRET
+      AUTHENTIK_OWNER_APP_CLIENT_SECRET: ${AUTHENTIK_OWNER_APP_CLIENT_SECRET:?}
+    volumes:
+      - ../authentik/blueprints:/blueprints/custom:ro
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ak healthcheck"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
