@@ -7,10 +7,11 @@ export default function App() {
       <Card className="max-w-md w-full">
         <CardHeader>
           <CardTitle>
-            <h1>Hello, Daily Tour</h1>
+            <h1 className="text-3xl font-[var(--font-display)]">Hello, Daily Tour</h1>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex justify-center">
+        <CardContent className="flex flex-col items-center gap-3">
+          <p className="text-sm text-muted-foreground text-center">São Miguel · Açores</p>
           <Button>Click me</Button>
         </CardContent>
       </Card>

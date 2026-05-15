@@ -1,10 +1,13 @@
 {
-  "name": "Daily Tour",
+  "name": "Daily Tour — São Miguel",
   "short_name": "Daily Tour",
-  "description": "Curated daily walking experiences for guesthouse guests.",
+  "description": "Curated places of interest for tourists staying at São Miguel guesthouses.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "background_color": "#F7F4EC",
+  "theme_color": "#2F5D43",
+  "lang": "en",
   "icons": []
 }
