@@ -16,6 +16,10 @@ paths = [
   "docs/.*",
   # .mcp.json.template contains placeholder strings, not real secrets
   "\\.mcp\\.json\\.template$",
+  # RabbitMQ definitions ship a pre-hashed placeholder password (SHA-256 of
+  # the dev `change-me-please-rabbit` literal). Rotated alongside .env per
+  # `infra/README.md "Secret rotation procedure"`. Not a real secret.
+  "infra/rabbitmq/definitions\\.json$",
 ]
 
 regexes = [
