@@ -39,15 +39,15 @@ pre-commit:
         pnpm exec prettier --check --ignore-unknown {staged_files}
       fail_text: "Run `pnpm exec prettier --write {staged_files}` to fix formatting."
 
-    eslint-staged:
-      # NOTE: No eslint.config.js exists at root yet. Individual packages (PWA, BFF)
-      # will add their own eslint.config.js in T-0.4.0 / T-0.4.2. Until then this
-      # command will no-op or skip because eslint finds no applicable config.
-      glob: "*.{js,jsx,ts,tsx}"
+    lint-affected:
+      # Lint via turbo's affected graph (same command CI runs in ci.yml).
+      # Each package owns its own eslint.config.js; turbo discovers them.
+      # If no package is "affected" (e.g. only docs changed) turbo exits 0.
+      # Aligns this local hook with the CI quality job.
       run: |
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
-        pnpm exec eslint --no-warn-ignored {staged_files}
-      fail_text: "Fix ESLint errors before committing."
+        pnpm exec turbo run lint --filter=...[HEAD]
+      fail_text: "Fix ESLint errors in the affected package(s) before committing."
 
 commit-msg:
   commands:
@@ -65,19 +65,49 @@ commit-msg:
         echo "$msg" | grep -qE "^Merge " && exit 0
         # Skip cs-agent auto-commit fallback
         echo "$msg" | grep -qE "^feat: agent work on " && exit 0
-        # Validate conventional commit format
-        echo "$msg" | grep -qE "^(feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert)(\([^)]+\))?: .+" && exit 0
-        echo "[lefthook] ERROR: Commit message does not follow Conventional Commits format."
-        echo "[lefthook] Expected: <type>[optional scope]: <description>"
-        echo "[lefthook] Example:  feat(auth): add token validation"
-        echo "[lefthook] Allowed types: feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert"
-        exit 1
-      fail_text: "Commit message must follow Conventional Commits format."
+        # Step 1: validate the type(scope): prefix structure.
+        first_line=$(echo "$msg" | head -1)
+        if ! echo "$first_line" | grep -qE "^(feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert)(\([^)]+\))?: .+"; then
+          echo "[lefthook] ERROR: Commit message does not follow Conventional Commits format."
+          echo "[lefthook] Expected: <type>[optional scope]: <description>"
+          echo "[lefthook] Example:  feat(auth): add token validation"
+          echo "[lefthook] Allowed types: feat|fix|chore|docs|refactor|test|perf|build|ci|style|revert"
+          exit 1
+        fi
+        # Step 2: enforce subject (description after the colon) starts lowercase —
+        # matches the pr-title.yml workflow's `subjectPattern: ^(?![A-Z]).+$` rule
+        # so we catch the issue locally instead of on the PR check.
+        subject=$(echo "$first_line" | sed -E 's/^[a-z]+(\([^)]+\))?: //')
+        if echo "$subject" | grep -qE "^[A-Z]"; then
+          echo "[lefthook] ERROR: Commit subject must start with a lowercase character."
+          echo "[lefthook] Got:      $subject"
+          echo "[lefthook] Example:  add Node OpenTelemetry SDK helper   (not 'Add Node ...')"
+          echo "[lefthook] Matches pr-title.yml subjectPattern ^(?![A-Z]).+$"
+          exit 1
+        fi
 
 pre-push:
+  parallel: true
   commands:
     typecheck:
       run: |
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
         pnpm typecheck
       fail_text: "Fix TypeScript errors before pushing. Ensure your shell uses Node from .nvmrc (run `nvm use`)."
+
+    audit:
+      # Mirror the CI security workflow's pnpm-audit job so we catch HIGH+ CVEs
+      # in prod deps locally before they fail the PR. The CI gate stays — this is
+      # belt-and-braces. Runs in parallel with typecheck for speed.
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm audit --prod --audit-level=high
+      fail_text: "HIGH+ vulnerability in prod dependencies. See https://github.com/advisories and bump the affected package."
+
+    tests:
+      # CI runs `turbo run test --filter=...[origin/main]`. Mirror that here so
+      # we catch failing tests before the runner does.
+      run: |
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
+        pnpm exec turbo run test --filter=...[HEAD]
+      fail_text: "Fix failing tests in the affected package(s) before pushing."
