@@ -23,6 +23,9 @@ paths = [
   # Traefik dashboard htpasswd is a bcrypt of the dev placeholder
   # TRAEFIK_DASHBOARD_PASSWORD. Rotated per infra/README.md.
   "infra/traefik/dashboard-users$",
+  # Authentik blueprints contain placeholder client_secret literals
+  # that match AUTHENTIK_OWNER_APP_CLIENT_SECRET in .env.example.
+  "infra/authentik/blueprints/.*\\.yaml$",
 ]
 
 regexes = [
@@ -41,10 +44,13 @@ regex = '''dt_[A-Za-z0-9_-]{20,}'''
 tags = ["daily-tour", "token"]
 
   [rules.allowlist]
-  description = "Allow dt_ tokens only inside test files and docs"
+  description = "Allow dt_ tokens only inside test files, docs, and infra resource names"
   paths = [
     "docs/.*",
     ".*\\.test\\.(js|ts|jsx|tsx)$",
     ".*\\.spec\\.(js|ts|jsx|tsx)$",
     ".*__tests__.*",
+    # Compose files name resources `dt_<resource>` (volumes, networks, containers).
+    # The `dt_` namespace prefix is a project convention; not a reservation token.
+    "infra/.*",
   ]

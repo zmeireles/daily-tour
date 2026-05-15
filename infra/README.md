@@ -67,6 +67,7 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 - **RabbitMQ** — `dt.events` topic exchange with day-1 queues (`place.*`, `tour.*`, `message.*`, `notification.*`, `reservation.*`). `dt.dlx` dead-letter exchange. Definitions loaded declaratively from `rabbitmq/definitions.json`.
 - **MinIO** — object storage for media. Three buckets seeded by `minio-init` one-shot service: `media-place`, `media-owner`, `media-tour`. The `public/` prefix is anonymously readable so the PWA can pull place hero images without signed URLs.
 - **Traefik** — reverse proxy and TLS terminator (v3.2). Routes incoming HTTP/HTTPS traffic to application services by hostname (e.g. `app.localhost`) using Docker label discovery (`traefik.enable=true`). ACME staging issuer handles certificate provisioning in dev/QA; the live issuer activates in Phase 5 with a real public domain. The dashboard (`:8080`) is protected by basic-auth and is **dev/QA only — never expose it in production**. Future services opt in by adding `traefik.http.*` labels; existing base-stack services (Postgres, Redis, RabbitMQ, MinIO) stay internal-only.
+- **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.localhost`. The `authentik-forward-auth@file` middleware is **defined-but-commented** in Traefik's dynamic config — it activates when T-0.3.3 (n8n) or T-1.6.x (owner backoffice) creates the required Proxy Provider binding on the embedded outpost (the bare server returns 404 on `/outpost.goauthentik.io/auth/traefik` until that binding exists).
 
 ## Ports (host bindings, all on 127.0.0.1)
 
@@ -81,8 +82,67 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 | RabbitMQ Management | 15672 | 127.0.0.1:15672 | admin UI |
 | MinIO S3 API | 9000 | 127.0.0.1:9000 | service-to-service |
 | MinIO Console | 9001 | 127.0.0.1:9001 | admin UI |
+| Authentik | 9000 (internal) | — | No host bind; Traefik routes `http://auth.localhost` → `authentik-server:9000` |
+| authentik-postgres | 5432 (internal) | — | No host bind; internal to `dt_internal` network only |
 
 All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth.
+
+## Authentik on first boot
+
+**Add to `/etc/hosts`** (needed for browser and curl to resolve `auth.localhost`):
+
+```
+127.0.0.1 auth.localhost
+```
+
+**Bring up the full stack**:
+
+```bash
+cp .env.example dev-environment  # fill in secrets
+docker compose --env-file dev-environment \
+  -f infra/compose/docker-compose.base.yml \
+  -f infra/compose/docker-compose.traefik.yml \
+  -f infra/compose/docker-compose.authentik.yml \
+  up -d
+```
+
+**Wait ≥3 min** for Authentik to migrate its DB on first boot (no blueprints to apply yet; see below):
+
+```bash
+docker compose --env-file dev-environment -f ... ps  # wait until all 8 services healthy
+```
+
+**Verify health**:
+
+```bash
+curl -sH "Host: auth.localhost" -o /dev/null -w "%{http_code}\n" http://127.0.0.1:80/-/health/live/
+# → 200
+```
+
+**Open the UI**: `http://auth.localhost` → login with `akadmin` / `$AUTHENTIK_BOOTSTRAP_PASSWORD`.
+
+### OIDC provider (owner-app) — manual setup until T-1.6.0
+
+T-0.3.2 originally shipped a blueprint to auto-create the `owner-app` OIDC provider on first boot, but the blueprint apply failed opaquely on Authentik 2026.2.2 (no error column on `authentik_blueprints_blueprintinstance`, no traceback in the worker logs — only a `status='error'` flag). Rather than spend more cycles debugging the YAML against a moving Authentik schema, **T-1.6.0** (BFF + Authentik JWKS integration) owns OIDC provider creation via the Authentik API at the moment it's actually needed.
+
+Until then, to bring up the provider manually:
+
+1. Log in to `http://auth.localhost` as `akadmin`.
+2. **Applications → Providers → Create → OAuth2/OpenID Provider**:
+   - Name: `owner-app`
+   - Client type: `Confidential`
+   - Client ID: `daily-tour-bff`
+   - Client secret: paste from `AUTHENTIK_OWNER_APP_CLIENT_SECRET` in `.env`.
+   - Authorization flow: `default-provider-authorization-implicit-consent`
+   - Signing key: `authentik Self-signed Certificate`
+   - Redirect URIs (strict): `http://localhost:8080/callback`, `http://localhost:5173/auth/callback`, `https://app.localhost/auth/callback`.
+   - Scope mappings: openid, email, profile.
+3. **Applications → Applications → Create**: name `Owner Backoffice`, slug `owner-app`, provider `owner-app`.
+4. **Directory → Groups → Create**: `owners`. Add `akadmin` as a member.
+
+### Forward-auth (currently 404)
+
+The Authentik embedded outpost at `/outpost.goauthentik.io/auth/traefik` returns 404 until a **Proxy Provider** is bound to it. T-0.3.3 (n8n) or T-1.6.x (owner backoffice) own that wiring + uncommenting the `authentik-forward-auth` middleware block in `traefik/dynamic/middlewares.yml`.
 
 ## Nuke + reseed (DATA LOSS)
 
