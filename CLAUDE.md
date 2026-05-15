@@ -4,6 +4,7 @@ Project-local instructions for any Claude Code session opened in this repo. Laye
 
 ## Read first
 
+- **[`docs/ai/session-handoff.md`](./docs/ai/session-handoff.md)** — most recent session-end state + explicit first-task-of-next-session. **Always check this on resume.**
 - [`docs/REQUIREMENTS.md`](./docs/REQUIREMENTS.md) — what's being built, locked decisions (D1–D15), open questions.
 - [`docs/implementation-plans/001-roadmap/README.md`](./docs/implementation-plans/001-roadmap/README.md) — the master plan; phases 0–5.
 - [`docs/implementation-plans/001-roadmap/TODO.md`](./docs/implementation-plans/001-roadmap/TODO.md) — current task state.
