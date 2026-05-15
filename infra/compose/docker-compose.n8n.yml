@@ -1,0 +1,80 @@
+# Daily Tour — n8n LTS overlay
+#
+# Workflow automation: ingest scheduling, owner-approval reminders, daily digests,
+# low-code integrations. Pinned to LTS floor >=1.123.26 per the CVSS 10.0 RCE floor
+# in docs/exploration/04-tech-stack.md §6.
+#
+# Auth: n8n's built-in **User Management** (N8N_BASIC_AUTH_* was removed in v0.184).
+# First boot serves the owner-setup wizard at http://n8n.localhost/setup — the first
+# user becomes owner and unlocks the UI for that user only. Document the wizard step
+# in infra/README.md. Authentik forward-auth integration is deferred to a follow-up
+# task (T-0.3.4 / T-1.6.x) once Authentik's Proxy Provider is bound to the embedded
+# outpost (bare forward-auth returns 404 until then). Host bindings stay on
+# 127.0.0.1 throughout — defense-in-depth via Docker network isolation + Traefik.
+#
+# Persistence: SQLite-backed in dev/QA via named volume dt_n8n_data. Phase 5
+# migrates to a dedicated Postgres DB (role `n8n` already exists in
+# infra/postgres/init/02-roles.sql, no DB provisioned yet).
+#
+# Compose on top of the base + Traefik overlays:
+#   docker compose \
+#     --env-file dev-environment \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     -f infra/compose/docker-compose.authentik.yml \
+#     -f infra/compose/docker-compose.n8n.yml \
+#     up -d
+#
+# See infra/README.md for the full operator runbook.
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+volumes:
+  dt_n8n_data:
+    name: dt_n8n_data
+
+services:
+  n8n:
+    image: n8nio/n8n:1.123.26
+    container_name: dt_n8n
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      N8N_HOST: n8n.localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: http://n8n.localhost
+      WEBHOOK_URL: http://n8n.localhost/
+      # N8N_BASIC_AUTH_* env vars were removed in n8n v0.184 — first-boot owner
+      # setup wizard at /setup is the auth path. Document this in README.
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY missing}
+      GENERIC_TIMEZONE: UTC
+      TZ: UTC
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - dt_n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.localhost`)"
+      - "traefik.http.routers.n8n.entrypoints=web"
+      - "traefik.http.routers.n8n.service=n8n"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1.0"
