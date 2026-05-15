@@ -1,10 +1,26 @@
 {
   "rabbit_version": "4.3.0",
-  "users": [],
+  "users": [
+    {
+      "name": "dailytour",
+      "password_hash": "G/XQ27SDPoHr9aEWF7UJ54ZzAFLfJXTDit1pWjTmM234GWWe",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator"],
+      "limits": {}
+    }
+  ],
   "vhosts": [
     { "name": "/" }
   ],
-  "permissions": [],
+  "permissions": [
+    {
+      "user": "dailytour",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
   "topic_permissions": [],
   "parameters": [],
   "global_parameters": [],

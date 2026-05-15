@@ -1,0 +1,179 @@
+# Daily Tour — Compose base stack
+#
+# Postgres 17 + pgvector, Redis 7, RabbitMQ 4.3 (management), MinIO + mc init.
+# Traefik / Authentik / n8n / app services live in overlays (T-0.3.1+).
+#
+# Bring up: docker compose -f infra/compose/docker-compose.base.yml up -d
+# See infra/README.md for the full operator runbook.
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    name: dt_internal
+    driver: bridge
+
+volumes:
+  dt_postgres_data:
+    name: dt_postgres_data
+  dt_redis_data:
+    name: dt_redis_data
+  dt_rabbitmq_data:
+    name: dt_rabbitmq_data
+  dt_minio_data:
+    name: dt_minio_data
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Postgres 17 + pgvector + project-specific extensions/schemas/roles
+  # ─────────────────────────────────────────────────────────────────────────
+  postgres:
+    build:
+      context: ../postgres
+      dockerfile: Dockerfile
+    container_name: dt_postgres
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-dailytour}
+      # pt-PT collation is generated in Dockerfile; the en_US fallback is set
+      # here in case the locale-gen fails on a given platform.
+      LANG: en_US.UTF-8
+    volumes:
+      - dt_postgres_data:/var/lib/postgresql/data
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dailytour}"]
+      interval: 5s
+      timeout: 3s
+      start_period: 20s
+      retries: 12
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1.0"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Redis 7 — session cache, WS fanout helper, rate-limit buckets
+  # ─────────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7.4-alpine
+    container_name: dt_redis
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    ports:
+      - "127.0.0.1:6379:6379"
+    command:
+      - "redis-server"
+      - "/usr/local/etc/redis/redis.conf"
+      - "--requirepass"
+      - "${REDIS_PASSWORD:?REDIS_PASSWORD missing in .env}"
+    volumes:
+      - dt_redis_data:/data
+      - ../redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG'
+      interval: 5s
+      timeout: 3s
+      start_period: 5s
+      retries: 5
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # RabbitMQ 4.3 with management UI + declarative definitions (exchanges, queues)
+  # ─────────────────────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:4.3-management-alpine
+    container_name: dt_rabbitmq
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dailytour}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD missing in .env}
+    volumes:
+      - dt_rabbitmq_data:/var/lib/rabbitmq
+      - ../rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MinIO — object storage. Pinned to a specific RELEASE tag because upstream
+  # archived the open repo (see docs/exploration/04-tech-stack.md §6).
+  # ─────────────────────────────────────────────────────────────────────────
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772
+    container_name: dt_minio
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-dailytour}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD missing in .env}
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    volumes:
+      - dt_minio_data:/data
+    command: ["server", "/data", "--console-address", ":9001"]
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || curl -fsS http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 6
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MinIO one-shot bootstrap — creates buckets, sets anonymous read on
+  # public/ prefixes. Idempotent; runs every `up`.
+  # ─────────────────────────────────────────────────────────────────────────
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: dt_minio_init
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - dt_internal
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-dailytour}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - ../minio/init.sh:/init.sh:ro
+    entrypoint: ["/bin/sh", "/init.sh"]
