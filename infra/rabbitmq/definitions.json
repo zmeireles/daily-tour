@@ -1,0 +1,247 @@
+{
+  "rabbit_version": "4.3.0",
+  "users": [
+    {
+      "name": "dailytour",
+      "password_hash": "G/XQ27SDPoHr9aEWF7UJ54ZzAFLfJXTDit1pWjTmM234GWWe",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator"],
+      "limits": {}
+    }
+  ],
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "permissions": [
+    {
+      "user": "dailytour",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "topic_permissions": [],
+  "parameters": [],
+  "global_parameters": [],
+  "policies": [],
+  "exchanges": [
+    {
+      "name": "dt.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "dt.dlx",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "place.candidate.discovered",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "place.candidate.discovered"
+      }
+    },
+    {
+      "name": "place.approved",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "place.approved"
+      }
+    },
+    {
+      "name": "place.published",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "place.published"
+      }
+    },
+    {
+      "name": "tour.requested",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "tour.requested"
+      }
+    },
+    {
+      "name": "tour.completed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "tour.completed"
+      }
+    },
+    {
+      "name": "message.inbound",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "message.inbound"
+      }
+    },
+    {
+      "name": "message.outbound",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "message.outbound"
+      }
+    },
+    {
+      "name": "notification.requested",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "notification.requested"
+      }
+    },
+    {
+      "name": "reservation.created",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "reservation.created"
+      }
+    },
+    {
+      "name": "reservation.cancelled",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": "reservation.cancelled"
+      }
+    },
+    {
+      "name": "dt.dlx.unrouted",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "place.candidate.discovered",
+      "destination_type": "queue",
+      "routing_key": "place.candidate.discovered",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "place.approved",
+      "destination_type": "queue",
+      "routing_key": "place.approved",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "place.published",
+      "destination_type": "queue",
+      "routing_key": "place.published",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "tour.requested",
+      "destination_type": "queue",
+      "routing_key": "tour.requested",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "tour.completed",
+      "destination_type": "queue",
+      "routing_key": "tour.completed",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "message.inbound",
+      "destination_type": "queue",
+      "routing_key": "message.inbound",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "message.outbound",
+      "destination_type": "queue",
+      "routing_key": "message.outbound",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "notification.requested",
+      "destination_type": "queue",
+      "routing_key": "notification.requested",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "reservation.created",
+      "destination_type": "queue",
+      "routing_key": "reservation.created",
+      "arguments": {}
+    },
+    {
+      "source": "dt.events",
+      "vhost": "/",
+      "destination": "reservation.cancelled",
+      "destination_type": "queue",
+      "routing_key": "reservation.cancelled",
+      "arguments": {}
+    },
+    {
+      "source": "dt.dlx",
+      "vhost": "/",
+      "destination": "dt.dlx.unrouted",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    }
+  ]
+}
