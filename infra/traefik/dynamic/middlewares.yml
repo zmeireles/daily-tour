@@ -24,25 +24,31 @@ http:
       compress: {}
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Authentik forward-auth — active as of T-0.3.2.
-    # Downstream services opt in with:
-    #   traefik.http.routers.<name>.middlewares=authentik-forward-auth@file
-    # First user: n8n in T-0.3.3; owner backoffice in T-1.6.1.
-    # Returns 200 for authenticated requests; 302 to Authentik login for others.
-    # ─────────────────────────────────────────────────────────────────────────
-    authentik-forward-auth:
-      forwardAuth:
-        address: "http://authentik-server:9000/outpost.goauthentik.io/auth/traefik"
-        trustForwardHeader: true
-        authResponseHeaders:
-          - X-authentik-username
-          - X-authentik-groups
-          - X-authentik-email
-          - X-authentik-name
-          - X-authentik-uid
-          - X-authentik-jwt
-          - X-authentik-meta-jwks
-          - X-authentik-meta-outpost
-          - X-authentik-meta-provider
-          - X-authentik-meta-app
-          - X-authentik-meta-version
+    # Authentik forward-auth — DEFINED BUT NOT YET WIRED.
+    #
+    # The Authentik server is up (T-0.3.2) but the embedded outpost's
+    # /outpost.goauthentik.io/auth/traefik endpoint currently returns 404 —
+    # the outpost needs a Proxy Provider binding before it answers forward-auth
+    # requests. That wiring belongs to the first task that actually needs to
+    # protect a service through Traefik: either T-0.3.3 (n8n) or T-1.6.x
+    # (owner backoffice through PWA). Both will:
+    #   1. Create a Proxy Provider in Authentik (via API or UI).
+    #   2. Bind it to the embedded `authentik Embedded Outpost`.
+    #   3. Uncomment the block below + add the middleware label on the target service.
+    #
+    # authentik-forward-auth:
+    #   forwardAuth:
+    #     address: "http://authentik-server:9000/outpost.goauthentik.io/auth/traefik"
+    #     trustForwardHeader: true
+    #     authResponseHeaders:
+    #       - X-authentik-username
+    #       - X-authentik-groups
+    #       - X-authentik-email
+    #       - X-authentik-name
+    #       - X-authentik-uid
+    #       - X-authentik-jwt
+    #       - X-authentik-meta-jwks
+    #       - X-authentik-meta-outpost
+    #       - X-authentik-meta-provider
+    #       - X-authentik-meta-app
+    #       - X-authentik-meta-version

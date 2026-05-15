@@ -92,7 +92,8 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:9000/-/health/live/"]
+      # Image ships curl but no wget; use curl for the liveness probe.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/-/health/live/ || exit 1"]
       interval: 15s
       timeout: 5s
       start_period: 90s
