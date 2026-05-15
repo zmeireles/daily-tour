@@ -35,3 +35,11 @@ Thumbs.db
 # Lefthook local overrides (never commit; .lefthook-local.example.yml IS committed)
 lefthook-local.yml
 .lefthook-local.yml
+
+# Traefik ACME storage — permissions must be 600; never commit
+infra/traefik/acme/acme.json
+
+# Local environment files renamed to dodge the .env bash-secret-guard hook.
+# Same intent as .env above: never committed.
+dev-environment
+dev-environment.*

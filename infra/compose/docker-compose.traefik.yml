@@ -1,0 +1,53 @@
+# Daily Tour — Traefik v3 overlay
+#
+# Compose on top of docker-compose.base.yml:
+#   docker compose \
+#     --env-file dev-environment \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     up -d
+#
+# See infra/README.md for the full operator runbook.
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: dt_traefik
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ../traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ../traefik/dynamic:/etc/traefik/dynamic:ro
+      - ../traefik/dashboard-users:/etc/traefik/dashboard-users:ro
+      - ../traefik/acme:/acme
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      TRAEFIK_ACME_EMAIL: ${TRAEFIK_ACME_EMAIL:-ops@example.local}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@file"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"

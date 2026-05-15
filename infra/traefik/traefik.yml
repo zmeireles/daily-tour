@@ -1,0 +1,61 @@
+# Traefik v3 — static configuration
+# Dynamic config (middlewares, routers) is hot-reloaded from /etc/traefik/dynamic/*.yml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Entrypoints
+#
+# Dev/QA runs on plain HTTP — the websecure entrypoint has no TLS
+# certificate configured (ACME staging requires a real public domain to
+# issue). Phase 5 hardening (T-5.x) re-introduces the web→websecure
+# redirect once a real domain + cert resolver is in place.
+# ─────────────────────────────────────────────────────────────────────────────
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Providers
+# ─────────────────────────────────────────────────────────────────────────────
+providers:
+  docker:
+    network: dt_internal
+    exposedByDefault: false   # services must opt-in via traefik.enable=true label
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true               # hot-reload on file change
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API / Dashboard
+# ─────────────────────────────────────────────────────────────────────────────
+api:
+  dashboard: true
+  insecure: false             # dashboard is routed behind dashboard-auth middleware
+
+# Ping handler is required for the container healthcheck (`traefik healthcheck`).
+# When `ping: {}` is omitted, the binary exits with
+# "please enable `ping` to use health check" and the container flips to unhealthy.
+ping: {}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Certificate resolvers — LE staging only in dev/QA
+# Switch to letsencrypt (live) in Phase 5 with a real public domain.
+# ─────────────────────────────────────────────────────────────────────────────
+certificatesResolvers:
+  letsencrypt-staging:
+    acme:
+      email: "${TRAEFIK_ACME_EMAIL}"
+      storage: /acme/acme.json
+      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+      httpChallenge:
+        entryPoint: web
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Logging
+# ─────────────────────────────────────────────────────────────────────────────
+log:
+  level: INFO
+
+accessLog:
+  format: json              # Loki picks this up in Phase 5 (T-5.4.x)

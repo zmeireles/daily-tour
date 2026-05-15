@@ -20,6 +20,9 @@ paths = [
   # the dev `change-me-please-rabbit` literal). Rotated alongside .env per
   # `infra/README.md "Secret rotation procedure"`. Not a real secret.
   "infra/rabbitmq/definitions\\.json$",
+  # Traefik dashboard htpasswd is a bcrypt of the dev placeholder
+  # TRAEFIK_DASHBOARD_PASSWORD. Rotated per infra/README.md.
+  "infra/traefik/dashboard-users$",
 ]
 
 regexes = [
