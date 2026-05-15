@@ -1,0 +1,73 @@
+/*
+ * Daily Tour — "Green Island, Volcanic Bones" design tokens
+ *
+ * Source: docs/exploration/02-ui-design-system.md §1
+ *
+ * Palette anchors:
+ *   - tea-green        primary (Gorreana tea-leaf)
+ *   - hydrangea blue   accent (São Miguel hydrangea)
+ *   - basalt black     neutral foreground / volcanic stone
+ *   - cream            background / lime-washed wall
+ *   - lake teal        Lagoa Azul accent
+ *   - coral            destructive only (lava-warm)
+ *   - sun amber        warning, daily-tour highlight
+ *
+ * Contrast (WCAG):
+ *   - tea-600 on cream-50   = 7.2:1  (AAA body)
+ *   - cream-100 on bg-950   = 13:1   (AAA body)
+ *
+ * Future Stitch MCP iterations regenerate values here; never edit these
+ * during component work — let globals.css map them onto shadcn semantic vars.
+ */
+
+:root {
+  /* ─── Volcanic basalt — neutrals on light ─────────────────────────────── */
+  --basalt-950: #0e1413;
+  --basalt-700: #2a332f;
+  --basalt-500: #4b5650;
+  --basalt-300: #97a29b;
+
+  /* ─── Cream — surfaces on light ───────────────────────────────────────── */
+  --cream-50: #f7f4ec;
+  --cream-100: #efead8;
+
+  /* ─── Tea green — primary brand ───────────────────────────────────────── */
+  --tea-600: #2f5d43;
+  --tea-500: #3e7a57;
+  --tea-300: #8fb89c;
+
+  /* ─── Hydrangea blue — accent ─────────────────────────────────────────── */
+  --hydrangea-600: #5b6fb8;
+  --hydrangea-400: #8a9ad6;
+
+  /* ─── Lake teal — secondary accent ────────────────────────────────────── */
+  --lake-500: #2e8c8a;
+
+  /* ─── Coral — destructive only ────────────────────────────────────────── */
+  --coral-600: #c6553e;
+
+  /* ─── Sun amber — warning, daily-tour highlight ───────────────────────── */
+  --sun-400: #e6b566;
+
+  /* ─── Dark-mode-only basalt + cream variants (referenced by :root.dark) ─ */
+  --bg-950: #0b1110;
+  --bg-900: #11181a;
+  --surface-800: #1a2322;
+  --surface-700: #24302e;
+  --tea-400: #5fa37b;
+  --hydrangea-300: #a6b4e3;
+  --lake-300: #6ec0be;
+  --cream-100-dark: #eae4d2;
+  --coral-400: #e07a65;
+
+  /* ─── Typography ──────────────────────────────────────────────────────── */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* ─── Motion ──────────────────────────────────────────────────────────── */
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-soft: cubic-bezier(0.5, 0, 0.8, 0.3);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+}
