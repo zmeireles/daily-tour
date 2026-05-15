@@ -1,0 +1,10 @@
+{
+  "name": "Daily Tour",
+  "short_name": "Daily Tour",
+  "description": "Curated daily walking experiences for guesthouse guests.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": []
+}
