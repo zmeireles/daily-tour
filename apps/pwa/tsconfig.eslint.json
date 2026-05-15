@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "e2e/**/*",
+    "eslint.config.js",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
+}
