@@ -1,0 +1,122 @@
+# Daily Tour — application overlay (BFF + static PWA)
+#
+# Closes Phase 0 by putting the React PWA and the Fastify BFF behind Traefik
+# alongside the existing infra (Postgres, Redis, RabbitMQ, MinIO, Authentik,
+# n8n). Two services:
+#
+#   - bff           → built locally from services/bff/Dockerfile (multi-stage,
+#                     ~216 MB). Listens on :8080. Reached as http://api.localhost
+#                     via Traefik. CORS already echoes the request origin (see
+#                     services/bff/src/app.ts), so app.localhost → api.localhost
+#                     fetches work in the browser.
+#   - pwa-static    → nginx:1.27-alpine serving the pre-built apps/pwa/dist via
+#                     a read-only bind mount. SPA fallback to index.html so the
+#                     React router handles unknown routes. Reached as
+#                     http://app.localhost via Traefik. Run
+#                     `pnpm --filter @daily-tour/pwa build` BEFORE bringing this
+#                     overlay up — the bind mount has no inline build step.
+#
+# Compose on top of the base + Traefik (+ Authentik + n8n) overlays:
+#   docker compose \
+#     --env-file dev-environment \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     -f infra/compose/docker-compose.authentik.yml \
+#     -f infra/compose/docker-compose.n8n.yml \
+#     -f infra/compose/docker-compose.app.yml \
+#     up -d --build
+#
+# `--build` is required because the BFF service has a `build:` block and we
+# want source changes picked up on `up`. For hot-reload feature work, prefer
+# native `pnpm dev` (Vite + tsx watch) and skip this overlay — see
+# infra/README.md "Dev flows".
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # BFF — Fastify v5.8.5 backend-for-frontend (T-0.4.2)
+  # Single ingress for the PWA. Built from the repo root because the
+  # Dockerfile copies workspace files (pnpm-workspace.yaml, packages/*).
+  # ─────────────────────────────────────────────────────────────────────────
+  bff:
+    build:
+      context: ../..
+      dockerfile: services/bff/Dockerfile
+    image: daily-tour/bff:dev
+    container_name: dt_bff
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      NODE_ENV: development
+      PORT: "8080"
+      HOST: 0.0.0.0
+      # OTel collector wiring lands in T-0.5.x / Phase 5 — leave the endpoint
+      # empty so the SDK no-ops instead of crashing on connect refused.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: bff
+    healthcheck:
+      # node:22-alpine ships BusyBox wget at /usr/bin/wget; -q --spider works.
+      # Use 127.0.0.1 explicitly — container /etc/hosts resolves "localhost" to
+      # both 127.0.0.1 AND ::1, BusyBox wget prefers IPv6, and Fastify only
+      # listens on 0.0.0.0 (IPv4). "localhost" → connection refused.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bff.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.bff.entrypoints=web"
+      - "traefik.http.routers.bff.service=bff"
+      - "traefik.http.services.bff.loadbalancer.server.port=8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # PWA static — nginx serving the pre-built React 19 + Vite 6.4.2 bundle
+  # (T-0.4.0 / T-0.4.1). Bind-mount over an image-baked dist for dev so a
+  # rebuild + browser refresh is the inner loop (no docker rebuild). Phase 5
+  # may switch to a built nginx image with the dist COPY'd in for QA / prod.
+  # ─────────────────────────────────────────────────────────────────────────
+  pwa-static:
+    image: nginx:1.27-alpine
+    container_name: dt_pwa_static
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    volumes:
+      - ../../apps/pwa/dist:/usr/share/nginx/html:ro
+      - ../nginx/pwa.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      # Same IPv4-only quirk as the BFF: nginx's docker-entrypoint normally
+      # appends `listen [::]:80;` to default.conf at startup, but our read-only
+      # bind mount blocks that edit (see container logs: "can not modify ...
+      # default.conf"). nginx ends up IPv4-only and BusyBox wget prefers IPv6,
+      # so "localhost" → connection refused. Pin to 127.0.0.1.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pwa.rule=Host(`app.localhost`)"
+      - "traefik.http.routers.pwa.entrypoints=web"
+      - "traefik.http.routers.pwa.service=pwa"
+      - "traefik.http.services.pwa.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
