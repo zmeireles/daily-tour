@@ -1,0 +1,48 @@
+# BuildKit reads `<Dockerfile-name>.dockerignore` next to the Dockerfile when
+# the build context is elsewhere (here: repo root). A bare `.dockerignore`
+# in services/bff/ would NOT be picked up by `docker build -f services/bff/Dockerfile .`
+# Keep this file in sync with services/bff/.dockerignore (kept for parity /
+# in case someone runs `docker build .` from services/bff/).
+
+# Node / build outputs
+node_modules
+**/node_modules
+dist
+**/dist
+.turbo
+**/.turbo
+coverage
+**/coverage
+*.log
+*.tsbuildinfo
+
+# Workspace folders we don't need to build the BFF image
+apps
+infra
+docs
+temp
+.github
+.claude
+.claude-squad
+
+# Other services (BFF Dockerfile only needs services/bff/)
+services/agent-svc
+services/catalog-svc
+services/chat-hub
+services/places-scraper
+services/planner-svc
+services/search-svc
+services/token-svc
+
+# Env / local
+.env
+.env.*
+!.env.example
+dev-environment
+dev-environment.*
+
+# Git / OS
+.git
+.gitignore
+.DS_Store
+Thumbs.db

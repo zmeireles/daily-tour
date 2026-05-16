@@ -1,0 +1,13 @@
+# When the build context is services/bff/ itself, Docker reads this file.
+# Note: the canonical build command is run from the repo root with
+# `docker build -f services/bff/Dockerfile .`, in which case BuildKit uses
+# services/bff/Dockerfile.dockerignore (kept in sync with this file).
+node_modules
+dist
+.turbo
+coverage
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
