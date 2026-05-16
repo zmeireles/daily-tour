@@ -10,15 +10,15 @@
 
 ## Progress Summary
 
-| Phase                           | Slices | Tasks  | Done   | In Progress | Ready | Blocked |
-| ------------------------------- | ------ | ------ | ------ | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 14     | 13     | 0           | 1     | 0       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25     | 0      | 0           | 0     | 25      |
-| 2 — Discovery & Search          | 4      | 11     | 0      | 0           | 0     | 11      |
-| 3 — Daily Tour Planner          | 5      | 16     | 0      | 0           | 0     | 16      |
-| 4 — Chat & Reservation Drafting | 5      | 15     | 0      | 0           | 0     | 15      |
-| 5 — Hardening & Growth          | 6      | 17     | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **98** | **13** | **0**       | **1** | **84**  |
+| Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
+| ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
+| 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 0      | 0           | 1     | 24      |
+| 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
+| 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
+| 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
+| 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
+| **Total**                       | **31** | **100** | **15** | **0**       | **1** | **84**  |
 
 ---
 
@@ -207,7 +207,9 @@
   - Vitest setup; one smoke test for `/health`.
   - Dockerfile (multi-stage) builds to `<200 MB` image.
 
-#### 🟢 T-0.4.3 — Compose overlay: bff + pwa-static (nginx) [opus]
+#### ✅ T-0.4.3 — Compose overlay: bff + pwa-static (nginx) [opus]
+
+> **Resolved 2026-05-16 via [PR #19](https://github.com/zmeireles/daily-tour/pull/19).** 3 files (+248 / −41). Profile: claude-yolo (Opus). Clean Opus self-commit (`618e2d5`). Two services: `bff` (built from `services/bff/Dockerfile`, repo-root context, `daily-tour/bff:dev` tag) + `pwa-static` (`nginx:1.27-alpine` with read-only bind mounts of `apps/pwa/dist/` and `infra/nginx/pwa.conf`). Both behind Traefik on `api.localhost` / `app.localhost`. **Agent-discovered IPv6/IPv4 mismatch**: BusyBox `wget` prefers IPv6 in both alpine images, but Fastify and the bind-mounted nginx (read-only conf blocks the `listen [::]:80` entrypoint patch) only bind IPv4. Healthchecks pinned to `http://127.0.0.1` instead of `localhost` to fix. Verified locally: 11/11 containers healthy after ~3 min Authentik first-boot, 5 endpoints green (PWA root 200, SPA fallback 200, /healthz 200, BFF /health JSON ok, CORS preflight 204), gitleaks clean (52 commits). **Slice 0.4 closes — Phase 0 complete (modulo deferred T-0.4.4).**
 
 - **owns**: `infra/compose/docker-compose.app.yml`
 - **deps**: T-0.3.1, T-0.4.0, T-0.4.2
@@ -236,7 +238,7 @@
 
 ### Slice 1.0 — Reservation token & access (FR-AC-01..05)
 
-#### ⬜ T-1.0.0 — Drizzle schema: `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`
+#### 🟢 T-1.0.0 — Drizzle schema: `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`
 
 - **owns**: `services/token-svc/src/db/schema.ts`, `services/token-svc/drizzle/migrations/0001_init.sql`
 - **deps**: T-0.2.0, T-0.3.0
