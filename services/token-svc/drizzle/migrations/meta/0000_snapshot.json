@@ -1,0 +1,308 @@
+{
+  "id": "4ccbfeec-a403-4832-a1db-57064fc80522",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "auth_tokens.guest": {
+      "name": "guest",
+      "schema": "auth_tokens",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opt_in_flags": {
+          "name": "opt_in_flags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "guest_locale_check": {
+          "name": "guest_locale_check",
+          "value": "\"auth_tokens\".\"guest\".\"locale\" IN ('en','pt-PT','pt-BR','de','es','fr')"
+        },
+        "guest_display_name_non_empty": {
+          "name": "guest_display_name_non_empty",
+          "value": "char_length(\"auth_tokens\".\"guest\".\"display_name\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "auth_tokens.reservation": {
+      "name": "reservation",
+      "schema": "auth_tokens",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "guesthouse_id": {
+          "name": "guesthouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_id": {
+          "name": "guest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checkin": {
+          "name": "checkin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checkout": {
+          "name": "checkout",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "party_size": {
+          "name": "party_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "reservation_guest_checkin_idx": {
+          "name": "reservation_guest_checkin_idx",
+          "columns": [
+            {
+              "expression": "guest_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "checkin",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reservation_checkout_idx": {
+          "name": "reservation_checkout_idx",
+          "columns": [
+            {
+              "expression": "checkout",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reservation_guest_id_guest_id_fk": {
+          "name": "reservation_guest_id_guest_id_fk",
+          "tableFrom": "reservation",
+          "tableTo": "guest",
+          "schemaTo": "auth_tokens",
+          "columnsFrom": ["guest_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "reservation_party_size_positive": {
+          "name": "reservation_party_size_positive",
+          "value": "\"auth_tokens\".\"reservation\".\"party_size\" > 0"
+        },
+        "reservation_locale_check": {
+          "name": "reservation_locale_check",
+          "value": "\"auth_tokens\".\"reservation\".\"locale\" IN ('en','pt-PT','pt-BR','de','es','fr')"
+        },
+        "reservation_status_check": {
+          "name": "reservation_status_check",
+          "value": "\"auth_tokens\".\"reservation\".\"status\" IN ('confirmed','checked_in','checked_out','cancelled')"
+        },
+        "reservation_checkout_after_checkin": {
+          "name": "reservation_checkout_after_checkin",
+          "value": "\"auth_tokens\".\"reservation\".\"checkout\" > \"auth_tokens\".\"reservation\".\"checkin\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "auth_tokens.token_grant": {
+      "name": "token_grant",
+      "schema": "auth_tokens",
+      "columns": {
+        "jti": {
+          "name": "jti",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reservation_id": {
+          "name": "reservation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "token_grant_reservation_active_idx": {
+          "name": "token_grant_reservation_active_idx",
+          "columns": [
+            {
+              "expression": "reservation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "revoked_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "token_grant_expires_idx": {
+          "name": "token_grant_expires_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "token_grant_reservation_id_reservation_id_fk": {
+          "name": "token_grant_reservation_id_reservation_id_fk",
+          "tableFrom": "token_grant",
+          "tableTo": "reservation",
+          "schemaTo": "auth_tokens",
+          "columnsFrom": ["reservation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "auth_tokens": "auth_tokens"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
