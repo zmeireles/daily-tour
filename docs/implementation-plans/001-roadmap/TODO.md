@@ -10,15 +10,15 @@
 
 ## Progress Summary
 
-| Phase                           | Slices | Tasks  | Done  | In Progress | Ready | Blocked |
-| ------------------------------- | ------ | ------ | ----- | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 14     | 7     | 0           | 1     | 6       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25     | 0     | 0           | 0     | 25      |
-| 2 — Discovery & Search          | 4      | 11     | 0     | 0           | 0     | 11      |
-| 3 — Daily Tour Planner          | 5      | 16     | 0     | 0           | 0     | 16      |
-| 4 — Chat & Reservation Drafting | 5      | 15     | 0     | 0           | 0     | 15      |
-| 5 — Hardening & Growth          | 6      | 17     | 0     | 0           | 0     | 17      |
-| **Total**                       | **31** | **98** | **7** | **0**       | **1** | **90**  |
+| Phase                           | Slices | Tasks  | Done   | In Progress | Ready | Blocked |
+| ------------------------------- | ------ | ------ | ------ | ----------- | ----- | ------- |
+| 0 — Foundation                  | 4      | 14     | 13     | 0           | 1     | 0       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25     | 0      | 0           | 0     | 25      |
+| 2 — Discovery & Search          | 4      | 11     | 0      | 0           | 0     | 11      |
+| 3 — Daily Tour Planner          | 5      | 16     | 0      | 0           | 0     | 16      |
+| 4 — Chat & Reservation Drafting | 5      | 15     | 0      | 0           | 0     | 15      |
+| 5 — Hardening & Growth          | 6      | 17     | 0      | 0           | 0     | 17      |
+| **Total**                       | **31** | **98** | **13** | **0**       | **1** | **84**  |
 
 ---
 
@@ -110,7 +110,9 @@
 
 ### Slice 0.3 — Docker Compose infra stack
 
-#### 🟢 T-0.3.0 — Compose base: Postgres 17 + pgvector 0.8.2, Redis, RabbitMQ 4.3, MinIO [opus]
+#### ✅ T-0.3.0 — Compose base: Postgres 17 + pgvector 0.8.2, Redis, RabbitMQ 4.3, MinIO [opus]
+
+> **Resolved 2026-05-15 via [PR #10](https://github.com/zmeireles/daily-tour/pull/10).**
 
 - **owns**: `infra/compose/docker-compose.base.yml`, `infra/postgres/init/00-extensions.sql`, `infra/postgres/init/01-schemas.sql`, `.env.example`
 - **deps**: T-0.1.1
@@ -123,7 +125,9 @@
   - RabbitMQ has `dt.events` topic exchange + dead-letter exchange `dt.dlx`.
   - All exposed ports documented; only RabbitMQ mgmt + MinIO console accessible on host.
 
-#### ⬜ T-0.3.1 — Compose overlay: Traefik v3 + ACME staging
+#### ✅ T-0.3.1 — Compose overlay: Traefik v3 + ACME staging
+
+> **Resolved 2026-05-15 via [PR #11](https://github.com/zmeireles/daily-tour/pull/11).**
 
 - **owns**: `infra/compose/docker-compose.traefik.yml`, `infra/traefik/**`
 - **deps**: T-0.3.0
@@ -133,7 +137,9 @@
   - HTTPS dev via mkcert OR Let's Encrypt staging — pick one and document.
   - Dashboard reachable on `traefik.localhost` behind basic-auth.
 
-#### ⬜ T-0.3.2 — Compose overlay: Authentik 2026.2.2+
+#### ✅ T-0.3.2 — Compose overlay: Authentik 2026.2.2+
+
+> **Resolved 2026-05-15 via [PR #12](https://github.com/zmeireles/daily-tour/pull/12).** OIDC provider creation deferred (blueprint failed opaquely on 2026.2.2) — owned by T-1.6.0 at BFF + JWKS integration time. Forward-auth Proxy Provider binding + outpost wiring also deferred to T-1.6.x (or new T-0.3.4) — uncomments middleware in `infra/traefik/dynamic/middlewares.yml`.
 
 - **owns**: `infra/compose/docker-compose.authentik.yml`, `infra/authentik/**`
 - **deps**: T-0.3.0, T-0.3.1
@@ -143,7 +149,9 @@
   - Behind Traefik with forward-auth middleware definition ready (not yet applied).
   - Never exposed on raw `:9000` — labeled to internal network only.
 
-#### ⬜ T-0.3.3 — Compose overlay: n8n ≥1.123.26 (LTS) behind Authentik
+#### ✅ T-0.3.3 — Compose overlay: n8n ≥1.123.26 (LTS) behind Authentik
+
+> **Resolved 2026-05-15 via [PR #13](https://github.com/zmeireles/daily-tour/pull/13).** Shipped on SQLite for dev; dedicated Postgres deferred to Phase 5 hardening. **Slice 0.3 complete.**
 
 - **owns**: `infra/compose/docker-compose.n8n.yml`, `infra/n8n/**`
 - **deps**: T-0.3.0, T-0.3.2
@@ -156,7 +164,9 @@
 
 ### Slice 0.4 — PWA shell + BFF skeleton + Stitch tokens
 
-#### ⬜ T-0.4.0 — PWA scaffold (Vite 6.4.2 + React 19 + TS + Tailwind v4) [opus]
+#### ✅ T-0.4.0 — PWA scaffold (Vite 6.4.2 + React 19 + TS + Tailwind v4) [opus]
+
+> **Resolved 2026-05-15 via [PR #14](https://github.com/zmeireles/daily-tour/pull/14).**
 
 - **owns**: `apps/pwa/**` (except `src/locales/`, `src/lib/api/` reserved for later)
 - **deps**: T-0.1.1, T-0.1.2
@@ -169,7 +179,9 @@
   - Vitest + RTL configured; one trivial passing test.
   - Playwright configured; one trivial passing test.
 
-#### ⬜ T-0.4.1 — Stitch MCP design tokens → `@theme` block [opus]
+#### ✅ T-0.4.1 — Stitch MCP design tokens → `@theme` block [opus]
+
+> **Resolved 2026-05-15 via [PR #15](https://github.com/zmeireles/daily-tour/pull/15).** Stitch design system created; mockup generation deferred to per-implementation tasks (T-1.2.1 Home, T-1.3.2 Place Detail, T-3.1.1 Daily Tour, T-4.1.1 Chat). `docs/design/tokens-light.svg` + `tokens-dark.svg` derived artefacts also deferred until mockups land.
 
 - **owns**: `apps/pwa/src/styles/tokens.css`, `apps/pwa/src/styles/globals.css`, `docs/design/**`
 - **deps**: T-0.4.0
@@ -180,7 +192,9 @@
   - 3–4 hero screen mockups exported into `docs/design/` as reference comps.
   - Dark theme variables under `[data-theme="dark"]` populated.
 
-#### ⬜ T-0.4.2 — BFF skeleton (Fastify v5.8.5 on Node 22) [opus]
+#### ✅ T-0.4.2 — BFF skeleton (Fastify v5.8.5 on Node 22) [opus]
+
+> **Resolved 2026-05-16 via [PR #17](https://github.com/zmeireles/daily-tour/pull/17).** 22 files (+1271 / −16 across 2 commits). Profile: claude-yolo (Opus). Bundled CVE bump: `@fastify/jwt` `^9.0.0` → `^10.0.0` to patch 4 advisories on `fast-jwt@5.0.6` (3 critical + 1 high) — `@fastify/jwt@10` declares `fast-jwt: ^6.0.2` resolving to patched 6.2.4. Per [auto-merge doctrine](../../operations/auto-merge-doctrine.md), CVE bump escalated to human merge (counter unchanged at 1/3). **Image size 216 MB — 8 % over the <200 MB acceptance target**; tracked as a Phase 0/5 follow-up in [`docs/ai/backlog.md`](../../ai/backlog.md).
 
 - **owns**: `services/bff/**`
 - **deps**: T-0.1.1, T-0.1.2, T-0.2.0, T-0.2.1
@@ -193,7 +207,7 @@
   - Vitest setup; one smoke test for `/health`.
   - Dockerfile (multi-stage) builds to `<200 MB` image.
 
-#### ⬜ T-0.4.3 — Compose overlay: bff + pwa-static (nginx) [opus]
+#### 🟢 T-0.4.3 — Compose overlay: bff + pwa-static (nginx) [opus]
 
 - **owns**: `infra/compose/docker-compose.app.yml`
 - **deps**: T-0.3.1, T-0.4.0, T-0.4.2

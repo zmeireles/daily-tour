@@ -40,6 +40,40 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 7 — 2026-05-16 — T-0.4.2 (sequential)
+
+| Agent  | Task ID | Branch           | Profile     | Scope                                                                          | Status |
+| ------ | ------- | ---------------- | ----------- | ------------------------------------------------------------------------------ | ------ |
+| t0-4-2 | T-0.4.2 | jmeireles/t0-4-2 | claude-yolo | BFF skeleton — Fastify v5.8.5 + OTel + helmet/cors/rate-limit/jwt + Dockerfile | Done   |
+
+#### Agent: t0-4-2 (T-0.4.2)
+
+- **Started**: 2026-05-15 22:27
+- **Finished**: agent ~30 m (clean Opus self-commit `93a35b3`); orchestrator verify + CVE remediation + branch-update next session ~50 m
+- **Predicted time**: 75 m
+- **Actual time**: ~80 m total (across two sessions; agent idle ~24 h between)
+- **Complexity**: Medium (BFF code) + Medium (CVE remediation surfaced by pre-push audit)
+- **LOC changed**: +1271 / −16 across 22 files (across 2 commits on the branch + 1 GitHub merge commit from `gh pr update-branch`)
+- **Commits**:
+  - ✅ `93a35b3` — agent's clean conventional commit (Fastify scaffold + OTel + plugins + Dockerfile + vitest smoke)
+  - ✅ `021c03d` — orchestrator CVE fix-up (`@fastify/jwt` `^9.0.0` → `^10.0.0` to patch 4 `fast-jwt` advisories)
+- **PR**: [#17](https://github.com/zmeireles/daily-tour/pull/17) (merged, all 6 CI checks green)
+- **Acceptance**: 5/6 criteria met; **Dockerfile <200 MB acceptance missed at 216 MB** (8 % over). All other criteria green: pnpm package + TS strict, Fastify v5.8.5 on `:8080`, `/health` returns `{"status":"ok",...}` (cold start 4 s under `tsx watch`, 2 s in container), all 4 plugins wired with HS256 dev fallback + `JWT_PUBLIC_KEY` env passthrough, OTel via `@daily-tour/shared-otel`, vitest smoke test for `/health` (1 passing, 132 ms).
+- **Issues**:
+  1. **Pre-push audit caught 4 critical/high CVEs** in `@fastify/jwt@9.1.0 → fast-jwt@5.0.6` path (GHSA-mvf2-f6gm-w987, GHSA-rp9m-7r4c-75qg, GHSA-gmvf-9v4p-v8jc, GHSA-hm7r-c7qw-ghp6). Same gate the agent's `pnpm install` ran without complaint — the Renovate-style gate now fires at push, not at install. **Fix**: bump `@fastify/jwt` to `^10.0.0` (declares `fast-jwt: ^6.0.2` → resolves to patched 6.2.4). No source changes — auth plugin uses only the stable `register` + `req.jwtVerify()` surface.
+  2. **`gh pr update-branch` needed** because the t0-4-2 worktree was branched from PR #15's merge but PR #16 (handoff doc) landed in between. Per the `protect-main` ruleset (require up-to-date), the merge button was blocked until the branch was rebased / merged. Used the GitHub UI's merge approach (non-destructive, no force-push); CI re-ran and went green in ~1 min.
+  3. **`Dockerfile.dockerignore` flagged as suspect** in the prior session's handoff (suspected misnamed `.dockerignore`) — turned out to be a deliberate documented BuildKit feature. When `docker build -f services/bff/Dockerfile .` runs from the repo root, BuildKit looks for `<dockerfile-name>.dockerignore` adjacent to the Dockerfile before falling back to the context root's `.dockerignore`. Both files exist with explanatory header comments. **Lesson**: read header comments before assuming a filename is a typo.
+- **Lessons applied** (from previous waves):
+  - Lesson from Wave 6 — pre-push audit gate caught the CVE in <2 s instead of failing 60 s into CI. Local lefthook ↔ CI parity paid off again.
+  - Pushed BEFORE killing the worktree (L008). Branch reached origin safely.
+- **New lessons**:
+  - **CVE bumps escalate per doctrine** — even when the bump is mechanical and CI is green. Auto-merge counter unchanged at 1/3 (vs the predicted 2/3); headroom preserved for T-0.4.3.
+  - **Dual-`.dockerignore` pattern (`<dockerfile>.dockerignore` + `.dockerignore`)** is a real BuildKit feature, not a footgun. Future Dockerfile reviews should respect it when both files exist with parity comments.
+  - **`gh pr update-branch` is the right tool for branch-staleness on linear-history-required repos** — creates a merge commit on the feature branch that gets squashed away on final merge. Cheaper than a local rebase + force-push.
+- **Decisions made on the fly (orchestrator)**:
+  - Pushed with the 216 MB image-size deviation disclosed in the PR body rather than spending a round on optimization (distroless / OTel sidecar split). Tracked as a Phase 0/5 follow-up in [`docs/ai/backlog.md`](../../ai/backlog.md). Phase 0 closes on schedule.
+  - Bundled the `@fastify/jwt` bump into the same PR rather than splitting it out — the audit gate would have blocked the push regardless, and the bump is mechanical (no source changes).
+
 ### Wave 6 — 2026-05-15 — T-0.2.1 (sequential)
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                        | Status |
