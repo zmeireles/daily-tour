@@ -45,11 +45,11 @@ Algorithm: **HS256** (Phase 1). T-1.6.0 may switch to RS256/ES256 + a JWKS endpo
 
 ## Migration on boot
 
-The drizzle migrator runs at service startup (`src/db/client.ts → runMigrations()`). It's idempotent (tracks state in `drizzle.__drizzle_migrations`), so re-running on every container start is safe.
+A small custom migrator runs at service startup (`src/db/client.ts → runMigrations()`). Idempotent: tracks applied versions in `auth_tokens.__drizzle_migrations` (a SHA-256 hash of each migration SQL file). Re-running on every container start is safe.
+
+drizzle-orm's bundled migrator was replaced because it unconditionally emits `CREATE SCHEMA IF NOT EXISTS` for both data and tracking schemas, requiring DB-level `CREATE` — which `token_svc` intentionally lacks per the least-privilege architecture (it only owns the `auth_tokens` schema). Routing the tracking table into the schema we already own sidesteps the perm gap. ~50 lines, no external migrator dep.
 
 In production the migrations folder ships at `/app/drizzle/migrations` inside the Docker image; in dev it resolves relative to the source file (`services/token-svc/drizzle/migrations`).
-
-## Drizzle schema
 
 ## Drizzle schema
 
