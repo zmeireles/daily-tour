@@ -3,9 +3,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { guestTable, reservationTable } from "../db/schema.js";
 
+// Default host port follows the DT_HOST_PORT_POSTGRES remap (27432).
+// Override via TOKEN_SVC_DATABASE_URL for non-default deployments.
 const DEV_DB_URL =
   process.env.TOKEN_SVC_DATABASE_URL ??
-  "postgres://token_svc:change-me-please-token@localhost:5432/dailytour";
+  "postgres://token_svc:change-me-please-token@localhost:27432/dailytour";
 
 const GUESTHOUSE_TEST_UUID = "bbb00001-0000-4000-b000-000000000001";
 
@@ -32,11 +34,15 @@ async function main(): Promise<void> {
     ])
     .onConflictDoNothing();
 
+  // Fixed UUIDs so re-runs are idempotent — without them, defaultRandom()
+  // gives every re-seed a fresh ID and `onConflictDoNothing` has no PK
+  // collision to suppress, leading to duplicate reservation rows.
   console.log("[seed] inserting 2 reservations");
   await db
     .insert(reservationTable)
     .values([
       {
+        id: "ccc00001-0000-4000-c000-000000000001",
         guesthouseId: GUESTHOUSE_TEST_UUID,
         guestId: "aaa00001-0000-4000-a000-000000000001",
         checkin: "2026-06-01",
@@ -46,6 +52,7 @@ async function main(): Promise<void> {
         status: "confirmed",
       },
       {
+        id: "ccc00001-0000-4000-c000-000000000002",
         guesthouseId: GUESTHOUSE_TEST_UUID,
         guestId: "aaa00001-0000-4000-a000-000000000002",
         checkin: "2026-07-10",

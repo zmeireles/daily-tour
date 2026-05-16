@@ -44,7 +44,7 @@ The seed is idempotent (`ON CONFLICT DO NOTHING`) and inserts 2 guests + 2 reser
 pnpm --filter @daily-tour/token-svc seed
 
 # Against a custom URL
-TOKEN_SVC_DATABASE_URL="postgres://token_svc:password@host:5432/dailytour" \
+TOKEN_SVC_DATABASE_URL="postgres://token_svc:password@host:27432/dailytour" \
   pnpm --filter @daily-tour/token-svc seed
 ```
 

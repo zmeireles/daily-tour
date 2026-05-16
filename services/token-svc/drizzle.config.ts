@@ -9,9 +9,11 @@ export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle/migrations",
   dbCredentials: {
+    // Default host port follows the DT_HOST_PORT_POSTGRES remap (27432).
+    // Override via TOKEN_SVC_DATABASE_URL for non-default deployments.
     url:
       process.env.TOKEN_SVC_DATABASE_URL ??
-      "postgres://token_svc:change-me-please-token@localhost:5432/dailytour",
+      "postgres://token_svc:change-me-please-token@localhost:27432/dailytour",
   },
   schemaFilter: ["auth_tokens"],
   verbose: true,
