@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 2      | 0           | 1     | 22      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 4      | 0           | 3     | 18      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **17** | **0**       | **1** | **82**  |
+| **Total**                       | **31** | **100** | **19** | **0**       | **3** | **78**  |
 
 ---
 
@@ -264,7 +264,9 @@
   - Vitest: happy path + expired + revoked + invalid.
   - Listens on `:8088`.
 
-#### 🟢 T-1.0.2 — BFF token-exchange middleware + Redis JTI cache
+#### ✅ T-1.0.2 — BFF token-exchange middleware + Redis JTI cache
+
+> **Resolved 2026-05-16 via [PR #26](https://github.com/zmeireles/daily-tour/pull/26).** 2 commits (+~600 / −20 across 12 files; +254 LOC across 8 BFF source files + 5 Testcontainers tests + helpers + token-svc compose entry + .env + READMEs). Profile: claude-yolo (Opus). **2nd consecutive Opus autocommit-fallback crash** — agent shipped all BFF source cleanly (`5716ba6`) but cs-agent watchdog killed before commit; orchestrator wrote the missing tests + compose extension + docs (`3adbf54`). **Secure-by-default `onRoute` hook** — every route auto-gets `fastify.authenticate` unless `config.auth = "public"` (only `/health` and `/r/:token` opt out). JWT verify via `@fastify/jwt` + Redis JTI revocation check (`isJtiRevoked` reads `jti:revoked:<jti>`); revoked → 401 within 1 min. `/r/:token` graceful-degrades to `302 /?reason=expired` on token-svc 401/404 per FR-AC-05. URL log redaction strips opaque path segment in pino serializer. **6/6 vitest pass** (Testcontainers Redis, token-svc mocked at boundary). Token-svc added to `docker-compose.app.yml` (internal-only, no Traefik). Per [doctrine](../../operations/auto-merge-doctrine.md), auth surface + crypto escalates — human-merged.
 
 - **owns**: `services/bff/src/plugins/auth.ts`, `services/bff/src/lib/redis.ts`
 - **deps**: T-1.0.1, T-0.3.0
@@ -276,7 +278,7 @@
   - Public routes opt-out via `route.config.auth = 'public'`.
   - Integration test uses Testcontainers for Postgres + Redis.
 
-#### ⬜ T-1.0.3 — PWA: token-URL router + auth state (Zustand)
+#### 🟢 T-1.0.3 — PWA: token-URL router + auth state (Zustand)
 
 - **owns**: `apps/pwa/src/routes/r.$token.tsx`, `apps/pwa/src/lib/auth/**`, `apps/pwa/src/store/session.ts`
 - **deps**: T-0.4.0, T-1.0.2
@@ -292,7 +294,9 @@
 
 ### Slice 1.1 — Catalog data model + 28-place seed (FR-CAT-01..04)
 
-#### ⬜ T-1.1.0 — Drizzle schema: catalog.\* tables + actions/wishes seed
+#### ✅ T-1.1.0 — Drizzle schema: catalog.\* tables + actions/wishes seed
+
+> **Resolved 2026-05-16 via [PR #27](https://github.com/zmeireles/daily-tour/pull/27).** 2 commits (+~1730 / −0 across 16 files; +1727 in the schema commit, −3 in the build-script fix). Profile: claude-sonnet-yolo. **Clean Sonnet self-commit** (`52ff412`) — followed the prompt exactly, copied the custom-migrator pattern from T-1.0.1 per the cc-platform-feedback doctrine note. **8 tables** (action, wish, guesthouse, owner_profile, place, place_action_wish, place_media, place_candidate) with 5 check constraints, 5 FKs (CASCADE for place children, RESTRICT for action refs), 3 indexes (place_status, place_geom for haversine, wish_action_sort). Geometry stored as `geom_lat` / `geom_lng` doubles (PostGIS deferred until Phase 3 OSRM needs). `place_action_wish` PK = composite (place_id, action_id, wish_id) with wish_id NOT NULL. `owner_profile.owner_id` is the PK (1:1 with future Authentik identity). 6 actions + 36 wishes seeded idempotently from `05-tourism-domain.md §3`. Single CI fix-up (`63abdfd`) dropped the agent's `build: tsup` script + `main`/`dist` refs (no entrypoint to build yet; runtime lands in T-1.1.1). Per [doctrine](../../operations/auto-merge-doctrine.md), schema migrations escalate — human-merged.
 
 - **owns**: `services/catalog-svc/src/db/schema.ts`, `services/catalog-svc/drizzle/migrations/0001_init.sql`, `services/catalog-svc/seeds/actions-wishes.sql`
 - **deps**: T-0.2.0, T-0.3.0
@@ -302,7 +306,7 @@
   - PostGIS not required; geometry via `point` type from earthdistance OR pgvector — pick one.
   - 6 actions + ~30 wishes seeded per [`05-tourism-domain.md §3`](../../exploration/05-tourism-domain.md).
 
-#### ⬜ T-1.1.1 — `catalog-svc` Fastify CRUD: places, guesthouses, owner-profile
+#### 🟢 T-1.1.1 — `catalog-svc` Fastify CRUD: places, guesthouses, owner-profile
 
 - **owns**: `services/catalog-svc/**` (except `src/db/schema.ts` from T-1.1.0)
 - **deps**: T-0.4.2, T-1.1.0, T-0.2.0
