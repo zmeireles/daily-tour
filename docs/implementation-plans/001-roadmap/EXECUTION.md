@@ -40,7 +40,47 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
-### Wave 8 — 2026-05-16 — T-0.4.3 (sequential) — closes Phase 0
+### Wave 9 — 2026-05-16 — T-1.0.0 (sequential) — opens Phase 1 / Slice 1.0
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                         | Status |
+| ------ | ------- | ---------------- | ------------------ | ----------------------------------------------------------------------------- | ------ |
+| t1-0-0 | T-1.0.0 | jmeireles/t1-0-0 | claude-sonnet-yolo | Drizzle schema for `auth_tokens.{guest, reservation, token_grant}` + dev seed | Done   |
+
+#### Agent: t1-0-0 (T-1.0.0)
+
+- **Started**: 2026-05-16 02:34
+- **Finished**: agent ~7 min (clean Sonnet self-commit `f621009`); orchestrator verification + port/idempotency fix + drizzle CVE bump + verification ~70 min (extended by a cross-cutting infra collision that surfaced mid-verification — see Issue 1 below)
+- **Predicted time**: 50–75 min
+- **Actual time**: ~77 min wall clock (mostly orchestrator post-agent, not agent work)
+- **Complexity**: Low for agent (mechanical schema + seed); High for orchestrator (CVE remediation + cross-project infra fix + drizzle-kit gotcha + idempotency bug)
+- **LOC changed**: 14 files (+~1450 net, ~750 of which is lockfile)
+- **Commits**:
+  - ✅ `f621009` — agent's clean Sonnet self-commit (Drizzle schema scaffold + drizzle.config + seed runner + README)
+  - ✅ `92e445b` — orchestrator fix-ups (port 5432 → 27432 in drizzle.config + seed defaults; reservation-seed idempotency bug — added fixed UUIDs since `defaultRandom()` made `onConflictDoNothing` a no-op)
+  - ✅ `d2bf70a` — orchestrator CVE fix-up (drizzle-orm ^0.36 → ^0.45.2 to patch [GHSA-gpj5-g38j-94v9](https://github.com/advisories/GHSA-gpj5-g38j-94v9) HIGH "SQL injection via improperly escaped SQL identifiers"; drizzle-kit ^0.30 → ^0.31.10 matching; migration regenerated and hand-stripped of re-emitted `CREATE SCHEMA "auth_tokens";` header)
+- **PR**: [#22](https://github.com/zmeireles/daily-tour/pull/22) (merged, all 6 CI checks green)
+- **Acceptance**: 3/3 criteria met:
+  - Tables in `auth_tokens` with proper types (timestamptz everywhere, date for checkin/checkout, uuid PKs with gen_random_uuid()).
+  - Drizzle migration generated + hand-reviewed against 10-point checklist (all pass: no CREATE SCHEMA, dep-order tables, 6 check constraints, FK RESTRICT for guest + CASCADE for token_grant, 4 btree indexes, all timestamps timestamptz, no destructive ops).
+  - Seed loads 2 guests + 2 reservations + 1 placeholder guesthouse-id; idempotent across re-runs (after the orchestrator fixed the reservation-uuid bug).
+- **Issues**:
+  1. **Cross-project host-port collision blocked live DB verification.** `docker compose up postgres` failed with `bind: address already in use` on 5432 — held by `cc-dev-postgres` from a sibling project. Rather than stop the other stack, did a structural fix: PR #21 (`chore(infra): remap host ports to 27xxx + hostnames to *.dt.localhost`) — reserved the 27xxx host-port block for daily-tour, templated via `DT_HOST_PORT_*` env vars + `${TRAEFIK_DOMAIN_BASE:-dt.localhost}`, verified end-to-end on the new ports. Then back to T-1.0.0 verification. **Cross-cut into cc-platform-feedback.md** as a recurring multi-project pattern.
+  2. **drizzle-kit ALWAYS re-emits `CREATE SCHEMA` for `pgSchema()` targets.** Tested on both drizzle-kit 0.30 (agent's original) and 0.31.10 (post-CVE bump). The `auth_tokens` schema is created by `infra/postgres/init/01-schemas.sql` (shared infra, schema-per-service); applying drizzle-kit's output unmodified would `ERROR: schema "auth_tokens" already exists` in prod. Hand-strip required after every `db:generate`; added a comment to the SQL header explaining the strip. **Cross-cut into cc-platform-feedback.md** — doctrine note for any project using Drizzle with infra-managed schemas.
+  3. **Reservation seed wasn't idempotent.** Guests had fixed UUIDs so `onConflictDoNothing` caught the dup PK. Reservations relied on `defaultRandom()` for `id` — new UUID every run, no conflict, rows doubled on re-seed (2 → 4 → 6 …). Fixed by giving reservations `ccc00001-…` fixed UUIDs (mirroring the guest pattern). Verified: count stable at 2/2 across re-runs.
+  4. **Pre-push audit caught HIGH CVE in agent's drizzle-orm pin.** Same recurring pattern as T-0.4.2's @fastify/jwt CVE — agent picks the version they trained on; CVE landed since. Bump + re-test; 0.36→0.45 didn't break the schema-definition surface (pgSchema/pgTable/check/index/references stable).
+  5. **drizzle-kit's filename naming.** 0.31 emitted `0000_elite_chimera.sql` (random adjective-noun); renamed back to `0000_init.sql` + updated `_journal.json.tag` for readability.
+- **Lessons applied** (from previous waves):
+  - Pushed BEFORE killing the worktree (L008). Branch reached origin safely.
+  - Used `gh pr update-branch` for branch staleness — not needed this round since PR #21 + #22 merged in user-controlled order.
+  - Pre-push audit gate fired predictably (Wave 7 pattern); ~2 s wall time saved a 60s CI failure.
+- **New lessons**:
+  - **Cross-project infra collisions are a recurring tax.** Every dev machine running ≥2 projects of mine will hit port collisions. The fix (env-var templated host-port block + hostname suffix) should be the SCAFFOLD-TIME default for new projects, not a retrofit. Cross-cut to cc-platform-feedback.
+  - **Drizzle `pgSchema()` + infra-managed schema = permanent strip requirement.** Doctrine note in service README; consider a lefthook check that flags `CREATE SCHEMA "<known-infra>"` in any new migration. Cross-cut to cc-platform-feedback.
+  - **Seed idempotency requires fixed UUIDs on every row, not "most".** `onConflictDoNothing` is a no-op if the PK is random. Lesson: when writing any dev seed, write the assertion FIRST (run twice, expect equal counts), then write the inserts.
+  - **CVE recurrence is the new normal at the pre-push audit gate.** 2/2 wave starts (T-0.4.2, T-1.0.0) have surfaced a fresh HIGH/CRITICAL on an agent-picked dep version. Fix is mechanical; expect it; budget ~5 min per occurrence.
+- **Decisions made on the fly (orchestrator)**:
+  - Did the infra remap (PR #21) BEFORE finishing T-1.0.0 verification. Adds ~1 PR to the cycle but converts a transient port collision into a permanent structural fix. The user explicitly approved this scope expansion.
+  - Picked the (a) design for `jti` in the upcoming T-1.0.1: `jti = sha256(opaque)` — one identifier for both lookup and revoke. Documented in the T-1.0.1 prompt. Alternate (b) needed a schema migration; out of scope here.
 
 | Agent  | Task ID | Branch           | Profile     | Scope                                                                              | Status |
 | ------ | ------- | ---------------- | ----------- | ---------------------------------------------------------------------------------- | ------ |

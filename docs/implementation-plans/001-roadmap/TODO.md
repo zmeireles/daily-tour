@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 0      | 0           | 1     | 24      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 1      | 0           | 1     | 23      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **15** | **0**       | **1** | **84**  |
+| **Total**                       | **31** | **100** | **16** | **0**       | **1** | **83**  |
 
 ---
 
@@ -238,9 +238,11 @@
 
 ### Slice 1.0 — Reservation token & access (FR-AC-01..05)
 
-#### 🟢 T-1.0.0 — Drizzle schema: `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`
+#### ✅ T-1.0.0 — Drizzle schema: `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`
 
-- **owns**: `services/token-svc/src/db/schema.ts`, `services/token-svc/drizzle/migrations/0001_init.sql`
+> **Resolved 2026-05-16 via [PR #22](https://github.com/zmeireles/daily-tour/pull/22).** 14 files (+~1450 / −0). Profile: claude-sonnet-yolo. Three commits on the branch: agent's clean self-commit (`f621009`) + orchestrator fix-ups for port-remap + idempotency (`92e445b`) and drizzle-orm `^0.36` → `^0.45.2` CVE bump (`d2bf70a`, GHSA-gpj5-g38j-94v9 HIGH "SQL injection via improperly escaped SQL identifiers"). 10-point migration SQL review all green: 3 tables + 7 indexes + 6 check constraints + 2 FKs (RESTRICT on guest, CASCADE on token_grant), schema column-pin matches `shared-types` zod exactly, `auth_tokens` schema NOT re-CREATEd (hand-stripped per drizzle-kit gotcha; comment added to SQL header explaining the strip needs to be re-applied after every `db:generate`). Verified on the new infra (postgres on 27432): migration applies cleanly, seed runs idempotently (2 guests + 2 reservations with fixed UUIDs across runs), pnpm audit clean, lint + typecheck green. Per [doctrine](../../operations/auto-merge-doctrine.md), schema migrations always escalate to human review — counter unchanged on merge. **Note**: file is `drizzle/migrations/0000_init.sql` (drizzle-kit's 0-indexed naming) rather than the TODO's hypothetical `0001_init.sql`.
+
+- **owns**: `services/token-svc/src/db/schema.ts`, `services/token-svc/drizzle/migrations/0000_init.sql`
 - **deps**: T-0.2.0, T-0.3.0
 - **blocks**: T-1.0.1, T-1.0.2
 - **acceptance**:
@@ -248,7 +250,7 @@
   - Drizzle migration generated, not pushed; SQL hand-reviewed for safety.
   - Seed script loads 1 guesthouse + 2 reservations + 2 guests for dev.
 
-#### ⬜ T-1.0.1 — `token-svc` Fastify service: issue / revoke / exchange endpoints
+#### 🟢 T-1.0.1 — `token-svc` Fastify service: issue / revoke / exchange endpoints
 
 - **owns**: `services/token-svc/**` (except `src/db/schema.ts` from T-1.0.0)
 - **deps**: T-0.4.2, T-1.0.0
