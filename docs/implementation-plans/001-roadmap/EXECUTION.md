@@ -40,6 +40,37 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 8 — 2026-05-16 — T-0.4.3 (sequential) — closes Phase 0
+
+| Agent  | Task ID | Branch           | Profile     | Scope                                                                              | Status |
+| ------ | ------- | ---------------- | ----------- | ---------------------------------------------------------------------------------- | ------ |
+| t0-4-3 | T-0.4.3 | jmeireles/t0-4-3 | claude-yolo | Compose app overlay — bff (built) + pwa-static (nginx + bind mount) behind Traefik | Done   |
+
+#### Agent: t0-4-3 (T-0.4.3)
+
+- **Started**: 2026-05-16 00:43
+- **Finished**: agent ~9 m (clean Opus self-commit `618e2d5`); orchestrator verify + branch-update + push ~12 m
+- **Predicted time**: 35–50 m
+- **Actual time**: ~21 m total
+- **Complexity**: Medium (compose overlay + nginx config + cross-Compose-file Traefik labels + the IPv4-pin discovery)
+- **LOC changed**: +248 / −41 across 3 files (1 new compose file, 1 new nginx conf, 1 README append)
+- **Commit verified**: ✅ `618e2d5` — clean Opus self-commit with conventional message and rich body
+- **PR**: [#19](https://github.com/zmeireles/daily-tour/pull/19) (merged as `1d9a0ce`, all 6 CI checks green after `gh pr update-branch` to incorporate PR #18)
+- **Acceptance**: 2/2 criteria met. `pnpm build && docker compose ... up --build` brings 11 containers healthy in ~3 min; PWA via Traefik on `app.localhost` (200), SPA fallback (200), `/healthz` (200), BFF on `api.localhost` (`{"status":"ok",...}`), CORS preflight (204). Hot-reload dev flow documented in `infra/README.md` "Dev flows" subsection (native `pnpm dev` for PWA + BFF natively, Compose runs the rest). Gitleaks clean (52 commits + `--no-git`).
+- **Issues**:
+  1. **Agent-discovered IPv4-pin requirement.** BusyBox `wget` (in both `node:22-alpine` and `nginx:1.27-alpine`) prefers IPv6, but Fastify only listens on `0.0.0.0` (IPv4) and the read-only nginx bind-mount blocks the docker-entrypoint from appending `listen [::]:80;` to default.conf. Both healthchecks pinned to `http://127.0.0.1` instead of `localhost` to fix. Documented in inline comments. **Promote to project-wide convention** for any Compose service whose runtime image uses BusyBox userland (alpine variants).
+  2. **PR branch was BEHIND main** (PR #18 docs landed in between). Same staleness pattern as PR #17. Fix: `gh pr update-branch 19` — non-destructive, CI re-ran, auto-merge fired ~1 min later. **Lesson**: when running back-to-back doc + feature merges, the second feature PR will always need a branch-update first. Could be automated by having `cs-agent push` always run `gh pr update-branch` if it detects the base branch has moved.
+- **Lessons applied** (from previous waves):
+  - Pushed BEFORE killing the worktree (L008). Branch reached origin safely.
+  - Used `gh pr update-branch` for the staleness instead of force-rebase (L Wave 7).
+- **New lessons**:
+  - **IPv4 pinning for healthchecks** — dev's most subtle Compose footgun. The container starts, the app listens, the healthcheck returns `connection refused`, the service goes "unhealthy" with no obvious cause. The agent caught this from cold by reading the runtime image's wget behavior — that's the Opus profile earning its rate-limit cost.
+  - **`gh pr update-branch` is now a routine step** — if a docs PR merges between agent push and CI green, the feature PR's auto-merge gets stuck on `BLOCKED / BEHIND`. One-line fix.
+  - **Phase 0 is closed.** All 15 active tasks done; T-0.4.4 (CI deploy gate) deferred until QA VPS exists. Phase 1 opens at T-1.0.0.
+- **Decisions made on the fly (orchestrator)**:
+  - Did not block on the `--build` flag being newly required for `up`. Documented in the bring-up snippet; future Phase 5 may pre-build the BFF image and push it to GHCR for image-based deploys (no `--build` needed at compose-up time).
+  - Bind-mount serving was kept as the Phase 0 PWA serving strategy. Phase 5 (or T-0.4.4) likely switches to a built nginx image with the dist `COPY`'d in for QA / prod.
+
 ### Wave 7 — 2026-05-16 — T-0.4.2 (sequential)
 
 | Agent  | Task ID | Branch           | Profile     | Scope                                                                          | Status |

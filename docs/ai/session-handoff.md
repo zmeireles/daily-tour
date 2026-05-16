@@ -1,71 +1,74 @@
-# Session Handoff — 2026-05-15 22:00 → next session
+# Session Handoff — 2026-05-16 01:30 → next session
 
 > Read this file first on next session, alongside [`CLAUDE.md`](../../CLAUDE.md), [`docs/REQUIREMENTS.md`](../REQUIREMENTS.md), and [`docs/implementation-plans/001-roadmap/`](../implementation-plans/001-roadmap/).
 
 ## TL;DR — first task of next session
 
-**Run `cs-agent status` and inspect `t0-4-2`**:
+**Phase 0 is closed.** Last action this session was PR #19 (T-0.4.3) merging at the 3/3 auto-merge boundary; per doctrine the orchestrator is **paused** until you say `continue`. There is no in-flight cs-agent worktree.
+
+When you're ready, the next launch is **T-1.0.0** — Drizzle schema for `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`. Slice 1.0 (token + access) is the gate everything else in Phase 1 feeds through:
+
+- T-1.0.0 (this) → opens
+- T-1.0.1 (`token-svc` Fastify endpoints) → blocked on T-1.0.0
+- T-1.0.2 (BFF token-exchange middleware + Redis JTI cache) → blocked on T-1.0.1
+- T-1.0.3 (PWA token-URL router + Zustand) → blocked on T-1.0.2
+
+Suggested launch:
 
 ```bash
-cs-agent status | grep -E "t0-4-2|AGENT"
-cd /home/jmeireles/.claude-squad/worktrees/jmeireles/t0-4-2
-git log --oneline -3                                   # confirm 93a35b3 is the tip
-git diff --name-only $(git merge-base main HEAD) HEAD  # 20 files in services/bff/* + lockfile
+# Draft the prompt at temp/prompt-t-1.0.0.md (model on temp/prompt-t-0.4.2.md scope-fence pattern)
+cs-agent launch \
+  --name    t1-0-0 \
+  --prompt  temp/prompt-t-1.0.0.md \
+  --profile claude-sonnet-yolo \
+  --base    HEAD
 ```
 
-The agent self-committed cleanly (`93a35b3 — feat(bff): scaffold Fastify v5.8.5 service with OTel + helmet/cors/rate-limit/jwt`) but cs-agent's tmux session was still showing `running` at session end. Probably idle at the end-of-work prompt.
-
-### Suspect: `services/bff/Dockerfile.dockerignore`
-
-The diff includes a file named `Dockerfile.dockerignore` — that's wrong. Likely the agent meant `.dockerignore`. **Verify first**: read the file's contents; if it looks like Docker-ignore patterns, rename it to `services/bff/.dockerignore` (and remove the misnamed one). Then re-run the verification suite:
-
-```bash
-source ~/.nvm/nvm.sh && nvm use            # 22.22.3
-pnpm install --frozen-lockfile
-pnpm exec turbo run lint typecheck test build --filter=@daily-tour/bff
-# Smoke: dev server
-pnpm --filter @daily-tour/bff dev &
-sleep 4
-curl -sf http://localhost:8080/health | jq -e '.status == "ok"'
-pkill -f "tsx" || true
-# Docker (sub-200 MB target)
-docker build -f services/bff/Dockerfile -t daily-tour/bff:dev .
-docker images daily-tour/bff:dev --format "{{.Size}}"
-docker run -d --rm --name bff_smoke -p 127.0.0.1:8081:8080 daily-tour/bff:dev
-sleep 4 && curl -sf http://127.0.0.1:8081/health | jq -e '.service == "bff"' && docker stop bff_smoke
-# Gitleaks (git history)
-gitleaks detect --redact -v --config .gitleaks.toml
-```
-
-If everything passes (after the rename fix-up), commit the rename, push, open PR, arm auto-merge. **Counter is at 1 / 3** (PR #15 was the last auto-merge), so this would be 2 / 3 — still in budget, no digest yet.
+`claude-sonnet-yolo` is enough — the Drizzle schema task is largely mechanical (table definitions + migration SQL + seed). Reserve `claude-yolo` (Opus) for tasks with the kind of subtle reasoning Wave 8's IPv4-pin discovery showed.
 
 ## Where we are
 
-| Slice                    | Status                      | Tasks                                                                                               |
-| ------------------------ | --------------------------- | --------------------------------------------------------------------------------------------------- |
-| 0.1 — Repo skeleton / CI | ✅ done                     | T-0.1.1/2/3/4                                                                                       |
-| 0.2 — Shared packages    | ✅ done                     | T-0.2.0/1/2                                                                                         |
-| 0.3 — Compose infra      | ✅ done                     | T-0.3.0/1/2/3                                                                                       |
-| 0.4 — PWA + BFF + Stitch | 🟡 2/5 done (3/5 in flight) | T-0.4.0 ✅ T-0.4.1 ✅ **T-0.4.2 🟡 in worktree, unpushed**; T-0.4.3 next; T-0.4.4 🔒 blocked on VPS |
+| Slice                    | Status                            | Tasks                                           |
+| ------------------------ | --------------------------------- | ----------------------------------------------- |
+| 0.1 — Repo skeleton / CI | ✅ done                           | T-0.1.1/2/3/4                                   |
+| 0.2 — Shared packages    | ✅ done                           | T-0.2.0/1/2                                     |
+| 0.3 — Compose infra      | ✅ done                           | T-0.3.0/1/2/3                                   |
+| 0.4 — PWA + BFF + Stitch | ✅ done (modulo T-0.4.4 deferred) | T-0.4.0/1/2/3 ✅ · T-0.4.4 🔒 blocked on QA VPS |
+| **Phase 0 — Foundation** | ✅ closed                         | 15 / 16 tasks done; 1 blocked (T-0.4.4)         |
+| 1.0 — Reservation token  | 🟢 ready (next)                   | T-1.0.0 🟢 → T-1.0.1/2/3 chain                  |
 
-**Phase 0**: 12 of 14 done. T-0.4.2 brings it to 13 once pushed + merged. T-0.4.3 (compose app overlay) is the last unblocked task in Phase 0.
+After Slice 1.0 lands, the next big milestone is **the guest-flow demo** through Phase 1:
 
-After Phase 0 closes (12 + T-0.4.2 + T-0.4.3 = 14 with T-0.4.4 deferred), we open **Phase 1**. The plan is to start at **T-1.0.0** (Drizzle schema for `auth_tokens.*`). Slice 1.0 (token + access) is the gate everything else feeds through.
+- 1.1 — Catalog data model + 28-place seed
+- 1.2 — Discover (6-action grid)
+- 1.3 — Place detail + map + Call/Navigate/Draft-DM
+- 1.4 — Owner CRUD via Authentik-gated backoffice (this is when the Authentik OIDC provider deferral comes due)
+- 1.5 — Ingest skeleton
+- 1.6 — Authentik integration (BFF + JWKS + forward-auth Proxy Provider) — **clears 2 deferrals at once**
 
 ## Open PRs / in-flight
 
-- **None on GitHub** — clean queue at session end. T-0.4.2 is local only (branch `jmeireles/t0-4-2` exists in worktree but not yet pushed).
+- **None.** Clean queue. No cs-agent worktrees running. Local main is at `1d9a0ce`.
 
 ## Auto-merge counter
 
-**1 / 3.** PR #15 (T-0.4.1) was the last auto-merge after the previous `continue`. T-0.4.2 push will be 2 / 3. T-0.4.3 will be 3 / 3 → Telegram digest + pause.
+**3 / 3 — paused.** Per doctrine, after the 3rd consecutive auto-merge the orchestrator stops and waits for an explicit `continue` / `merged` / `ack` from you. This session burned through:
+
+| #   | PR                              | Type                     | Counter           |
+| --- | ------------------------------- | ------------------------ | ----------------- |
+| 1   | #17 — T-0.4.2 BFF               | CVE-bumped → human merge | 1 / 3 (unchanged) |
+| 2   | #18 — docs(plan-001) post-cycle | auto-merged              | 2 / 3             |
+| 3   | #19 — T-0.4.3 app overlay       | auto-merged              | **3 / 3 → pause** |
+
+PR #17's CVE escalation preserved auto-merge headroom that would otherwise have been used by T-0.4.2 (the prior session's prediction was 2/3 by now). When you say `continue`, the counter resets and T-1.0.0 launches with a fresh budget.
 
 ## Deferrals tracked across the session
 
-Document these as P0 follow-ups when their unlock task arrives:
+Document these as P0 follow-ups when their unlock task arrives. Mirrored in [`docs/ai/backlog.md "Engineering follow-ups"`](./backlog.md):
 
 | Deferral                                                                     | Owner task                                                                                                                            |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **BFF Docker image: 216 MB vs 200 MB target**                                | Phase 0 / 5 — investigate distroless / OTel sidecar split. Not blocking; structural ceiling, not a regression.                        |
 | **Authentik OIDC provider creation** (blueprint failed opaquely on 2026.2.2) | T-1.6.0 owns it via the Authentik API at BFF + JWKS integration time                                                                  |
 | **Authentik forward-auth Proxy Provider binding + outpost wiring**           | New T-0.3.4 _or_ rolled into T-1.6.x — uncomments the middleware in `infra/traefik/dynamic/middlewares.yml` and adds the label to n8n |
 | **Stitch MCP mockup generation** (project created but mockups deferred)      | Per-implementation task — T-1.2.1 Home, T-1.3.2 Place Detail, T-3.1.1 Daily Tour, T-4.1.1 Chat                                        |
@@ -77,12 +80,14 @@ Document these as P0 follow-ups when their unlock task arrives:
 
 These should inform future prompts:
 
-1. **Agent autocommit fallback is the norm.** Sonnet sessions ship via auto-commit ~100% of the time; Opus ~50%. T-0.4.2 was a clean Opus self-commit — counter-example, but don't expect it. PR-title squash-merge cleans the conventional-message gap.
-2. **Compose tasks consistently need 3 orchestrator fix-ups**: image-tag drift (MinIO RELEASE.2026… → RELEASE.2025), healthcheck command vs image contents (wget vs curl), deprecated env vars (N8N*BASIC_AUTH*\* was removed in v0.184). For future infra prompts: add a "verify-against-running-image" step.
+1. **Agent autocommit fallback is the norm.** Sonnet sessions ship via auto-commit ~100% of the time; Opus ~50%. T-0.4.2 + T-0.4.3 were both clean Opus self-commits — counter-evidence, but don't expect it. PR-title squash-merge cleans the conventional-message gap.
+2. **Compose tasks consistently need 3 orchestrator fix-ups**: image-tag drift, healthcheck command vs image contents, deprecated env vars. T-0.4.3 added a 4th class: **IPv4 pinning** for healthchecks on alpine images (BusyBox `wget` prefers IPv6, Fastify+nginx-bind-mount only listen IPv4). For future infra prompts: add a "verify-against-running-image" step for healthcheck endpoints AND the IPv4-vs-IPv6 contract.
 3. **Auth integrations are recursive scope.** OIDC blueprints + forward-auth Proxy Providers depend on multiple Authentik primitives existing first. The pragmatic move was to defer both to T-1.6.x when there's an actual consumer (BFF + JWKS). Don't try to wire forward-auth in isolation.
 4. **Branch protection works.** Direct `git push origin main` is rejected by the `protect-main` ruleset — every change goes through a PR. The orchestrator's "commit doc updates to main directly" shortcut died at T-0.1.4; doc-tick PRs are now the pattern.
 5. **The `dt_` namespace tripped gitleaks** when used for Compose resource names (`dt_authentik_postgres_data`). Added `infra/.*` to the `daily-tour-test-token` rule's allowlist in PR #12.
 6. **n8n's `N8N_BASIC_AUTH_*` removal in v0.184** is a class of issue worth flagging: pinning a recent CVE-floor version doesn't guarantee old env-var contracts work. Always do a `curl` smoke check, not just healthcheck-passes.
+7. **CVE bumps escalate per doctrine even when CI is green.** PR #17 (T-0.4.2) bundled a `@fastify/jwt` ^9 → ^10 bump that patched 4 advisories on `fast-jwt`. Auto-merge counter stayed at 1/3 instead of incrementing. Tradeoff: human review for security mechanics; orchestrator headroom preserved.
+8. **`gh pr update-branch` is the right tool for required-up-to-date branches on linear-history repos.** Hit twice this session (PR #17 and PR #19). Cheaper than local rebase + force-push; merge commit on the feature branch gets squashed away on final merge to main.
 
 ## Repo settings reminder
 
@@ -97,17 +102,36 @@ Nothing to change on the GitHub side.
 
 ## Session ending state checklist
 
-- [x] All committed work pushed to `main` via PRs #1–#15 (15 merged)
-- [x] T-0.4.2 work is on a local branch in cs-agent worktree, **not pushed** (deliberate — needs orchestrator verification first)
-- [x] cs-agent `t0-4-2` left running (worktree intact); next session decides whether to kill or push
-- [x] Riff hierarchy populated (6 epics + 32 slices + 86 leaf tasks); statuses current through T-0.4.1
-- [x] Telegram channel paired with this orchestrator (chat_id `2031690099`); message id 11 was the last digest
+- [x] PRs #17, #18, #19 merged. Local main at `1d9a0ce`.
+- [x] No cs-agent worktrees running (`t0-4-2`, `t0-4-3` killed cleanly). Stale local merged branches pruned.
+- [x] TODO.md, EXECUTION.md (Wave 7 + Wave 8), backlog.md all on main and current.
+- [x] 216 MB BFF image-size deviation tracked in `backlog.md "Engineering follow-ups"` with the 4 other deferrals.
+- [x] Telegram channel paired with this orchestrator (chat_id `2031690099`); message ids 15 (mid-cycle update) and 17 (mid-verify ping ack) are this session's last 2; the **3/3 digest is the next outbound message**.
+- [ ] **Next session sends the 3/3 digest** (drafted in this session — see "Pending Telegram digest" below). Doctrine says: digest before `continue`.
+
+## Pending Telegram digest
+
+Save this for the moment you (or me, on resume) decide it's time to ping the channel — it summarises the burst and asks for `continue` or `pause-for-review`:
+
+```
+Phase 0 is closed.
+
+Three PRs landed since the last digest:
+- #17 (T-0.4.2 BFF skeleton) — CVE-bumped @fastify/jwt ^9 → ^10 (4 fast-jwt advisories), human-merged. 216 MB image vs 200 MB target tracked as follow-up.
+- #18 (docs post-cycle) — TODO ticks for T-0.3.0/1/2/3 + T-0.4.0/1/2 retrofitted, Wave 7 logged, backlog updated. Auto-merged.
+- #19 (T-0.4.3 app overlay) — bff + nginx pwa-static behind Traefik, agent-discovered IPv4 healthcheck pin. Auto-merged.
+
+Auto-merge counter: 3/3 → paused per doctrine.
+Phase 0 status: 15/16 tasks done. Only T-0.4.4 (CI deploy to QA VPS) remains, blocked on infra.
+Next launch: T-1.0.0 (Drizzle schema for auth_tokens.*) — Slice 1.0 is the gate for Phase 1.
+
+Reply `continue` to launch T-1.0.0, or `pause` to take a beat.
+```
 
 ## How to resume
 
 1. Read this doc + `CLAUDE.md` + the auto-merge doctrine.
-2. **Check `cs-agent status` for `t0-4-2`** — the explicit first task.
-3. Fix the `Dockerfile.dockerignore` naming if confirmed.
-4. Run the verification suite from § "Where we are".
-5. Push + open PR + arm auto-merge.
-6. Continue to T-0.4.3 (final Phase 0 task before VPS unblocks T-0.4.4).
+2. Send the **pending Telegram digest** above (or confirm I should send it). The 3/3 boundary requires a digest before any further auto-merges.
+3. On `continue`: draft `temp/prompt-t-1.0.0.md` modelled on the T-0.4.2 scope-fence pattern. Slice 1.0's full spec is in [`TODO.md`](../implementation-plans/001-roadmap/TODO.md) under `T-1.0.0`. Read [`packages/shared-types/`](../../packages/shared-types/) for the Drizzle column types that should mirror the zod schemas, and [`infra/postgres/init/01-schemas.sql`](../../infra/postgres/init/01-schemas.sql) to confirm the `auth_tokens` schema exists (it does — created in T-0.3.0).
+4. Launch with `claude-sonnet-yolo` profile (mechanical schema work; reserve Opus for the harder Phase 1 BFF integration tasks).
+5. Verify like usual: drizzle-kit generate doesn't drift, hand-review the SQL, the seed loads without error, no migrations applied to a real DB (those are run during T-1.0.1 setup, not during T-1.0.0 generation).
