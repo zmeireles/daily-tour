@@ -40,6 +40,60 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Waves 11 + 12 — 2026-05-16 — T-1.0.2 + T-1.1.0 (parallel launch)
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                       | Status                   |
+| ------ | ------- | ---------------- | ------------------ | --------------------------------------------------------------------------- | ------------------------ |
+| t1-0-2 | T-1.0.2 | jmeireles/t1-0-2 | claude-yolo        | BFF auth integration — token-exchange + Redis JTI cache + secure-by-default | Crashed @ ~70%; rescued  |
+| t1-1-0 | T-1.1.0 | jmeireles/t1-1-0 | claude-sonnet-yolo | Drizzle schema for catalog.\* (8 tables) + actions/wishes seed              | Done (clean self-commit) |
+
+**First parallel launch of the session.** Two independent worktrees, no file scope overlap (BFF vs new catalog-svc), only `pnpm-lock.yaml` shared (resolves cleanly on rebase). Started 23:16; both PRs open by 23:32 (~16 min wall clock — t1-0-2 needed the orchestrator rescue, t1-1-0 finished in ~14 min agent + ~5 min orchestrator verify).
+
+#### Agent: t1-0-2 (T-1.0.2) — partial agent + orchestrator rescue
+
+- **Started**: 2026-05-16 23:16
+- **Finished**: agent ~5 m before crash (1 autocommit at 23:?? capturing 8 files; agent shipped most of the BFF source cleanly); orchestrator manual completion ~10 m; verification + push ~5 m
+- **Predicted time**: 75–100 m
+- **Actual time**: ~20 m total
+- **Complexity**: High (auth surface + multi-service integration + Redis side-effects + Testcontainers harness + compose extension)
+- **LOC changed**: 12 files (+~600 / −20)
+- **Commits**:
+  - ⚠️ `5716ba6` — cs-agent autocommit-fallback. **8 files clean and high-quality**: package.json (ioredis + @fastify/cookie + jose + Testcontainers devs), config (+ JWT_SIGNING_KEY/TOKEN_SVC_URL/REDIS_URL with zod min(32) on the secret), lib/redis (lazy singleton + `setRedisForTest` seam + key naming convention with `markJtiRevoked` for future n8n use), lib/token-svc-client (typed `TokenExchangeError` + `fetch`), routes/token-exchange (302 graceful degrade + cookie + fire-and-forget Redis cache with logged failure), routes/health (auth-public + rate-limit-disabled), plugins/auth (REPLACE T-0.4.2 stub: verify-only + JTI check + `onRoute` secure-by-default hook), app.ts (+cookie plugin, +URL log redaction).
+  - ✅ `3adbf54` — orchestrator manual completion: 5 Testcontainers vitest cases (happy + revoked + unknown opaque + expired JWT + cache-miss authed) with mocked token-svc client, helpers.ts harness, health.test.ts env-before-import fix, token-svc Compose entry in app.yml (internal-only, no Traefik, depends_on bff), `.env.example` JWT_SIGNING_KEY + rotation note, BFF README auth-flow section, infra/README.md service blurb + port table row, 2 small lint fixes.
+- **PR**: [#26](https://github.com/zmeireles/daily-tour/pull/26) (merged as `3f8cb39`, all 6 CI checks green; human-merged per doctrine)
+- **Acceptance**: 5/5 criteria met. `/r/:token` exchanges + 200 with JWT + `dt_refresh` HttpOnly cookie; `onRoute` hook auto-authenticates feature routes; revoked JTI → 401 within 1 min (test simulates by setting `jti:revoked:<jti>` directly); unknown opaque → 302 `/?reason=expired`; integration test uses Testcontainers Redis (token-svc mocked at boundary since T-1.0.1 covers it E2E).
+- **Issues**:
+  1. **3rd cs-agent autocommit-fallback this session** (after t1-0-1 and t0-4-2's prior session). Opus crash rate this session: 3/5 (60%); Sonnet: 0/2 (100% self-commit). Pattern is clear: **prefer Sonnet for Phase 1 mechanical tasks**, reserve Opus for the IPv4-pin / custom-migrator class of insight work.
+  2. Two trivial lint fixes during orchestrator completion: `routes/token-exchange.ts`'s async-without-await registration (added an `eslint-disable-next-line @typescript-eslint/require-await` matching `routes/health.ts`); unused `afterEach` import in the new auth.test.ts.
+- **New lessons**:
+  - **`onRoute` hook is the right shape for secure-by-default auth** in Fastify. Routes opt OUT explicitly via `config.auth = "public"`. Future feature routes (discover, place detail) inherit auth for free.
+  - **Mock token-svc at the test boundary**, don't spin it up in-process. The point of T-1.0.2's tests is the BFF; T-1.0.1 already covers token-svc E2E with 10 tests.
+  - **Fire-and-forget Redis cache** on the happy path — log the failure, don't fail the request. Only the revocation check on the authed path is load-bearing.
+
+#### Agent: t1-1-0 (T-1.1.0) — clean Sonnet self-commit
+
+- **Started**: 2026-05-16 23:16
+- **Finished**: agent ~14 m (clean self-commit `52ff412`); orchestrator verify ~5 m; one trivial CI fix-up ~2 m
+- **Predicted time**: 60–90 m
+- **Actual time**: ~21 m total (significantly under estimate — the prompt's "copy from token-svc + adjust schema name" template paid off)
+- **Complexity**: Medium (8 tables + seed; mechanical mirror of T-1.0.0)
+- **LOC changed**: 16 files (+~1730 / −0; +1727 in the schema commit, −3 in the build-script fix)
+- **Commits**:
+  - ✅ `52ff412` — agent's clean Sonnet self-commit. Custom migrator copied from token-svc per the cc-platform-feedback doctrine note I appended right before launch.
+  - ✅ `63abdfd` — orchestrator CI fix-up. The agent's package.json had `"build": "tsup"` (copied from token-svc's scaffolding) but no `tsup` devDependency AND no `src/index.ts` entrypoint — the runtime lands in T-1.1.1. Dropped the `build` script + `main` + `dist`-in-`files`.
+- **PR**: [#27](https://github.com/zmeireles/daily-tour/pull/27) (merged as `e054530`, all 6 CI checks green after `gh pr update-branch` because PR #26 merged in between)
+- **Acceptance**: 3/3 criteria met. 8 tables in `catalog` schema, geometry via lat/lng doubles (PostGIS deferred), 6 actions + 36 wishes seeded idempotently from `05-tourism-domain.md §3`.
+- **Issues**:
+  1. Build script copy-paste from token-svc scaffolding caused the CI fail. The fix is trivial (drop the script) but the lesson is: **when copying scaffolding from a runtime service to a schema-only one, audit `scripts` and `files` to match the actual deliverables**.
+  2. `gh pr update-branch` needed (same as T-1.0.2's PR #17 staleness pattern) because PR #26 merged ~5 min before PR #27's CI completed.
+- **New lessons**:
+  - **Sonnet's reliability continues to dominate Opus on mechanical tasks.** All 3 Sonnet waves this session (t0-4-3 in earlier reading was Opus actually — recheck; t1-0-0, t1-1-0) committed cleanly. Opus has 2 crashes (t1-0-1, t1-0-2) plus the partial t0-4-2 from the prior session.
+  - **Sonnet faithfully followed the "copy from token-svc + adjust" template** — the prompt's reduction in spec verbosity (vs T-1.0.0's full spec) didn't cause any divergence. Smaller prompts work when there's an obvious reference implementation to point at.
+  - **Mid-session cc-platform-feedback append worked**: the custom-migrator doctrine note I added right before launch was visible to the agent (via the prompt's link), and the agent applied it without prompting. Confirms the queue → reference pattern.
+- **Decisions made on the fly (orchestrator)**:
+  - Picked Sonnet for T-1.1.0 despite the T-1.0.0 → T-1.1.0 similarity (both schema work). Validated — 100% clean.
+  - Launched in parallel with T-1.0.2 (different worktree, no file overlap). First time this session; pattern worked. Lockfile conflict on `pnpm-lock.yaml` resolved automatically via `gh pr update-branch`.
+
 ### Wave 10 — 2026-05-16 — T-1.0.1 (sequential, recovery) — opens token-svc HTTP surface
 
 | Agent  | Task ID | Branch           | Profile     | Scope                                                                    | Status                  |
