@@ -1,8 +1,38 @@
 # @daily-tour/bff
 
-Fastify v5 BFF (Backend-For-Frontend) for the Daily Tour PWA. Single ingress for browser traffic: aggregates calls to downstream services, terminates auth (token-svc handles the real exchange — see T-1.0.2), and will own the WebSocket multiplex in T-4.1.0.
+Fastify v5 BFF (Backend-For-Frontend) for the Daily Tour PWA. Single ingress for browser traffic: aggregates calls to downstream services, terminates auth, and will own the WebSocket multiplex in T-4.1.0.
 
-**Skeleton scope (T-0.4.2)** — `/health` is the only route. No business logic, no downstream-service clients yet. Phase 1 tasks own real endpoints.
+**Current scope (T-0.4.2 + T-1.0.2)** — `/health` probe + the reservation-token exchange flow. Real feature routes (discover, place detail, chat) land in T-1.2.x+.
+
+## Auth flow (T-1.0.2)
+
+The BFF is the **verify** side of the JWT contract; [`token-svc`](../token-svc/) signs. The HS256 `JWT_SIGNING_KEY` env var MUST match across both services.
+
+| Endpoint              | Auth     | Purpose                                                                                                       |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
+| `GET /health`         | public   | Liveness probe; never rate-limited                                                                            |
+| `GET /r/:token`       | public   | First-load: opaque token → JWT (calls `token-svc /exchange`) + sets `dt_refresh` HttpOnly cookie              |
+| `*` (everything else) | required | Global `onRoute` hook attaches `fastify.authenticate` unless route opts out with `config: { auth: 'public' }` |
+
+**Secure by default** — new feature routes get authenticated automatically. Only `/health` and `/r/:token` opt out. The authenticate handler verifies the JWT signature (via `@fastify/jwt`) and then checks `payload.jti` against the Redis revocation cache; revoked tokens fail within ~1 min of the revocation event.
+
+### Required env vars
+
+| Var                           | Required | Notes                                                                                                 |
+| ----------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `JWT_SIGNING_KEY`             | yes      | HS256 secret, **≥32 chars**. **Must match `token-svc`**. Rotate both simultaneously.                  |
+| `TOKEN_SVC_URL`               | no       | Default `http://dt_token_svc:8088` (the compose-internal hostname).                                   |
+| `REDIS_URL`                   | no       | Default `redis://dt_redis:6379/0`. Reads `jti:revoked:<jti>` keys; writes `jti:active:<jti>` markers. |
+| `PORT`                        | no       | Default `8080`.                                                                                       |
+| `LOG_LEVEL`                   | no       | One of `fatal`/`error`/`warn`/`info`/`debug`/`trace`. Default `info`.                                 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | no       | Empty → OTel SDK no-op. Phase 5 wires the collector.                                                  |
+
+### Security notes
+
+- **Opaque tokens never land in logs** — `app.ts`'s pino serializer replaces `/r/<opaque>` URL segments with `/r/[redacted]`.
+- **`dt_refresh` cookie**: HttpOnly, SameSite=Lax, Secure in production (set when `NODE_ENV === 'production'`). Value is the opaque token itself; consumed by a future refresh handler when the JWT expires (out of scope for T-1.0.2).
+- **Rate-limit on `/r/:token`**: 30/min per IP (brute-force mitigation).
+- **Graceful degrade**: token-svc 401/404 → `302 /?reason=expired` (no PII leak per FR-AC-05).
 
 ## Stack
 
