@@ -1,0 +1,41 @@
+# BuildKit reads `<Dockerfile-name>.dockerignore` next to the Dockerfile when
+# the build context is elsewhere (here: repo root). Keep in sync with the
+# bare .dockerignore in this directory.
+
+node_modules
+**/node_modules
+dist
+**/dist
+.turbo
+**/.turbo
+coverage
+**/coverage
+*.log
+*.tsbuildinfo
+
+apps
+infra
+docs
+temp
+.github
+.claude
+.claude-squad
+
+services/agent-svc
+services/bff
+services/catalog-svc
+services/chat-hub
+services/places-scraper
+services/planner-svc
+services/search-svc
+
+.env
+.env.*
+!.env.example
+dev-environment
+dev-environment.*
+
+.git
+.gitignore
+.DS_Store
+Thumbs.db
