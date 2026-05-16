@@ -1,0 +1,28 @@
+{
+  "name": "@daily-tour/token-svc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "db:up": "drizzle-kit up",
+    "seed": "tsx src/seed/run.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf dist node_modules .turbo coverage"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@daily-tour/shared-config": "workspace:*",
+    "@daily-tour/shared-types": "workspace:*",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  }
+}
