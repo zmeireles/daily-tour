@@ -1,5 +1,8 @@
 -- auth_tokens schema created by infra/postgres/init/01-schemas.sql
 -- This migration creates tables only; no CREATE SCHEMA here.
+-- (drizzle-kit always emits a CREATE SCHEMA for pgSchema() targets; we
+-- hand-strip it because the schema is shared infra. Re-strip after every
+-- `db:generate`.)
 CREATE TABLE "auth_tokens"."guest" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"display_name" varchar(200) NOT NULL,

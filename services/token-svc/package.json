@@ -13,7 +13,7 @@
     "clean": "rm -rf dist node_modules .turbo coverage"
   },
   "dependencies": {
-    "drizzle-orm": "^0.36.0",
+    "drizzle-orm": "^0.45.2",
     "pg": "^8.13.0"
   },
   "devDependencies": {
@@ -21,7 +21,7 @@
     "@daily-tour/shared-types": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
-    "drizzle-kit": "^0.30.0",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.19.0",
     "typescript": "^5.6.3"
   }
