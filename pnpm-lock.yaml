@@ -304,6 +304,37 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.19)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.47.1)
 
+  services/catalog-svc:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(gel@2.2.0)(pg@8.20.0)
+      pg:
+        specifier: ^8.13.0
+        version: 8.20.0
+    devDependencies:
+      '@daily-tour/shared-config':
+        specifier: workspace:*
+        version: link:../../packages/shared-config
+      '@daily-tour/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.19
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.15.6
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.0
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
   services/token-svc:
     dependencies:
       '@daily-tour/shared-otel':
