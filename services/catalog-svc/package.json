@@ -3,13 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
   "files": [
-    "dist",
     "drizzle/migrations"
   ],
   "scripts": {
-    "build": "tsup",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
