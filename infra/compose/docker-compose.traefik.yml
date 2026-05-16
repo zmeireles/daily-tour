@@ -24,9 +24,9 @@ services:
     networks:
       - dt_internal
     ports:
-      - "127.0.0.1:80:80"
-      - "127.0.0.1:443:443"
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}:80"
+      - "127.0.0.1:${DT_HOST_PORT_TRAEFIK_HTTPS:-27443}:443"
+      - "127.0.0.1:${DT_HOST_PORT_TRAEFIK_DASHBOARD:-27088}:8080"
     volumes:
       - ../traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ../traefik/dynamic:/etc/traefik/dynamic:ro
@@ -37,7 +37,7 @@ services:
       TRAEFIK_ACME_EMAIL: ${TRAEFIK_ACME_EMAIL:-ops@example.local}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=dashboard-auth@file"
     healthcheck:

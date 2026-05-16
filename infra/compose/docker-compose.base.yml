@@ -36,7 +36,7 @@ services:
     networks:
       - dt_internal
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DT_HOST_PORT_POSTGRES:-27432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing in .env}
@@ -48,8 +48,7 @@ services:
       - dt_postgres_data:/var/lib/postgresql/data
       - ../postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dailytour}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dailytour}"]
       interval: 5s
       timeout: 3s
       start_period: 20s
@@ -70,7 +69,7 @@ services:
     networks:
       - dt_internal
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${DT_HOST_PORT_REDIS:-27379}:6379"
     command:
       - "redis-server"
       - "/usr/local/etc/redis/redis.conf"
@@ -105,8 +104,8 @@ services:
     networks:
       - dt_internal
     ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:${DT_HOST_PORT_RABBITMQ_AMQP:-27672}:5672"
+      - "127.0.0.1:${DT_HOST_PORT_RABBITMQ_MGMT:-27673}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dailytour}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD missing in .env}
@@ -137,12 +136,12 @@ services:
     networks:
       - dt_internal
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:${DT_HOST_PORT_MINIO_API:-27900}:9000"
+      - "127.0.0.1:${DT_HOST_PORT_MINIO_CONSOLE:-27901}:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-dailytour}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD missing in .env}
-      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:${DT_HOST_PORT_MINIO_CONSOLE:-27901}
     volumes:
       - dt_minio_data:/data
     command: ["server", "/data", "--console-address", ":9001"]
