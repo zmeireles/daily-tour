@@ -2,10 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { decodeJwt } from "jose";
 import { loadConfig } from "../config.js";
 import { cacheJtiActive } from "../lib/redis.js";
-import {
-  TokenExchangeError,
-  exchangeOpaqueToken,
-} from "../lib/token-svc-client.js";
+import { TokenExchangeError, exchangeOpaqueToken } from "../lib/token-svc-client.js";
 
 interface ExchangeParams {
   token: string;
@@ -15,6 +12,7 @@ interface ExchangeParams {
 // JWT to the PWA, and sets a long-lived HttpOnly refresh cookie holding the
 // opaque token itself. The PWA never touches that cookie — it's used by a
 // future refresh handler (out of scope for T-1.0.2) when the JWT expires.
+// eslint-disable-next-line @typescript-eslint/require-await
 const tokenExchangeRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const config = loadConfig();
 

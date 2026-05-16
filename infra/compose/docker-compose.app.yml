@@ -1,14 +1,19 @@
-# Daily Tour — application overlay (BFF + static PWA)
+# Daily Tour — application overlay (BFF + token-svc + static PWA)
 #
-# Closes Phase 0 by putting the React PWA and the Fastify BFF behind Traefik
-# alongside the existing infra (Postgres, Redis, RabbitMQ, MinIO, Authentik,
-# n8n). Two services:
+# Three services that round out the request path: PWA → Traefik → BFF →
+# token-svc (+ Postgres + Redis on dt_internal from the base overlay).
 #
 #   - bff           → built locally from services/bff/Dockerfile (multi-stage,
 #                     ~216 MB). Listens on :8080. Reached as http://api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
 #                     via Traefik. CORS already echoes the request origin (see
 #                     services/bff/src/app.ts), so app.${TRAEFIK_DOMAIN_BASE:-dt.localhost} → api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
-#                     fetches work in the browser.
+#                     fetches work in the browser. Reaches token-svc directly via
+#                     dt_internal (http://dt_token_svc:8088) — no Traefik leg.
+#   - token-svc     → built from services/token-svc/Dockerfile (multi-stage,
+#                     ~227 MB). Listens on :8088. **Internal-only** — no host
+#                     port binding, no Traefik labels. The BFF is the only
+#                     consumer in Phase 1; T-1.6.x may add Traefik for owner-side
+#                     reservation CRUD.
 #   - pwa-static    → nginx:1.27-alpine serving the pre-built apps/pwa/dist via
 #                     a read-only bind mount. SPA fallback to index.html so the
 #                     React router handles unknown routes. Reached as
@@ -53,6 +58,9 @@ services:
     restart: unless-stopped
     networks:
       - dt_internal
+    depends_on:
+      token-svc:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       PORT: "8080"
@@ -61,6 +69,11 @@ services:
       # empty so the SDK no-ops instead of crashing on connect refused.
       OTEL_EXPORTER_OTLP_ENDPOINT: ""
       OTEL_SERVICE_NAME: bff
+      # T-1.0.2 auth wiring: BFF calls token-svc and reads/writes the JTI
+      # revocation cache in Redis.
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY missing in .env}
+      TOKEN_SVC_URL: http://dt_token_svc:8088
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@dt_redis:6379/0
     healthcheck:
       # node:22-alpine ships BusyBox wget at /usr/bin/wget; -q --spider works.
       # Use 127.0.0.1 explicitly — container /etc/hosts resolves "localhost" to
@@ -77,6 +90,44 @@ services:
       - "traefik.http.routers.bff.entrypoints=web"
       - "traefik.http.routers.bff.service=bff"
       - "traefik.http.services.bff.loadbalancer.server.port=8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # token-svc — Fastify v5.8.5 reservation-token service (T-1.0.1)
+  # Owns auth_tokens.{guest, reservation, token_grant}. Issues opaque tokens,
+  # exchanges them for HS256 JWTs, revokes by jti. Internal-only — the BFF
+  # is the sole consumer. T-1.6.x may add Traefik for owner-side ops.
+  # ─────────────────────────────────────────────────────────────────────────
+  token-svc:
+    build:
+      context: ../..
+      dockerfile: services/token-svc/Dockerfile
+    image: daily-tour/token-svc:dev
+    container_name: dt_token_svc
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      NODE_ENV: development
+      PORT: "8088"
+      HOST: 0.0.0.0
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: token-svc
+      TOKEN_SVC_DATABASE_URL: postgres://token_svc:${SERVICE_DB_PASSWORD_TOKEN}@dt_postgres:5432/dailytour
+      # MUST match the BFF's JWT_SIGNING_KEY — token-svc signs, BFF verifies.
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY missing in .env}
+    healthcheck:
+      # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but the
+      # Fastify listener binds 0.0.0.0 only.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8088/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     deploy:
       resources:
         limits:
