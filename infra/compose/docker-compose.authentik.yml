@@ -58,7 +58,7 @@ services:
   # ─────────────────────────────────────────────────────────────────────────
   # Authentik server — OIDC API + admin UI.
   # Pinned to 2026.2.2 per docs/exploration/04-tech-stack.md §3 CVE floor.
-  # Bumped by Renovate. Reachable via Traefik at http://auth.localhost.
+  # Bumped by Renovate. Reachable via Traefik at http://auth.${TRAEFIK_DOMAIN_BASE:-dt.localhost}.
   # Blueprints in /blueprints/custom are applied by the worker on first boot.
   # ─────────────────────────────────────────────────────────────────────────
   authentik-server:
@@ -100,7 +100,7 @@ services:
       retries: 8
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.authentik.rule=Host(`auth.localhost`)"
+      - "traefik.http.routers.authentik.rule=Host(`auth.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
       - "traefik.http.routers.authentik.entrypoints=web"
       - "traefik.http.routers.authentik.service=authentik"
       - "traefik.http.services.authentik.loadbalancer.server.port=9000"

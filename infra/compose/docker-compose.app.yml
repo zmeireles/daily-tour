@@ -5,14 +5,14 @@
 # n8n). Two services:
 #
 #   - bff           → built locally from services/bff/Dockerfile (multi-stage,
-#                     ~216 MB). Listens on :8080. Reached as http://api.localhost
+#                     ~216 MB). Listens on :8080. Reached as http://api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
 #                     via Traefik. CORS already echoes the request origin (see
-#                     services/bff/src/app.ts), so app.localhost → api.localhost
+#                     services/bff/src/app.ts), so app.${TRAEFIK_DOMAIN_BASE:-dt.localhost} → api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
 #                     fetches work in the browser.
 #   - pwa-static    → nginx:1.27-alpine serving the pre-built apps/pwa/dist via
 #                     a read-only bind mount. SPA fallback to index.html so the
 #                     React router handles unknown routes. Reached as
-#                     http://app.localhost via Traefik. Run
+#                     http://app.${TRAEFIK_DOMAIN_BASE:-dt.localhost} via Traefik. Run
 #                     `pnpm --filter @daily-tour/pwa build` BEFORE bringing this
 #                     overlay up — the bind mount has no inline build step.
 #
@@ -73,7 +73,7 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.bff.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.bff.rule=Host(`api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
       - "traefik.http.routers.bff.entrypoints=web"
       - "traefik.http.routers.bff.service=bff"
       - "traefik.http.services.bff.loadbalancer.server.port=8080"
@@ -111,7 +111,7 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.pwa.rule=Host(`app.localhost`)"
+      - "traefik.http.routers.pwa.rule=Host(`app.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
       - "traefik.http.routers.pwa.entrypoints=web"
       - "traefik.http.routers.pwa.service=pwa"
       - "traefik.http.services.pwa.loadbalancer.server.port=80"

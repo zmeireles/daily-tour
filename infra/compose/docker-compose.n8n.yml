@@ -5,7 +5,7 @@
 # in docs/exploration/04-tech-stack.md §6.
 #
 # Auth: n8n's built-in **User Management** (N8N_BASIC_AUTH_* was removed in v0.184).
-# First boot serves the owner-setup wizard at http://n8n.localhost/setup — the first
+# First boot serves the owner-setup wizard at http://n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}/setup — the first
 # user becomes owner and unlocks the UI for that user only. Document the wizard step
 # in infra/README.md. Authentik forward-auth integration is deferred to a follow-up
 # task (T-0.3.4 / T-1.6.x) once Authentik's Proxy Provider is bound to the embedded
@@ -46,11 +46,11 @@ services:
     networks:
       - dt_internal
     environment:
-      N8N_HOST: n8n.localhost
+      N8N_HOST: n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
       N8N_PORT: 5678
       N8N_PROTOCOL: http
-      N8N_EDITOR_BASE_URL: http://n8n.localhost
-      WEBHOOK_URL: http://n8n.localhost/
+      N8N_EDITOR_BASE_URL: http://n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
+      WEBHOOK_URL: http://n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}/
       # N8N_BASIC_AUTH_* env vars were removed in n8n v0.184 — first-boot owner
       # setup wizard at /setup is the auth path. Document this in README.
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY missing}
@@ -69,7 +69,7 @@ services:
       retries: 5
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.n8n.rule=Host(`n8n.localhost`)"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
       - "traefik.http.routers.n8n.entrypoints=web"
       - "traefik.http.routers.n8n.service=n8n"
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"

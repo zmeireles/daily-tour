@@ -34,7 +34,7 @@ docker compose --env-file dev-environment \
   up -d
 ```
 
-> **Local hostname resolution**: To reach `traefik.localhost` from your browser or curl, add `127.0.0.1 traefik.localhost` to `/etc/hosts`.
+> **Local hostname resolution**: To reach `traefik.dt.localhost` from your browser or curl, add `127.0.0.1 traefik.dt.localhost` to `/etc/hosts`. The full set of dev hostnames is listed in [§ Authentik on first boot](#authentik-on-first-boot). The `dt.localhost` suffix isolates daily-tour from other sibling dev stacks; override with `TRAEFIK_DOMAIN_BASE` in `.env` if you want a different suffix.
 
 All five services + Traefik should report `healthy` within ~60 seconds.
 
@@ -51,11 +51,12 @@ docker compose -f infra/compose/docker-compose.base.yml exec -T redis \
 # → PONG
 
 # RabbitMQ — exchanges + queues loaded from definitions.json
-curl -s -u dailytour:"$RABBITMQ_PASSWORD" http://localhost:15672/api/exchanges/%2F | jq -r '.[].name'
+curl -s -u dailytour:"$RABBITMQ_PASSWORD" \
+  "http://localhost:${DT_HOST_PORT_RABBITMQ_MGMT:-27673}/api/exchanges/%2F" | jq -r '.[].name'
 # → ... dt.dlx, dt.events, ...
 
 # MinIO — buckets created
-curl -s http://localhost:9000/minio/health/live
+curl -s "http://localhost:${DT_HOST_PORT_MINIO_API:-27900}/minio/health/live"
 docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc ls dailytour/
 # → media-owner, media-place, media-tour
 ```
@@ -66,40 +67,44 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 - **Redis** — session cache, JTI revocation, future WS pub/sub fan-out. AOF persistence on (everysec), 256 MB ceiling, allkeys-lru eviction.
 - **RabbitMQ** — `dt.events` topic exchange with day-1 queues (`place.*`, `tour.*`, `message.*`, `notification.*`, `reservation.*`). `dt.dlx` dead-letter exchange. Definitions loaded declaratively from `rabbitmq/definitions.json`.
 - **MinIO** — object storage for media. Three buckets seeded by `minio-init` one-shot service: `media-place`, `media-owner`, `media-tour`. The `public/` prefix is anonymously readable so the PWA can pull place hero images without signed URLs.
-- **Traefik** — reverse proxy and TLS terminator (v3.2). Routes incoming HTTP/HTTPS traffic to application services by hostname (e.g. `app.localhost`) using Docker label discovery (`traefik.enable=true`). ACME staging issuer handles certificate provisioning in dev/QA; the live issuer activates in Phase 5 with a real public domain. The dashboard (`:8080`) is protected by basic-auth and is **dev/QA only — never expose it in production**. Future services opt in by adding `traefik.http.*` labels; existing base-stack services (Postgres, Redis, RabbitMQ, MinIO) stay internal-only.
-- **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.localhost`. The `authentik-forward-auth@file` middleware is **defined-but-commented** in Traefik's dynamic config — it activates when T-0.3.4 or T-1.6.x creates the required Proxy Provider binding on the embedded outpost (the bare server returns 404 on `/outpost.goauthentik.io/auth/traefik` until that binding exists).
-- **n8n** — workflow automation. Owns the ingest scheduling, owner-approval reminders, daily digests, and low-code integrations described in [`03-architecture.md §2`](../docs/exploration/03-architecture.md). Pinned to LTS line `>=1.123.26` per the CVE floor in [`04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md). Runs SQLite-backed in dev/QA (single container, no separate DB). Reachable via Traefik at `http://n8n.localhost`. **Auth via n8n's built-in User Management** — first boot serves the owner-setup wizard at `http://n8n.localhost/setup` where the first user becomes the instance owner (`N8N_BASIC_AUTH_*` env vars were removed upstream in v0.184 and are silently ignored). Authentik forward-auth integration lands in a follow-up task once the Authentik Proxy Provider is wired to the embedded outpost. Never expose n8n's UI to the public internet — even with Authentik, keep host bindings on `127.0.0.1`.
-- **bff** — Fastify v5.8.5 backend-for-frontend (T-0.4.2). Single ingress for the PWA. Aggregates downstream services, enforces token + SSO, no business logic of its own. OTel auto-instrumented. Reachable via Traefik at `http://api.localhost`. Built locally from `services/bff/Dockerfile` on `compose up --build` (multi-stage; runtime image is `node:22.22.3-alpine` + tini, non-root). The first build of the BFF image is slow (pnpm fetch + tsup bundle); subsequent builds reuse the deps layer.
-- **pwa-static** — nginx-served static build of the React 19 + Vite 6.4.2 PWA (T-0.4.0 + T-0.4.1). Reads `apps/pwa/dist/` via read-only bind mount; SPA fallback to `index.html` so the React router handles unknown routes. Reachable via Traefik at `http://app.localhost`. **Requires `pnpm --filter @daily-tour/pwa build` first** — there's no inline build step in dev. For hot-reload, use `pnpm --filter @daily-tour/pwa dev` natively (Vite on `:5173`) and skip this service. Phase 5 may switch to an image-based deploy with the dist baked in.
+- **Traefik** — reverse proxy and TLS terminator (v3.2). Routes incoming HTTP/HTTPS traffic to application services by hostname (e.g. `app.dt.localhost`) using Docker label discovery (`traefik.enable=true`). ACME staging issuer handles certificate provisioning in dev/QA; the live issuer activates in Phase 5 with a real public domain. The dashboard is protected by basic-auth and is **dev/QA only — never expose it in production**. Host ports default to `${DT_HOST_PORT_TRAEFIK_HTTP:-27080}` / `${DT_HOST_PORT_TRAEFIK_HTTPS:-27443}` / `${DT_HOST_PORT_TRAEFIK_DASHBOARD:-27088}` to avoid collisions with sibling dev stacks. Future services opt in by adding `traefik.http.*` labels; existing base-stack services (Postgres, Redis, RabbitMQ, MinIO) stay internal-only.
+- **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.dt.localhost`. The `authentik-forward-auth@file` middleware is **defined-but-commented** in Traefik's dynamic config — it activates when T-0.3.4 or T-1.6.x creates the required Proxy Provider binding on the embedded outpost (the bare server returns 404 on `/outpost.goauthentik.io/auth/traefik` until that binding exists).
+- **n8n** — workflow automation. Owns the ingest scheduling, owner-approval reminders, daily digests, and low-code integrations described in [`03-architecture.md §2`](../docs/exploration/03-architecture.md). Pinned to LTS line `>=1.123.26` per the CVE floor in [`04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md). Runs SQLite-backed in dev/QA (single container, no separate DB). Reachable via Traefik at `http://n8n.dt.localhost`. **Auth via n8n's built-in User Management** — first boot serves the owner-setup wizard at `http://n8n.dt.localhost/setup` where the first user becomes the instance owner (`N8N_BASIC_AUTH_*` env vars were removed upstream in v0.184 and are silently ignored). Authentik forward-auth integration lands in a follow-up task once the Authentik Proxy Provider is wired to the embedded outpost. Never expose n8n's UI to the public internet — even with Authentik, keep host bindings on `127.0.0.1`.
+- **bff** — Fastify v5.8.5 backend-for-frontend (T-0.4.2). Single ingress for the PWA. Aggregates downstream services, enforces token + SSO, no business logic of its own. OTel auto-instrumented. Reachable via Traefik at `http://api.dt.localhost`. Built locally from `services/bff/Dockerfile` on `compose up --build` (multi-stage; runtime image is `node:22.22.3-alpine` + tini, non-root). The first build of the BFF image is slow (pnpm fetch + tsup bundle); subsequent builds reuse the deps layer.
+- **pwa-static** — nginx-served static build of the React 19 + Vite 6.4.2 PWA (T-0.4.0 + T-0.4.1). Reads `apps/pwa/dist/` via read-only bind mount; SPA fallback to `index.html` so the React router handles unknown routes. Reachable via Traefik at `http://app.dt.localhost`. **Requires `pnpm --filter @daily-tour/pwa build` first** — there's no inline build step in dev. For hot-reload, use `pnpm --filter @daily-tour/pwa dev` natively (Vite on `:5173`) and skip this service. Phase 5 may switch to an image-based deploy with the dist baked in.
 
 ## Ports (host bindings, all on 127.0.0.1)
 
-| Service             | Container       | Host            | Notes                                                                          |
-| ------------------- | --------------- | --------------- | ------------------------------------------------------------------------------ |
-| Traefik HTTP        | 80              | 127.0.0.1:80    | redirects to HTTPS                                                             |
-| Traefik HTTPS       | 443             | 127.0.0.1:443   | TLS termination                                                                |
-| Traefik Dashboard   | 8080            | 127.0.0.1:8080  | dev/QA only; basic-auth protected                                              |
-| Postgres            | 5432            | 127.0.0.1:5432  | dev access                                                                     |
-| Redis               | 6379            | 127.0.0.1:6379  | requires password                                                              |
-| RabbitMQ AMQP       | 5672            | 127.0.0.1:5672  | clients                                                                        |
-| RabbitMQ Management | 15672           | 127.0.0.1:15672 | admin UI                                                                       |
-| MinIO S3 API        | 9000            | 127.0.0.1:9000  | service-to-service                                                             |
-| MinIO Console       | 9001            | 127.0.0.1:9001  | admin UI                                                                       |
-| Authentik           | 9000 (internal) | —               | No host bind; Traefik routes `http://auth.localhost` → `authentik-server:9000` |
-| authentik-postgres  | 5432 (internal) | —               | No host bind; internal to `dt_internal` network only                           |
-| n8n                 | 5678 (internal) | —               | No host bind; Traefik routes `http://n8n.localhost` → `dt_n8n:5678`            |
-| bff                 | 8080 (internal) | —               | No host bind; Traefik routes `http://api.localhost` → `dt_bff:8080`            |
-| pwa-static          | 80 (internal)   | —               | No host bind; Traefik routes `http://app.localhost` → `dt_pwa_static:80`       |
+Daily-tour reserves the **27xxx** host-port block to avoid collisions with sibling dev stacks (`cc-dev`/codecomedy on 5432/6379/9000/9001/80/443/8080, po-platform on the same set, fit on 35432/38080, supabase on 5432/6543/8000/8443). Override any port via the matching `DT_HOST_PORT_*` env var in `.env` (defaults shown in parentheses).
 
-All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth.
+| Service             | Container       | Host                                                | Notes                                                                             |
+| ------------------- | --------------- | --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Traefik HTTP        | 80              | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_HTTP` (27080)      | redirects to HTTPS                                                                |
+| Traefik HTTPS       | 443             | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_HTTPS` (27443)     | TLS termination                                                                   |
+| Traefik Dashboard   | 8080            | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_DASHBOARD` (27088) | dev/QA only; basic-auth protected                                                 |
+| Postgres            | 5432            | 127.0.0.1:`$DT_HOST_PORT_POSTGRES` (27432)          | dev access (run `psql -h 127.0.0.1 -p 27432`)                                     |
+| Redis               | 6379            | 127.0.0.1:`$DT_HOST_PORT_REDIS` (27379)             | requires password                                                                 |
+| RabbitMQ AMQP       | 5672            | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_AMQP` (27672)     | clients                                                                           |
+| RabbitMQ Management | 15672           | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_MGMT` (27673)     | admin UI                                                                          |
+| MinIO S3 API        | 9000            | 127.0.0.1:`$DT_HOST_PORT_MINIO_API` (27900)         | service-to-service                                                                |
+| MinIO Console       | 9001            | 127.0.0.1:`$DT_HOST_PORT_MINIO_CONSOLE` (27901)     | admin UI                                                                          |
+| Authentik           | 9000 (internal) | —                                                   | No host bind; Traefik routes `http://auth.dt.localhost` → `authentik-server:9000` |
+| authentik-postgres  | 5432 (internal) | —                                                   | No host bind; internal to `dt_internal` network only                              |
+| n8n                 | 5678 (internal) | —                                                   | No host bind; Traefik routes `http://n8n.dt.localhost` → `dt_n8n:5678`            |
+| bff                 | 8080 (internal) | —                                                   | No host bind; Traefik routes `http://api.dt.localhost` → `dt_bff:8080`            |
+| pwa-static          | 80 (internal)   | —                                                   | No host bind; Traefik routes `http://app.dt.localhost` → `dt_pwa_static:80`       |
+
+All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth. **Note**: `127.0.0.1` bindings still collide with `0.0.0.0` bindings from other Docker stacks on the same port — Docker rejects `bind: address already in use` regardless of interface, hence the 27xxx remap.
 
 ## Authentik on first boot
 
 **Add to `/etc/hosts`** (needed for browser and curl to resolve local service hostnames):
 
 ```
-127.0.0.1 auth.localhost n8n.localhost app.localhost api.localhost traefik.localhost
+127.0.0.1 auth.dt.localhost n8n.dt.localhost app.dt.localhost api.dt.localhost traefik.dt.localhost
 ```
+
+The `dt.localhost` suffix is configurable via `TRAEFIK_DOMAIN_BASE` in `.env` (default: `dt.localhost`). The default avoids collisions with sibling dev stacks (cc-dev uses `*.dev.localhost`, fit uses `*.fit.localhost`, etc.).
 
 **Bring up the full stack**:
 
@@ -126,11 +131,12 @@ docker compose --env-file dev-environment -f ... ps  # wait until all 11 service
 **Verify health**:
 
 ```bash
-curl -sH "Host: auth.localhost" -o /dev/null -w "%{http_code}\n" http://127.0.0.1:80/-/health/live/
+curl -sH "Host: auth.dt.localhost" -o /dev/null -w "%{http_code}\n" \
+  "http://127.0.0.1:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}/-/health/live/"
 # → 200
 ```
 
-**Open the UI**: `http://auth.localhost` → login with `akadmin` / `$AUTHENTIK_BOOTSTRAP_PASSWORD`.
+**Open the UI**: `http://auth.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}` → login with `akadmin` / `$AUTHENTIK_BOOTSTRAP_PASSWORD`. (Browsers reach `*.dt.localhost` via `/etc/hosts`; the Traefik port is non-standard so the URL is `:27080` until you put a real reverse proxy on `:80` for prod.)
 
 ### OIDC provider (owner-app) — manual setup until T-1.6.0
 
@@ -138,7 +144,7 @@ T-0.3.2 originally shipped a blueprint to auto-create the `owner-app` OIDC provi
 
 Until then, to bring up the provider manually:
 
-1. Log in to `http://auth.localhost` as `akadmin`.
+1. Log in to `http://auth.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}` as `akadmin`.
 2. **Applications → Providers → Create → OAuth2/OpenID Provider**:
    - Name: `owner-app`
    - Client type: `Confidential`
@@ -146,7 +152,7 @@ Until then, to bring up the provider manually:
    - Client secret: paste from `AUTHENTIK_OWNER_APP_CLIENT_SECRET` in `.env`.
    - Authorization flow: `default-provider-authorization-implicit-consent`
    - Signing key: `authentik Self-signed Certificate`
-   - Redirect URIs (strict): `http://localhost:8080/callback`, `http://localhost:5173/auth/callback`, `https://app.localhost/auth/callback`.
+   - Redirect URIs (strict): `http://localhost:8080/callback`, `http://localhost:5173/auth/callback`, `https://app.dt.localhost/auth/callback`.
    - Scope mappings: openid, email, profile.
 3. **Applications → Applications → Create**: name `Owner Backoffice`, slug `owner-app`, provider `owner-app`.
 4. **Directory → Groups → Create**: `owners`. Add `akadmin` as a member.
@@ -177,7 +183,9 @@ docker compose --env-file dev-environment \
   up -d
 ```
 
-In native-dev mode, point the PWA's API base URL at `http://localhost:8080` (the BFF's native port). The Traefik-routed hosts (`app.localhost`, `api.localhost`) are not used — those are for the Compose-built path below.
+In native-dev mode, point the PWA's API base URL at `http://localhost:8080` (the BFF's native port). The Traefik-routed hosts (`app.dt.localhost`, `api.dt.localhost`) are not used — those are for the Compose-built path below.
+
+> **Native-dev port note**: Vite serves on `:5173` and the BFF on `:8080` by default; both are unaffected by the `DT_HOST_PORT_*` Compose remap (they're not in Compose). If you also run **po-platform**'s Compose stack locally, it binds Vite on `:5173` too — stop one or run daily-tour Vite on a different port with `pnpm --filter @daily-tour/pwa dev -- --port 5174`.
 
 **Compose-up dev (mirrors prod, slower iteration)** — pre-build everything, run the full stack behind Traefik. Use to validate that the production-shaped serving works end-to-end before shipping.
 
@@ -190,8 +198,8 @@ docker compose --env-file dev-environment \
   -f infra/compose/docker-compose.n8n.yml \
   -f infra/compose/docker-compose.app.yml \
   up -d --build
-# PWA: http://app.localhost
-# BFF: http://api.localhost/health
+# PWA: http://app.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}
+# BFF: http://api.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}/health
 ```
 
 ## Nuke + reseed (DATA LOSS)
@@ -223,26 +231,26 @@ Phase 5 (T-5.4.x observability + sizing) introduces a secrets-manager bootstrap 
 
 ## Troubleshooting
 
-| Symptom                                                            | Likely cause                                                               | Fix                                                                                                                                                                                                                                                                               |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Traefik dashboard `401`                                            | `TRAEFIK_DASHBOARD_PASSWORD` doesn't match the bcrypt in `dashboard-users` | Regenerate: `htpasswd -nbB admin "<new>"` → update `infra/traefik/dashboard-users` and `.env`.                                                                                                                                                                                    |
-| Traefik ACME certificate denied                                    | Let's Encrypt staging rate limit hit, or challenge not reachable           | Wait for rate-limit window, or switch to a real public domain + the live ACME server in Phase 5.                                                                                                                                                                                  |
-| Service not routable through Traefik                               | Missing opt-in label on target container                                   | Add `traefik.enable=true` and `traefik.http.routers.<name>.rule=Host(...)` labels to the service.                                                                                                                                                                                 |
-| Postgres healthcheck fails                                         | First-boot init scripts erroring (check `docker logs dt_postgres`)         | Most often a syntax issue in `02-roles.sql`. `down -v` to wipe and retry.                                                                                                                                                                                                         |
-| `definitions didn't load` (RabbitMQ)                               | Missing volume mount or invalid JSON                                       | `curl -u dailytour:$RABBITMQ_PASSWORD http://localhost:15672/api/overview` to inspect; `docker logs dt_rabbitmq` to see load errors.                                                                                                                                              |
-| MinIO bucket-init fails after a clean install                      | Container reached `up` before MinIO was healthy                            | The `depends_on: condition: service_healthy` guard should prevent this. If it slips, re-run `docker compose up minio-init`.                                                                                                                                                       |
-| pt_PT.UTF-8 collation missing                                      | `locale-gen` failed in postgres Dockerfile build                           | Set `LANG=en_US.UTF-8` in `.env` and accept the slightly weaker sort for now. Re-attempt the build with `--no-cache` if you have apt-get connectivity.                                                                                                                            |
-| Containers fight for the same port                                 | Another stack on the host bound 5432/6379/etc                              | Edit the `ports:` entries in `docker-compose.base.yml` (use `:5432` instead of `:5432:5432` to disable host exposure, or pick a different host port).                                                                                                                             |
-| n8n first-time access                                              | First boot serves the owner-setup wizard at `/setup`                       | Open `http://n8n.localhost/setup`, create the owner account. The first user becomes the instance admin and unlocks the UI. `N8N_BASIC_AUTH_*` env vars are silently ignored (removed upstream in v0.184).                                                                         |
-| n8n owner password lost                                            | n8n stores users in its SQLite DB                                          | Wipe the volume to start over: `docker compose down -v && docker compose up -d`; then re-do the setup wizard.                                                                                                                                                                     |
-| n8n cannot save credentials                                        | `N8N_ENCRYPTION_KEY` changed between runs                                  | Restore the same key in `dev-environment`, or wipe the volume: `docker compose down -v` + `up -d`.                                                                                                                                                                                |
-| n8n workflow state lost after restart                              | Volume `dt_n8n_data` was removed                                           | Workflow state persists via named volume `/home/node/.n8n`. Ensure you use `down` not `down -v`. Backups are operator's responsibility (Phase 5 adds automated backup).                                                                                                           |
-| `http://app.localhost` returns 404 / nginx default page            | `apps/pwa/dist/` is empty or missing                                       | Run `pnpm --filter @daily-tour/pwa build` first, then `docker compose ... restart pwa-static` (or just refresh — the bind mount is live).                                                                                                                                         |
-| `http://app.localhost/some-route` returns 404 on hard refresh      | SPA fallback broken in `infra/nginx/pwa.conf`                              | Confirm the catch-all `location /` block has `try_files $uri $uri/ /index.html;`. If you added a custom location ahead of it, make sure unknown URIs still fall through to the SPA.                                                                                               |
-| `http://api.localhost/health` returns 502                          | BFF container not healthy                                                  | `docker compose --env-file dev-environment -f ... logs bff` — check OTel init or env-var validation. Verify the BFF binds to `0.0.0.0:8080` (the overlay sets `HOST=0.0.0.0`); a `127.0.0.1` bind isn't reachable from Traefik.                                                   |
-| PWA fetch to BFF returns CORS error                                | Mixed origin between Traefik-routed and native-port URLs                   | `@fastify/cors` already echoes `origin: true` and `credentials: true` in dev. Confirm the PWA uses one consistent base URL: `http://api.localhost` in Compose mode, `http://localhost:8080` in native mode — never both. Cookies need `credentials: "include"` on the fetch call. |
-| `docker compose up` fails: `no such file: services/bff/Dockerfile` | Ran compose from the wrong directory                                       | The `build.context: ../..` in `docker-compose.app.yml` is relative to `infra/compose/`. Always invoke `docker compose` from the repo root.                                                                                                                                        |
-| BFF rebuild slow on every `up --build`                             | pnpm deps layer wasn't cached                                              | Don't `--no-cache`; let Docker reuse the `deps` layer. The first build is unavoidable (~1 min for pnpm fetch + tsup bundle); incremental rebuilds only re-run the `build`/`deploy`/`runtime` stages.                                                                              |
+| Symptom                                                            | Likely cause                                                               | Fix                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Traefik dashboard `401`                                            | `TRAEFIK_DASHBOARD_PASSWORD` doesn't match the bcrypt in `dashboard-users` | Regenerate: `htpasswd -nbB admin "<new>"` → update `infra/traefik/dashboard-users` and `.env`.                                                                                                                                                                                       |
+| Traefik ACME certificate denied                                    | Let's Encrypt staging rate limit hit, or challenge not reachable           | Wait for rate-limit window, or switch to a real public domain + the live ACME server in Phase 5.                                                                                                                                                                                     |
+| Service not routable through Traefik                               | Missing opt-in label on target container                                   | Add `traefik.enable=true` and `traefik.http.routers.<name>.rule=Host(...)` labels to the service.                                                                                                                                                                                    |
+| Postgres healthcheck fails                                         | First-boot init scripts erroring (check `docker logs dt_postgres`)         | Most often a syntax issue in `02-roles.sql`. `down -v` to wipe and retry.                                                                                                                                                                                                            |
+| `definitions didn't load` (RabbitMQ)                               | Missing volume mount or invalid JSON                                       | `curl -u dailytour:$RABBITMQ_PASSWORD "http://localhost:${DT_HOST_PORT_RABBITMQ_MGMT:-27673}/api/overview"` to inspect; `docker logs dt_rabbitmq` to see load errors.                                                                                                                |
+| MinIO bucket-init fails after a clean install                      | Container reached `up` before MinIO was healthy                            | The `depends_on: condition: service_healthy` guard should prevent this. If it slips, re-run `docker compose up minio-init`.                                                                                                                                                          |
+| pt_PT.UTF-8 collation missing                                      | `locale-gen` failed in postgres Dockerfile build                           | Set `LANG=en_US.UTF-8` in `.env` and accept the slightly weaker sort for now. Re-attempt the build with `--no-cache` if you have apt-get connectivity.                                                                                                                               |
+| Containers fight for the same port                                 | Sibling dev stack bound the same host port                                 | Override the matching `DT_HOST_PORT_*` env var in `.env` (e.g. `DT_HOST_PORT_POSTGRES=27532`) and re-`up`. To disable host exposure entirely, drop the host side of the binding (use `:5432` instead of `127.0.0.1:5432:5432`) — then services on `dt_internal` can still reach it.  |
+| n8n first-time access                                              | First boot serves the owner-setup wizard at `/setup`                       | Open `http://n8n.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}/setup`, create the owner account. The first user becomes the instance admin and unlocks the UI. `N8N_BASIC_AUTH_*` env vars are silently ignored (removed upstream in v0.184).                                     |
+| n8n owner password lost                                            | n8n stores users in its SQLite DB                                          | Wipe the volume to start over: `docker compose down -v && docker compose up -d`; then re-do the setup wizard.                                                                                                                                                                        |
+| n8n cannot save credentials                                        | `N8N_ENCRYPTION_KEY` changed between runs                                  | Restore the same key in `dev-environment`, or wipe the volume: `docker compose down -v` + `up -d`.                                                                                                                                                                                   |
+| n8n workflow state lost after restart                              | Volume `dt_n8n_data` was removed                                           | Workflow state persists via named volume `/home/node/.n8n`. Ensure you use `down` not `down -v`. Backups are operator's responsibility (Phase 5 adds automated backup).                                                                                                              |
+| `http://app.dt.localhost` returns 404 / nginx default page         | `apps/pwa/dist/` is empty or missing                                       | Run `pnpm --filter @daily-tour/pwa build` first, then `docker compose ... restart pwa-static` (or just refresh — the bind mount is live).                                                                                                                                            |
+| `http://app.dt.localhost/some-route` returns 404 on hard refresh   | SPA fallback broken in `infra/nginx/pwa.conf`                              | Confirm the catch-all `location /` block has `try_files $uri $uri/ /index.html;`. If you added a custom location ahead of it, make sure unknown URIs still fall through to the SPA.                                                                                                  |
+| `http://api.dt.localhost/health` returns 502                       | BFF container not healthy                                                  | `docker compose --env-file dev-environment -f ... logs bff` — check OTel init or env-var validation. Verify the BFF binds to `0.0.0.0:8080` (the overlay sets `HOST=0.0.0.0`); a `127.0.0.1` bind isn't reachable from Traefik.                                                      |
+| PWA fetch to BFF returns CORS error                                | Mixed origin between Traefik-routed and native-port URLs                   | `@fastify/cors` already echoes `origin: true` and `credentials: true` in dev. Confirm the PWA uses one consistent base URL: `http://api.dt.localhost` in Compose mode, `http://localhost:8080` in native mode — never both. Cookies need `credentials: "include"` on the fetch call. |
+| `docker compose up` fails: `no such file: services/bff/Dockerfile` | Ran compose from the wrong directory                                       | The `build.context: ../..` in `docker-compose.app.yml` is relative to `infra/compose/`. Always invoke `docker compose` from the repo root.                                                                                                                                           |
+| BFF rebuild slow on every `up --build`                             | pnpm deps layer wasn't cached                                              | Don't `--no-cache`; let Docker reuse the `deps` layer. The first build is unavoidable (~1 min for pnpm fetch + tsup bundle); incremental rebuilds only re-run the `build`/`deploy`/`runtime` stages.                                                                                 |
 
 ## See also
 
