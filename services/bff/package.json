@@ -22,7 +22,7 @@
     "@daily-tour/shared-types": "workspace:*",
     "@fastify/cors": "^11.0.0",
     "@fastify/helmet": "^13.0.0",
-    "@fastify/jwt": "^9.0.0",
+    "@fastify/jwt": "^10.0.0",
     "@fastify/rate-limit": "^10.0.0",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.0",
