@@ -40,7 +40,52 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
-### Wave 9 — 2026-05-16 — T-1.0.0 (sequential) — opens Phase 1 / Slice 1.0
+### Wave 10 — 2026-05-16 — T-1.0.1 (sequential, recovery) — opens token-svc HTTP surface
+
+| Agent  | Task ID | Branch           | Profile     | Scope                                                                    | Status                  |
+| ------ | ------- | ---------------- | ----------- | ------------------------------------------------------------------------ | ----------------------- |
+| t1-0-1 | T-1.0.1 | jmeireles/t1-0-1 | claude-yolo | token-svc Fastify endpoints (issue/exchange/revoke) + tests + Dockerfile | Crashed @ ~40%; rescued |
+
+#### Agent: t1-0-1 (T-1.0.1) — partial agent + orchestrator rescue
+
+- **Started**: 2026-05-16 22:05
+- **Finished**: agent ~5 m before crash (2 autocommits at 22:10:37 + 22:11:15 capturing 7 files); orchestrator manual completion ~40 m; verification + push ~10 m
+- **Predicted time**: 90–120 m
+- **Actual time**: ~60 m total (agent + orchestrator)
+- **Complexity**: High (4 endpoints + Testcontainers harness + Dockerfile + migrator gotcha + cs-agent crash recovery)
+- **LOC changed**: 18 files (+~1300 / −15 across 4 commits; ~750 in lockfile)
+- **Commits**:
+  - ⚠️ `3d253f4` — cs-agent autocommit-fallback (`feat: agent work on t1-0-1 (auto-committed by closer)`) — package.json deps, config.ts, db/client.ts, instrumentation.ts, opaque-token.ts, version.ts
+  - ⚠️ `031590d` — second cs-agent autocommit ~40s later — lib/jwt.ts
+  - ✅ `802278f` — orchestrator manual completion — 3 routes + app.ts + index.ts + tsup/vitest configs + Dockerfile + dual `.dockerignore` + helpers + 4 test files + **custom migrator** + README updates
+  - ✅ `be77dce` — orchestrator README cleanup (duplicate heading + tracking-table location)
+- **PR**: [#24](https://github.com/zmeireles/daily-tour/pull/24) (merged as `792eaa6`, all 6 CI checks green; human-merged per doctrine)
+- **Acceptance**: all 5/5 criteria met. 3 endpoints + 10 vitest tests (Testcontainers-pg on pgvector/pgvector:pg17). Native smoke green: issue → exchange (JWT decodes with sub/rid/gh/locale/jti) → revoke 204 → re-exchange 401 → idempotent revoke 204 → unknown jti 404 → invalid opaque 401. Log redaction confirmed (opaque NOT in service logs). Docker image 227 MB.
+- **Issues**:
+  1. **Agent crashed at ~40% via cs-agent's autocommit-fallback closer.** Two autocommit commits ~40s apart suggest the agent did several rounds of work but the cs-agent watchdog killed the tmux session before the agent's own commit. **Pattern observation**: Opus may not be as reliable as the "~100% self-commit" pattern this session had been showing (3 waves of agent self-commits before this). Recovery path: read the partial files, write the rest manually following the prompt. **Lesson**: cs-agent's two-autocommit pattern (vs the usual one) is a tell that the agent was actively working but got truncated; preserve both commits for attribution.
+  2. **drizzle-orm bundled migrator incompatible with least-privilege architecture.** The migrator unconditionally emits `CREATE SCHEMA IF NOT EXISTS` for both the data schema (`auth_tokens`) AND its tracking schema (`drizzle` by default). Both require DB-level CREATE which `token_svc` intentionally doesn't have. Tried `migrationsSchema: "auth_tokens"` — still fails because the bundled migrator emits CREATE SCHEMA for the targeted schema too. **Fix**: replaced with ~50 lines of custom migrator in `src/db/client.ts` — creates only `auth_tokens.__drizzle_migrations` (TABLE-level perm in the schema we own), reads SQL files from `drizzle/migrations/` in lexical order, splits on `--> statement-breakpoint`, applies in transactions, records SHA-256 hashes for idempotency. Cross-cut to [`cc-platform-feedback.md`](../../../../.claude/docs/cc-platform-feedback.md).
+  3. **`pnpm dev` (tsx watch) doesn't run `main()` correctly.** `/health` responds but migrations never apply. Direct `./node_modules/.bin/tsx src/index.ts` and `node dist/index.js` (Dockerfile CMD) both work. Likely a tsx-watch + initOtel() startup ordering issue. **Prod unaffected** because the container CMD bypasses tsx-watch. Filed as a followup; for now use direct tsx invocation for native dev.
+  4. **Lint friction during recovery.** 6 lint errors caught by the project ESLint config:
+     - `req.remoteAddress` doesn't exist on `FastifyRequest` in Fastify v5 → use `req.ip` instead.
+     - Async functions without `await` (the route registration wrappers) → drop the `async` keyword.
+     - Unused imports (`sql`, `and`, `isNull`) → remove.
+     - `prefer-const` for `let ctx` that's only assigned once → restructure to `const ctx = await startTestPostgres();` at top-level.
+     - `@typescript-eslint/no-unnecessary-type-assertion` for `res.json() as X` → use the generic `res.json<X>()` instead.
+     - `tsup.config.ts` + `vitest.config.ts` parsing errors → add to `tsconfig.eslint.json` `include` list.
+- **Lessons applied** (from previous waves):
+  - Pushed BEFORE killing the worktree (L008). Branch reached origin safely.
+  - 10-point migration SQL review carried over from T-1.0.0 to vet any migrator changes.
+  - Pre-push audit caught no new CVEs (drizzle was already bumped in T-1.0.0).
+- **New lessons**:
+  - **cs-agent two-autocommit pattern is the tell for "agent was actively working but got truncated by closer".** Preserve both commits; don't squash them.
+  - **drizzle-orm bundled migrator is incompatible with infra-managed schemas.** The custom migrator is ~50 lines and gives full control. Cross-cut doctrine note to cc-platform-feedback.
+  - **tsx watch + initOtel() has a startup ordering bug.** Direct tsx works; bundled `node dist/index.js` works. Avoid tsx watch for services that initOtel() at module load.
+  - **Fastify v5 dropped `req.remoteAddress` in favor of `req.ip`.** Pattern for future Fastify v5 services.
+  - **Recovery PRs are doable but expensive.** ~50 min of orchestrator time vs ~30 min if the agent had finished cleanly. Worth tracking the agent crash rate (1 of 4 Opus-yolo waves this session crashed at autocommit-fallback).
+- **Decisions made on the fly (orchestrator)**:
+  - Continued manually on the worktree branch rather than re-launching a fresh agent. Faster, more reliable, preserves agent attribution.
+  - Picked the (a) design for `jti` (= `sha256(opaque)`) — same as documented in the prompt; one identifier for lookup + revoke.
+  - Custom migrator instead of `migrationsSchema: "auth_tokens"` workaround — the latter still failed because drizzle-orm's bundled migrator emits CREATE SCHEMA for the targeted schema too.
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                         | Status |
 | ------ | ------- | ---------------- | ------------------ | ----------------------------------------------------------------------------- | ------ |

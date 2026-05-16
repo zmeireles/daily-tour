@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 1      | 0           | 1     | 23      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 2      | 0           | 1     | 22      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **16** | **0**       | **1** | **83**  |
+| **Total**                       | **31** | **100** | **17** | **0**       | **1** | **82**  |
 
 ---
 
@@ -250,7 +250,9 @@
   - Drizzle migration generated, not pushed; SQL hand-reviewed for safety.
   - Seed script loads 1 guesthouse + 2 reservations + 2 guests for dev.
 
-#### 🟢 T-1.0.1 — `token-svc` Fastify service: issue / revoke / exchange endpoints
+#### ✅ T-1.0.1 — `token-svc` Fastify service: issue / revoke / exchange endpoints
+
+> **Resolved 2026-05-16 via [PR #24](https://github.com/zmeireles/daily-tour/pull/24).** 18 files (+~1300 / −15 across 4 commits). Profile: claude-yolo (Opus). **Recovery cycle**: agent crashed at ~40% via cs-agent's autocommit-fallback closer; foundational layer (config, db/client, instrumentation, opaque-token lib, jwt lib, version, package.json deps) committed as `3d253f4` + `031590d`. Orchestrator wrote the remaining ~60% manually following [`temp/prompt-t-1.0.1.md`](../../../temp/prompt-t-1.0.1.md), shipped as `802278f` + `be77dce`. **3 endpoints + health** (POST issue, GET exchange, DELETE revoke) with the full JWT contract (`sub=guest_id`, `rid`, `gh`, `locale`, `jti=sha256(opaque)`, `exp=min(checkout+24h, now+1h)`, HS256). **10/10 vitest cases pass** (Testcontainers-pg on pgvector/pgvector:pg17). **Custom migrator** replaces drizzle-orm's bundled one — drizzle unconditionally emits `CREATE SCHEMA IF NOT EXISTS` for both data + tracking schemas which requires DB-level CREATE; token_svc intentionally lacks that per the least-privilege architecture. ~50 lines, routes tracking into `auth_tokens.__drizzle_migrations`. **Log redaction** via pino serializer: opaque token never lands in logs (D15). Docker image 227 MB. Per [doctrine](../../operations/auto-merge-doctrine.md), schema migrations on boot + cryptographic primitives both escalate — human-merged, counter unchanged.
 
 - **owns**: `services/token-svc/**` (except `src/db/schema.ts` from T-1.0.0)
 - **deps**: T-0.4.2, T-1.0.0
@@ -262,7 +264,7 @@
   - Vitest: happy path + expired + revoked + invalid.
   - Listens on `:8088`.
 
-#### ⬜ T-1.0.2 — BFF token-exchange middleware + Redis JTI cache
+#### 🟢 T-1.0.2 — BFF token-exchange middleware + Redis JTI cache
 
 - **owns**: `services/bff/src/plugins/auth.ts`, `services/bff/src/lib/redis.ts`
 - **deps**: T-1.0.1, T-0.3.0
