@@ -1,0 +1,13 @@
+# Used when the build context is services/token-svc/ itself. Canonical
+# build invokes from the repo root with `-f services/token-svc/Dockerfile`,
+# in which case BuildKit uses Dockerfile.dockerignore (kept in sync with
+# this file).
+node_modules
+dist
+.turbo
+coverage
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

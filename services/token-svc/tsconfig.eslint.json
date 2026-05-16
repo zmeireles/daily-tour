@@ -9,5 +9,11 @@
     "allowJs": true,
     "baseUrl": "."
   },
-  "include": ["src/**/*", "eslint.config.js", "drizzle.config.ts"]
+  "include": [
+    "src/**/*",
+    "eslint.config.js",
+    "drizzle.config.ts",
+    "tsup.config.ts",
+    "vitest.config.ts"
+  ]
 }
