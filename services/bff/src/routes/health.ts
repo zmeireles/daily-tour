@@ -9,8 +9,8 @@ const healthRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.get(
     "/health",
     {
-      // Health probes from Docker/Kubernetes/Traefik must never be rate-limited.
-      config: { rateLimit: false },
+      // Probes must never hit auth or the rate-limiter.
+      config: { rateLimit: false, auth: "public" },
     },
     () => ({
       status: "ok" as const,

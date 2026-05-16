@@ -4,13 +4,28 @@ const ConfigSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8080),
   HOST: z.string().default("0.0.0.0"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  // T-1.0.2 wires the real verification key from token-svc. Until then this
-  // is optional and the auth plugin falls back to a dev-only HS256 secret.
-  JWT_PUBLIC_KEY: z.string().optional(),
+  // Shared HS256 secret with token-svc. The BFF only verifies — token-svc signs.
+  // Rotation: env-var swap + restart on both services. ≥32 bytes of entropy
+  // required by HS256.
+  JWT_SIGNING_KEY: z.string().min(32),
+  // Internal HTTP base URL for the token-svc on dt_internal. The BFF calls
+  // /v1/tokens/:opaque/exchange to mint a JWT from a URL-borne opaque token.
+  TOKEN_SVC_URL: z.string().url().default("http://dt_token_svc:8088"),
+  // ioredis-compatible connection URL. Used for the JTI revocation cache —
+  // the BFF reads `jti:revoked:<jti>` on every authed request.
+  REDIS_URL: z.string().default("redis://dt_redis:6379/0"),
 });
 
 export type BffConfig = z.infer<typeof ConfigSchema>;
 
+let cached: BffConfig | undefined;
+
 export function loadConfig(): BffConfig {
-  return ConfigSchema.parse(process.env);
+  cached ??= ConfigSchema.parse(process.env);
+  return cached;
+}
+
+// Test-only: reset the cached config so a test can swap env vars between cases.
+export function resetConfigCache(): void {
+  cached = undefined;
 }

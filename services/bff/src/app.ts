@@ -1,13 +1,35 @@
+import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import healthRoute from "./routes/health.js";
+import tokenExchangeRoute from "./routes/token-exchange.js";
+
+// Opaque tokens MUST NEVER land in logs (D15: token-in-URL hygiene). The
+// default pino req serializer logs the full URL — we replace the opaque
+// path segment with a placeholder before logging. Mirrors the token-svc
+// pattern (see services/token-svc/src/app.ts).
+function redactOpaqueInUrl(url: string | undefined): string {
+  if (!url) return "";
+  return url.replace(/\/r\/[^/?#]+/, "/r/[redacted]");
+}
 
 export async function createApp(): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: { level: process.env["LOG_LEVEL"] ?? "info" },
+    logger: {
+      level: process.env["LOG_LEVEL"] ?? "info",
+      serializers: {
+        req(req) {
+          return {
+            method: req.method,
+            url: redactOpaqueInUrl(req.url),
+            remoteAddress: req.ip,
+          };
+        },
+      },
+    },
     trustProxy: true,
   });
 
@@ -31,8 +53,18 @@ export async function createApp(): Promise<FastifyInstance> {
     timeWindow: "1 minute",
   });
 
+  // dt_refresh HttpOnly cookie is set by /r/:token; T-1.0.3+ owns the read
+  // side. No signed-cookie secret yet — the cookie value is the opaque
+  // token, which already carries entropy.
+  await app.register(fastifyCookie);
+
+  // Auth plugin installs the global onRoute hook that forces every NEW route
+  // to go through fastify.authenticate unless `config.auth === 'public'`.
+  // Routes registered BEFORE this point are exempt (e.g. plugins it depends
+  // on). We register auth FIRST so route registrations below pick up the hook.
   await app.register(authPlugin);
   await app.register(healthRoute);
+  await app.register(tokenExchangeRoute);
 
   return app;
 }
