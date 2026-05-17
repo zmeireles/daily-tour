@@ -1,6 +1,52 @@
 # catalog-svc
 
-Drizzle schema for the `catalog` schema (actions, wishes, guesthouses, owner profiles, places, media, candidates). HTTP endpoints land in T-1.1.1.
+Fastify v5.8.5 catalog CRUD service. Owns the `catalog` schema (actions, wishes, guesthouses, owner profiles, places, media, candidates). REST endpoints under `/v1` for places, guesthouses, and owner-profiles. Internal-only — the BFF aggregates on top.
+
+Listens on `:8081`.
+
+## Endpoints
+
+| Verb   | Path                           | Purpose                                                                                         |
+| ------ | ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| GET    | `/health`                      | Liveness probe (no rate-limit).                                                                 |
+| GET    | `/v1/places`                   | List with cursor pagination + filters (`?status`, `?guesthouse_scope_id`, `?include_archived`). |
+| GET    | `/v1/places/:id`               | Get by id; 404 if archived unless `?include_archived=true`.                                     |
+| POST   | `/v1/places`                   | Create. Validates body against zod; 409 on dup-key.                                             |
+| PATCH  | `/v1/places/:id`               | Partial update; 404 if archived.                                                                |
+| DELETE | `/v1/places/:id`               | **Soft-delete** (`status='archived'`). Idempotent: 204 even if already archived.                |
+| GET    | `/v1/guesthouses`              | List with cursor + `?slug=` filter.                                                             |
+| GET    | `/v1/guesthouses/:id`          | Get by id.                                                                                      |
+| POST   | `/v1/guesthouses`              | Create. 409 on dup slug.                                                                        |
+| PATCH  | `/v1/guesthouses/:id`          | Partial update.                                                                                 |
+| DELETE | `/v1/guesthouses/:id`          | **Hard delete** (no status column on this table; Phase 1 trade-off). Idempotent.                |
+| GET    | `/v1/owner-profiles/:owner_id` | Get by owner id (PK).                                                                           |
+| POST   | `/v1/owner-profiles`           | **Upsert** by owner_id PK: 201 on insert, 200 on update.                                        |
+| PATCH  | `/v1/owner-profiles/:owner_id` | Partial update.                                                                                 |
+| DELETE | `/v1/owner-profiles/:owner_id` | Hard delete. Idempotent.                                                                        |
+
+### Pagination
+
+`?cursor=<base64>` — opaque to clients. Encodes `(updated_at, id)` so the cursor is stable across rows with identical `updated_at`. `?limit=50` default, `?limit=200` max.
+
+### Auth
+
+**Open at this layer.** catalog-svc trusts its caller (the BFF is the perimeter; `dt_internal` network is isolated). T-1.4.x (owner backoffice slice) + T-1.6.0 (Authentik OIDC) wrap the **write** endpoints with auth; reads stay open since the BFF's auth decorator (T-1.0.2) already gates the public surface.
+
+### Required env vars
+
+| Var                           | Required | Notes                                                                 |
+| ----------------------------- | -------- | --------------------------------------------------------------------- |
+| `CATALOG_SVC_DATABASE_URL`    | yes      | Postgres connection string for the `catalog_svc` role.                |
+| `PORT`                        | no       | Default `8081`.                                                       |
+| `HOST`                        | no       | Default `0.0.0.0`.                                                    |
+| `LOG_LEVEL`                   | no       | One of `fatal`/`error`/`warn`/`info`/`debug`/`trace`. Default `info`. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | no       | Empty → OTel SDK no-op. Phase 5 wires the collector.                  |
+
+### Migration on boot
+
+The custom migrator runs at startup (`src/db/client.ts → runMigrations()`). Idempotent: tracks state in `catalog.__drizzle_migrations` (TABLE-level perm in the owned schema; drizzle-orm's bundled migrator was replaced because it required DB-level CREATE — see token-svc's README for the full rationale).
+
+## Schema
 
 ## Schema
 
