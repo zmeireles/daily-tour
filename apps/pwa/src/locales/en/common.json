@@ -6,5 +6,11 @@
   },
   "landing": {
     "expired_message": "Your link expired. Please ask your host for a new one."
+  },
+  "pwa_install": {
+    "title": "Install Daily Tour",
+    "body": "Add to your home screen for instant access.",
+    "install": "Install",
+    "dismiss": "Not now"
   }
 }
