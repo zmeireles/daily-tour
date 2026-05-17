@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 20     | 0           | 1     | 4       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 21     | 0           | 2     | 2       |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **35** | **0**       | **1** | **64**  |
+| **Total**                       | **31** | **100** | **36** | **0**       | **2** | **62**  |
 
 ---
 
@@ -499,7 +499,9 @@
   - BFF `@fastify/jwt` plugin configured with Authentik JWKS endpoint for the `staff` audience.
   - `route.config.auth = 'owner'` middleware enforces the audience.
 
-#### 🟢 T-1.6.1 — PWA: Backoffice shell at `/admin` (Authentik-protected)
+#### ✅ T-1.6.1 — PWA: Backoffice shell at `/admin` (Authentik-protected)
+
+> **Resolved 2026-05-17 via [PR #56](https://github.com/zmeireles/daily-tour/pull/56).** 1 clean Sonnet self-commit (`1d72fe4`, 13 files, +380 LOC) in ~15 min wall-clock (14th clean self-commit this session — 13 Sonnet + 1 Opus). PWA /admin shell with Authentik OIDC PKCE flow via `oidc-client-ts`, owner Zustand session distinct from guest, 4-link sidebar nav (Guesthouses/Places/Reservations/Profile placeholder pages for T-1.6.2/1.6.3). 3 RTL cases. Phase 1: **20/25 → 21/25 (84%)**.
 
 - **owns**: `apps/pwa/src/routes/admin.tsx`, `apps/pwa/src/routes/admin.**`, `apps/pwa/src/features/backoffice/**`
 - **deps**: T-1.6.0, T-1.2.2
@@ -508,7 +510,7 @@
   - Hits `/admin` redirect to Authentik login if no session; back to dashboard on success.
   - Dashboard shell with nav: Guesthouses, Places, Reservations, Profile.
 
-#### ⬜ T-1.6.2 — Backoffice: Place CRUD with media upload
+#### 🟢 T-1.6.2 — Backoffice: Place CRUD with media upload
 
 - **owns**: `apps/pwa/src/features/backoffice/places/**`
 - **deps**: T-1.6.1, T-1.1.1, T-1.4.0
@@ -518,7 +520,7 @@
   - Action + wish multi-select with the seeded taxonomy.
   - i18n fields (EN + pt-PT) entered as separate tabs.
 
-#### ⬜ T-1.6.3 — Backoffice: Owner profile + Guesthouse CRUD
+#### 🟢 T-1.6.3 — Backoffice: Owner profile + Guesthouse CRUD
 
 - **owns**: `apps/pwa/src/features/backoffice/profile/**`, `apps/pwa/src/features/backoffice/guesthouses/**`
 - **deps**: T-1.6.1, T-1.1.1
