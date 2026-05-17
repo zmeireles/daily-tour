@@ -25,6 +25,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
+        // maplibre-gl + embla push the main chunk over the default 2 MiB limit.
+        // Raised to 4 MiB; code-splitting is a Phase 2 concern.
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
     }),
   ],
