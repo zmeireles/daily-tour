@@ -8,6 +8,15 @@ if (typeof URL.createObjectURL === "undefined") {
   Object.defineProperty(URL, "createObjectURL", { value: vi.fn(() => "blob:mock") });
 }
 
+// jsdom doesn't implement ResizeObserver — required by @radix-ui/react-use-size (Slider, DropdownMenu).
+if (typeof ResizeObserver === "undefined") {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 afterEach(() => {
   cleanup();
 });

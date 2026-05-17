@@ -67,6 +67,30 @@ const resources = {
         },
         wa_prefill: "Hi! I'm at {{placeName}}, can you recommend the next stop?",
       },
+      discover: {
+        title: "Discover",
+        controls: {
+          location: {
+            me: "Near me",
+            guesthouse: "From here",
+          },
+          range: "Within {{km}} km",
+          sort: {
+            label: "Sort",
+            distance: "Distance",
+            rating: "Rating",
+            name: "Name",
+          },
+          group: {
+            grouped: "Grouped",
+            flat: "List",
+          },
+        },
+        geolocation_denied: "Location access denied. Showing nearby from your guesthouse.",
+        empty: "Nothing here for {{action}} within {{km}} km.",
+        loading: "Loading…",
+        error: "Couldn't load. Try again.",
+      },
     },
   },
   "pt-PT": {
@@ -132,6 +156,30 @@ const resources = {
           message: "Mensagem",
         },
         wa_prefill: "Olá! Estou em {{placeName}}, podes recomendar o próximo lugar?",
+      },
+      discover: {
+        title: "Descobrir",
+        controls: {
+          location: {
+            me: "Perto de mim",
+            guesthouse: "Daqui",
+          },
+          range: "Até {{km}} km",
+          sort: {
+            label: "Ordenar",
+            distance: "Distância",
+            rating: "Avaliação",
+            name: "Nome",
+          },
+          group: {
+            grouped: "Agrupado",
+            flat: "Lista",
+          },
+        },
+        geolocation_denied: "Sem acesso à localização. A mostrar a partir da casa.",
+        empty: "Nada aqui para {{action}} até {{km}} km.",
+        loading: "A carregar…",
+        error: "Não foi possível carregar. Tente novamente.",
       },
     },
   },
