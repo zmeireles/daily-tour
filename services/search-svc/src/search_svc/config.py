@@ -22,6 +22,19 @@ class Settings(BaseSettings):
     otel_service_name: str = "search-svc"
     otel_exporter_otlp_endpoint: str | None = None
 
+    # Embeddings (T-2.0.1).
+    # When EMBEDDING_API_KEY is unset, the worker logs a warning and skips the
+    # upsert — this lets dev/CI bring the service up without a real key while
+    # production gates on it. EMBEDDING_DIMENSIONS must match the migration's
+    # vector(N) column (1024 today).
+    embedding_api_key: str | None = None
+    embedding_provider: Literal["openai", "voyage"] = "openai"
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1024
+    embedding_api_base_url: str = "https://api.openai.com/v1"
+    embedding_request_timeout_seconds: float = 30.0
+    embedding_max_retries: int = 3
+
 
 _cached: Settings | None = None
 

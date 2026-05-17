@@ -36,6 +36,7 @@ WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --from=builder --chown=app:app /app/src /app/src
 COPY --from=builder --chown=app:app /workspace/packages/python-common /workspace/packages/python-common
+COPY --chown=app:app services/search-svc/migrations /app/migrations
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONPATH="/app/src" \
     PYTHONDONTWRITEBYTECODE=1 \
