@@ -40,6 +40,61 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 19 — 2026-05-17 — T-1.3.1 (parallel half) — fourth clean Sonnet self-commit this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                               | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------- | ------------------------ |
+| t1-3-1 | T-1.3.1 | jmeireles/t1-3-1 | claude-sonnet-yolo | PWA MapView + MapPin + map config helpers + tests (maplibre mocked) | Done (clean self-commit) |
+
+#### Agent: t1-3-1 (T-1.3.1) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 04:24
+- **Finished**: agent ~22 min (clean self-commit `0b6ea9d`); orchestrator verify + push ~5 min
+- **Predicted time**: 60–90 min
+- **Actual time**: ~27 min total (well under estimate)
+- **Complexity**: Medium (custom SVG + maplibre wiring + jsdom-mocked tests + idempotent protocol guard)
+- **LOC changed**: 7 files (+350 / −0)
+- **Commit**: ✅ `0b6ea9d` — clean Sonnet self-commit.
+- **PR**: [#39](https://github.com/zmeireles/daily-tour/pull/39) (merged as `fd668f6`, all 6 CI checks green; human-merged per doctrine — Phase 1+)
+- **Acceptance**: 3/3 criteria met. MapLibre 5.24 + PMTiles 4 loaded via custom protocol; MapPin SVG matches §5 exactly; `prefers-reduced-motion` toggles `flyTo` → `jumpTo` (asserted in test).
+- **Issues**: PR title rename via `gh pr edit` (same pattern as prior PRs).
+- **New lessons**:
+  - **maplibre-gl in jsdom requires full module mock** — `vi.mock("maplibre-gl", ...)` replacing `Map`/`Marker`/`addProtocol` with `vi.fn()`. Unmocked tests throw "WebGL not supported". Worth a doctrine note for any future map work.
+  - **`createRoot` + `flushSync`** is the cleanest way to render React components into DOM elements that imperative libraries (MapLibre's `Marker`) expect. Keeps React as source of truth without manual DOM construction.
+  - **Module-level boolean for idempotent protocol registration** survives HMR + React StrictMode double-mount + test re-renders. Pattern reusable for any one-time browser-API registration.
+- **Decisions made on the fly (agent)**:
+  - No marker clustering (deferred — single-marker §5 spec sufficient for v1; Phase 1.3.2+ can add).
+  - OSM raster style as fallback when no pmtilesUrl provided (vs failing). More forgiving for dev.
+
+### Wave 20 — 2026-05-17 — T-1.5.0 (parallel half) — fifth clean Sonnet self-commit this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                             | Status                   |
+| ------ | ------- | ---------------- | ------------------ | --------------------------------------------------------------------------------- | ------------------------ |
+| t1-5-0 | T-1.5.0 | jmeireles/t1-5-0 | claude-sonnet-yolo | PWA public landing (hero + sample places + locale switch + mailto CTA + expand /) | Done (clean self-commit) |
+
+#### Agent: t1-5-0 (T-1.5.0) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 04:25
+- **Finished**: agent ~22 min (clean self-commit `5746a1c`); orchestrator verify + push ~5 min
+- **Predicted time**: 60–90 min
+- **Actual time**: ~27 min total
+- **Complexity**: Medium (5 feature components + i18n keys + sample fixture + route replacement preserving existing test + premium-gating defensive test)
+- **LOC changed**: 11 files (+349 / −28)
+- **Commit**: ✅ `5746a1c` — clean Sonnet self-commit.
+- **PR**: [#40](https://github.com/zmeireles/daily-tour/pull/40) (merged as `c85ad78`, all 6 CI checks green after `gh pr update-branch` because PR #39 merged in between; human-merged per doctrine — Phase 1+)
+- **Acceptance**: 4/4 criteria met. Hero + owner-pitch + 4 sample PlaceCards (reusing T-1.2.2 component) + mailto CTA + locale switcher. `?reason=expired` toast preserved (existing T-1.0.3 test passes unchanged). Premium-surface defensive test passes (no `[data-premium]` on page).
+- **Issues**:
+  1. **First post-merge "is not mergeable: base branch policy"** — gh CLI returned this on the first merge attempt for #40 because 3 of the 6 required checks were still in_progress when the watcher fired (watcher checked title-validate completion only). Watcher tightened to require ALL checks completed (not just one). Cycle is now: `until [ "$(gh pr view N --json statusCheckRollup -q '[.statusCheckRollup[] | select(.conclusion == "")] | length')" = "0" ]`.
+  2. PR title rename via `gh pr edit` (same as prior PRs).
+- **New lessons**:
+  - **Watcher correctness**: counting "completed" must mean `conclusion != ""` (an empty conclusion means in_progress per gh's data shape), NOT `status == "COMPLETED"` alone. The latter occasionally returns prematurely if a check is requeued mid-poll.
+  - **Hardcoded sample fixtures are fine for public landing pages** — avoids spinning up a new public BFF endpoint just for 4 places. Future task can convert if needed; for v1, less surface = less to maintain.
+  - **i18n key fallbacks via `t("key", { defaultValue: "..." })`** keep tests passing without full i18n provider setup. Pattern continues to work well.
+- **Decisions made on the fly (agent)**:
+  - Sample fixture in `lib/sample-places.ts` over new BFF endpoint — self-contained, no auth/dt_internal dance.
+  - Premium gating is layout-level (just don't include the entries) vs conditional rendering — fewer code paths, easier to reason about.
+  - Inline destructive `<p>` for expired alert (preserved from T-1.0.3) vs new Alert component — keeps the existing `data-testid="expired-message"` selector intact for backward compatibility.
+
 ### Wave 17 — 2026-05-17 — T-1.2.2 (parallel half) — second clean Sonnet self-commit this session
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                                | Status                   |

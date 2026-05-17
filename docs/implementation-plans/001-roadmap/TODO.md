@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 10     | 0           | 4     | 11      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 12     | 0           | 2     | 11      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **25** | **0**       | **4** | **71**  |
+| **Total**                       | **31** | **100** | **27** | **0**       | **2** | **71**  |
 
 ---
 
@@ -406,7 +406,9 @@
   - Returns place + media + actions + wishes + i18n description + computed `weather_ok_today` boolean (stubbed `true` in Phase 1; real IPMA call in Phase 3).
   - p95 < 200 ms.
 
-#### 🟢 T-1.3.1 — PWA: Map setup (MapLibre GL JS + PMTiles + custom MapPin)
+#### ✅ T-1.3.1 — PWA: Map setup (MapLibre GL JS + PMTiles + custom MapPin)
+
+> **Resolved 2026-05-17 via [PR #39](https://github.com/zmeireles/daily-tour/pull/39).** 1 clean Sonnet self-commit (`0b6ea9d`, 7 files, +350 LOC). Profile: claude-sonnet-yolo. **No orchestrator rescue.** No new deps (maplibre-gl + pmtiles already pinned). 3 lib helpers (`buildStyle`, `ensurePmtilesProtocol` with module-level idempotency guard, `SAO_MIGUEL_CENTER` + `clampZoom`), custom MapPin SVG matching §5 (basalt teardrop + tea-green inner dot + white halo + 1.15× scale + hydrangea ring on selected), MapView wrapper (createRoot+flushSync marker rendering, `prefers-reduced-motion` toggles flyTo↔jumpTo, `map.remove()` on unmount). 6 vitest cases (MapPin: default/selected/className; MapView: mount asserts addProtocol+Map ctor, pins update asserts old marker.remove+new Marker, reduced-motion asserts jumpTo not flyTo). maplibre-gl mocked entirely in MapView tests (jsdom-no-WebGL). All 5/5 PWA turbo tasks green. Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ feature commits escalate — human-merged.
 
 - **owns**: `apps/pwa/src/lib/map/**`, `apps/pwa/src/components/map-pin.tsx`, `apps/pwa/src/components/map-view.tsx`
 - **deps**: T-0.4.0
@@ -458,7 +460,9 @@
 
 ### Slice 1.5 — Public landing (FR-PUB-01..03)
 
-#### ⬜ T-1.5.0 — PWA: Public landing route `/`
+#### ✅ T-1.5.0 — PWA: Public landing route `/`
+
+> **Resolved 2026-05-17 via [PR #40](https://github.com/zmeireles/daily-tour/pull/40).** 1 clean Sonnet self-commit (`5746a1c`, 11 files, +349/−28). Profile: claude-sonnet-yolo. **No orchestrator rescue.** Replaced T-1.0.3's minimal landing with the full public-landing composition (hero + 3-line owner pitch + 4 sample PlaceCards + mailto CTA + EN/pt-PT locale switcher in header) while preserving `?reason=expired` toast (existing T-1.0.3 test passes unchanged). **Hardcoded 4-place sample fixture** in `lib/sample-places.ts` (Sete Cidades, Furnas, Tony's, Whale Watching — UUIDs matching the T-1.1.2 seed for cross-consistency) — chosen over a new public BFF endpoint to keep scope tight; a Phase 1.5+ task can convert if needed. 7 new i18n keys (EN + pt-PT) for hero/pitch/sample/CTA/locale labels. 4 vitest cases (renders without authed shell; `?reason=expired` toast preserved; locale switch calls `i18n.changeLanguage`; no `[data-premium]` element on page). All 5/5 PWA turbo tasks green. Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ feature commits escalate — human-merged.
 
 - **owns**: `apps/pwa/src/routes/index.tsx`, `apps/pwa/src/features/public-landing/**`
 - **deps**: T-0.4.0, T-0.4.1, T-1.1.2 (to render sample places)
