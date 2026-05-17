@@ -40,6 +40,63 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 13 — 2026-05-16 — T-1.0.3 (parallel half) — closes Slice 1.0
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                  | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------ | ------------------------ |
+| t1-0-3 | T-1.0.3 | jmeireles/t1-0-3 | claude-sonnet-yolo | PWA /r/:token route + Zustand session store + auth lib | Done (clean self-commit) |
+
+#### Agent: t1-0-3 (T-1.0.3) — clean Sonnet self-commit
+
+- **Started**: 2026-05-16 23:53
+- **Finished**: agent ~13 min (clean self-commit `1787cce`); orchestrator verify + push ~5 min
+- **Predicted time**: 45–60 min
+- **Actual time**: ~18 min total (significantly under estimate)
+- **Complexity**: Medium (auth lib + Zustand + react-router 7 + i18next + 3 vitest cases)
+- **LOC changed**: 10 new files (+543 / −142 across the agent's commit; existing App.tsx + main.tsx modified)
+- **Commit**: ✅ `1787cce` — clean Sonnet self-commit. No orchestrator rescue.
+- **PR**: [#30](https://github.com/zmeireles/daily-tour/pull/30) (merged as `79a1951`, all 6 CI checks green; human-merged per doctrine)
+- **Acceptance**: 5/5 criteria met. `/r/:token` consumes opaque + calls BFF exchange + stores JWT in Zustand (memory-only, no localStorage); `useSession()` selector exposes `{jwt, exp, reservation, guest}`; refresh-cookie flow deferred per prompt; expired → sonner toast + redirect to `/?reason=expired`; 3 vitest cases (happy, expired, network error) using React Testing Library + mocked exchange client.
+- **Issues**: None on this branch. (T-1.1.1 sibling-parallel run had a Sonnet autocommit-fallback crash — first this session.)
+- **New lessons**:
+  - **`fetch` with `redirect: "manual"`** is the right pattern for detecting upstream graceful-degrade redirects. The PWA's exchange client throws `TokenExpiredError` on `res.type === "opaqueredirect"` so the route handler can show a toast + soft-redirect.
+  - **react-router 7's `navigate({ replace: true })`** prevents back-button into a stale `/r/:token` after exchange. Use replace for any "consumed" URL.
+  - **`Storage.prototype.setItem` spy in tests** is the simplest way to assert "this code never touches localStorage" — important for token hygiene (D15).
+- **Decisions made on the fly**:
+  - Used `createBrowserRouter` + `<RouterProvider>` (react-router 7's data-router API) over the legacy `<BrowserRouter>` — agent's choice. Cleaner.
+  - i18next defaultValue fallback in `t()` so tests don't need full i18n init.
+
+### Wave 14 — 2026-05-16 — T-1.1.1 (parallel half, recovery) — first Sonnet autocommit-fallback this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                             | Status                  |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| t1-1-1 | T-1.1.1 | jmeireles/t1-1-1 | claude-sonnet-yolo | catalog-svc Fastify CRUD (places + guesthouses + owner-profiles) + Testcontainers + compose entry | Crashed @ ~50%; rescued |
+
+#### Agent: t1-1-1 (T-1.1.1) — partial agent + orchestrator rescue
+
+- **Started**: 2026-05-16 23:54
+- **Finished**: agent ~10 min before crash (autocommit `b0e51a3`); orchestrator manual completion ~25 min; verification + push ~5 min
+- **Predicted time**: 75–100 min
+- **Actual time**: ~40 min total
+- **Complexity**: High (3 REST surfaces + Testcontainers harness + Dockerfile + compose entry + i18n jsonb handling + cursor pagination)
+- **LOC changed**: ~16 files (+~1100 / −5 across 2 commits)
+- **Commits**:
+  - ⚠️ `b0e51a3` — cs-agent autocommit-fallback. Fastify scaffold (app, config, index, instrumentation, version, health), full places route (321 LOC with zod validation, base64 cursor pagination, idempotent soft-delete, 409 on unique conflict).
+  - ✅ `f98807e` — orchestrator manual completion: guesthouses route (200 LOC, hard-delete, 409 on dup slug), owner-profiles route (160 LOC, POST = upsert by PK), `__tests__/helpers.ts` (Testcontainers-pg with inline migrator), 4 test files (13 tests total), Dockerfile + dual `.dockerignore`, tsup + vitest configs, package.json scripts/deps restored + Fastify/OTel/Testcontainers added, tsconfig.eslint.json fix, compose-app.yml catalog-svc entry, infra/README + svc README. Plus 2 fix-ups to agent's places.ts: replaced `as ReturnType<typeof eq>` casts with `(SQL | undefined)[]` typed array; fixed `isUniqueViolation()` to check `err.cause.code` (drizzle wraps pg errors so SQLSTATE 23505 lives there, not on the direct error).
+- **PR**: [#29](https://github.com/zmeireles/daily-tour/pull/29) (merged as `b5c6710`, all 6 CI checks green; human-merged per doctrine). Title needed lowercase-subject fix (agent's "Fastify CRUD endpoints" violated the subject-case rule).
+- **Acceptance**: all 5/5 criteria met. 3 REST surfaces (places + guesthouses + owner-profiles); i18n jsonb; soft-delete on places + hard-delete on the others (no status columns); 13/13 vitest pass in ~11s (Testcontainers-pg on pgvector:pg17); listens on :8081.
+- **Issues**:
+  1. **First Sonnet autocommit-fallback this session.** Crash class is real and NOT Opus-specific. Updated session-wide stat: Sonnet 1/4 (25%) vs Opus 2/4 (50%). Sonnet still has lower crash rate but neither is reliable.
+  2. **`isUniqueViolation` indirection** — drizzle-orm 0.45.x wraps `pg.DatabaseError` in `DrizzleQueryError`. The error code (SQLSTATE 23505 for unique violation) lives on `.cause`, not directly on `.code`. Without checking both shapes, 409 conflicts return 500. Likely affects any drizzle-orm project that needs to handle pg error codes.
+  3. **`build: "tsup"` script copy-paste** — agent restored the build script from token-svc's template (T-1.0.0 had dropped it for the schema-only state). Now correct.
+  4. **PR title subject-case** — "feat(catalog-svc): Fastify CRUD endpoints (...)" started with capital F. pr-title.yml's `subjectPattern: ^(?![A-Z]).+$` rejected. Renamed to "feat(catalog-svc): add CRUD endpoints (...)". **Lesson**: orchestrator PR titles must follow the same lowercase-subject rule as commit messages.
+- **New lessons**:
+  - **drizzle-orm wraps pg errors** — any code checking pg SQLSTATE codes must check `err.cause.code`, not just `err.code`. Cross-cut to cc-platform-feedback as a Drizzle gotcha (3rd entry: in addition to the CREATE-SCHEMA emit + the bundled-migrator-vs-least-privilege, now the wrapped-pg-error pattern).
+  - **Sonnet's reliability advantage shrinks at higher complexity tasks.** T-1.1.1's spec was the most complex Sonnet has handled this session (3 REST surfaces + Testcontainers + Dockerfile + compose). Sonnet handled the first ~50% cleanly then crashed. Pattern: complexity affects crash rate independent of profile.
+- **Decisions made on the fly (orchestrator)**:
+  - Hard-delete on guesthouses + owner-profiles (no status column on those tables; T-1.4.x may add via migration if soft-delete becomes a requirement).
+  - POST upsert semantics on owner-profiles (PK is owner_id, caller provides). 201 on insert, 200 on update.
+
 ### Waves 11 + 12 — 2026-05-16 — T-1.0.2 + T-1.1.0 (parallel launch)
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                       | Status                   |

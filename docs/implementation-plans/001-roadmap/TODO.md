@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 4      | 0           | 3     | 18      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 6      | 0           | 3     | 16      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **19** | **0**       | **3** | **78**  |
+| **Total**                       | **31** | **100** | **21** | **0**       | **3** | **76**  |
 
 ---
 
@@ -278,7 +278,9 @@
   - Public routes opt-out via `route.config.auth = 'public'`.
   - Integration test uses Testcontainers for Postgres + Redis.
 
-#### 🟢 T-1.0.3 — PWA: token-URL router + auth state (Zustand)
+#### ✅ T-1.0.3 — PWA: token-URL router + auth state (Zustand)
+
+> **Resolved 2026-05-17 via [PR #30](https://github.com/zmeireles/daily-tour/pull/30).** 10 new files (+~543 LOC). Profile: claude-sonnet-yolo. **Clean Sonnet self-commit** (`1787cce`) — no orchestrator rescue. `/r/:token` route via react-router 7's data-router API; Zustand session store (no `persist`, no localStorage — D15 hygiene); `jose.decodeJwt` for claim extraction (server already verified); `redirect: "manual"` to detect BFF's 302 graceful-degrade; i18next + sonner toaster; `navigate({ replace: true })` prevents back-button-to-stale; 3 vitest cases (happy + expired + network error) mocking the exchange client at the boundary. **Slice 1.0 closes** with this merge.
 
 - **owns**: `apps/pwa/src/routes/r.$token.tsx`, `apps/pwa/src/lib/auth/**`, `apps/pwa/src/store/session.ts`
 - **deps**: T-0.4.0, T-1.0.2
@@ -306,7 +308,9 @@
   - PostGIS not required; geometry via `point` type from earthdistance OR pgvector — pick one.
   - 6 actions + ~30 wishes seeded per [`05-tourism-domain.md §3`](../../exploration/05-tourism-domain.md).
 
-#### 🟢 T-1.1.1 — `catalog-svc` Fastify CRUD: places, guesthouses, owner-profile
+#### ✅ T-1.1.1 — `catalog-svc` Fastify CRUD: places, guesthouses, owner-profile
+
+> **Resolved 2026-05-17 via [PR #29](https://github.com/zmeireles/daily-tour/pull/29).** 2 commits (~16 files, +~1100/−5). Profile: claude-sonnet-yolo. **First Sonnet autocommit-fallback this session** at ~50% (`b0e51a3` — Fastify scaffold + places route, 321 LOC clean with full zod + cursor pagination + idempotent soft-delete + 409 on unique conflict). Orchestrator wrote remaining ~50% (`f98807e`): guesthouses route (200 LOC, hard-delete since no status column — Phase 1 trade-off), owner-profiles route (160 LOC, POST = upsert by owner_id PK), Testcontainers-pg harness with inline migrator, 13 vitest tests (4 files), Dockerfile + dual `.dockerignore`, tsup + vitest configs, compose-app.yml catalog-svc entry (internal-only, IPv4-pinned healthcheck, depends_on bff), `infra/README.md` updates (12→13 services), service README. Plus 2 fix-ups: `(SQL | undefined)[]` typed conditions array replacing `as ReturnType<typeof eq>` casts; `isUniqueViolation()` now checks `err.cause.code` (drizzle wraps pg errors in DrizzleQueryError so SQLSTATE 23505 lives on `.cause`). PR title needed lowercase-subject fix ("Fastify" → "add CRUD"). Per [doctrine](../../operations/auto-merge-doctrine.md), CRUD with permissions surface + new Compose entry both escalate — human-merged.
 
 - **owns**: `services/catalog-svc/**` (except `src/db/schema.ts` from T-1.1.0)
 - **deps**: T-0.4.2, T-1.1.0, T-0.2.0
@@ -318,7 +322,7 @@
   - Vitest integration tests w/ Testcontainers.
   - Listens on `:8081`.
 
-#### ⬜ T-1.1.2 — 28-place seed fixture loader
+#### 🟢 T-1.1.2 — 28-place seed fixture loader
 
 - **owns**: `services/catalog-svc/seeds/places-sao-miguel.sql`, `services/catalog-svc/seeds/load.ts`
 - **deps**: T-1.1.0, T-1.1.1
@@ -332,7 +336,7 @@
 
 ### Slice 1.2 — PWA Home + Action drill-down list (FR-DSC-01..05, FR-PUB)
 
-#### ⬜ T-1.2.0 — BFF aggregator: `GET /v1/discover?action=<>&loc=...&km=...`
+#### 🟢 T-1.2.0 — BFF aggregator: `GET /v1/discover?action=<>&loc=...&km=...`
 
 - **owns**: `services/bff/src/routes/discover.ts`, `services/bff/src/lib/catalog-client.ts`
 - **deps**: T-1.0.2, T-1.1.1
