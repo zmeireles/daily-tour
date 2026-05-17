@@ -6,6 +6,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
+import placesRoute from "./routes/places.js";
 import tokenExchangeRoute from "./routes/token-exchange.js";
 
 // Opaque tokens MUST NEVER land in logs (D15: token-in-URL hygiene). The
@@ -68,6 +69,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(tokenExchangeRoute);
   // discoverRoute registers after authPlugin so the onRoute hook applies authentication.
   await app.register(discoverRoute);
+  await app.register(placesRoute);
 
   return app;
 }

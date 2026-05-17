@@ -2,7 +2,7 @@
 
 Fastify v5 BFF (Backend-For-Frontend) for the Daily Tour PWA. Single ingress for browser traffic: aggregates calls to downstream services, terminates auth, and will own the WebSocket multiplex in T-4.1.0.
 
-**Current scope (T-0.4.2 + T-1.0.2 + T-1.2.0)** — `/health` probe, the reservation-token exchange flow, and the action-grid discover aggregator. Place detail and chat land in T-1.3.x+.
+**Current scope (T-0.4.2 + T-1.0.2 + T-1.2.0 + T-1.3.0)** — `/health` probe, the reservation-token exchange flow, the action-grid discover aggregator, and the place-detail hydrated payload. Chat lands in T-4.1.x.
 
 ## Auth flow (T-1.0.2)
 
@@ -13,6 +13,7 @@ The BFF is the **verify** side of the JWT contract; [`token-svc`](../token-svc/)
 | `GET /health`         | public   | Liveness probe; never rate-limited                                                                            |
 | `GET /r/:token`       | public   | First-load: opaque token → JWT (calls `token-svc /exchange`) + sets `dt_refresh` HttpOnly cookie              |
 | `GET /v1/discover`    | required | Action-grid aggregator: places grouped by wish, geo-filtered, top 30 (T-1.2.0)                                |
+| `GET /v1/places/:id`  | required | Place detail: hydrated payload (place + media + actions + wishes + `weather_ok_today`) (T-1.3.0)              |
 | `*` (everything else) | required | Global `onRoute` hook attaches `fastify.authenticate` unless route opts out with `config: { auth: 'public' }` |
 
 **Secure by default** — new feature routes get authenticated automatically. Only `/health` and `/r/:token` opt out. The authenticate handler verifies the JWT signature (via `@fastify/jwt`) and then checks `payload.jti` against the Redis revocation cache; revoked tokens fail within ~1 min of the revocation event.
@@ -28,6 +29,45 @@ The BFF is the **verify** side of the JWT contract; [`token-svc`](../token-svc/)
 | `PORT`                        | no       | Default `8080`.                                                                                       |
 | `LOG_LEVEL`                   | no       | One of `fatal`/`error`/`warn`/`info`/`debug`/`trace`. Default `info`.                                 |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | no       | Empty → OTel SDK no-op. Phase 5 wires the collector.                                                  |
+
+## Place detail (T-1.3.0)
+
+`GET /v1/places/:id` returns a fully-hydrated place payload for the PWA's Place Detail page.
+
+**Response shape**:
+
+```json
+{
+  "id": "...",
+  "guesthouse_scope": { "all": true },
+  "name": { "en": "...", "pt-PT": "..." },
+  "description": { "en": "...", "pt-PT": "..." },
+  "geom_lat": 37.74,
+  "geom_lng": -25.66,
+  "address": "...",
+  "contacts": { "phone": "...", "website": "..." },
+  "hours": [{ "dow": 1, "open": "09:00", "close": "17:00" }],
+  "status": "published",
+  "is_hosts_pick": true,
+  "source_kind": "manual",
+  "source_ref": null,
+  "created_at": "...",
+  "updated_at": "...",
+  "media": [
+    { "id": "...", "kind": "image", "url": "...", "alt": { "en": "..." }, "sort_order": 0 }
+  ],
+  "actions": [{ "slug": "eat", "label_i18n": { "en": "Eat", "pt-PT": "Comer" } }],
+  "wishes": [{ "slug": "sea-view", "action_slug": "eat", "label_i18n": { "en": "Sea view" } }],
+  "weather_ok_today": true
+}
+```
+
+- `media`: ordered by `sort_order` asc. Empty array if the place has no media rows.
+- `actions` / `wishes`: empty arrays if no action+wish tags are set.
+- **`weather_ok_today`**: **stub — always `true`**. Real IPMA forecast call lands in Phase 3 (T-3.2.x). Will compute per `place.kind` once the Phase 3 schema migration adds that column.
+- **Not yet implemented** (deferred per task scope): `reputation_summary` (FR-PDT-02, catalog schema not ready); `reserve via agent` (FR-PDT-05, Phase 1 P1); `report issue` (FR-PDT-06, Phase 1 P1).
+
+**catalog-svc extension**: adds `GET /v1/places/:id/hydrated` which JOINs `place_media`, `place_action_wish`, `action`, and `wish` in a single query and deduplicates the cartesian product in JS. Same pattern as `/v1/places-by-action` from T-1.2.0.
 
 ## Discover aggregator (T-1.2.0)
 
@@ -151,6 +191,6 @@ docker stop bff_smoke
 | T-0.4.3 | Compose overlay (`infra/compose/bff.yml`) wiring the BFF into `dt_internal`             |
 | T-1.0.2 | Real auth: opaque token → JWT exchange via token-svc, Redis JTI cache, asymmetric key   |
 | T-1.2.0 | ✅ `GET /v1/discover` — action-grid aggregator (catalog-client, geo-filter, wish-group) |
-| T-1.3.0 | `GET /v1/places/:id` → search-svc / catalog-svc aggregate                               |
+| T-1.3.0 | ✅ `GET /v1/places/:id` — hydrated place payload (catalog-svc /v1/places/:id/hydrated)  |
 | T-3.0.3 | `POST /v1/plan` → planner-svc proxy                                                     |
 | T-4.1.0 | `WS /v1/chat` multiplexed chat-hub                                                      |

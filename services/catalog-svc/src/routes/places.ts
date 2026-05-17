@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getDb } from "../db/client.js";
 import {
   placeTable,
+  placeMediaTable,
   placeActionWishTable,
   actionTable,
   wishTable,
@@ -211,6 +212,128 @@ export function placesRoutes(app: FastifyInstance): void {
     }
 
     return formatPlace(row);
+  });
+
+  // GET /v1/places/:id/hydrated — place + media + actions + wishes (joined).
+  // Called by the BFF place-detail route (T-1.3.0). Single endpoint to avoid 3-4
+  // round trips; mirrors the /v1/places-by-action pattern from T-1.2.0.
+  app.get("/v1/places/:id/hydrated", async (req, reply) => {
+    const paramsParsed = IdParamSchema.safeParse(req.params);
+    if (!paramsParsed.success) {
+      return reply
+        .code(400)
+        .send({ error: "validation_failed", details: paramsParsed.error.issues });
+    }
+    const { id } = paramsParsed.data;
+
+    const db = getDb();
+    const rows = await db
+      .select({
+        id: placeTable.id,
+        guesthouseScope: placeTable.guesthouseScope,
+        name: placeTable.name,
+        description: placeTable.description,
+        geomLat: placeTable.geomLat,
+        geomLng: placeTable.geomLng,
+        address: placeTable.address,
+        contacts: placeTable.contacts,
+        hours: placeTable.hours,
+        status: placeTable.status,
+        isHostsPick: placeTable.isHostsPick,
+        sourceKind: placeTable.sourceKind,
+        sourceRef: placeTable.sourceRef,
+        createdAt: placeTable.createdAt,
+        updatedAt: placeTable.updatedAt,
+        mediaId: placeMediaTable.id,
+        mediaKind: placeMediaTable.kind,
+        mediaUrl: placeMediaTable.url,
+        mediaAlt: placeMediaTable.alt,
+        mediaSortOrder: placeMediaTable.sortOrder,
+        actionSlug: actionTable.slug,
+        actionI18n: actionTable.i18n,
+        wishSlug: wishTable.slug,
+        wishI18n: wishTable.i18n,
+      })
+      .from(placeTable)
+      .leftJoin(placeMediaTable, eq(placeMediaTable.placeId, placeTable.id))
+      .leftJoin(placeActionWishTable, eq(placeActionWishTable.placeId, placeTable.id))
+      .leftJoin(actionTable, eq(placeActionWishTable.actionId, actionTable.id))
+      .leftJoin(wishTable, eq(placeActionWishTable.wishId, wishTable.id))
+      .where(eq(placeTable.id, id));
+
+    if (rows.length === 0) {
+      return reply.code(404).send({ error: "place_not_found" });
+    }
+
+    const first = rows[0]!;
+    if (first.status === "archived") {
+      return reply.code(404).send({ error: "place_not_found" });
+    }
+
+    // Deduplicate the cartesian product (media × action+wish) in JS.
+    const seenMedia = new Set<string>();
+    const seenActions = new Set<string>();
+    const seenWishes = new Set<string>();
+    const media: {
+      id: string;
+      kind: string;
+      url: string;
+      alt: Record<string, string> | null;
+      sort_order: number;
+    }[] = [];
+    const actions: { slug: string; label_i18n: Record<string, string> }[] = [];
+    const wishes: { slug: string; action_slug: string; label_i18n: Record<string, string> }[] = [];
+
+    for (const row of rows) {
+      if (row.mediaId && !seenMedia.has(row.mediaId)) {
+        seenMedia.add(row.mediaId);
+        media.push({
+          id: row.mediaId,
+          kind: row.mediaKind!,
+          url: row.mediaUrl!,
+          alt: row.mediaAlt ?? null,
+          sort_order: row.mediaSortOrder!,
+        });
+      }
+      if (row.actionSlug && !seenActions.has(row.actionSlug)) {
+        seenActions.add(row.actionSlug);
+        actions.push({ slug: row.actionSlug, label_i18n: row.actionI18n! });
+      }
+      if (row.wishSlug && row.actionSlug) {
+        const wishKey = `${row.actionSlug}::${row.wishSlug}`;
+        if (!seenWishes.has(wishKey)) {
+          seenWishes.add(wishKey);
+          wishes.push({
+            slug: row.wishSlug,
+            action_slug: row.actionSlug,
+            label_i18n: row.wishI18n!,
+          });
+        }
+      }
+    }
+
+    media.sort((a, b) => a.sort_order - b.sort_order);
+
+    return {
+      id: first.id,
+      guesthouse_scope: first.guesthouseScope,
+      name: first.name,
+      description: first.description,
+      geom_lat: first.geomLat,
+      geom_lng: first.geomLng,
+      address: first.address,
+      contacts: first.contacts,
+      hours: first.hours,
+      status: first.status,
+      is_hosts_pick: first.isHostsPick,
+      source_kind: first.sourceKind,
+      source_ref: first.sourceRef,
+      created_at: first.createdAt,
+      updated_at: first.updatedAt,
+      media,
+      actions,
+      wishes,
+    };
   });
 
   // POST /v1/places
