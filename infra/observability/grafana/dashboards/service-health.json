@@ -1,0 +1,135 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "12.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Per-service UP/DOWN status and uptime across all seven Daily Tour services (T-5.4.0)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"bff\"}", "legendFormat": "bff", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"catalog-svc\"}", "legendFormat": "catalog-svc", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"search-svc\"}", "legendFormat": "search-svc", "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"planner-svc\"}", "legendFormat": "planner-svc", "refId": "D" },
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"chat-hub\"}", "legendFormat": "chat-hub", "refId": "E" },
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"media-svc\"}", "legendFormat": "media-svc", "refId": "F" },
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up{job=\"token-svc\"}", "legendFormat": "token-svc", "refId": "G" }
+      ],
+      "title": "Service Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 4 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "up", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "Service Uptime History",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 1, "fillOpacity": 10 },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "process_resident_memory_bytes", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "RSS Memory per Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 1, "fillOpacity": 10 },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "dt_prometheus" }, "expr": "rate(process_cpu_seconds_total[$__rate_interval])", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "CPU Usage per Service",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["health", "services", "daily-tour"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Service Health",
+  "uid": "dt-service-health",
+  "version": 1
+}

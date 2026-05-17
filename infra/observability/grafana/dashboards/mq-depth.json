@@ -1,0 +1,170 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "12.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" }
+  ],
+  "annotations": { "list": [] },
+  "description": "RabbitMQ queue depth for dt.events queues — reservation, place, tour, message, notification (T-5.4.0)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rabbitmq_queue_messages{queue=~\"reservation.*\"}",
+          "legendFormat": "{{queue}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rabbitmq_queue_messages{queue=~\"place.*\"}",
+          "legendFormat": "{{queue}}",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rabbitmq_queue_messages{queue=~\"tour.*\"}",
+          "legendFormat": "{{queue}}",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rabbitmq_queue_messages{queue=~\"message.*\"}",
+          "legendFormat": "{{queue}}",
+          "refId": "D"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rabbitmq_queue_messages{queue=~\"notification.*\"}",
+          "legendFormat": "{{queue}}",
+          "refId": "E"
+        }
+      ],
+      "title": "Queue Depth (current)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 4 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rabbitmq_queue_messages",
+          "legendFormat": "{{queue}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Queue Depth History",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "msgps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rate(rabbitmq_queue_messages_published_total[$__rate_interval])",
+          "legendFormat": "publish {{queue}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Publish Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "msgps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
+          "expr": "rate(rabbitmq_queue_messages_delivered_total[$__rate_interval])",
+          "legendFormat": "consume {{queue}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Consume Rate",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["rabbitmq", "mq", "daily-tour"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MQ Depth",
+  "uid": "dt-mq-depth",
+  "version": 1
+}
