@@ -9,6 +9,7 @@ export type DiscoverPlace = {
   description: I18nText;
   hero_image_url: string | null;
   wishes: string[];
+  is_hosts_pick?: boolean;
   distance_km?: number;
 };
 

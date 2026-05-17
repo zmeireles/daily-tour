@@ -11,6 +11,7 @@ import { ControlsBar, type GroupBy } from "@/features/discover/controls-bar";
 import { WishGroupList } from "@/features/discover/wish-group-list";
 import { FlatList } from "@/features/discover/flat-list";
 import { EmptyState } from "@/features/discover/empty-state";
+import { HostsPicksRibbon } from "@/features/discover/hosts-picks-ribbon";
 import type { LocationValue } from "@/components/location-toggle";
 import type { SortBy } from "@/features/discover/sort-utils";
 import { flattenGroups } from "@/features/discover/sort-utils";
@@ -139,6 +140,8 @@ export default function ActionDrillDownRoute() {
         )}
 
         {data && data.count === 0 && <EmptyState action={action ?? ""} km={kmRange} />}
+
+        {data && data.count > 0 && <HostsPicksRibbon places={flattenGroups(data.groups)} />}
 
         {data && data.count > 0 && groupBy === "grouped" && (
           <WishGroupList groups={data.groups} sortBy={sortBy} />

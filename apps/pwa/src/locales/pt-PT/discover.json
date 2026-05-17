@@ -20,5 +20,9 @@
   "geolocation_denied": "Sem acesso à localização. A mostrar a partir da casa.",
   "empty": "Nada aqui para {{action}} até {{km}} km.",
   "loading": "A carregar…",
-  "error": "Não foi possível carregar. Tente novamente."
+  "error": "Não foi possível carregar. Tente novamente.",
+  "hosts_picks": {
+    "title": "Escolhas do anfitrião",
+    "subtitle": "Recomendado pessoalmente pelo seu anfitrião"
+  }
 }

@@ -115,6 +115,7 @@ const discoverRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           description: Record<string, string>;
           hero_image_url: string | null;
           wishes: string[];
+          is_hosts_pick: boolean;
           distance_km?: number;
         } = {
           id: p.id,
@@ -122,6 +123,7 @@ const discoverRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           description: p.description,
           hero_image_url: p.hero_image_url,
           wishes: p.wishes,
+          is_hosts_pick: p.is_hosts_pick,
         };
         if (p.distance_km !== undefined) card.distance_km = p.distance_km;
         return card;

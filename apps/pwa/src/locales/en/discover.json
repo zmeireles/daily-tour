@@ -20,5 +20,9 @@
   "geolocation_denied": "Location access denied. Showing nearby from your guesthouse.",
   "empty": "Nothing here for {{action}} within {{km}} km.",
   "loading": "Loading…",
-  "error": "Couldn't load. Try again."
+  "error": "Couldn't load. Try again.",
+  "hosts_picks": {
+    "title": "Host's picks",
+    "subtitle": "Personally recommended by your host"
+  }
 }
