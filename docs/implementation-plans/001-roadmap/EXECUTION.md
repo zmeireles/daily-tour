@@ -40,6 +40,64 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 15 — 2026-05-17 — T-1.1.2 (parallel half, recovery) — second Sonnet autocommit-fallback
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                  | Status                  |
+| ------ | ------- | ---------------- | ------------------ | ---------------------------------------------------------------------- | ----------------------- |
+| t1-1-2 | T-1.1.2 | jmeireles/t1-1-2 | claude-sonnet-yolo | 28-place São Miguel seed (SQL + TS loader + idempotency test + wiring) | Crashed @ ~80%; rescued |
+
+#### Agent: t1-1-2 (T-1.1.2) — partial agent + orchestrator rescue
+
+- **Started**: 2026-05-17 02:21
+- **Finished**: agent ~30 min before crash (autocommit `18f0b76` shipped the 743-LOC SQL — the bulk of the work); orchestrator manual completion ~15 min; verification + push ~5 min
+- **Predicted time**: 60–75 min
+- **Actual time**: ~50 min total
+- **Complexity**: Medium-high (28 place rows × 5 jsonb fields + ≥28 action/wish tag rows + 28 media rows, all idempotent; per-row mapping decisions from §2 freeform → §3 controlled vocabulary)
+- **LOC changed**: 4 files (+869 / −0 across 2 commits)
+- **Commits**:
+  - ⚠️ `18f0b76` — cs-agent autocommit-fallback. The 743-LOC `seeds/places-sao-miguel.sql` is **complete and well-structured**: header comment block explaining UUID convention + the §2 Relax→§3 Do remap + the §2-freeform → §3-controlled-vocabulary closest-fit mapping + the dev-placeholder strategy (one shared Unsplash hero, `[]`/`{}` hours/contacts, all `is_hosts_pick = false`); 28 individual place INSERTs with `ON CONFLICT (id) DO NOTHING`; 28 batched `place_action_wish` INSERTs (one per place, multi-row VALUES — each place has ≥1 action+wish tag, multi-action places have more); 1 batched 28-row `place_media` INSERT. Fixed UUIDs: `c0000001-…-NN` for places, `d0000001-…-NN` for hero media.
+  - ✅ `ea8856c` — orchestrator manual completion: `seeds/places.ts` (~45 LOC TypeScript loader reading + applying the SQL via `pg.Pool`, reports counts), `package.json` (`seed:places` script alongside `seed`), `__tests__/places-seed.test.ts` (~85 LOC Testcontainers-pg idempotency check: applies SQL once → asserts 28 places + ≥28 tags + 28 media; applies again → asserts counts unchanged), `README.md` (seed section).
+- **PR**: [#33](https://github.com/zmeireles/daily-tour/pull/33) (merged as `89481ff`, all 6 CI checks green; human-merged per doctrine since T-1.1.2 ships under a Phase 1 task ID)
+- **Acceptance**: 3/3 criteria met. 28 places loaded; idempotent re-run = same counts; loader idempotent via `ON CONFLICT DO NOTHING` on fixed UUIDs.
+- **Issues**:
+  1. **Second Sonnet autocommit-fallback this session** (after T-1.1.1). Session-wide stat now Sonnet 2/5 (40%) vs Opus 2/4 (50%) — Sonnet's reliability advantage continues to shrink as we push more complex/data-dense tasks at it. Pattern: **bulk-data-entry tasks crash near the end** when the agent has loaded the full §2 + §3 source data + the schema into context and is part-way through the SQL emission.
+  2. **Wish-mapping is a judgment call.** §2 lists freeform wishes ("iconic", "bucket-list", "summer-only", "evening-open", "morning"); §3 has a tight controlled vocabulary. Agent's mapping is reasonable per the SQL comments but reviewers should sanity-check at-merge-time. "summer-only" / "evening-open" / "morning" are season/hours flags, not wishes — agent correctly skipped them.
+- **New lessons**:
+  - **`seeds/places.ts` as a SQL-runner** (vs `seeds/dev.ts`-style inline TS data) is the right shape when the data fixture is large and authored in raw SQL. Avoids duplicating 28 rows × 5 jsonb fields in TypeScript form just to satisfy a "TS loader" requirement.
+  - **Testcontainers idempotency test pattern**: apply SQL once → snapshot counts; apply again → assert counts unchanged. Cheap (~7s in the Testcontainers harness) and load-bearing for idempotency-required seeds.
+- **Decisions made on the fly (agent)**:
+  - One shared Unsplash hero URL for all 28 places (vs 4-6 theme-grouped) — defensible since per-place imagery comes from T-1.4.x owner uploads.
+  - All §2 "Relax" entries → "Do" action with wish `thermal-soak` (or closest fit) — matches §3's "Drop Relax; merge into Do (thermal soak) + Eat (sea view)" guidance.
+
+### Wave 16 — 2026-05-17 — T-1.2.0 (parallel half) — first authed feature route + clean Sonnet self-commit
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                              | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ---------------------------------------------------------------------------------- | ------------------------ |
+| t1-2-0 | T-1.2.0 | jmeireles/t1-2-0 | claude-sonnet-yolo | BFF `/v1/discover` aggregator + dedicated catalog-svc `/v1/places-by-action/:slug` | Done (clean self-commit) |
+
+#### Agent: t1-2-0 (T-1.2.0) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 02:21
+- **Finished**: agent ~30 min (clean self-commit `b3ae7e4`); orchestrator verify + push ~5 min
+- **Predicted time**: 75–100 min
+- **Actual time**: ~35 min total (significantly under estimate)
+- **Complexity**: High (auth-chain integration + cross-service HTTP + scope expansion decision + 4 vitest cases covering the authed/unauth/no-loc/error paths)
+- **LOC changed**: 9 files (+517 / −10)
+- **Commit**: ✅ `b3ae7e4` — clean Sonnet self-commit. No orchestrator rescue.
+- **PR**: [#34](https://github.com/zmeireles/daily-tour/pull/34) (merged as `a460694`, all 6 CI checks green; human-merged per doctrine — auth-chain escalation)
+- **Acceptance**: 5/5 criteria met. Zod-validated query params (`action: string`, `loc?: <lat,lng>`, `km?: 0.1–200`); haversine geo-filter when `loc` provided; `is_hosts_pick desc` + distance asc sort; top-30 cap; wish-slug grouped response shape; auth applied via the `onRoute` hook (no manual `preHandler`). p95<300ms can now be verified end-to-end with the 28-place seed from Wave 15.
+- **Issues**:
+  1. **Catalog-svc scope expansion decision** — the spec was ambiguous about whether catalog-svc could grow a filter endpoint. Agent took the recommended path (dedicated `GET /v1/places-by-action/:slug` that returns places + wish slugs in one call) over the alternatives (BFF loads-all-and-filters; or `?action_id` filter on existing list endpoint). The dedicated endpoint is self-documenting and avoids a slug→UUID map in the BFF. Trade-off accepted: +80 LOC + 1 test in catalog-svc.
+  2. **Stale "Validate PR title" check failed once** (cs-agent auto-creates PR with title "T1 2 0" which violates conventional commits; orchestrator renamed via `gh pr edit`). Re-run was SUCCESS. Same as PR #33's title issue — cs-agent default title needs an override.
+- **New lessons**:
+  - **`onRoute` hook inheritance works end-to-end.** Discover route just `register()`s; the auth plugin's hook (T-1.0.2) auto-attaches `fastify.authenticate`. Unauth test asserts 401 — confirms the hook applied. **Secure-by-default architecture pays off the first time a new authed route gets written.**
+  - **Mock the cross-service HTTP client at the test boundary** (`vi.mock("./lib/catalog-client.js", ...)`) — don't spin up catalog-svc in the BFF tests. T-1.1.1's 13 tests already cover catalog-svc E2E.
+  - **Catalog-svc internal endpoint** (no Authentik wrap, internal-only on `dt_internal`) is the right shape for BFF-aggregator calls — same pattern as token-svc from T-1.0.2.
+- **Decisions made on the fly (agent)**:
+  - Inline haversine in `discover.ts` (vs extracting to `lib/geo.ts`) — single function, used once; YAGNI.
+  - `is_hosts_pick desc, distance asc` as the default sort (rather than `is_hosts_pick desc, createdAt desc`) when `loc` provided — matches the FR-DSC-01 spec ("nearest first" when location available).
+  - Pino error log `[bff:discover] catalog-svc error` on 5xx propagation — intentional; visible in test output but does NOT leak to PWA (response is generic 503).
+
 ### Wave 13 — 2026-05-16 — T-1.0.3 (parallel half) — closes Slice 1.0
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                  | Status                   |
