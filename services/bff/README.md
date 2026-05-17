@@ -2,7 +2,7 @@
 
 Fastify v5 BFF (Backend-For-Frontend) for the Daily Tour PWA. Single ingress for browser traffic: aggregates calls to downstream services, terminates auth, and will own the WebSocket multiplex in T-4.1.0.
 
-**Current scope (T-0.4.2 + T-1.0.2)** — `/health` probe + the reservation-token exchange flow. Real feature routes (discover, place detail, chat) land in T-1.2.x+.
+**Current scope (T-0.4.2 + T-1.0.2 + T-1.2.0)** — `/health` probe, the reservation-token exchange flow, and the action-grid discover aggregator. Place detail and chat land in T-1.3.x+.
 
 ## Auth flow (T-1.0.2)
 
@@ -12,6 +12,7 @@ The BFF is the **verify** side of the JWT contract; [`token-svc`](../token-svc/)
 | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
 | `GET /health`         | public   | Liveness probe; never rate-limited                                                                            |
 | `GET /r/:token`       | public   | First-load: opaque token → JWT (calls `token-svc /exchange`) + sets `dt_refresh` HttpOnly cookie              |
+| `GET /v1/discover`    | required | Action-grid aggregator: places grouped by wish, geo-filtered, top 30 (T-1.2.0)                                |
 | `*` (everything else) | required | Global `onRoute` hook attaches `fastify.authenticate` unless route opts out with `config: { auth: 'public' }` |
 
 **Secure by default** — new feature routes get authenticated automatically. Only `/health` and `/r/:token` opt out. The authenticate handler verifies the JWT signature (via `@fastify/jwt`) and then checks `payload.jti` against the Redis revocation cache; revoked tokens fail within ~1 min of the revocation event.
@@ -22,10 +23,39 @@ The BFF is the **verify** side of the JWT contract; [`token-svc`](../token-svc/)
 | ----------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
 | `JWT_SIGNING_KEY`             | yes      | HS256 secret, **≥32 chars**. **Must match `token-svc`**. Rotate both simultaneously.                  |
 | `TOKEN_SVC_URL`               | no       | Default `http://dt_token_svc:8088` (the compose-internal hostname).                                   |
+| `CATALOG_SVC_URL`             | no       | Default `http://dt_catalog_svc:8081`. Called by `/v1/discover` (catalog-client.ts).                   |
 | `REDIS_URL`                   | no       | Default `redis://dt_redis:6379/0`. Reads `jti:revoked:<jti>` keys; writes `jti:active:<jti>` markers. |
 | `PORT`                        | no       | Default `8080`.                                                                                       |
 | `LOG_LEVEL`                   | no       | One of `fatal`/`error`/`warn`/`info`/`debug`/`trace`. Default `info`.                                 |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | no       | Empty → OTel SDK no-op. Phase 5 wires the collector.                                                  |
+
+## Discover aggregator (T-1.2.0)
+
+`GET /v1/discover?action=<slug>&loc=<lat,lng>&km=<n>` is the first real authed feature route. It aggregates catalog-svc data for the PWA's Home screen action grid.
+
+**Design decision**: catalog-svc exposes `GET /v1/places-by-action?action_slug=<slug>` (added in T-1.2.0). The BFF calls this endpoint, which JOINs `place_action_wish` + `action` + `wish` tables and returns places with their wish slugs for the given action. This avoids a slug→UUID map in the BFF and a separate round-trip to look up wish slugs.
+
+**Response shape**:
+
+```json
+{
+  "action": "eat",
+  "count": 5,
+  "groups": [
+    { "wish": "sea-view",    "places": [{ "id": "...", "name": {...}, "description": {...}, "hero_image_url": null, "distance_km": 1.2, "wishes": ["sea-view", "traditional"] }] },
+    { "wish": "traditional", "places": [...] }
+  ]
+}
+```
+
+- `count`: unique places in the result (before wish-grouping); capped at 30.
+- `groups`: one entry per wish slug that appears in the result set. A place with two wishes appears in two groups.
+- `hero_image_url`: `null` in v1 — signed media URLs land in T-1.4.x.
+- `distance_km`: only present when `loc` is provided. Haversine distance from the query lat/lng.
+- **Geo filter**: if `loc=<lat>,<lng>&km=<n>` is provided, only places within `km` km (haversine) are returned. Default `km=20`. Omitting `loc` returns all published places for the action.
+- **Sorting**: `is_hosts_pick` desc, then distance asc (or catalog-svc insertion order when no loc).
+
+**catalog-client.ts** (`src/lib/catalog-client.ts`): typed HTTP client mirroring `token-svc-client.ts`. Exports `CatalogError` and `fetchPlacesByAction(actionSlug)`. Uses platform `fetch` (Node 22 built-in).
 
 ### Security notes
 
@@ -116,11 +146,11 @@ docker stop bff_smoke
 
 ## What lands here next
 
-| Task    | Adds                                                                                  |
-| ------- | ------------------------------------------------------------------------------------- |
-| T-0.4.3 | Compose overlay (`infra/compose/bff.yml`) wiring the BFF into `dt_internal`           |
-| T-1.0.2 | Real auth: opaque token → JWT exchange via token-svc, Redis JTI cache, asymmetric key |
-| T-1.2.0 | `GET /v1/discover` → catalog-svc client                                               |
-| T-1.3.0 | `GET /v1/places/:id` → search-svc / catalog-svc aggregate                             |
-| T-3.0.3 | `POST /v1/plan` → planner-svc proxy                                                   |
-| T-4.1.0 | `WS /v1/chat` multiplexed chat-hub                                                    |
+| Task    | Adds                                                                                    |
+| ------- | --------------------------------------------------------------------------------------- |
+| T-0.4.3 | Compose overlay (`infra/compose/bff.yml`) wiring the BFF into `dt_internal`             |
+| T-1.0.2 | Real auth: opaque token → JWT exchange via token-svc, Redis JTI cache, asymmetric key   |
+| T-1.2.0 | ✅ `GET /v1/discover` — action-grid aggregator (catalog-client, geo-filter, wish-group) |
+| T-1.3.0 | `GET /v1/places/:id` → search-svc / catalog-svc aggregate                               |
+| T-3.0.3 | `POST /v1/plan` → planner-svc proxy                                                     |
+| T-4.1.0 | `WS /v1/chat` multiplexed chat-hub                                                      |
