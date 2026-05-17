@@ -1,1 +1,16 @@
-{}
+{
+  "shell": {
+    "nav": {
+      "guesthouses": "Alojamentos",
+      "places": "Locais",
+      "reservations": "Reservas",
+      "profile": "Perfil"
+    },
+    "loading": "A carregar admin…",
+    "redirecting": "A redirecionar para o login…"
+  },
+  "placeholder": {
+    "title": "Em breve",
+    "body": "Esta secção será implementada numa tarefa seguinte."
+  }
+}

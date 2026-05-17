@@ -1,1 +1,16 @@
-{}
+{
+  "shell": {
+    "nav": {
+      "guesthouses": "Guesthouses",
+      "places": "Places",
+      "reservations": "Reservations",
+      "profile": "Profile"
+    },
+    "loading": "Loading admin…",
+    "redirecting": "Redirecting to login…"
+  },
+  "placeholder": {
+    "title": "Coming soon",
+    "body": "This section is wired up in a follow-up task."
+  }
+}
