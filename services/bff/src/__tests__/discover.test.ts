@@ -26,8 +26,24 @@ vi.mock("../lib/catalog-client.js", () => ({
   fetchPlacesByAction: vi.fn(),
 }));
 
+// Mock search-client at the test boundary — BFF behaviour under test, not search-svc.
+vi.mock("../lib/search-client.js", () => ({
+  SearchError: class SearchError extends Error {
+    constructor(
+      public readonly status: number,
+      message: string,
+    ) {
+      super(message);
+      this.name = "SearchError";
+    }
+  },
+  queryPlaces: vi.fn(),
+}));
+
 const catalogClient = await import("../lib/catalog-client.js");
 const fetchMock = catalogClient.fetchPlacesByAction as ReturnType<typeof vi.fn>;
+const searchClient = await import("../lib/search-client.js");
+const queryMock = searchClient.queryPlaces as ReturnType<typeof vi.fn>;
 const { createApp } = await import("../app.js");
 const { resetConfigCache } = await import("../config.js");
 const { setRedisForTest, closeRedis } = await import("../lib/redis.js");
@@ -81,6 +97,7 @@ describe("GET /v1/discover", () => {
   beforeEach(async () => {
     await flushRedis(ctx.client);
     fetchMock.mockReset();
+    queryMock.mockReset();
   });
 
   afterAll(async () => {
@@ -89,10 +106,20 @@ describe("GET /v1/discover", () => {
     await stopTestRedis(ctx);
   });
 
-  it("happy authed — groups places by wish, geo-filters to km radius", async () => {
+  it("happy authed — groups places by wish, geo-filters to km radius via search-svc", async () => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
     fetchMock.mockResolvedValueOnce(FIXTURE_PLACES);
+    // search-svc returns only the near place (geo-filtered).
+    queryMock.mockResolvedValueOnce({
+      action: "eat",
+      wish: null,
+      count: 1,
+      reranked: false,
+      results: [
+        { place_id: "aabbccdd-0000-4000-8000-000000000001", distance_km: 0.0, score: null },
+      ],
+    });
 
     const res = await app.inject({
       method: "GET",
@@ -107,7 +134,7 @@ describe("GET /v1/discover", () => {
       groups: { wish: string; places: { id: string; distance_km: number }[] }[];
     }>();
     expect(body.action).toBe("eat");
-    // Only place-near (0 km) is within 20 km; place-far (~200 km) is filtered out.
+    // Only place-near (0 km) is returned by search-svc; place-far is filtered out.
     expect(body.count).toBe(1);
     expect(body.groups.length).toBe(2); // sea-view + traditional
     for (const group of body.groups) {
@@ -126,7 +153,7 @@ describe("GET /v1/discover", () => {
     expect(res.json()).toMatchObject({ error: "unauthorized" });
   });
 
-  it("no loc — returns all places, no distance_km in cards", async () => {
+  it("no loc — returns all places from catalog-svc, no distance_km in cards", async () => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
     fetchMock.mockResolvedValueOnce(FIXTURE_PLACES);
@@ -145,6 +172,8 @@ describe("GET /v1/discover", () => {
     }>();
     expect(body.action).toBe("see");
     expect(body.count).toBe(2); // no geo filter → both places returned
+    // search-svc is NOT called when loc is absent.
+    expect(queryMock).not.toHaveBeenCalled();
     for (const group of body.groups) {
       for (const place of group.places) {
         expect(place.distance_km).toBeUndefined();
@@ -167,5 +196,23 @@ describe("GET /v1/discover", () => {
     expect(res.statusCode).toBe(503);
     const body = res.json<{ error: string }>();
     expect(body.error).toBe("catalog_unavailable");
+  });
+
+  it("search-svc 503 — BFF returns 503, no internal details leaked", async () => {
+    const { SearchError } = await import("../lib/search-client.js");
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
+    fetchMock.mockResolvedValueOnce(FIXTURE_PLACES);
+    queryMock.mockRejectedValueOnce(new SearchError(503, "service unavailable"));
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/discover?action=eat&loc=37.74,-25.66&km=20",
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(503);
+    const body = res.json<{ error: string }>();
+    expect(body.error).toBe("search_unavailable");
   });
 });

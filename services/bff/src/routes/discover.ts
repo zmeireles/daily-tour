@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { CatalogError, fetchPlacesByAction, type PlaceCard } from "../lib/catalog-client.js";
+import { queryPlaces, SearchError } from "../lib/search-client.js";
 
 const DiscoverQuerySchema = z.object({
   action: z.string().min(1),
@@ -18,16 +19,6 @@ function parseLoc(loc: string): { lat: number; lng: number } | null {
   const lng = parseFloat(parts[1]!);
   if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
   return { lat, lng };
-}
-
-function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const aa =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(aa));
 }
 
 type PlaceWithDistance = PlaceCard & { distance_km?: number };
@@ -55,31 +46,50 @@ const discoverRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       }
     }
 
-    let places: PlaceCard[];
-    try {
-      places = await fetchPlacesByAction(action);
-    } catch (err) {
-      if (err instanceof CatalogError) {
-        req.log.error({ err }, "[bff:discover] catalog-svc error");
-        return reply.code(503).send({ error: "catalog_unavailable" });
-      }
-      throw err;
-    }
-
-    let annotated: PlaceWithDistance[] = places.map((p) => {
-      if (!userLoc) return p;
-      return { ...p, distance_km: haversineKm(userLoc, { lat: p.geom_lat, lng: p.geom_lng }) };
-    });
+    let annotated: PlaceWithDistance[];
 
     if (userLoc) {
-      annotated = annotated.filter((p) => (p.distance_km ?? 0) <= km);
-    }
+      // Parallel fetch: catalog cards + search-svc geo+vector ranking.
+      const [catalogResult, searchResult] = await Promise.allSettled([
+        fetchPlacesByAction(action),
+        queryPlaces({ action, lat: userLoc.lat, lng: userLoc.lng, km }),
+      ]);
 
-    annotated.sort((a, b) => {
-      if (a.is_hosts_pick !== b.is_hosts_pick) return a.is_hosts_pick ? -1 : 1;
-      if (userLoc) return (a.distance_km ?? 0) - (b.distance_km ?? 0);
-      return 0;
-    });
+      if (catalogResult.status === "rejected") {
+        const err: unknown = catalogResult.reason;
+        if (err instanceof CatalogError) {
+          req.log.error({ err }, "[bff:discover] catalog-svc error");
+          return reply.code(503).send({ error: "catalog_unavailable" });
+        }
+        throw err;
+      }
+
+      if (searchResult.status === "rejected") {
+        const err: unknown = searchResult.reason;
+        if (err instanceof SearchError) {
+          req.log.error({ err }, "[bff:discover] search-svc error");
+          return reply.code(503).send({ error: "search_unavailable" });
+        }
+        throw err;
+      }
+
+      const placeById = new Map<string, PlaceCard>(catalogResult.value.map((p) => [p.id, p]));
+      // Preserve search-svc rank order; skip IDs not present in catalog.
+      annotated = searchResult.value.results.flatMap((hit) => {
+        const place = placeById.get(hit.place_id);
+        return place ? [{ ...place, distance_km: hit.distance_km }] : [];
+      });
+    } else {
+      try {
+        annotated = await fetchPlacesByAction(action);
+      } catch (err) {
+        if (err instanceof CatalogError) {
+          req.log.error({ err }, "[bff:discover] catalog-svc error");
+          return reply.code(503).send({ error: "catalog_unavailable" });
+        }
+        throw err;
+      }
+    }
 
     const top = annotated.slice(0, TOP_N);
 
