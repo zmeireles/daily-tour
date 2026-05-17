@@ -33,6 +33,14 @@
     "timeline": {
       "reorder_hint": "Arrastar para reordenar",
       "duration": "{{min}} min"
+    },
+    "failure": {
+      "rejected_title": "Plano indisponível",
+      "rejected_body": "O seu plano de visita não pôde ser criado.",
+      "timeout_title": "Ainda a planear…",
+      "timeout_body": "Está a demorar mais do que o esperado. Pode tentar novamente ou editar as suas preferências.",
+      "retry": "Tentar novamente",
+      "edit": "Editar preferências"
     }
   }
 }

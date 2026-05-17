@@ -33,6 +33,14 @@
     "timeline": {
       "reorder_hint": "Drag to reorder",
       "duration": "{{min}} min"
+    },
+    "failure": {
+      "rejected_title": "Plan not available",
+      "rejected_body": "Your tour plan could not be created.",
+      "timeout_title": "Still planning…",
+      "timeout_body": "This is taking longer than expected. You can retry or edit your preferences.",
+      "retry": "Try again",
+      "edit": "Edit preferences"
     }
   }
 }
