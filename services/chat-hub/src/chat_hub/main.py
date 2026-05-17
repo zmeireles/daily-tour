@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .drivers.in_app import mount_in_app_driver
+from .drivers.telegram import mount_telegram_driver
 from .routes import health_router
 from .version import __version__
 
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     mount_in_app_driver(app)
+    mount_telegram_driver(app)
 
     @app.on_event("startup")
     async def _startup() -> None:

@@ -13,6 +13,7 @@ dependencies = [
   "structlog>=25.1,<26",
   "httpx>=0.28,<1",
   "websockets>=13.1,<14",
+  "aiogram>=3.7,<4",
 ]
 
 [dependency-groups]
