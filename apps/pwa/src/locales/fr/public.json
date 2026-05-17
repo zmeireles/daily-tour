@@ -1,0 +1,25 @@
+{
+  "hero": {
+    "title": "Daily Tour",
+    "tagline": "São Miguel · Açores · Où vous séjournez, ce que vous aimerez"
+  },
+  "owner_pitch": {
+    "line1": "Les sélections curées de votre hôte pour São Miguel.",
+    "line2": "Des lieux authentiques, des recommandations honnêtes, sans chichi.",
+    "line3": "Arrivez en visiteur. Repartez en local."
+  },
+  "sample_places": {
+    "title": "Un avant-goût de São Miguel"
+  },
+  "cta": {
+    "check_availability": "Vérifier la disponibilité"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "pt-BR": "Português (BR)"
+  }
+}

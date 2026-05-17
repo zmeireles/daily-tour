@@ -1,0 +1,112 @@
+{
+  "shell": {
+    "nav": {
+      "guesthouses": "Unterkünfte",
+      "places": "Orte",
+      "reservations": "Reservierungen",
+      "profile": "Profil"
+    },
+    "loading": "Admin wird geladen…",
+    "redirecting": "Weiterleitung zur Anmeldung…"
+  },
+  "placeholder": {
+    "title": "Demnächst verfügbar",
+    "body": "Dieser Abschnitt wird in einer Folgeaufgabe eingerichtet."
+  },
+  "profile": {
+    "title": "Gastgeberprofil",
+    "form": {
+      "loading": "Wird geladen…",
+      "load_error": "Profil konnte nicht geladen werden.",
+      "bio": "Bio",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "photo": "Foto-Asset-ID",
+      "contact_options": "Kontaktoptionen",
+      "call_enabled": "Anrufe erlauben",
+      "dm_in_app": "In-App-Nachrichten",
+      "dm_telegram": "Telegram",
+      "dm_whatsapp_link": "WhatsApp (Link)",
+      "dm_whatsapp_cloud": "WhatsApp (Cloud API)",
+      "save": "Speichern",
+      "saved": "Gespeichert.",
+      "tabs": {
+        "en": "Englisch",
+        "pt_PT": "Portugiesisch"
+      }
+    }
+  },
+  "guesthouses": {
+    "title": "Unterkünfte",
+    "new": "Neue Unterkunft",
+    "edit": "Unterkunft bearbeiten",
+    "list": {
+      "loading": "Wird geladen…",
+      "error": "Unterkünfte konnten nicht geladen werden.",
+      "empty": "Noch keine Unterkünfte.",
+      "name": "Name",
+      "slug": "Slug",
+      "address": "Adresse",
+      "actions": "Aktionen",
+      "edit": "Bearbeiten"
+    },
+    "form": {
+      "loading": "Wird geladen…",
+      "load_error": "Unterkunft konnte nicht geladen werden.",
+      "name": "Name",
+      "slug": "Slug",
+      "address": "Adresse",
+      "latitude": "Breitengrad",
+      "longitude": "Längengrad",
+      "map_placeholder": "Kartenauswahl auf Phase 2 verschoben — vorerst numerische Eingaben verwenden.",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "tabs": {
+        "en": "Englisch",
+        "pt_PT": "Portugiesisch"
+      }
+    }
+  },
+  "places": {
+    "title": "Orte",
+    "new": "Neuer Ort",
+    "edit": "Ort bearbeiten",
+    "list": {
+      "loading": "Wird geladen…",
+      "error": "Orte konnten nicht geladen werden.",
+      "empty": "Noch keine Orte.",
+      "name": "Name",
+      "status": "Status",
+      "address": "Adresse",
+      "actions": "Aktionen",
+      "edit": "Bearbeiten"
+    },
+    "form": {
+      "loading": "Wird geladen…",
+      "load_error": "Ort konnte nicht geladen werden.",
+      "name": "Name",
+      "description": "Beschreibung",
+      "address": "Adresse",
+      "latitude": "Breitengrad",
+      "longitude": "Längengrad",
+      "status": "Status",
+      "is_hosts_pick": "Gastgeberempfehlung",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "tabs": {
+        "en": "Englisch",
+        "pt_PT": "Portugiesisch"
+      },
+      "media": {
+        "title": "Medien",
+        "upload_hint": "Bilder hierher ziehen oder zum Auswählen klicken"
+      }
+    },
+    "archive": {
+      "button": "Archivieren",
+      "confirm": "Diesen Ort archivieren?",
+      "yes": "Archivieren",
+      "no": "Abbrechen"
+    }
+  }
+}

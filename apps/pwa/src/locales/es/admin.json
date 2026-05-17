@@ -1,0 +1,112 @@
+{
+  "shell": {
+    "nav": {
+      "guesthouses": "Alojamientos",
+      "places": "Lugares",
+      "reservations": "Reservas",
+      "profile": "Perfil"
+    },
+    "loading": "Cargando admin…",
+    "redirecting": "Redirigiendo al inicio de sesión…"
+  },
+  "placeholder": {
+    "title": "Próximamente",
+    "body": "Esta sección se configurará en una tarea posterior."
+  },
+  "profile": {
+    "title": "Perfil del Anfitrión",
+    "form": {
+      "loading": "Cargando…",
+      "load_error": "No se pudo cargar el perfil.",
+      "bio": "Bio",
+      "phone": "Teléfono",
+      "email": "Correo electrónico",
+      "photo": "ID del recurso de foto",
+      "contact_options": "Opciones de contacto",
+      "call_enabled": "Permitir llamadas",
+      "dm_in_app": "Mensajes en la app",
+      "dm_telegram": "Telegram",
+      "dm_whatsapp_link": "WhatsApp (enlace)",
+      "dm_whatsapp_cloud": "WhatsApp (Cloud API)",
+      "save": "Guardar",
+      "saved": "Guardado.",
+      "tabs": {
+        "en": "Inglés",
+        "pt_PT": "Portugués"
+      }
+    }
+  },
+  "guesthouses": {
+    "title": "Alojamientos",
+    "new": "Nuevo Alojamiento",
+    "edit": "Editar Alojamiento",
+    "list": {
+      "loading": "Cargando…",
+      "error": "No se pudieron cargar los alojamientos.",
+      "empty": "Aún no hay alojamientos.",
+      "name": "Nombre",
+      "slug": "Slug",
+      "address": "Dirección",
+      "actions": "Acciones",
+      "edit": "Editar"
+    },
+    "form": {
+      "loading": "Cargando…",
+      "load_error": "No se pudo cargar el alojamiento.",
+      "name": "Nombre",
+      "slug": "Slug",
+      "address": "Dirección",
+      "latitude": "Latitud",
+      "longitude": "Longitud",
+      "map_placeholder": "Selector de mapa diferido a la Fase 2 — use entradas numéricas por ahora.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "tabs": {
+        "en": "Inglés",
+        "pt_PT": "Portugués"
+      }
+    }
+  },
+  "places": {
+    "title": "Lugares",
+    "new": "Nuevo Lugar",
+    "edit": "Editar Lugar",
+    "list": {
+      "loading": "Cargando…",
+      "error": "No se pudieron cargar los lugares.",
+      "empty": "Aún no hay lugares.",
+      "name": "Nombre",
+      "status": "Estado",
+      "address": "Dirección",
+      "actions": "Acciones",
+      "edit": "Editar"
+    },
+    "form": {
+      "loading": "Cargando…",
+      "load_error": "No se pudo cargar el lugar.",
+      "name": "Nombre",
+      "description": "Descripción",
+      "address": "Dirección",
+      "latitude": "Latitud",
+      "longitude": "Longitud",
+      "status": "Estado",
+      "is_hosts_pick": "Elección del Anfitrión",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "tabs": {
+        "en": "Inglés",
+        "pt_PT": "Portugués"
+      },
+      "media": {
+        "title": "Multimedia",
+        "upload_hint": "Arrastra imágenes o haz clic para seleccionar"
+      }
+    },
+    "archive": {
+      "button": "Archivar",
+      "confirm": "¿Archivar este lugar?",
+      "yes": "Archivar",
+      "no": "Cancelar"
+    }
+  }
+}

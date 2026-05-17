@@ -1,0 +1,53 @@
+{
+  "title": "Descubrir",
+  "controls": {
+    "location": {
+      "me": "Cerca de mí",
+      "guesthouse": "Desde aquí"
+    },
+    "range": "Dentro de {{km}} km",
+    "sort": {
+      "label": "Ordenar",
+      "distance": "Distancia",
+      "rating": "Valoración",
+      "name": "Nombre"
+    },
+    "group": {
+      "grouped": "Agrupado",
+      "flat": "Lista"
+    }
+  },
+  "vehicle": {
+    "car": "Coche",
+    "foot": "A pie"
+  },
+  "geolocation_denied": "Acceso a ubicación denegado. Mostrando desde tu alojamiento.",
+  "empty": "Nada aquí para {{action}} dentro de {{km}} km.",
+  "loading": "Cargando…",
+  "error": "No se pudo cargar. Inténtalo de nuevo.",
+  "hosts_picks": {
+    "title": "Recomendaciones del anfitrión",
+    "subtitle": "Recomendado personalmente por tu anfitrión"
+  },
+  "tour": {
+    "timeline": {
+      "reorder_hint": "Arrastra para reordenar",
+      "duration": "{{min}} min"
+    },
+    "failure": {
+      "rejected_title": "Plan no disponible",
+      "rejected_body": "Tu plan de visita no pudo crearse.",
+      "timeout_title": "Aún planificando…",
+      "timeout_body": "Está tardando más de lo esperado. Puedes reintentar o editar tus preferencias.",
+      "retry": "Intentar de nuevo",
+      "edit": "Editar preferencias"
+    },
+    "share": {
+      "button": "Compartir",
+      "copied": "¡Enlace copiado!",
+      "title": "Mi Ruta del Día",
+      "heading": "Ruta Compartida",
+      "not_found": "Este plan de visita no está disponible."
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "greeting": "Bienvenido de nuevo",
+  "locale_hint": "Mostrando en {{locale}}",
+  "actions": {
+    "eat": "Comer",
+    "drink": "Beber",
+    "see": "Ver",
+    "do": "Hacer",
+    "buy": "Comprar",
+    "move": "Moverse"
+  },
+  "premium": {
+    "plan_my_day": "Planear mi día",
+    "message_owner": "Mensaje a João",
+    "coming_soon": "Próximamente"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "pt-BR": "Português (BR)"
+  },
+  "tour": {
+    "new": {
+      "title": "Planear Tu Día",
+      "subtitle": "Cuéntanos qué te gustaría hacer",
+      "wishes_label": "¿Qué te apetece hacer?",
+      "duration_label": "¿Cuánto tiempo tienes?",
+      "vehicle_label": "¿Cómo vas a moverte?",
+      "notes_label": "¿Algo más?",
+      "notes_placeholder": "Ej: Quiero evitar los lugares muy turísticos…",
+      "voice_hint": "Toca para hablar",
+      "voice_recording": "Escuchando...",
+      "submit": "Planear mi día",
+      "error": "Algo salió mal. Por favor inténtalo de nuevo.",
+      "vehicles": {
+        "car": "Coche",
+        "bike": "Bicicleta",
+        "walking": "A pie",
+        "bus": "Autobús"
+      },
+      "durations": {
+        "1": "1 hora",
+        "2": "2 horas",
+        "3": "3 horas",
+        "4": "4 horas",
+        "6": "Medio día",
+        "8": "Día completo"
+      }
+    },
+    "status": {
+      "queued": "Planeando tu día...",
+      "ready": "¡Tu plan está listo!",
+      "rejected": "No se pudo crear un plan. Por favor inténtalo de nuevo.",
+      "back": "Volver al inicio"
+    }
+  }
+}

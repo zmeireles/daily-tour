@@ -1,0 +1,53 @@
+{
+  "title": "Entdecken",
+  "controls": {
+    "location": {
+      "me": "In meiner Nähe",
+      "guesthouse": "Von hier"
+    },
+    "range": "Innerhalb von {{km}} km",
+    "sort": {
+      "label": "Sortieren",
+      "distance": "Entfernung",
+      "rating": "Bewertung",
+      "name": "Name"
+    },
+    "group": {
+      "grouped": "Gruppiert",
+      "flat": "Liste"
+    }
+  },
+  "vehicle": {
+    "car": "Auto",
+    "foot": "Zu Fuß"
+  },
+  "geolocation_denied": "Standortzugriff verweigert. Zeige Nähe zu Ihrer Unterkunft.",
+  "empty": "Nichts für {{action}} innerhalb von {{km}} km.",
+  "loading": "Wird geladen…",
+  "error": "Laden fehlgeschlagen. Bitte erneut versuchen.",
+  "hosts_picks": {
+    "title": "Gastgeberempfehlungen",
+    "subtitle": "Persönlich von Ihrem Gastgeber empfohlen"
+  },
+  "tour": {
+    "timeline": {
+      "reorder_hint": "Zum Neuordnen ziehen",
+      "duration": "{{min}} Min."
+    },
+    "failure": {
+      "rejected_title": "Plan nicht verfügbar",
+      "rejected_body": "Ihr Reiseplan konnte nicht erstellt werden.",
+      "timeout_title": "Noch in Planung…",
+      "timeout_body": "Das dauert länger als erwartet. Sie können es erneut versuchen oder Ihre Präferenzen bearbeiten.",
+      "retry": "Erneut versuchen",
+      "edit": "Präferenzen bearbeiten"
+    },
+    "share": {
+      "button": "Teilen",
+      "copied": "Link kopiert!",
+      "title": "Meine Tagesroute",
+      "heading": "Geteilte Route",
+      "not_found": "Dieser Reiseplan ist nicht verfügbar."
+    }
+  }
+}

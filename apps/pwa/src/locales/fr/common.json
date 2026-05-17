@@ -1,0 +1,19 @@
+{
+  "auth": {
+    "exchanging": "Connexion en cours…",
+    "token_expired": "Votre lien a expiré. Demandez un nouveau à votre hôte.",
+    "exchange_failed": "Une erreur s'est produite. Veuillez réessayer."
+  },
+  "landing": {
+    "expired_message": "Votre lien a expiré. Veuillez demander un nouveau à votre hôte."
+  },
+  "pwa_install": {
+    "title": "Installer Daily Tour",
+    "body": "Ajoutez à votre écran d'accueil pour un accès instantané.",
+    "install": "Installer",
+    "dismiss": "Pas maintenant"
+  },
+  "offline": {
+    "message": "Vous êtes hors ligne. Affichage du contenu en cache."
+  }
+}
