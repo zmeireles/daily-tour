@@ -104,7 +104,6 @@ describe("BFF admin-media routes", () => {
     const body: { put_url: string; asset_id: string } = res.json();
     expect(body.put_url).toBe("https://minio/put");
     expect(body.asset_id).toBe("asset-uuid-1");
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.mocked() reads the mock metadata, doesn't invoke
     expect(vi.mocked(app.mediaSvc.signUpload)).toHaveBeenCalledWith("owner-1", "image/jpeg", 2048);
   });
 
@@ -120,7 +119,6 @@ describe("BFF admin-media routes", () => {
       payload: { asset_id: "00000000-0000-0000-0000-000000000001" },
     });
     expect(res.statusCode).toBe(204);
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.mocked() reads the mock metadata, doesn't invoke
     expect(vi.mocked(app.mediaSvc.completeUpload)).toHaveBeenCalledWith(
       "00000000-0000-0000-0000-000000000001",
     );
