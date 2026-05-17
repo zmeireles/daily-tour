@@ -1,0 +1,60 @@
+{
+  "greeting": "Willkommen zurück",
+  "locale_hint": "Angezeigt in {{locale}}",
+  "actions": {
+    "eat": "Essen",
+    "drink": "Trinken",
+    "see": "Sehen",
+    "do": "Erleben",
+    "buy": "Einkaufen",
+    "move": "Fortbewegen"
+  },
+  "premium": {
+    "plan_my_day": "Meinen Tag planen",
+    "message_owner": "João anschreiben",
+    "coming_soon": "Demnächst"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "pt-BR": "Português (BR)"
+  },
+  "tour": {
+    "new": {
+      "title": "Ihren Tag planen",
+      "subtitle": "Sagen Sie uns, was Sie tun möchten",
+      "wishes_label": "Worauf haben Sie Lust?",
+      "duration_label": "Wie viel Zeit haben Sie?",
+      "vehicle_label": "Wie kommen Sie voran?",
+      "notes_label": "Noch etwas?",
+      "notes_placeholder": "Z.B. Ich möchte Touristenfallen vermeiden…",
+      "voice_hint": "Zum Sprechen tippen",
+      "voice_recording": "Aufnahme läuft...",
+      "submit": "Meinen Tag planen",
+      "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "vehicles": {
+        "car": "Auto",
+        "bike": "Fahrrad",
+        "walking": "Zu Fuß",
+        "bus": "Bus"
+      },
+      "durations": {
+        "1": "1 Stunde",
+        "2": "2 Stunden",
+        "3": "3 Stunden",
+        "4": "4 Stunden",
+        "6": "Halber Tag",
+        "8": "Ganzer Tag"
+      }
+    },
+    "status": {
+      "queued": "Ihr Tag wird geplant...",
+      "ready": "Ihr Plan ist fertig!",
+      "rejected": "Ein Plan konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "back": "Zurück zur Startseite"
+    }
+  }
+}

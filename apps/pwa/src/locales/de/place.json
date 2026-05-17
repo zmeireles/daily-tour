@@ -1,0 +1,12 @@
+{
+  "translation_pending": "EN",
+  "loading": "Ort wird geladen…",
+  "error": "Dieser Ort konnte nicht geladen werden. Bitte erneut versuchen.",
+  "not_found": "Ort nicht gefunden.",
+  "actions": {
+    "navigate": "Navigieren",
+    "call": "Anrufen",
+    "message": "Nachricht"
+  },
+  "wa_prefill": "Hallo! Ich bin bei {{placeName}}, können Sie den nächsten Halt empfehlen?"
+}

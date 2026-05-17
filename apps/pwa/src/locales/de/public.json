@@ -1,0 +1,25 @@
+{
+  "hero": {
+    "title": "Daily Tour",
+    "tagline": "São Miguel · Azoren · Wo Sie wohnen, was Sie lieben werden"
+  },
+  "owner_pitch": {
+    "line1": "Die kuratierten Empfehlungen Ihres Gastgebers für São Miguel.",
+    "line2": "Echte Orte, ehrliche Empfehlungen, kein Aufwand.",
+    "line3": "Als Gast rein. Als Einheimischer raus."
+  },
+  "sample_places": {
+    "title": "Ein Vorgeschmack auf São Miguel"
+  },
+  "cta": {
+    "check_availability": "Verfügbarkeit prüfen"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "pt-BR": "Português (BR)"
+  }
+}

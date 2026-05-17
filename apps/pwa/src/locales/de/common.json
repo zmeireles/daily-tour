@@ -1,0 +1,19 @@
+{
+  "auth": {
+    "exchanging": "Anmeldung läuft…",
+    "token_expired": "Ihr Link ist abgelaufen. Bitten Sie Ihren Gastgeber um einen neuen.",
+    "exchange_failed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  },
+  "landing": {
+    "expired_message": "Ihr Link ist abgelaufen. Bitte bitten Sie Ihren Gastgeber um einen neuen."
+  },
+  "pwa_install": {
+    "title": "Daily Tour installieren",
+    "body": "Zum Startbildschirm hinzufügen für sofortigen Zugriff.",
+    "install": "Installieren",
+    "dismiss": "Nicht jetzt"
+  },
+  "offline": {
+    "message": "Sie sind offline. Zwischengespeicherte Inhalte werden angezeigt."
+  }
+}
