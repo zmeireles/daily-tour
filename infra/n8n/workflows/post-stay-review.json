@@ -1,0 +1,97 @@
+{
+  "name": "Post-Stay Review Nudge",
+  "active": false,
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2",
+      "name": "Fetch Expired Tokens (2-3 days)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.TOKEN_SVC_URL }}/v1/tokens/expired",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "min_days_ago", "value": "2" },
+            { "name": "max_days_ago", "value": "3" }
+          ]
+        }
+      },
+      "notes": "Placeholder: token-svc does not yet expose this endpoint. Wire up in T-5.5.1 when token-svc expiry query lands."
+    },
+    {
+      "id": "3",
+      "name": "Split Tokens",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 300],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "4",
+      "name": "POST notif-svc",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIF_SVC_URL }}/v1/notify/post-stay",
+        "contentType": "json",
+        "body": {
+          "guest_email": "={{ $json.guest_email }}",
+          "guest_name": "={{ $json.guest_name }}",
+          "reservation_id": "={{ $json.reservation_id }}",
+          "guesthouse_name": "={{ $json.guesthouse_name }}",
+          "review_url": "={{ $env.PUBLIC_APP_URL }}/review/{{ $json.reservation_id }}",
+          "locale": "={{ $json.locale ?? 'en' }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule": {
+      "main": [
+        [{ "node": "Fetch Expired Tokens (2-3 days)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Expired Tokens (2-3 days)": {
+      "main": [
+        [{ "node": "Split Tokens", "type": "main", "index": 0 }]
+      ]
+    },
+    "Split Tokens": {
+      "main": [
+        [{ "node": "POST notif-svc", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["post-stay", "notifications"]
+}

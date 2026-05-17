@@ -269,6 +269,41 @@ services:
           cpus: "0.5"
 
   # ─────────────────────────────────────────────────────────────────────────
+  # notif-svc — FastAPI email notification dispatcher (T-5.5.0)
+  # Consumes POST /v1/notify/post-stay; dispatches review nudge emails via
+  # SMTP. Triggered by the n8n post-stay-review workflow 2-3 days after token
+  # expiry. Internal-only — n8n is the sole caller.
+  # ─────────────────────────────────────────────────────────────────────────
+  notif-svc:
+    build:
+      context: ../..
+      dockerfile: services/notif-svc/Dockerfile
+    image: daily-tour/notif-svc:dev
+    container_name: dt_notif_svc
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      PORT: "8085"
+      HOST: 0.0.0.0
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: notif-svc
+      SMTP_URL: ${SMTP_URL:-smtp://localhost:1025}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@daily-tour.example.local}
+    healthcheck:
+      # Python 3.12-slim ships no wget/curl — exec python with a one-liner.
+      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8085/health\",timeout=2).status==200 else 1)'"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+  # ─────────────────────────────────────────────────────────────────────────
   # PWA static — nginx serving the pre-built React 19 + Vite 6.4.2 bundle
   # (T-0.4.0 / T-0.4.1). Bind-mount over an image-baked dist for dev so a
   # rebuild + browser refresh is the inner loop (no docker rebuild). Phase 5
