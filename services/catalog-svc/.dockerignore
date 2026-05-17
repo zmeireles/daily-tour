@@ -1,0 +1,12 @@
+# Used when the build context is services/catalog-svc/ itself. The canonical
+# build invokes from the repo root with `-f services/catalog-svc/Dockerfile`,
+# in which case BuildKit uses Dockerfile.dockerignore (kept in sync).
+node_modules
+dist
+.turbo
+coverage
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

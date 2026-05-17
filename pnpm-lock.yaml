@@ -306,19 +306,40 @@ importers:
 
   services/catalog-svc:
     dependencies:
+      '@daily-tour/shared-otel':
+        specifier: workspace:*
+        version: link:../../packages/shared-otel
+      '@daily-tour/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@fastify/cors':
+        specifier: ^11.0.0
+        version: 11.2.0
+      '@fastify/helmet':
+        specifier: ^13.0.0
+        version: 13.0.2
+      '@fastify/rate-limit':
+        specifier: ^10.0.0
+        version: 10.3.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(gel@2.2.0)(pg@8.20.0)
+      fastify:
+        specifier: ^5.8.5
+        version: 5.8.5
       pg:
         specifier: ^8.13.0
         version: 8.20.0
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
     devDependencies:
       '@daily-tour/shared-config':
         specifier: workspace:*
         version: link:../../packages/shared-config
-      '@daily-tour/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
+      '@testcontainers/postgresql':
+        specifier: ^10.16.0
+        version: 10.28.0
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19
@@ -328,12 +349,21 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
+      testcontainers:
+        specifier: ^10.16.0
+        version: 10.28.0
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.14)(tsx@4.22.0)(typescript@5.9.3)(yaml@2.9.0)
       tsx:
         specifier: ^4.19.0
         version: 4.22.0
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.19)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.47.1)
 
   services/token-svc:
     dependencies:

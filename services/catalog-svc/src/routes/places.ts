@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, ne, and, lt, or, sql } from "drizzle-orm";
+import { eq, ne, and, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../db/client.js";
 import { placeTable, type Place } from "../db/schema.js";
@@ -24,9 +24,7 @@ const ContactsSchema = z
     phone: z.string().optional(),
     email: z.string().email().optional(),
     website: z.string().url().optional(),
-    social: z
-      .array(z.object({ kind: z.string(), handle: z.string() }))
-      .default([]),
+    social: z.array(z.object({ kind: z.string(), handle: z.string() })).default([]),
   })
   .default({});
 
@@ -126,7 +124,7 @@ export function placesRoutes(app: FastifyInstance): void {
     const { limit, cursor, status, guesthouse_scope_id, include_archived } = parsed.data;
 
     const db = getDb();
-    const conditions: ReturnType<typeof eq>[] = [];
+    const conditions: (SQL | undefined)[] = [];
 
     // Default: hide archived unless explicitly requested.
     if (!include_archived) {
@@ -144,7 +142,7 @@ export function placesRoutes(app: FastifyInstance): void {
         sql`(
           ${placeTable.guesthouseScope} @> '{"all":true}'::jsonb
           OR ${placeTable.guesthouseScope}->'guesthouse_ids' @> ${JSON.stringify([guesthouse_scope_id])}::jsonb
-        )` as ReturnType<typeof eq>,
+        )`,
       );
     }
 
@@ -157,7 +155,7 @@ export function placesRoutes(app: FastifyInstance): void {
         or(
           lt(placeTable.updatedAt, decoded.updatedAt),
           and(eq(placeTable.updatedAt, decoded.updatedAt), lt(placeTable.id, decoded.id)),
-        ) as ReturnType<typeof eq>,
+        ),
       );
     }
 
@@ -171,8 +169,7 @@ export function placesRoutes(app: FastifyInstance): void {
     const hasNext = rows.length > limit;
     const data = rows.slice(0, limit).map(formatPlace);
     const lastRow = data[data.length - 1];
-    const nextCursor =
-      hasNext && lastRow ? encodeCursor(lastRow.updated_at, lastRow.id) : null;
+    const nextCursor = hasNext && lastRow ? encodeCursor(lastRow.updated_at, lastRow.id) : null;
 
     return { data, nextCursor };
   });
@@ -181,7 +178,9 @@ export function placesRoutes(app: FastifyInstance): void {
   app.get("/v1/places/:id", async (req, reply) => {
     const paramsParsed = IdParamSchema.safeParse(req.params);
     if (!paramsParsed.success) {
-      return reply.code(400).send({ error: "validation_failed", details: paramsParsed.error.issues });
+      return reply
+        .code(400)
+        .send({ error: "validation_failed", details: paramsParsed.error.issues });
     }
     const queryParsed = GetQuerySchema.safeParse(req.query);
     const includeArchived = queryParsed.success ? queryParsed.data.include_archived : false;
@@ -249,7 +248,9 @@ export function placesRoutes(app: FastifyInstance): void {
   app.patch("/v1/places/:id", async (req, reply) => {
     const paramsParsed = IdParamSchema.safeParse(req.params);
     if (!paramsParsed.success) {
-      return reply.code(400).send({ error: "validation_failed", details: paramsParsed.error.issues });
+      return reply
+        .code(400)
+        .send({ error: "validation_failed", details: paramsParsed.error.issues });
     }
     const bodyParsed = UpdatePlaceBodySchema.safeParse(req.body);
     if (!bodyParsed.success) {
@@ -303,19 +304,19 @@ export function placesRoutes(app: FastifyInstance): void {
     await db
       .update(placeTable)
       .set({ status: "archived", updatedAt: new Date().toISOString() })
-      .where(
-        and(eq(placeTable.id, parsed.data.id), ne(placeTable.status, "archived")),
-      );
+      .where(and(eq(placeTable.id, parsed.data.id), ne(placeTable.status, "archived")));
 
     return reply.code(204).send();
   });
 }
 
 function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: string }).code === "23505"
-  );
+  // drizzle wraps the underlying pg error in DrizzleQueryError, so the
+  // `.code` (Postgres SQLSTATE 23505 = unique_violation) lives on
+  // `.cause`. Check both shapes.
+  if (typeof err !== "object" || err === null) return false;
+  const direct = (err as { code?: string }).code;
+  if (direct === "23505") return true;
+  const cause = (err as { cause?: { code?: string } }).cause;
+  return cause?.code === "23505";
 }
