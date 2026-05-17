@@ -5,6 +5,7 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import mediaSvcPlugin from "./plugins/media-client.js";
+import ownerAuthPlugin from "./plugins/owner-auth.js";
 import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
@@ -61,11 +62,16 @@ export async function createApp(): Promise<FastifyInstance> {
   // token, which already carries entropy.
   await app.register(fastifyCookie);
 
-  // Auth plugin installs the global onRoute hook that forces every NEW route
-  // to go through fastify.authenticate unless `config.auth === 'public'`.
-  // Routes registered BEFORE this point are exempt (e.g. plugins it depends
-  // on). We register auth FIRST so route registrations below pick up the hook.
+  // Auth plugin installs the global onRoute hook that dispatches each route
+  // to fastify.authenticate (guest, default), fastify.authenticateOwner
+  // (owner, Authentik RS256), or no preHandler (public). Routes registered
+  // BEFORE this point are exempt (e.g. plugins it depends on). We register
+  // auth FIRST so route registrations below pick up the hook.
   await app.register(authPlugin);
+  // Owner-auth plugin decorates app.authenticateOwner for the 'owner'
+  // posture (T-1.6.0 — Authentik-issued JWT verified via JWKS, aud=staff).
+  // Registered before any owner-tagged route so the dispatch hook resolves.
+  await app.register(ownerAuthPlugin);
   // mediaSvcPlugin decorates app.mediaSvc — used by T-1.6.2 backoffice upload route.
   await app.register(mediaSvcPlugin);
   await app.register(healthRoute);
