@@ -174,7 +174,8 @@ describe("Tour intake form", () => {
     renderPlanRoute(PLAN_ID);
 
     await waitFor(() => {
-      expect(screen.getByText(/could not create a plan/i)).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+      expect(screen.getByText(/plan not available/i)).toBeInTheDocument();
     });
   });
 });
