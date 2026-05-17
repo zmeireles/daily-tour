@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Toaster } from "sonner";
 import IndexRoute from "@/routes/index";
 import RTokenRoute from "@/routes/r.$token";
@@ -18,8 +19,16 @@ import AdminGuesthousesRoute from "@/routes/admin.guesthouses";
 import AdminGuesthousesNewRoute from "@/routes/admin.guesthouses.new";
 import AdminGuesthousesEditRoute from "@/routes/admin.guesthouses.$id";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
+import { OfflineBanner } from "@/components/offline-banner";
+import { queryPersister } from "@/lib/offline/cache";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24,
+    },
+  },
+});
 
 const router = createBrowserRouter([
   { path: "/", element: <IndexRoute /> },
@@ -48,10 +57,11 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: queryPersister }}>
       <RouterProvider router={router} />
       <Toaster />
       <InstallBanner />
-    </QueryClientProvider>
+      <OfflineBanner />
+    </PersistQueryClientProvider>
   );
 }

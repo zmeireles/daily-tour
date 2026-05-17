@@ -12,5 +12,8 @@
     "body": "Adicione ao ecrã principal para acesso instantâneo.",
     "install": "Instalar",
     "dismiss": "Agora não"
+  },
+  "offline": {
+    "message": "Está sem ligação. A mostrar conteúdo em cache."
   }
 }
