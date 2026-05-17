@@ -120,6 +120,54 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("GET /v1/places/:id/hydrated — returns joined media + actions + wishes", async () => {
+    const actionId = "11111111-1111-4111-8111-111111111111";
+    const wishId = "22222222-2222-4222-8222-222222222222";
+    const mediaId = "33333333-3333-4333-8333-333333333333";
+
+    await ctx.pool.query(
+      `INSERT INTO catalog.wish (id, action_id, slug, i18n, sort_order)
+       VALUES ($1, $2, 'sea-view', '{"en":"Sea view","pt-PT":"Vista mar"}'::jsonb, 1)
+       ON CONFLICT DO NOTHING`,
+      [wishId, actionId],
+    );
+
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    expect(create.statusCode).toBe(201);
+    const { id: placeId } = create.json<{ id: string }>();
+
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
+      [placeId, actionId, wishId],
+    );
+
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_media (id, place_id, kind, url, alt, sort_order)
+       VALUES ($1, $2, 'image', 'https://example.com/img.jpg', '{"en":"A place"}'::jsonb, 0)`,
+      [mediaId, placeId],
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/v1/places/${placeId}/hydrated`,
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      id: string;
+      media: { id: string; kind: string; url: string }[];
+      actions: { slug: string; label_i18n: Record<string, string> }[];
+      wishes: { slug: string; action_slug: string; label_i18n: Record<string, string> }[];
+    }>();
+    expect(body.id).toBe(placeId);
+    expect(body.media).toHaveLength(1);
+    expect(body.media[0]!.kind).toBe("image");
+    expect(body.actions).toHaveLength(1);
+    expect(body.actions[0]!.slug).toBe("eat");
+    expect(body.wishes).toHaveLength(1);
+    expect(body.wishes[0]!.slug).toBe("sea-view");
+    expect(body.wishes[0]!.action_slug).toBe("eat");
+  });
+
   it("GET /v1/places-by-action — returns published places with wish slugs for action", async () => {
     // seedReferenceData (called by beforeEach) inserts action id "11111111-..." with slug "eat".
     const actionId = "11111111-1111-4111-8111-111111111111";
