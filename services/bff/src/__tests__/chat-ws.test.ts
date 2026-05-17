@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument -- WebSocket DOM types not surfaced in node test env; pragmatic disable for v1 chat tests */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { SignJWT } from "jose";
 
