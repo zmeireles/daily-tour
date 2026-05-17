@@ -40,10 +40,39 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 26 — 2026-05-17 — T-1.4.0 (sequential, post-Slice-1.7) — eleventh clean Sonnet self-commit; opens Slice 1.4
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                  | Status                   |
+| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------- | ------------------------ |
+| t1-4-0 | T-1.4.0 | jmeireles/t1-4-0 | claude-sonnet-yolo | New media-svc Fastify microservice: pre-signed PUT/GET + media.asset schema + BFF wire | Done (clean self-commit) |
+
+#### Agent: t1-4-0 (T-1.4.0) — clean Sonnet self-commit (first new microservice since T-0.4.2)
+
+- **Started**: 2026-05-17 13:06
+- **Finished**: agent ~18 min (clean self-commit `7bb7041`); orchestrator verify + push + auto-merge ~8 min
+- **Predicted time**: 75–120 min
+- **Actual time**: ~26 min total (well under estimate)
+- **Complexity**: High (new microservice scaffolding + S3 presigner + new Drizzle schema + custom migrator + BFF client + Compose overlay + 7 tests)
+- **LOC changed**: 597+ lines (lockfile-heavy with @aws-sdk transitive deps)
+- **Commit**: ✅ `7bb7041` — clean Sonnet self-commit.
+- **PR**: [#50](https://github.com/zmeireles/daily-tour/pull/50) (auto-merged per session-level orchestrator autonomy)
+- **Acceptance**: 5/5 criteria met. POST /v1/uploads/sign with X-Owner-Id scoping + X-Internal-Token auth; GET /v1/assets/:id 302-redirect; 50 MB cap + jpeg/webp/mp4 MIME whitelist; listens :8087; media schema migration applied.
+- **Issues**: None — clean self-commit; auto-merge fired cleanly.
+- **New lessons**:
+  - **Sonnet handles new microservice scaffolding cleanly** when given a clear "mirror catalog-svc/token-svc" anchor + scope contract. ~18 min for a 4th service of similar shape.
+  - **`@aws-sdk/client-s3` + `forcePathStyle: true` for MinIO** is the idiomatic path; no need for the heavier `minio` JS SDK.
+  - **`getSignedUrl` is local** — testing pre-signed URL generation doesn't require a running MinIO; tests stay fast + container-free.
+  - **Custom Drizzle migrator pattern from catalog-svc** transfers cleanly to a new schema. `media.__drizzle_migrations` tracking table is self-contained.
+  - **Stub auth posture as a feature** — internal-only services on `dt_internal` with header-based identity is the right call when Authentik isn't wired yet. T-1.6.x swap is a documented, bounded follow-up.
+- **Decisions made on the fly (agent)**:
+  - X-Internal-Token + X-Owner-Id as the stub auth headers — cleanest signal that this is bridged auth, not real owner identity. The 401/400 split distinguishes "wrong caller" from "wrong payload."
+  - `ensureBucket()` self-heal on boot — service tolerates first-Compose-up where MinIO has no buckets yet.
+  - 50 MB cap as a CHECK constraint at the SQL layer + Fastify schema validation at the API layer — defense in depth.
+
 ### Wave 25 — 2026-05-17 — T-1.7.1 (parallel half) — tenth clean Sonnet self-commit; **Slice 1.7 closed**
 
-| Agent  | Task ID | Branch           | Profile            | Scope                                                                          | Status                   |
-| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------ | ------------------------ |
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                       | Status                   |
+| ------ | ------- | ---------------- | ------------------ | --------------------------------------------------------------------------- | ------------------------ |
 | t1-7-1 | T-1.7.1 | jmeireles/t1-7-1 | claude-sonnet-yolo | PWA install polish: real icons + manifest theme + install banner + SW shell | Done (clean self-commit) |
 
 #### Agent: t1-7-1 (T-1.7.1) — clean Sonnet self-commit
@@ -69,8 +98,8 @@ When an agent reports "done", before marking the task ✅:
 
 ### Wave 24 — 2026-05-17 — T-1.7.0 (parallel half) — ninth clean Sonnet self-commit
 
-| Agent  | Task ID | Branch           | Profile            | Scope                                                                                  | Status                   |
-| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------- | ------------------------ |
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                 | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------------- | ------------------------ |
 | t1-7-0 | T-1.7.0 | jmeireles/t1-7-0 | claude-sonnet-yolo | PWA i18n refactor: split monolithic resources into 12 namespace JSON files + CI check | Done (clean self-commit) |
 
 #### Agent: t1-7-0 (T-1.7.0) — clean Sonnet self-commit
@@ -96,8 +125,8 @@ When an agent reports "done", before marking the task ✅:
 
 ### Wave 23 — 2026-05-17 — T-1.2.3 (sequential after Waves 21+22) — eighth clean Sonnet self-commit; **Slice 1.2 + 1.3 closed**
 
-| Agent  | Task ID | Branch           | Profile            | Scope                                                                                                                | Status                   |
-| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                                                   | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | t1-2-3 | T-1.2.3 | jmeireles/t1-2-3 | claude-sonnet-yolo | PWA action drill-down route `/a/:action` + ControlsBar + grouped/flat list + sort + react-window virtualisation + tests | Done (clean self-commit) |
 
 #### Agent: t1-2-3 (T-1.2.3) — clean Sonnet self-commit (most complex Slice 1.2 task)
@@ -124,8 +153,8 @@ When an agent reports "done", before marking the task ✅:
 
 ### Wave 22 — 2026-05-17 — T-1.3.2 (parallel half) — seventh clean Sonnet self-commit this session
 
-| Agent  | Task ID | Branch           | Profile            | Scope                                                                                            | Status                                                  |
-| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                           | Status                                                 |
+| ------ | ------- | ---------------- | ------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | t1-3-2 | T-1.3.2 | jmeireles/t1-3-2 | claude-sonnet-yolo | PWA Place Detail route + Hero + Gallery (embla) + Description (i18n fallback) + Map + ActionRow | Done (clean self-commit; merge-resolve on i18n + lock) |
 
 #### Agent: t1-3-2 (T-1.3.2) — clean Sonnet self-commit + i18n merge-resolve
@@ -152,9 +181,9 @@ When an agent reports "done", before marking the task ✅:
 
 ### Wave 21 — 2026-05-17 — T-1.2.1 (parallel half) — sixth clean Sonnet self-commit this session
 
-| Agent  | Task ID | Branch           | Profile            | Scope                                                                                  | Status                   |
-| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------- | ------------------------ |
-| t1-2-1 | T-1.2.1 | jmeireles/t1-2-1 | claude-sonnet-yolo | PWA authed home: 3×2 action grid + suncalc theme-auto + locale-auto + premium stubs   | Done (clean self-commit) |
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                               | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ----------------------------------------------------------------------------------- | ------------------------ |
+| t1-2-1 | T-1.2.1 | jmeireles/t1-2-1 | claude-sonnet-yolo | PWA authed home: 3×2 action grid + suncalc theme-auto + locale-auto + premium stubs | Done (clean self-commit) |
 
 #### Agent: t1-2-1 (T-1.2.1) — clean Sonnet self-commit
 

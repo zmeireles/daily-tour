@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 17     | 0           | 0     | 8       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 18     | 0           | 1     | 6       |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **32** | **0**       | **0** | **68**  |
+| **Total**                       | **31** | **100** | **33** | **0**       | **1** | **66**  |
 
 ---
 
@@ -441,7 +441,9 @@
 
 ### Slice 1.4 — Media service + MinIO upload pipeline (supports FR-CAT-02, FR-PDT)
 
-#### ⬜ T-1.4.0 — `media-svc` Fastify: pre-signed PUT + GET + asset registry
+#### ✅ T-1.4.0 — `media-svc` Fastify: pre-signed PUT + GET + asset registry
+
+> **Resolved 2026-05-17 via [PR #50](https://github.com/zmeireles/daily-tour/pull/50).** 1 clean Sonnet self-commit (`7bb7041`) in **~18 min wall-clock** (eleventh clean self-commit this session). Profile: claude-sonnet-yolo. New 4th Fastify microservice on `:8087`, mirroring catalog-svc / token-svc structure. `POST /v1/uploads/sign` returns `{ put_url, asset_id }` (15-min TTL, jpeg/webp/mp4 whitelist, ≤50 MB). `GET /v1/assets/:id` 302-redirects to pre-signed GET URL (15-min TTL, public). New Drizzle `media.asset` schema + migration via catalog-svc's hash-based custom migrator pattern (`media.__drizzle_migrations` tracking table). `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner`; `forcePathStyle: true` for MinIO; `ensureBucket()` self-heals on first boot. **Auth posture = option 2 stub** (X-Internal-Token + X-Owner-Id headers; service on `dt_internal` only; documented swap-with-Authentik-aud:staff in T-1.6.x). BFF integration via `services/bff/src/plugins/media-client.ts` (fp() plugin decorating `app.mediaSvc`). 7 vitest cases (3 uploads + 2 assets + 2 internal-auth) via testcontainers/postgresql. `infra/compose/docker-compose.app.yml` adds the service (depends on postgres + minio). Per [doctrine](../../operations/auto-merge-doctrine.md), borderline (new service + auth surface) — orchestrator auto-merged per session-level autonomy authorization.
 
 - **owns**: `services/media-svc/**`
 - **deps**: T-0.4.2, T-0.3.0, T-0.2.0
@@ -453,7 +455,7 @@
   - Max file size + MIME whitelist enforced (jpeg/webp/mp4).
   - Listens on `:8087`.
 
-#### ⬜ T-1.4.1 — Image transcode worker (sharp → multiple sizes + AVIF/WebP)
+#### 🟢 T-1.4.1 — Image transcode worker (sharp → multiple sizes + AVIF/WebP)
 
 - **owns**: `services/media-svc/src/workers/transcode.ts`
 - **deps**: T-1.4.0
