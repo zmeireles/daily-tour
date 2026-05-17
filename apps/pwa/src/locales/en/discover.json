@@ -17,6 +17,10 @@
       "flat": "List"
     }
   },
+  "vehicle": {
+    "car": "Car",
+    "foot": "On foot"
+  },
   "geolocation_denied": "Location access denied. Showing nearby from your guesthouse.",
   "empty": "Nothing here for {{action}} within {{km}} km.",
   "loading": "Loading…",

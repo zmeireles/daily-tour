@@ -17,6 +17,10 @@
       "flat": "Lista"
     }
   },
+  "vehicle": {
+    "car": "Carro",
+    "foot": "A pé"
+  },
   "geolocation_denied": "Sem acesso à localização. A mostrar a partir da casa.",
   "empty": "Nada aqui para {{action}} até {{km}} km.",
   "loading": "A carregar…",

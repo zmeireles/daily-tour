@@ -15,6 +15,7 @@ import { HostsPicksRibbon } from "@/features/discover/hosts-picks-ribbon";
 import type { LocationValue } from "@/components/location-toggle";
 import type { SortBy } from "@/features/discover/sort-utils";
 import { flattenGroups } from "@/features/discover/sort-utils";
+import { useVehiclePref, WALK_KM_LIMIT } from "@/lib/preferences/use-vehicle-pref";
 
 const SAO_MIGUEL_CENTER = { lat: 37.74, lng: -25.67 };
 
@@ -58,6 +59,10 @@ export default function ActionDrillDownRoute() {
   const [sortBy, setSortBy] = React.useState<SortBy>("distance");
   const [groupBy, setGroupBy] = React.useState<GroupBy>("grouped");
 
+  const vehicleMode = useVehiclePref((s) => s.mode);
+  const setVehicleMode = useVehiclePref((s) => s.setMode);
+  const effectiveKm = vehicleMode === "foot" ? Math.min(kmRange, WALK_KM_LIMIT) : kmRange;
+
   React.useEffect(() => {
     if (!jwt) {
       void navigate("/?reason=expired", { replace: true });
@@ -86,7 +91,7 @@ export default function ActionDrillDownRoute() {
     }
   }
 
-  const { data, isLoading, isError } = useDiscover(action ?? "", activeLoc, kmRange, jwt ?? "");
+  const { data, isLoading, isError } = useDiscover(action ?? "", activeLoc, effectiveKm, jwt ?? "");
 
   if (!jwt) return null;
 
@@ -116,10 +121,12 @@ export default function ActionDrillDownRoute() {
         kmRange={kmRange}
         sortBy={sortBy}
         groupBy={groupBy}
+        vehicleMode={vehicleMode}
         onLocationChange={handleLocationChange}
         onKmChange={setKmRange}
         onSortChange={setSortBy}
         onGroupChange={setGroupBy}
+        onVehicleChange={setVehicleMode}
       />
 
       <main className="flex-1">

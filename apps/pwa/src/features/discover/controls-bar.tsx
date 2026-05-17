@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
+import { VehicleToggle } from "./vehicle-toggle";
 import type { SortBy } from "./sort-utils";
+import type { VehicleMode } from "@/lib/preferences/use-vehicle-pref";
 
 export type GroupBy = "grouped" | "flat";
 
@@ -22,10 +24,12 @@ type ControlsBarProps = {
   kmRange: number;
   sortBy: SortBy;
   groupBy: GroupBy;
+  vehicleMode: VehicleMode;
   onLocationChange: (v: LocationValue) => void;
   onKmChange: (v: number) => void;
   onSortChange: (v: SortBy) => void;
   onGroupChange: (v: GroupBy) => void;
+  onVehicleChange: (v: VehicleMode) => void;
 };
 
 export function ControlsBar({
@@ -34,10 +38,12 @@ export function ControlsBar({
   kmRange,
   sortBy,
   groupBy,
+  vehicleMode,
   onLocationChange,
   onKmChange,
   onSortChange,
   onGroupChange,
+  onVehicleChange,
 }: ControlsBarProps) {
   const { t } = useTranslation("discover");
 
@@ -49,6 +55,8 @@ export function ControlsBar({
           onChange={onLocationChange}
           geolocationDenied={geolocationDenied}
         />
+
+        <VehicleToggle value={vehicleMode} onChange={onVehicleChange} />
 
         <div className="flex items-center gap-2 ml-auto">
           <DropdownMenu>
