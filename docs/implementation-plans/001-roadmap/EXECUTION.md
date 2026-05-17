@@ -40,6 +40,90 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 23 — 2026-05-17 — T-1.2.3 (sequential after Waves 21+22) — eighth clean Sonnet self-commit; **Slice 1.2 + 1.3 closed**
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                                                | Status                   |
+| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| t1-2-3 | T-1.2.3 | jmeireles/t1-2-3 | claude-sonnet-yolo | PWA action drill-down route `/a/:action` + ControlsBar + grouped/flat list + sort + react-window virtualisation + tests | Done (clean self-commit) |
+
+#### Agent: t1-2-3 (T-1.2.3) — clean Sonnet self-commit (most complex Slice 1.2 task)
+
+- **Started**: 2026-05-17 11:29
+- **Finished**: agent ~26 min (clean self-commit `7cc1ee1`); orchestrator verify + push + auto-merge ~7 min
+- **Predicted time**: 100–130 min
+- **Actual time**: ~33 min total (well under estimate; the most complex Slice 1.2 task)
+- **Complexity**: High (5 features + use-discover hook + sort helpers + 6 RTL + 3 unit + Playwright smoke + react-window + GUESTHOUSE_LOCATIONS placeholder)
+- **LOC changed**: 17 files (+1201 / −0)
+- **Commit**: ✅ `7cc1ee1` — clean Sonnet self-commit.
+- **PR**: [#44](https://github.com/zmeireles/daily-tour/pull/44) (auto-merged per session-level orchestrator autonomy)
+- **Acceptance**: 7/7 criteria met. Grouped-by-wish list with `ActionGroupHeader`, `LocationToggle` + `RangeSlider` wired via TanStack Query, default sort=distance, sort `DropdownMenu` (Distance/Rating/Name), group `ToggleGroup` (Grouped/Flat), `react-window` virtualisation at ≥30 items.
+- **Issues**: None — clean self-commit; auto-merge fired cleanly.
+- **New lessons**:
+  - **`ResizeObserver` polyfill in jsdom** — Radix Slider needs it; minimal one-line polyfill in `setup.ts` (already a known cross-cut for any Radix-based UI in jsdom tests).
+  - **react-window threshold pattern**: `places.length >= 30 ? <FixedSizeList itemSize={320} ...> : places.map(...)`. Below-threshold renders 28 seeded places without virtualisation cost; above-threshold scales linearly.
+  - **`GUESTHOUSE_LOCATIONS` placeholder map** in `lib/config.ts` keeps geometry contract intact for v1 without a real per-guesthouse lookup. Replace via T-1.4.x owner CRUD; the call site doesn't change shape.
+  - **Sort by Rating fallback** = id-desc when payload lacks per-place rating. Establishes a stable order; UI doesn't need to special-case "no rating data."
+- **Decisions made on the fly (agent)**:
+  - Playwright is auth-guard smoke only (not full BFF round-trip) — same constraint as T-1.3.2; deferred full e2e until Phase 0 CI gets the dev server harness wired.
+  - LocationToggle defaults to "guesthouse" (not "me") — avoids unnecessary `navigator.geolocation` prompt on route mount; user opts in to live tracking.
+  - `useDiscover` query key includes location coords + km — TanStack Query memoizes per `(action, lat, lng, km)` quadruple. Future range-slider changes hit cache for stable inputs.
+
+### Wave 22 — 2026-05-17 — T-1.3.2 (parallel half) — seventh clean Sonnet self-commit this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                            | Status                                                  |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| t1-3-2 | T-1.3.2 | jmeireles/t1-3-2 | claude-sonnet-yolo | PWA Place Detail route + Hero + Gallery (embla) + Description (i18n fallback) + Map + ActionRow | Done (clean self-commit; merge-resolve on i18n + lock) |
+
+#### Agent: t1-3-2 (T-1.3.2) — clean Sonnet self-commit + i18n merge-resolve
+
+- **Started**: 2026-05-17 11:09 (parallel with t1-2-1)
+- **Finished**: agent ~12 min (clean self-commit `32c7487`); orchestrator i18n merge-resolve + push + auto-merge ~7 min
+- **Predicted time**: 90–120 min
+- **Actual time**: ~19 min total (well under estimate)
+- **Complexity**: High (route + 6 features + carousel + deep-link helpers + Playwright + QueryClient wiring)
+- **LOC changed**: 19 files (+862 / −3)
+- **Commit**: ✅ `32c7487` — clean Sonnet self-commit. Merge-resolve commit `a25fb33` (additive — both `home.*` and `place_detail.*` keys kept).
+- **PR**: [#43](https://github.com/zmeireles/daily-tour/pull/43) (auto-merged per session-level orchestrator autonomy)
+- **Acceptance**: 5/5 criteria met. Hero, embla carousel gallery (skipped when media≤1), per-field i18n fallback `Badge`, single-pin `MapView`, action row with Apple Maps HTTPS / `tel:` / `wa.me/` hrefs. Unauthed → redirect to `/?reason=expired`.
+- **Issues**:
+  1. Predictable i18n.ts merge conflict with T-1.2.1 (PR #42 merged in between) — both PRs added new keys to the same translation object. `gh pr update-branch` couldn't auto-resolve; manual fetch + merge + additive resolve (kept both `home.*` and `place_detail.*`) + push back. 42 tests pass on resolved branch.
+- **New lessons**:
+  - **i18n.ts merge-resolve pattern**: when two parallel PRs add new keys to the same `resources` object, the diff has structural `<<<<<<<` markers but the intent is always additive. A scripted "keep both" resolution would automate this — worth a cs-agent feature.
+  - **QueryClientProvider wiring as a "swallow" cost** — T-1.3.2 added the provider opportunistically since TanStack Query v5 requires it; Slice 1.7 had this dep anyway. Net-cost: 1 line in `App.tsx`; net-benefit: T-1.2.3 + future TanStack-Query routes "just work."
+  - **maplibre-gl + jsdom needs URL.createObjectURL polyfill** for smoke tests where the map module loads but isn't actually rendered. One-line polyfill in `setup.ts`.
+  - **Workbox `maximumFileSizeToCacheInBytes`** — default 2 MiB, raised to 4 MiB because maplibre-gl + embla push main chunk past default. Code-splitting is Phase 2.
+- **Decisions made on the fly (agent)**:
+  - Playwright spec is a "route resolves" smoke, not a full `tel:` navigation intercept (unreliable headless across Chromium/WebKit). RTL covers the href contract.
+  - `GUESTHOUSE_CONTACT_PHONE` hardcoded placeholder in `lib/config.ts` (+351912345678 — fake); real per-place phones land in T-1.4.x.
+
+### Wave 21 — 2026-05-17 — T-1.2.1 (parallel half) — sixth clean Sonnet self-commit this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                  | Status                   |
+| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------- | ------------------------ |
+| t1-2-1 | T-1.2.1 | jmeireles/t1-2-1 | claude-sonnet-yolo | PWA authed home: 3×2 action grid + suncalc theme-auto + locale-auto + premium stubs   | Done (clean self-commit) |
+
+#### Agent: t1-2-1 (T-1.2.1) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 11:09 (parallel with t1-3-2)
+- **Finished**: agent ~9 min (clean self-commit `7ec2427`); orchestrator verify + push + auto-merge ~5 min
+- **Predicted time**: 75–110 min
+- **Actual time**: ~14 min total (well under estimate)
+- **Complexity**: Medium (dispatcher refactor + 4 features + 2 hooks + 11 i18n keys + 4 RTL tests)
+- **LOC changed**: 12 files (+363 / −3)
+- **Commit**: ✅ `7ec2427` — clean Sonnet self-commit.
+- **PR**: [#42](https://github.com/zmeireles/daily-tour/pull/42) (merged as `a8df8b0` — first auto-merge of Phase 1+ feature in this session per orchestrator autonomy authorization)
+- **Acceptance**: 5/5 criteria met. 3×2 action grid (composing T-1.2.2 `ActionGroupHeader` × 6), greeting (anonymous "Welcome back" — `sub` is UUID so greeting-by-name deferred), `data-theme` set by `useThemeAuto` (suncalc against São Miguel), locale auto from token claims, locale switcher in header, premium stubs below the fold.
+- **Issues**: PR title rename via `gh pr edit` (cs-agent default "T1 2 1" violates conventional commits) — same pattern as prior PRs; well-understood.
+- **New lessons**:
+  - **Polymorphic dispatcher beats App.tsx route split** for an `/` that has both authed + unauthed flavors — keeps router config flat, makes the JWT branch obvious, parallel-safe with other route additions (T-1.3.2's `/p/:id`). The dispatcher reads `useSessionStore.jwt` and renders one of two trees; no App.tsx change.
+  - **`useThemeAuto` 30-min poll + `window.focus` re-check** captures the realistic "guest leaves app, comes back at sunset" UX without burning CPU. Single `setInterval` cleaned up on unmount.
+  - **`suncalc` ships no bundled types** (CJS-style) — `@types/suncalc` is a devDep; not a blocker, just a one-line addition. Worth noting in any future "tiny utility lib" sweep.
+  - **`vi.setSystemTime(new Date("2026-06-21T12:00:00Z"))`** is a reliable way to deterministically test sunrise/sunset-driven logic — the date controls suncalc's calculation without needing to mock the lib itself.
+- **Decisions made on the fly (agent)**:
+  - Greeting uses generic "Welcome back" rather than the guest name — `sub` claim is a UUID, not a name. PII-free; matches privacy posture. Greeting-by-name deferred to a future task (would need a separate guest-profile lookup).
+  - PremiumStubs use real `<button disabled>` rather than a `<Tooltip>` — simpler, native a11y, matches the "coming soon" intent without animation cost.
+  - Locale switcher is a separate component from public-landing's switcher — kept disjoint to avoid scope expansion; refactor into shared component is a follow-up.
+
 ### Wave 19 — 2026-05-17 — T-1.3.1 (parallel half) — fourth clean Sonnet self-commit this session
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                               | Status                   |
