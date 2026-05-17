@@ -4,6 +4,7 @@ import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
+import mediaSvcPlugin from "./plugins/media-client.js";
 import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
@@ -65,6 +66,8 @@ export async function createApp(): Promise<FastifyInstance> {
   // Routes registered BEFORE this point are exempt (e.g. plugins it depends
   // on). We register auth FIRST so route registrations below pick up the hook.
   await app.register(authPlugin);
+  // mediaSvcPlugin decorates app.mediaSvc — used by T-1.6.2 backoffice upload route.
+  await app.register(mediaSvcPlugin);
   await app.register(healthRoute);
   await app.register(tokenExchangeRoute);
   // discoverRoute registers after authPlugin so the onRoute hook applies authentication.

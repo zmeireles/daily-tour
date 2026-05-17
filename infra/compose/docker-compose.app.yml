@@ -62,6 +62,8 @@ services:
     depends_on:
       token-svc:
         condition: service_healthy
+      media-svc:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       PORT: "8080"
@@ -75,6 +77,9 @@ services:
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY missing in .env}
       TOKEN_SVC_URL: http://dt_token_svc:8088
       REDIS_URL: redis://default:${REDIS_PASSWORD}@dt_redis:6379/0
+      # T-1.4.0 media-svc: BFF forwards X-Internal-Token for owner-upload signing.
+      MEDIA_SVC_URL: http://dt_media_svc:8087
+      MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
     healthcheck:
       # node:22-alpine ships BusyBox wget at /usr/bin/wget; -q --spider works.
       # Use 127.0.0.1 explicitly — container /etc/hosts resolves "localhost" to
@@ -162,6 +167,53 @@ services:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
       # Fastify only listens on 0.0.0.0.
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # media-svc — Fastify v5 pre-signed PUT/GET + asset registry (T-1.4.0)
+  # Owns media.asset. Issues 15-min pre-signed MinIO URLs for direct client
+  # uploads. Internal-only — the BFF is the sole caller in Phase 1.
+  # Auth posture: X-Internal-Token stub until T-1.6.x wires Authentik OIDC.
+  # ─────────────────────────────────────────────────────────────────────────
+  media-svc:
+    build:
+      context: ../..
+      dockerfile: services/media-svc/Dockerfile
+    image: daily-tour/media-svc:dev
+    container_name: dt_media_svc
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: "8087"
+      HOST: 0.0.0.0
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: media-svc
+      MEDIA_SVC_DATABASE_URL: postgres://media_svc:${SERVICE_DB_PASSWORD_MEDIA}@dt_postgres:5432/dailytour
+      # MinIO root creds used for dev; T-1.4.x follow-up can scope to a dedicated
+      # media_svc IAM user via mc admin policy attach.
+      MINIO_ENDPOINT: http://dt_minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-dailytour}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD missing in .env}
+      MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
+    healthcheck:
+      # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
+      # Fastify only listens on 0.0.0.0.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8087/health || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 30s
