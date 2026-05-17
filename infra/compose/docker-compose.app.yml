@@ -229,6 +229,46 @@ services:
           cpus: "0.5"
 
   # ─────────────────────────────────────────────────────────────────────────
+  # planner-svc — FastAPI + Anthropic SDK tour-plan service (T-3.0.0)
+  # Skeleton on :8083; RAG retrieval (T-3.0.1), validators (T-3.0.2), and
+  # async tour-plan endpoint (T-3.0.3) layer on top. Internal-only.
+  # Owns the `planner` Postgres schema; reads catalog + search for RAG.
+  # ─────────────────────────────────────────────────────────────────────────
+  planner-svc:
+    build:
+      context: ../..
+      dockerfile: services/planner-svc/Dockerfile
+    image: daily-tour/planner-svc:dev
+    container_name: dt_planner_svc
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      PORT: "8083"
+      HOST: 0.0.0.0
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: planner-svc
+      DATABASE_URL: postgresql://planner_svc:${SERVICE_DB_PASSWORD_PLANNER}@dt_postgres:5432/dailytour
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
+      SEARCH_SVC_URL: http://dt_search_svc:8082
+      # Anthropic key — leave blank in dev/CI; the LLM client warns and
+      # short-circuits to None rather than failing health checks (matches
+      # search-svc's EMBEDDING_API_KEY posture).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    healthcheck:
+      # Python 3.12-slim ships no wget/curl — exec python with a one-liner.
+      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8083/health\",timeout=2).status==200 else 1)'"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
   # PWA static — nginx serving the pre-built React 19 + Vite 6.4.2 bundle
   # (T-0.4.0 / T-0.4.1). Bind-mount over an image-baked dist for dev so a
   # rebuild + browser refresh is the inner loop (no docker rebuild). Phase 5
