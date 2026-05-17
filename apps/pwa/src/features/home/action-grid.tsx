@@ -14,16 +14,24 @@ export function ActionGrid() {
   const { t } = useTranslation("home");
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-4 py-2">
-      {ACTIONS.map(({ slug, iconName, key }) => (
-        <ActionGroupHeader
-          key={slug}
-          actionSlug={slug}
-          actionLabel={t(key)}
-          iconName={iconName}
-          href={`/a/${slug}`}
-        />
-      ))}
+    <div className="flex flex-col gap-3 px-4 py-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {ACTIONS.map(({ slug, iconName, key }) => (
+          <ActionGroupHeader
+            key={slug}
+            actionSlug={slug}
+            actionLabel={t(key)}
+            iconName={iconName}
+            href={`/a/${slug}`}
+          />
+        ))}
+      </div>
+      <ActionGroupHeader
+        actionSlug="chat"
+        actionLabel={t("actions.chat")}
+        iconName="MessageCircle"
+        href="/chat"
+      />
     </div>
   );
 }

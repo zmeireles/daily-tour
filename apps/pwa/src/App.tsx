@@ -8,6 +8,7 @@ import ActionDrillDownRoute from "@/routes/_authed.a.$action";
 import TourNewRoute from "@/routes/_authed.tour.new";
 import TourPlanRoute from "@/routes/_authed.tour.$planId";
 import TourShareRoute from "@/routes/tour.share.$planId";
+import ChatRoute from "@/routes/_authed.chat";
 import AdminRoute from "@/routes/admin";
 import AdminCallbackRoute from "@/routes/admin.callback";
 import AdminPlacesRoute from "@/routes/admin.places";
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
   { path: "/a/:action", element: <ActionDrillDownRoute /> },
   { path: "/tour/new", element: <TourNewRoute /> },
   { path: "/tour/share/:planId", element: <TourShareRoute /> },
+  { path: "/chat", element: <ChatRoute /> },
   { path: "/tour/:planId", element: <TourPlanRoute /> },
   {
     path: "/admin",

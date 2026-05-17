@@ -7,7 +7,8 @@
     "see": "See",
     "do": "Do",
     "buy": "Buy",
-    "move": "Move"
+    "move": "Move",
+    "chat": "Chat"
   },
   "premium": {
     "plan_my_day": "Plan my day",

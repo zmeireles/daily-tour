@@ -2,6 +2,7 @@ import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
+import fastifyWebSocket from "@fastify/websocket";
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import mediaSvcPlugin from "./plugins/media-client.js";
@@ -10,6 +11,7 @@ import adminGuesthousesRoute from "./routes/admin-guesthouses.js";
 import adminMediaRoute from "./routes/admin-media.js";
 import adminPlacesRoute from "./routes/admin-places.js";
 import adminProfileRoute from "./routes/admin-profile.js";
+import chatWsRoute from "./routes/chat-ws.js";
 import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
@@ -64,6 +66,9 @@ export async function createApp(): Promise<FastifyInstance> {
     timeWindow: "1 minute",
   });
 
+  // WebSocket support — registered before routes so { websocket: true } routes work.
+  await app.register(fastifyWebSocket);
+
   // dt_refresh HttpOnly cookie is set by /r/:token; T-1.0.3+ owns the read
   // side. No signed-cookie secret yet — the cookie value is the opaque
   // token, which already carries entropy.
@@ -93,6 +98,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(tourPlansRoute);
   await app.register(telemetryRoute);
   await app.register(publicTourPlansRoute);
+  await app.register(chatWsRoute);
 
   return app;
 }
