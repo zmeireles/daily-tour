@@ -1,5 +1,13 @@
 {
   "title": "Descobrir",
+  "chat": {
+    "title": "Falar com o anfitrião",
+    "back": "Voltar",
+    "connecting": "A ligar…",
+    "empty": "Diga olá para começar a conversa.",
+    "placeholder": "Escreva uma mensagem",
+    "send": "Enviar"
+  },
   "controls": {
     "location": {
       "me": "Perto de mim",

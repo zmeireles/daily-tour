@@ -1,5 +1,13 @@
 {
   "title": "Discover",
+  "chat": {
+    "title": "Chat with your host",
+    "back": "Back",
+    "connecting": "Connecting…",
+    "empty": "Say hello to start the conversation.",
+    "placeholder": "Type a message",
+    "send": "Send"
+  },
   "controls": {
     "location": {
       "me": "Near me",

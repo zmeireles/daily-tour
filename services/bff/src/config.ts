@@ -20,6 +20,9 @@ const ConfigSchema = z.object({
   MEDIA_SVC_URL: z.string().url().default("http://dt_media_svc:8087"),
   // Internal HTTP base URL for planner-svc on dt_internal (T-3.1.0).
   PLANNER_SVC_URL: z.string().url().default("http://dt_planner_svc:8083"),
+  // Internal HTTP base URL for chat-hub on dt_internal (T-4.0.0). The BFF
+  // proxies guest WebSocket frames to chat-hub's /ws/{client_id} endpoint.
+  CHAT_HUB_URL: z.string().url().default("http://dt_chat_hub:8084"),
   // Shared secret forwarded as X-Internal-Token to media-svc. Temporary auth
   // posture until T-1.6.x wires Authentik OIDC (see media-svc/src/plugins/internal-auth.ts).
   MEDIA_SVC_INTERNAL_TOKEN: z.string().default("change-me-please-media-svc-internal-token-min-32c"),
