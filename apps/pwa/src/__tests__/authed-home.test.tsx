@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import i18n from "@/lib/i18n";
 import { useSessionStore } from "@/store/session";
 import IndexRoute from "@/routes/index";
@@ -23,20 +24,33 @@ const MOCK_CLAIMS = {
 };
 
 function renderRoute(path = "/") {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   const router = createMemoryRouter([{ path: "/", element: <IndexRoute /> }], {
     initialEntries: [path],
   });
-  return render(<RouterProvider router={router} />);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
 }
+
+const EMPTY_DISCOVER = { action: "eat", count: 0, groups: [] };
 
 describe("Authed home (IndexRoute dispatcher)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useSessionStore.getState().clearSession();
     void i18n.changeLanguage("en");
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(EMPTY_DISCOVER), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
