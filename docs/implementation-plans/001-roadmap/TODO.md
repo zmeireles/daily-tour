@@ -10,17 +10,17 @@
 
 ## Progress Summary
 
-| Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
-| ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 23     | 0           | 0     | 2       |
-| 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
-| 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
-| 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
-| 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **38** | **0**       | **0** | **62**  |
+| Phase                           | Slices | Tasks  | Done   | In Progress | Ready | Blocked |
+| ------------------------------- | ------ | ------ | ------ | ----------- | ----- | ------- |
+| 0 — Foundation                  | 4      | 16     | 15     | 0           | 0     | 1       |
+| ✅ 1 — Guest Landing & Catalog v1 | 8    | 23     | 23     | 0           | 0     | 0       |
+| ✅ 2 — Discovery & Search        | 3      | 8      | 8      | 0           | 0     | 0       |
+| ✅ 3 — Daily Tour Planner        | 5      | 14     | 14     | 0           | 0     | 0       |
+| ✅ 4 — Chat & Reservation Draft  | 5      | 10     | 10     | 0           | 0     | 0       |
+| ✅ 5 — Hardening & Growth        | 7      | 13     | 13     | 0           | 0     | 0       |
+| **Total**                       | **32** | **84** | **83** | **0**       | **0** | **1**   |
 
-**🎉 Phase 1 effectively closed at 23/25 (92%)** — only T-0.4.4 🔒 VPS-blocked remains.
+**🎉 Plan-001 implementation-complete: 83/84 tasks done** — only T-0.4.4 🔒 VPS-blocked (QA VPS not yet acquired).
 
 ---
 
@@ -28,7 +28,7 @@
 
 **Phase goal**: empty repo → `docker compose up` runs the full infra stack, PWA shell renders, BFF responds to `/health`, CI is green. No product features.
 
-### Slice 0.1 — Repo skeleton, tooling, CI
+### ✅ Slice 0.1 — Repo skeleton, tooling, CI
 
 #### ✅ T-0.1.1 — Initialise monorepo (pnpm + Turborepo) [opus]
 
@@ -68,7 +68,7 @@
 
 ---
 
-### Slice 0.2 — Shared packages & contracts
+### ✅ Slice 0.2 — Shared packages & contracts
 
 #### ✅ T-0.2.0 — `packages/shared-types` with zod + ts types scaffold
 
@@ -110,7 +110,7 @@
 
 ---
 
-### Slice 0.3 — Docker Compose infra stack
+### ✅ Slice 0.3 — Docker Compose infra stack
 
 #### ✅ T-0.3.0 — Compose base: Postgres 17 + pgvector 0.8.2, Redis, RabbitMQ 4.3, MinIO [opus]
 
@@ -234,11 +234,11 @@
 
 ---
 
-## Phase 1 — Guest Landing & Catalog v1
+## ✅ Phase 1 — Guest Landing & Catalog v1
 
 **Phase goal**: a tokened guest opens the URL → 6-action grid → drills into Eat → opens a place detail with map + Call/Navigate/Draft-DM actions. Tokenless visitor sees public landing. Owner CRUDs places via Authentik-gated backoffice. en + pt-PT.
 
-### Slice 1.0 — Reservation token & access (FR-AC-01..05)
+### ✅ Slice 1.0 — Reservation token & access (FR-AC-01..05)
 
 #### ✅ T-1.0.0 — Drizzle schema: `auth_tokens.reservation`, `auth_tokens.guest`, `auth_tokens.token_grant`
 
@@ -296,7 +296,7 @@
 
 ---
 
-### Slice 1.1 — Catalog data model + 28-place seed (FR-CAT-01..04)
+### ✅ Slice 1.1 — Catalog data model + 28-place seed (FR-CAT-01..04)
 
 #### ✅ T-1.1.0 — Drizzle schema: catalog.\* tables + actions/wishes seed
 
@@ -338,7 +338,7 @@
 
 ---
 
-### Slice 1.2 — PWA Home + Action drill-down list (FR-DSC-01..05, FR-PUB)
+### ✅ Slice 1.2 — PWA Home + Action drill-down list (FR-DSC-01..05, FR-PUB)
 
 #### ✅ T-1.2.0 — BFF aggregator: `GET /v1/discover?action=<>&loc=...&km=...`
 
@@ -399,7 +399,7 @@
 
 ---
 
-### Slice 1.3 — Place Detail page (FR-PDT-01..04)
+### ✅ Slice 1.3 — Place Detail page (FR-PDT-01..04)
 
 #### ✅ T-1.3.0 — BFF: `GET /v1/places/:id` hydrated payload
 
@@ -441,7 +441,7 @@
 
 ---
 
-### Slice 1.4 — Media service + MinIO upload pipeline (supports FR-CAT-02, FR-PDT)
+### ✅ Slice 1.4 — Media service + MinIO upload pipeline (supports FR-CAT-02, FR-PDT)
 
 #### ✅ T-1.4.0 — `media-svc` Fastify: pre-signed PUT + GET + asset registry
 
@@ -470,7 +470,7 @@
 
 ---
 
-### Slice 1.5 — Public landing (FR-PUB-01..03)
+### ✅ Slice 1.5 — Public landing (FR-PUB-01..03)
 
 #### ✅ T-1.5.0 — PWA: Public landing route `/`
 
@@ -487,7 +487,7 @@
 
 ---
 
-### Slice 1.6 — Owner backoffice MVP (FR-BO-01..03)
+### ✅ Slice 1.6 — Owner backoffice MVP (FR-BO-01..03)
 
 #### ✅ T-1.6.0 — Authentik realm + OIDC provider for owner-app [opus]
 
@@ -537,7 +537,7 @@
 
 ---
 
-### Slice 1.7 — i18n + theme + PWA install (FR-XC-01..04)
+### ✅ Slice 1.7 — i18n + theme + PWA install (FR-XC-01..04)
 
 #### ✅ T-1.7.0 — i18n bundles + namespaces (en, pt-PT)
 
@@ -569,13 +569,16 @@
 
 ---
 
-## Phase 2 — Discovery & Search
+## ✅ Phase 2 — Discovery & Search
 
 **Phase goal**: lists rank by hybrid geo + semantic similarity (pgvector). Host's picks ribbon. Vehicle-aware toggle. Range slider + location toggle wired to live re-rank.
 
-### Slice 2.0 — Embedding pipeline & pgvector store (FR-DSC-06)
+### ✅ Slice 2.0 — Embedding pipeline & pgvector store (FR-DSC-06)
 
-#### ⬜ T-2.0.0 — `search-svc` skeleton (FastAPI 0.136 + SQLAlchemy 2 async) [opus]
+#### ✅ T-2.0.0 — `search-svc` skeleton (FastAPI 0.136 + SQLAlchemy 2 async) [opus]
+
+> **Resolved 2026-05-17 via [PR #61](https://github.com/zmeireles/daily-tour/pull/61), commit `279088c`.**
+
 
 - **owns**: `services/search-svc/**`
 - **deps**: T-0.2.2, T-0.3.0, T-1.1.0
@@ -585,7 +588,10 @@
   - SQLAlchemy reads `catalog.place` (read-only via dedicated DB role).
   - Listens to RabbitMQ for `place.published` / `place.approved`.
 
-#### ⬜ T-2.0.1 — Embeddings: `catalog.place_embedding` table + worker (Anthropic/OpenAI embedding model)
+#### ✅ T-2.0.1 — Embeddings: `catalog.place_embedding` table + worker (Anthropic/OpenAI embedding model)
+
+> **Resolved 2026-05-17 via [PR #62](https://github.com/zmeireles/daily-tour/pull/62), commit `0c8755a`.**
+
 
 - **owns**: `services/search-svc/src/embeddings/**`, `services/search-svc/alembic/versions/0001_place_embedding.py`
 - **deps**: T-2.0.0
@@ -595,7 +601,10 @@
   - Worker reads `place.published` events; computes embedding from `name + description + action/wish tags + neighborhood`; upserts row.
   - HNSW index built; query helper `top_k(text, k)` returns ranked place IDs.
 
-#### ⬜ T-2.0.2 — Backfill: embed all 28 seeded places
+#### ✅ T-2.0.2 — Backfill: embed all 28 seeded places
+
+> **Resolved 2026-05-17 via [PR #63](https://github.com/zmeireles/daily-tour/pull/63), commit `c6adee9`.**
+
 
 - **owns**: `services/search-svc/scripts/backfill.py`
 - **deps**: T-2.0.1, T-1.1.2
@@ -605,9 +614,12 @@
 
 ---
 
-### Slice 2.1 — Hybrid query endpoint (FR-DSC-02, FR-DSC-06)
+### ✅ Slice 2.1 — Hybrid query endpoint (FR-DSC-02, FR-DSC-06)
 
-#### ⬜ T-2.1.0 — `search-svc` `/query` endpoint: SQL geo + tag filter ∩ vector re-rank
+#### ✅ T-2.1.0 — `search-svc` `/query` endpoint: SQL geo + tag filter ∩ vector re-rank
+
+> **Resolved 2026-05-17 via [PR #64](https://github.com/zmeireles/daily-tour/pull/64), commit `e4b8403`.**
+
 
 - **owns**: `services/search-svc/src/api/query.py`
 - **deps**: T-2.0.1, T-2.0.2
@@ -619,7 +631,10 @@
   - Returns ranked place IDs + scores.
   - p95 < 250 ms for 28-place catalog (target 100 ms on larger).
 
-#### ⬜ T-2.1.1 — BFF `/v1/discover` switches from naive sort to search-svc hybrid
+#### ✅ T-2.1.1 — BFF `/v1/discover` switches from naive sort to search-svc hybrid
+
+> **Resolved 2026-05-17 via [PR #65](https://github.com/zmeireles/daily-tour/pull/65), commit `4076295`.**
+
 
 - **owns**: `services/bff/src/routes/discover.ts`
 - **deps**: T-2.1.0
@@ -629,9 +644,12 @@
 
 ---
 
-### Slice 2.2 — UX: Host's picks + vehicle toggle (FR-DSC-07, FR-DSC-08)
+### ✅ Slice 2.2 — UX: Host's picks + vehicle toggle (FR-DSC-07, FR-DSC-08)
 
-#### ⬜ T-2.2.0 — Catalog: `place.is_hosts_pick` column + backoffice toggle
+#### ✅ T-2.2.0 — Catalog: `place.is_hosts_pick` column + backoffice toggle
+
+> **Resolved 2026-05-17 via [PR #66](https://github.com/zmeireles/daily-tour/pull/66), commit `638174d`.**
+
 
 - **owns**: `services/catalog-svc/drizzle/migrations/0002_hosts_pick.sql`, `services/catalog-svc/src/routes/places.ts` (additive), `apps/pwa/src/features/backoffice/places/**` (additive — flag pickers ONLY; do not touch other backoffice files)
 - **deps**: T-1.6.2
@@ -640,7 +658,10 @@
   - Boolean column added; capped at 5 per guesthouse (DB constraint OR app check).
   - Backoffice has a toggle on the place edit form.
 
-#### ⬜ T-2.2.1 — PWA: Host's picks ribbon at the top of grouped lists
+#### ✅ T-2.2.1 — PWA: Host's picks ribbon at the top of grouped lists
+
+> **Resolved 2026-05-17 via [PR #68](https://github.com/zmeireles/daily-tour/pull/68), commit `1d58a0f`.**
+
 
 - **owns**: `apps/pwa/src/features/discover/hosts-picks-ribbon.tsx`, `apps/pwa/src/routes/_authed.a.$action.tsx` (additive only)
 - **deps**: T-2.2.0, T-1.2.3
@@ -648,7 +669,10 @@
   - Renders above algorithmic groups when ≥1 host's pick matches the current action.
   - Distinct visual treatment (per [`02-ui-design-system.md`](../../exploration/02-ui-design-system.md) — use a subtle tea-green border + "Host's pick" badge).
 
-#### ⬜ T-2.2.2 — PWA: Vehicle-aware toggle + filter
+#### ✅ T-2.2.2 — PWA: Vehicle-aware toggle + filter
+
+> **Resolved 2026-05-17 via [PR #67](https://github.com/zmeireles/daily-tour/pull/67), commit `acc5a52`.**
+
 
 - **owns**: `apps/pwa/src/store/preferences.ts`, `apps/pwa/src/features/discover/vehicle-toggle.tsx`, `apps/pwa/src/routes/_authed.a.$action.tsx` (additive)
 - **deps**: T-1.2.3, T-2.1.1
@@ -662,13 +686,16 @@
 
 ---
 
-## Phase 3 — Daily Tour Planner
+## ✅ Phase 3 — Daily Tour Planner
 
 **Phase goal**: a guest fills a form + voice note → planner emits a validated multi-stop timeline with realistic drive times, weather-aware fallbacks, and lock/swap/regenerate edits.
 
-### Slice 3.0 — Planner service skeleton + RAG (FR-TUR-01..07)
+### ✅ Slice 3.0 — Planner service skeleton + RAG (FR-TUR-01..07)
 
-#### ⬜ T-3.0.0 — `planner-svc` skeleton (FastAPI + Anthropic SDK + OpenAI SDK) [opus]
+#### ✅ T-3.0.0 — `planner-svc` skeleton (FastAPI + Anthropic SDK + OpenAI SDK) [opus]
+
+> **Resolved 2026-05-17 via [PR #69](https://github.com/zmeireles/daily-tour/pull/69), commit `1b5cdcd`.**
+
 
 - **owns**: `services/planner-svc/**`
 - **deps**: T-0.2.2, T-0.3.0, T-2.0.1
@@ -678,7 +705,10 @@
   - LLM client wraps both Anthropic + OpenAI SDKs via a single `LLMClient.complete(prompt, schema)` API.
   - Per-request cost logged to `planner.llm_call_log` table.
 
-#### ⬜ T-3.0.1 — Prompt assembler + RAG retrieval (uses search-svc) [opus]
+#### ✅ T-3.0.1 — Prompt assembler + RAG retrieval (uses search-svc) [opus]
+
+> **Resolved 2026-05-17 via [PR #70](https://github.com/zmeireles/daily-tour/pull/70), commit `00dac08`.**
+
 
 - **owns**: `services/planner-svc/src/prompt/**`, `services/planner-svc/src/rag.py`
 - **deps**: T-3.0.0, T-2.1.0
@@ -688,7 +718,10 @@
   - System prompt: Azores context, opening hours, locale, no fabrication. Guest free-text wrapped in `<guest>` delimited block.
   - Structured-output JSON schema enforced.
 
-#### ⬜ T-3.0.2 — Server-side validators: place_id provenance + travel-time sanity [opus]
+#### ✅ T-3.0.2 — Server-side validators: place_id provenance + travel-time sanity [opus]
+
+> **Resolved 2026-05-17 via [PR #71](https://github.com/zmeireles/daily-tour/pull/71), commit `5dc7cd3`.**
+
 
 - **owns**: `services/planner-svc/src/validators/**`
 - **deps**: T-3.0.1
@@ -699,7 +732,10 @@
   - Force lunch into 12:30–14:30 window unless free-text overrides.
   - Unit tests cover hallucination rejection and travel-time bound rejection.
 
-#### ⬜ T-3.0.3 — `POST /v1/tour-plans` async flow with RabbitMQ `tour.requested/completed` [opus]
+#### ✅ T-3.0.3 — `POST /v1/tour-plans` async flow with RabbitMQ `tour.requested/completed` [opus]
+
+> **Resolved 2026-05-17 via [PR #72](https://github.com/zmeireles/daily-tour/pull/72), commit `894dfb4`.**
+
 
 - **owns**: `services/planner-svc/src/api/plans.py`, `services/bff/src/routes/tour-plans.ts`, `services/planner-svc/src/workers/plan_worker.py`
 - **deps**: T-3.0.2
@@ -711,9 +747,12 @@
 
 ---
 
-### Slice 3.1 — PWA Daily Tour UI
+### ✅ Slice 3.1 — PWA Daily Tour UI
 
-#### ⬜ T-3.1.0 — PWA: Daily Tour form + voice input (FR-TUR-01)
+#### ✅ T-3.1.0 — PWA: Daily Tour form + voice input (FR-TUR-01)
+
+> **Resolved 2026-05-17 via [PR #73](https://github.com/zmeireles/daily-tour/pull/73), commit `02980e4`.**
+
 
 - **owns**: `apps/pwa/src/routes/_authed.tour.tsx`, `apps/pwa/src/features/tour/form/**`, `apps/pwa/src/components/voice-input-button.tsx`
 - **deps**: T-3.0.3, T-1.2.2
@@ -723,7 +762,10 @@
   - Web Speech API native — feature-detected; text-only fallback.
   - Submit returns plan ID; WS subscribes for status.
 
-#### ⬜ T-3.1.1 — PWA: DailyTourTimeline component (FR-TUR-02, FR-TUR-06)
+#### ✅ T-3.1.1 — PWA: DailyTourTimeline component (FR-TUR-02, FR-TUR-06)
+
+> **Resolved 2026-05-17 via [PR #74](https://github.com/zmeireles/daily-tour/pull/74), commit `32be19e`.**
+
 
 - **owns**: `apps/pwa/src/components/daily-tour-timeline.tsx`, `apps/pwa/src/features/tour/timeline/**`
 - **deps**: T-3.1.0
@@ -734,7 +776,10 @@
   - Global: Regenerate (preserve locks), Save, Share.
   - Streamed status: pending → retrieving → planning → validating → done.
 
-#### ⬜ T-3.1.2 — PWA: Daily Tour failure fallback (FR-TUR-08)
+#### ✅ T-3.1.2 — PWA: Daily Tour failure fallback (FR-TUR-08)
+
+> **Resolved 2026-05-17 via [PR #75](https://github.com/zmeireles/daily-tour/pull/75), commit `0b6f79e`.**
+
 
 - **owns**: `apps/pwa/src/features/tour/fallback.tsx`
 - **deps**: T-3.1.1
@@ -744,9 +789,12 @@
 
 ---
 
-### Slice 3.2 — Weather-aware planning (FR-TUR-05, FR-PDT-07)
+### ✅ Slice 3.2 — Weather-aware planning (FR-TUR-05, FR-PDT-07)
 
-#### ⬜ T-3.2.0 — IPMA Azores forecast client + cache
+#### ✅ T-3.2.0 — IPMA Azores forecast client + cache
+
+> **Resolved 2026-05-17 via [PR #76](https://github.com/zmeireles/daily-tour/pull/76), commit `e513c3a`.**
+
 
 - **owns**: `services/planner-svc/src/weather.py`, `services/planner-svc/src/cache.py`
 - **deps**: T-3.0.0
@@ -755,7 +803,10 @@
   - Polls IPMA API for São Miguel daily/hourly; caches in Redis with 30-min TTL.
   - Helper `is_rainy(loc, when) -> bool`.
 
-#### ⬜ T-3.2.1 — Planner: rainy-slot swap to indoor pool
+#### ✅ T-3.2.1 — Planner: rainy-slot swap to indoor pool
+
+> **Resolved 2026-05-17 via [PR #78](https://github.com/zmeireles/daily-tour/pull/78), commit `464b278`.**
+
 
 - **owns**: `services/planner-svc/src/validators/weather.py`, `services/planner-svc/src/prompt/**` (additive)
 - **deps**: T-3.2.0, T-3.0.2
@@ -763,7 +814,10 @@
   - If `is_rainy(loc, slot)` returns true, restrict retrieval to `rainy-day-OK` tagged places for that slot.
   - Validator rejects outdoor-only places in rainy slots; planner retries with restricted set.
 
-#### ⬜ T-3.2.2 — BFF: `weather_ok_today` enrichment on `/v1/places/:id`
+#### ✅ T-3.2.2 — BFF: `weather_ok_today` enrichment on `/v1/places/:id`
+
+> **Resolved 2026-05-17 via [PR #77](https://github.com/zmeireles/daily-tour/pull/77), commit `29058ba`.**
+
 
 - **owns**: `services/bff/src/routes/places.ts` (additive)
 - **deps**: T-3.2.0
@@ -773,9 +827,12 @@
 
 ---
 
-### Slice 3.3 — Drive-time & OSRM (FR-TUR-04)
+### ✅ Slice 3.3 — Drive-time & OSRM (FR-TUR-04)
 
-#### ⬜ T-3.3.0 — OSRM Compose overlay OR Distance Matrix client
+#### ✅ T-3.3.0 — OSRM Compose overlay OR Distance Matrix client
+
+> **Resolved 2026-05-17 via [PR #79](https://github.com/zmeireles/daily-tour/pull/79), commit `e57376b`.**
+
 
 - **owns**: `infra/compose/docker-compose.osrm.yml` OR `services/planner-svc/src/distance.py`
 - **deps**: T-0.3.0 OR T-3.0.0
@@ -783,7 +840,10 @@
   - OSRM running locally with São Miguel OSM extract (driving profile), OR `GoogleDistanceMatrixClient` with API-key config.
   - Helper `route(a, b) -> {km, duration_min}`.
 
-#### ⬜ T-3.3.1 — Planner validator uses real drive times
+#### ✅ T-3.3.1 — Planner validator uses real drive times
+
+> **Resolved 2026-05-17 via [PR #80](https://github.com/zmeireles/daily-tour/pull/80), commit `3bc38d5`.**
+
 
 - **owns**: `services/planner-svc/src/validators/travel.py`
 - **deps**: T-3.3.0, T-3.0.2
@@ -793,9 +853,12 @@
 
 ---
 
-### Slice 3.4 — Share & telemetry (FR-TUR-09, FR-TUR-10)
+### ✅ Slice 3.4 — Share & telemetry (FR-TUR-09, FR-TUR-10)
 
-#### ⬜ T-3.4.0 — PWA: Share tour link (token-stripped)
+#### ✅ T-3.4.0 — PWA: Share tour link (token-stripped)
+
+> **Resolved 2026-05-17 via [PR #82](https://github.com/zmeireles/daily-tour/pull/82), commit `2d8f57b`.**
+
 
 - **owns**: `apps/pwa/src/features/tour/share.tsx`, `services/bff/src/routes/tour-plans.ts` (additive)
 - **deps**: T-3.1.1
@@ -803,7 +866,10 @@
   - "Share" generates an opaque short link via BFF; recipient sees a read-only tour view (no token, no chat, no per-guest data).
   - PDF export (client-side `html2pdf` or similar) for car-dashboard print.
 
-#### ⬜ T-3.4.1 — Telemetry: "started stop" event + analytics table
+#### ✅ T-3.4.1 — Telemetry: "started stop" event + analytics table
+
+> **Resolved 2026-05-17 via [PR #81](https://github.com/zmeireles/daily-tour/pull/81), commit `8ca50a7`.**
+
 
 - **owns**: `services/bff/src/routes/telemetry.ts`, `services/catalog-svc/drizzle/migrations/0003_telemetry.sql` OR a dedicated `audit.telemetry` table
 - **deps**: T-3.1.1, T-1.0.2
@@ -817,13 +883,16 @@
 
 ---
 
-## Phase 4 — Chat & Reservation Drafting
+## ✅ Phase 4 — Chat & Reservation Drafting
 
 **Phase goal**: in-app WebSocket chat between guest and owner; Telegram driver works; WhatsApp `wa.me` deep-link substitutes for full Business API; AI drafts a localised reservation DM.
 
-### Slice 4.0 — chat-hub skeleton + driver interface (FR-CHT-01)
+### ✅ Slice 4.0 — chat-hub skeleton + driver interface (FR-CHT-01)
 
-#### ⬜ T-4.0.0 — `chat-hub` Fastify service skeleton with driver interface [opus]
+#### ✅ T-4.0.0 — `chat-hub` Fastify service skeleton with driver interface [opus]
+
+> **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.**
+
 
 - **owns**: `services/chat-hub/**`
 - **deps**: T-0.4.2, T-0.3.0
@@ -833,7 +902,10 @@
   - Driver interface: `send(channel, thread, message)`, `receive_webhook(channel, payload)`, `normalize(payload) -> Message`.
   - In-memory driver registered for in-app channel.
 
-#### ⬜ T-4.0.1 — Schemas: `chat.chat_thread`, `chat.message`, `chat.channel_binding`
+#### ✅ T-4.0.1 — Schemas: `chat.chat_thread`, `chat.message`, `chat.channel_binding`
+
+> **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery (chat schemas shipped alongside service scaffold + in-app WS).
+
 
 - **owns**: `services/chat-hub/src/db/schema.ts`, `services/chat-hub/drizzle/migrations/0001_init.sql`
 - **deps**: T-4.0.0
@@ -844,9 +916,12 @@
 
 ---
 
-### Slice 4.1 — In-app chat (WebSocket via BFF)
+### ✅ Slice 4.1 — In-app chat (WebSocket via BFF)
 
-#### ⬜ T-4.1.0 — BFF WebSocket `/v1/chat` multiplexed channel [opus]
+#### ✅ T-4.1.0 — BFF WebSocket `/v1/chat` multiplexed channel [opus]
+
+> **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery — in-app WebSocket channel is the PR's primary scope.
+
 
 - **owns**: `services/bff/src/routes/ws.ts`, `services/bff/src/lib/chat-client.ts`
 - **deps**: T-4.0.1, T-1.0.2
@@ -856,7 +931,10 @@
   - Auth via JWT in WS handshake; topic subscription model.
   - Cross-instance fanout via Redis pub/sub (stub OK in v1 single-instance).
 
-#### ⬜ T-4.1.1 — PWA: Guest chat UI (FR-CHT-01..04)
+#### ✅ T-4.1.1 — PWA: Guest chat UI (FR-CHT-01..04)
+
+> **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery — guest chat UI shipped in the same PR as the WS infrastructure.
+
 
 - **owns**: `apps/pwa/src/routes/_authed.chat.tsx`, `apps/pwa/src/features/chat/**`, `apps/pwa/src/components/chat-bubble.tsx`
 - **deps**: T-4.1.0, T-1.2.2
@@ -867,7 +945,10 @@
   - Voice-call button shown only if `owner_profile.call_enabled`.
   - Playwright: send a message, owner replies (via stubbed inbound endpoint), guest sees it.
 
-#### ⬜ T-4.1.2 — Backoffice: Owner chat inbox (FR-BO-06)
+#### ✅ T-4.1.2 — Backoffice: Owner chat inbox (FR-BO-06)
+
+> **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery — owner inbox shipped alongside guest chat.
+
 
 - **owns**: `apps/pwa/src/features/backoffice/chat/**`
 - **deps**: T-4.1.0, T-1.6.1
@@ -877,9 +958,12 @@
 
 ---
 
-### Slice 4.2 — Telegram driver (FR-CHT-05)
+### ✅ Slice 4.2 — Telegram driver (FR-CHT-05)
 
-#### ⬜ T-4.2.0 — Telegram driver module
+#### ✅ T-4.2.0 — Telegram driver module
+
+> **Resolved 2026-05-17 via [PR #85](https://github.com/zmeireles/daily-tour/pull/85), commit `cf3a202`.**
+
 
 - **owns**: `services/chat-hub/src/drivers/telegram.ts`
 - **deps**: T-4.0.0
@@ -889,7 +973,10 @@
   - Inbound webhook endpoint at `/webhooks/telegram` (secret-token verified).
   - Normalises `tg.Message` → internal `Message` shape.
 
-#### ⬜ T-4.2.1 — Owner-side Telegram bot setup + linking flow
+#### ✅ T-4.2.1 — Owner-side Telegram bot setup + linking flow
+
+> **Resolved 2026-05-17 via [PR #85](https://github.com/zmeireles/daily-tour/pull/85), commit `cf3a202`.** Bundled in T-4.2.0 delivery — Telegram bot linking flow shipped with the driver.
+
 
 - **owns**: `services/chat-hub/src/api/link-telegram.ts`, `apps/pwa/src/features/backoffice/channels/telegram.tsx`
 - **deps**: T-4.2.0, T-1.6.3
@@ -899,9 +986,12 @@
 
 ---
 
-### Slice 4.3 — WhatsApp deep-link (FR-CHT-06)
+### ✅ Slice 4.3 — WhatsApp deep-link (FR-CHT-06)
 
-#### ⬜ T-4.3.0 — WhatsApp `wa.me` deep-link generator + opt-out copy
+#### ✅ T-4.3.0 — WhatsApp `wa.me` deep-link generator + opt-out copy
+
+> **Resolved 2026-05-17 via [PR #86](https://github.com/zmeireles/daily-tour/pull/86), commit `006cc3c`.**
+
 
 - **owns**: `services/chat-hub/src/drivers/whatsapp-link.ts`
 - **deps**: T-4.0.0
@@ -911,9 +1001,12 @@
 
 ---
 
-### Slice 4.4 — AI reservation drafting (FR-PDT-05)
+### ✅ Slice 4.4 — AI reservation drafting (FR-PDT-05)
 
-#### ⬜ T-4.4.0 — Planner-svc endpoint: `POST /v1/draft-reservation`
+#### ✅ T-4.4.0 — Planner-svc endpoint: `POST /v1/draft-reservation`
+
+> **Resolved 2026-05-17 via [PR #87](https://github.com/zmeireles/daily-tour/pull/87), commit `d5bbb02`.**
+
 
 - **owns**: `services/planner-svc/src/api/draft_reservation.py`
 - **deps**: T-3.0.0
@@ -922,7 +1015,10 @@
   - Output: localised draft text (PT for Azores venues by default), polite phrasing, party-size and date stated, contact-back ask.
   - Output validated by zod schema on BFF side.
 
-#### ⬜ T-4.4.1 — PWA: "Reserve via Agent" → preview → send (dry-run preview)
+#### ✅ T-4.4.1 — PWA: "Reserve via Agent" → preview → send (dry-run preview)
+
+> **Resolved 2026-05-17 via [PR #87](https://github.com/zmeireles/daily-tour/pull/87), commit `d5bbb02`.** Bundled in T-4.4.0 delivery — PWA Reserve via Agent UI shipped with the drafter endpoint.
+
 
 - **owns**: `apps/pwa/src/features/place-detail/reserve-via-agent.tsx`
 - **deps**: T-4.4.0, T-1.3.2, T-4.3.0
@@ -938,13 +1034,16 @@
 
 ---
 
-## Phase 5 — Hardening & Growth
+## ✅ Phase 5 — Hardening & Growth
 
 **Phase goal**: production-readiness — offline cache, locale expansion, a11y AA, observability dashboards, post-stay review loop, WhatsApp Business API onboarding.
 
-### Slice 5.0 — Offline catalog cache (FR-XC-06)
+### ✅ Slice 5.0 — Offline catalog cache (FR-XC-06)
 
-#### ⬜ T-5.0.0 — Service worker: place + map tile caching strategy
+#### ✅ T-5.0.0 — Service worker: place + map tile caching strategy
+
+> **Resolved 2026-05-17 via [PR #88](https://github.com/zmeireles/daily-tour/pull/88), commit `daed089`.**
+
 
 - **owns**: `apps/pwa/src/lib/pwa/cache-strategies.ts`, `apps/pwa/vite.config.ts` (additive PWA block)
 - **deps**: T-1.7.1
@@ -953,9 +1052,12 @@
   - PMTiles regions for São Miguel pre-cached on first install (~50 MB cap; opt-in prompt).
   - Offline detector banner shows stale-data timestamp.
 
-### Slice 5.1 — Locale expansion (FR-XC-01, FR-XC-02)
+### ✅ Slice 5.1 — Locale expansion (FR-XC-01, FR-XC-02)
 
-#### ⬜ T-5.1.0 — Add de + es locales
+#### ✅ T-5.1.0 — Add de + es locales
+
+> **Resolved 2026-05-17 via [PR #89](https://github.com/zmeireles/daily-tour/pull/89), commit `928c52d`.**
+
 
 - **owns**: `apps/pwa/src/locales/de/**`, `apps/pwa/src/locales/es/**`
 - **deps**: T-1.7.0
@@ -964,7 +1066,10 @@
   - All namespaces translated (LLM-drafted + flagged for owner review).
   - CI missing-keys check passes for de + es.
 
-#### ⬜ T-5.1.1 — Add fr + pt-BR locales
+#### ✅ T-5.1.1 — Add fr + pt-BR locales
+
+> **Resolved 2026-05-17 via [PR #89](https://github.com/zmeireles/daily-tour/pull/89), commit `928c52d`.** Bundled in T-5.1.0 delivery — fr + pt-BR included in the locale expansion PR.
+
 
 - **owns**: `apps/pwa/src/locales/fr/**`, `apps/pwa/src/locales/pt-BR/**`
 - **deps**: T-1.7.0
@@ -972,7 +1077,10 @@
 - **acceptance**:
   - Same as T-5.1.0 for fr + pt-BR.
 
-#### ⬜ T-5.1.2 — Place description translation workflow (LLM-drafted + owner review queue)
+#### ✅ T-5.1.2 — Place description translation workflow (LLM-drafted + owner review queue)
+
+> **Resolved 2026-05-17 via [PR #89](https://github.com/zmeireles/daily-tour/pull/89), commit `928c52d`.** Bundled in T-5.1.0 delivery — LLM-draft translation workflow wired alongside locale addition.
+
 
 - **owns**: `services/catalog-svc/src/translations/**`, `apps/pwa/src/features/backoffice/translations/**`
 - **deps**: T-1.6.2, T-5.1.0, T-5.1.1
@@ -980,9 +1088,12 @@
   - When a place description changes in one locale, queue LLM-drafted translations for the others; owner reviews + accepts.
   - n8n flow drives the review reminder schedule.
 
-### Slice 5.2 — Accessibility audit (NFR §5.2)
+### ✅ Slice 5.2 — Accessibility audit (NFR §5.2)
 
-#### ⬜ T-5.2.0 — axe-core integration + per-route a11y tests
+#### ✅ T-5.2.0 — axe-core integration + per-route a11y tests
+
+> **Resolved 2026-05-17 via [PR #90](https://github.com/zmeireles/daily-tour/pull/90), commit `92f311e`.**
+
 
 - **owns**: `apps/pwa/e2e/a11y.spec.ts`
 - **deps**: every Phase 1–4 PWA route
@@ -991,16 +1102,22 @@
   - CI fails on serious or critical violations.
   - WCAG 2.2 AA confirmed for: token landing, action drill-down, place detail, tour timeline, chat, public landing, backoffice dashboard.
 
-#### ⬜ T-5.2.1 — Manual a11y review report (focus order, screen-reader, color contrast)
+#### ✅ T-5.2.1 — Manual a11y review report (focus order, screen-reader, color contrast)
+
+> **Resolved 2026-05-17 via [PR #90](https://github.com/zmeireles/daily-tour/pull/90), commit `92f311e`.** Bundled in T-5.2.0 delivery — manual review findings documented in the same PR.
+
 
 - **owns**: `docs/a11y/audit-2026.md`
 - **deps**: T-5.2.0
 - **acceptance**:
   - Documented manual pass with NVDA + VoiceOver; remediation TODOs filed.
 
-### Slice 5.3 — Performance budgets (NFR §5.1)
+### ✅ Slice 5.3 — Performance budgets (NFR §5.1)
 
-#### ⬜ T-5.3.0 — Lighthouse-CI in pipeline
+#### ✅ T-5.3.0 — Lighthouse-CI in pipeline
+
+> **Resolved 2026-05-17 via [PR #91](https://github.com/zmeireles/daily-tour/pull/91), commit `96ea7eb`.**
+
 
 - **owns**: `.github/workflows/lighthouse.yml`, `lighthouserc.json`
 - **deps**: T-1.7.1
@@ -1008,9 +1125,12 @@
   - Lighthouse runs against QA deploys; budgets: LCP < 2.5s, INP < 200ms, CLS < 0.1.
   - Fails the PR if regressions exceed thresholds.
 
-### Slice 5.4 — Observability dashboards (NFR §5.6)
+### ✅ Slice 5.4 — Observability dashboards (NFR §5.6)
 
-#### ⬜ T-5.4.0 — Loki + Promtail + Grafana Compose overlay
+#### ✅ T-5.4.0 — Loki + Promtail + Grafana Compose overlay
+
+> **Resolved 2026-05-17 via [PR #92](https://github.com/zmeireles/daily-tour/pull/92), commit `eb13286`.**
+
 
 - **owns**: `infra/compose/docker-compose.observability.yml`, `infra/observability/**`
 - **deps**: T-0.4.4
@@ -1019,16 +1139,22 @@
   - Compose overlay brings up Prom + Grafana + Loki + Promtail.
   - All services already emit OTel (T-0.2.1, T-0.2.2); Prom scrapes `/metrics`.
 
-#### ⬜ T-5.4.1 — Grafana dashboards: RED, RabbitMQ, Postgres, host
+#### ✅ T-5.4.1 — Grafana dashboards: RED, RabbitMQ, Postgres, host
+
+> **Resolved 2026-05-17 via [PR #92](https://github.com/zmeireles/daily-tour/pull/92), commit `eb13286`.** Bundled in T-5.4.0 delivery — Grafana dashboards shipped in the same observability overlay PR.
+
 
 - **owns**: `infra/observability/grafana/dashboards/**`
 - **deps**: T-5.4.0
 - **acceptance**:
   - 4 dashboards as JSON, versioned in repo, auto-provisioned by Grafana.
 
-### Slice 5.5 — Post-stay review loop (FR-XC-07)
+### ✅ Slice 5.5 — Post-stay review loop (FR-XC-07)
 
-#### ⬜ T-5.5.0 — Post-checkout review push (web push + email fallback)
+#### ✅ T-5.5.0 — Post-checkout review push (web push + email fallback)
+
+> **Resolved 2026-05-17 via [PR #93](https://github.com/zmeireles/daily-tour/pull/93), commit `043f24e`.**
+
 
 - **owns**: `services/notif-svc/**` (skeleton if not already), `services/notif-svc/src/templates/post-stay.ts`
 - **deps**: T-1.0.1
@@ -1036,7 +1162,10 @@
   - `notif-svc` service exists; triggered by n8n `reservation.checkout+24h` schedule.
   - Pushes a "Rate the places you visited" prompt with deep-link.
 
-#### ⬜ T-5.5.1 — Lightweight in-app rating UI
+#### ✅ T-5.5.1 — Lightweight in-app rating UI
+
+> **Resolved 2026-05-17 via [PR #93](https://github.com/zmeireles/daily-tour/pull/93), commit `043f24e`.** Bundled in T-5.5.0 delivery — in-app rating UI shipped alongside the notification service.
+
 
 - **owns**: `apps/pwa/src/routes/_authed.review.tsx`, `apps/pwa/src/features/review/**`
 - **deps**: T-5.5.0
@@ -1044,9 +1173,12 @@
   - One screen, 3 cards, 1-5 stars + optional comment.
   - Submit writes to `audit.review` (or `catalog.review`) and updates owner-facing reputation.
 
-### Slice 5.6 — WhatsApp Business API (FR-CHT-07)
+### ✅ Slice 5.6 — WhatsApp Business API (FR-CHT-07)
 
-#### ⬜ T-5.6.0 — Meta Business verification + BSP onboarding (process doc)
+#### ✅ T-5.6.0 — Meta Business verification + BSP onboarding (process doc)
+
+> **Resolved 2026-05-17 via [PR #94](https://github.com/zmeireles/daily-tour/pull/94), commit `716d9be`.**
+
 
 - **owns**: `docs/operations/whatsapp-business-onboarding.md`
 - **deps**: none (calendar)
@@ -1054,7 +1186,10 @@
   - Step-by-step doc for the owner to run through Meta + BSP onboarding.
   - List of required business documents, template-message strategy, expected timeline.
 
-#### ⬜ T-5.6.1 — WhatsApp Business API driver in chat-hub
+#### ✅ T-5.6.1 — WhatsApp Business API driver in chat-hub
+
+> **Resolved 2026-05-17 via [PR #94](https://github.com/zmeireles/daily-tour/pull/94), commit `716d9be`.** Bundled in T-5.6.0 delivery — WhatsApp Cloud API driver shipped in the same PR.
+
 
 - **owns**: `services/chat-hub/src/drivers/whatsapp-cloud.ts`
 - **deps**: T-4.0.0, T-5.6.0 (calendar)
