@@ -14,6 +14,7 @@ import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
 import tokenExchangeRoute from "./routes/token-exchange.js";
+import telemetryRoute from "./routes/telemetry.js";
 import tourPlansRoute from "./routes/tour-plans.js";
 
 // Opaque tokens MUST NEVER land in logs (D15: token-in-URL hygiene). The
@@ -89,6 +90,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(adminProfileRoute);
   await app.register(adminGuesthousesRoute);
   await app.register(tourPlansRoute);
+  await app.register(telemetryRoute);
 
   return app;
 }

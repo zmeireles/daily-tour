@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@/store/session";
 import { useTourPlan } from "@/features/tour/use-tour-plan";
+import { useTourTelemetry } from "@/features/tour/use-tour-telemetry";
 import { DailyTourTimeline, type TourStop } from "@/components/daily-tour-timeline";
 import { FailureFallback } from "@/features/tour/failure-fallback";
 
@@ -22,6 +23,7 @@ export default function TourPlanRoute() {
   }, [jwt, navigate]);
 
   const { data: plan, isLoading } = useTourPlan(planId ?? "", jwt ?? "");
+  useTourTelemetry(planId ?? "");
 
   // Start a 2-minute timeout whenever we're in the queued/loading state.
   useEffect(() => {

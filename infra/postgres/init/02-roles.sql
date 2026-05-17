@@ -23,10 +23,11 @@
 --     separate database created by the T-0.3.3 overlay.
 
 -- ---------------------------------------------------------------------------
--- Catalog service: owns `catalog`
+-- Catalog service: owns `catalog` + `analytics` (telemetry table migrations)
 -- ---------------------------------------------------------------------------
 CREATE ROLE catalog_svc WITH LOGIN PASSWORD 'change-me-please-catalog';
 ALTER SCHEMA catalog OWNER TO catalog_svc;
+ALTER SCHEMA analytics OWNER TO catalog_svc;
 GRANT USAGE ON SCHEMA audit TO catalog_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO catalog_svc;
 
@@ -95,11 +96,15 @@ GRANT USAGE ON SCHEMA audit TO token_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO token_svc;
 
 -- ---------------------------------------------------------------------------
--- BFF: aggregator, READ-ONLY across every schema. No writes.
+-- BFF: aggregator, READ-ONLY across every schema.
+-- Exception: INSERT on analytics (telemetry events, T-3.4.1).
 -- ---------------------------------------------------------------------------
 CREATE ROLE bff WITH LOGIN PASSWORD 'change-me-please-bff';
 GRANT USAGE ON SCHEMA catalog, chat, planner, ingest, auth_tokens,
-                       media, notif, audit, search TO bff;
+                       media, notif, audit, search, analytics TO bff;
+-- analytics INSERT: catalog_svc creates tables; bff writes telemetry rows.
+ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA analytics
+  GRANT INSERT ON TABLES TO bff;
 -- Default privileges are applied per-schema by the owning service when it
 -- creates tables. We pre-declare them here so future CREATE TABLE statements
 -- by the owner role automatically grant SELECT to bff.
