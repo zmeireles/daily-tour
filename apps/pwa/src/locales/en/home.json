@@ -17,5 +17,40 @@
   "locale": {
     "en": "English",
     "pt-PT": "Português"
+  },
+  "tour": {
+    "new": {
+      "title": "Plan Your Day",
+      "subtitle": "Tell us what you'd like to do",
+      "wishes_label": "What are you in the mood for?",
+      "duration_label": "How long do you have?",
+      "vehicle_label": "How are you getting around?",
+      "notes_label": "Anything else?",
+      "notes_placeholder": "E.g. I want to avoid tourist traps...",
+      "voice_hint": "Tap to speak",
+      "voice_recording": "Listening...",
+      "submit": "Plan my day",
+      "error": "Something went wrong. Please try again.",
+      "vehicles": {
+        "car": "Car",
+        "bike": "Bike",
+        "walking": "On foot",
+        "bus": "Bus"
+      },
+      "durations": {
+        "1": "1 hour",
+        "2": "2 hours",
+        "3": "3 hours",
+        "4": "4 hours",
+        "6": "Half day",
+        "8": "Full day"
+      }
+    },
+    "status": {
+      "queued": "Planning your day...",
+      "ready": "Your plan is ready!",
+      "rejected": "Could not create a plan. Please try again.",
+      "back": "Back to home"
+    }
   }
 }

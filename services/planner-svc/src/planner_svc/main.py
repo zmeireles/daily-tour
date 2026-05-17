@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routes import health_router
+from .routes import health_router, plans_router
 from .version import __version__
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_router)
+    app.include_router(plans_router)
 
     @app.on_event("startup")
     async def _startup() -> None:
