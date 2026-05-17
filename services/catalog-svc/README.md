@@ -105,3 +105,14 @@ pnpm --filter @daily-tour/catalog-svc seed
 Inserts 6 actions and 36 wishes (6 per action) from `docs/exploration/05-tourism-domain.md §3`. Re-runs are idempotent — `onConflictDoNothing()` on fixed UUIDs.
 
 The raw SQL form (`seeds/actions-wishes.sql`) is regenerated when `seeds/dev.ts` changes.
+
+### 28-place São Miguel day-1 seed
+
+```bash
+# From repo root — run AFTER `pnpm seed` (actions/wishes must exist first).
+pnpm --filter @daily-tour/catalog-svc seed:places
+```
+
+Loads the 28 places from `docs/exploration/05-tourism-domain.md §2` into `catalog.place` + `catalog.place_action_wish` + `catalog.place_media`. Idempotent — `seeds/places-sao-miguel.sql` uses `ON CONFLICT DO NOTHING` on fixed UUIDs (`c0000001-…-NN` for places, `d0000001-…-NN` for hero media).
+
+**Dev placeholders**: every place ships with one shared Unsplash hero image, empty `hours`/`contacts`, `{"all": true}` guesthouse scope, and EN + pt-PT description placeholders. Owner-side editing in T-1.4.x replaces these with authoritative content; the MinIO media pipeline (T-1.4.x) supplies per-place imagery.
