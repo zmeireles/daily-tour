@@ -5,6 +5,7 @@ import IndexRoute from "@/routes/index";
 import RTokenRoute from "@/routes/r.$token";
 import PlaceDetailRoute from "@/routes/_authed.p.$id";
 import ActionDrillDownRoute from "@/routes/_authed.a.$action";
+import { InstallBanner } from "@/features/pwa-install/install-banner";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
       <Toaster />
+      <InstallBanner />
     </QueryClientProvider>
   );
 }
