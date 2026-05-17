@@ -1,10 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { getDb } from "../db.js";
 import { assetTable } from "../schema.js";
 import { getS3Client, getPresignedPutUrl } from "../lib/s3.js";
 import { loadConfig } from "../config.js";
+import { publishMediaUploaded } from "../lib/mq.js";
 
 const ALLOWED_MIMES = new Set(["image/jpeg", "image/webp", "video/mp4"]);
 const MAX_BYTES = 50 * 1024 * 1024; // 52_428_800
@@ -18,6 +20,10 @@ const MIME_TO_EXT: Record<string, string> = {
 const SignBodySchema = z.object({
   mime_type: z.string(),
   size_bytes: z.number().int().positive(),
+});
+
+const CompleteBodySchema = z.object({
+  asset_id: z.string().uuid(),
 });
 
 export function uploadsRoutes(app: FastifyInstance): void {
@@ -58,5 +64,34 @@ export function uploadsRoutes(app: FastifyInstance): void {
     });
 
     return reply.code(201).send({ put_url: putUrl, asset_id: assetId });
+  });
+
+  // Called by the BFF after the client's direct PUT to MinIO succeeds.
+  // Marks the asset as uploaded and enqueues it for transcoding.
+  app.post("/v1/uploads/complete", { preHandler: [app.verifyInternal] }, async (req, reply) => {
+    const parse = CompleteBodySchema.safeParse(req.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: "invalid body", details: parse.error.issues });
+    }
+    const { asset_id } = parse.data;
+
+    const [updated] = await getDb()
+      .update(assetTable)
+      .set({ uploadedAt: new Date().toISOString() })
+      .where(eq(assetTable.id, asset_id))
+      .returning({ id: assetTable.id });
+
+    if (!updated) {
+      return reply.code(404).send({ error: "asset not found" });
+    }
+
+    // best-effort: HTTP succeeds even if RabbitMQ is down
+    try {
+      await publishMediaUploaded(asset_id);
+    } catch (err) {
+      req.log.warn({ err, asset_id }, "media.uploaded publish failed; transcode skipped");
+    }
+
+    return reply.code(200).send({ asset_id: updated.id });
   });
 }

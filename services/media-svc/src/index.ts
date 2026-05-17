@@ -4,6 +4,7 @@ import { createApp } from "./server.js";
 import { loadConfig } from "./config.js";
 import { closePool, runMigrations } from "./db.js";
 import { getS3Client, ensureBucket } from "./lib/s3.js";
+import { runTranscodeWorker } from "./workers/transcode.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -17,6 +18,14 @@ async function main(): Promise<void> {
   const app = await createApp();
   await app.listen({ port: config.PORT, host: config.HOST });
   app.log.info(`media-svc listening on http://${config.HOST}:${config.PORT}`);
+
+  // Start transcode worker in-process. If RabbitMQ is unreachable at boot,
+  // the HTTP server stays up and serves requests; transcode is unavailable.
+  // Trade-off vs. separate container: simpler compose, no shared DB pool issue,
+  // but horizontal scaling transcodes too (prefetch=4 caps per-instance concurrency).
+  runTranscodeWorker().catch((err: unknown) => {
+    app.log.error({ err }, "transcode worker failed to start; HTTP continues");
+  });
 
   const shutdown = async (sig: string): Promise<void> => {
     app.log.info(`media-svc received ${sig}, shutting down`);

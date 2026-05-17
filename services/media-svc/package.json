@@ -29,15 +29,18 @@
     "@fastify/cors": "^11.0.0",
     "@fastify/helmet": "^13.0.0",
     "@fastify/rate-limit": "^10.0.0",
+    "amqplib": "^2.0.1",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.0",
     "pg": "^8.13.0",
+    "sharp": "^0.34.5",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@daily-tour/shared-config": "workspace:*",
     "@testcontainers/postgresql": "^10.16.0",
+    "@types/amqplib": "^0.10.8",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.31.10",

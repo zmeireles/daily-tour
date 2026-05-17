@@ -197,6 +197,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       PORT: "8087"
@@ -210,6 +212,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-dailytour}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD missing in .env}
       MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
+      # T-1.4.1 transcode worker: AMQP URL for media.uploaded events.
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
     healthcheck:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
       # Fastify only listens on 0.0.0.0.
