@@ -13,15 +13,27 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      // T-0.4.1 will land real icons + theme colors via Stitch tokens.
-      pwaAssets: { disabled: true },
+      pwaAssets: { preset: "minimal-2023", image: "public/logo.svg" },
       manifest: {
         name: "Daily Tour",
         short_name: "Daily Tour",
+        description: "São Miguel guesthouse companion — discover, plan, message.",
+        lang: "en",
         start_url: "/",
         display: "standalone",
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
+        background_color: "#F7F4EC",
+        theme_color: "#2F5D43",
+        icons: [
+          { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
+          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          {
+            src: "maskable-icon-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
