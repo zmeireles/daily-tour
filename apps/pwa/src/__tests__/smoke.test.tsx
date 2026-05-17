@@ -4,16 +4,14 @@ import { LocaleSchema } from "@daily-tour/shared-types";
 import App from "../App";
 
 describe("App smoke", () => {
-  it("renders the greeting heading", () => {
+  it("renders the greeting heading", async () => {
     render(<App />);
-    expect(
-      screen.getByRole("heading", { name: /hello, daily tour/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /hello, daily tour/i })).toBeInTheDocument();
   });
 
-  it("renders the shadcn Button", () => {
+  it("renders the shadcn Button", async () => {
     render(<App />);
-    expect(screen.getByRole("button", { name: /click me/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /click me/i })).toBeInTheDocument();
   });
 });
 
