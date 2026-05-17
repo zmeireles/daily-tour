@@ -12,5 +12,8 @@
     "body": "Add to your home screen for instant access.",
     "install": "Install",
     "dismiss": "Not now"
+  },
+  "offline": {
+    "message": "You're offline. Showing cached content."
   }
 }
