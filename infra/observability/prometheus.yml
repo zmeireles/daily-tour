@@ -1,0 +1,52 @@
+# Prometheus scrape configuration — Daily Tour (T-5.4.0)
+#
+# All targets are on dt_internal. Services must expose /metrics for Prometheus
+# to collect. Node.js services (bff, token-svc, catalog-svc, media-svc,
+# planner-svc, chat-hub) export prom-client metrics; Python services
+# (search-svc) export prometheus-fastapi-instrumentator metrics.
+#
+# When a service is not yet running (e.g. chat-hub, search-svc in a partial
+# stack), Prometheus marks the target as DOWN but continues scraping the rest.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: daily-tour
+    env: dev
+
+scrape_configs:
+  - job_name: bff
+    static_configs:
+      - targets: ["dt_bff:8080"]
+    metrics_path: /metrics
+
+  - job_name: catalog-svc
+    static_configs:
+      - targets: ["dt_catalog_svc:8081"]
+    metrics_path: /metrics
+
+  - job_name: search-svc
+    static_configs:
+      - targets: ["dt_search_svc:8082"]
+    metrics_path: /metrics
+
+  - job_name: planner-svc
+    static_configs:
+      - targets: ["dt_planner_svc:8083"]
+    metrics_path: /metrics
+
+  - job_name: chat-hub
+    static_configs:
+      - targets: ["dt_chat_hub:8084"]
+    metrics_path: /metrics
+
+  - job_name: media-svc
+    static_configs:
+      - targets: ["dt_media_svc:8087"]
+    metrics_path: /metrics
+
+  - job_name: token-svc
+    static_configs:
+      - targets: ["dt_token_svc:8088"]
+    metrics_path: /metrics
