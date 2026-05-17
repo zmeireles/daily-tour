@@ -49,5 +49,12 @@
       "heading": "Roteiro Partilhado",
       "not_found": "Este plano de visita não está disponível."
     }
+  },
+  "chat": {
+    "title": "Conversa",
+    "placeholder": "Mensagem ao seu anfitrião…",
+    "send": "Enviar",
+    "empty": "Sem mensagens. Diga olá!",
+    "connecting": "A ligar…"
   }
 }
