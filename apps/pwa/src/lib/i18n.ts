@@ -34,6 +34,18 @@ const resources = {
           "pt-PT": "Português",
         },
       },
+      place_detail: {
+        translation_pending: "EN",
+        loading: "Loading place…",
+        error: "Couldn't load this place. Try again.",
+        not_found: "Place not found.",
+        actions: {
+          navigate: "Navigate",
+          call: "Call",
+          message: "Message",
+        },
+        wa_prefill: "Hi! I'm at {{placeName}}, can you recommend the next stop?",
+      },
     },
   },
   "pt-PT": {
@@ -66,6 +78,18 @@ const resources = {
           en: "English",
           "pt-PT": "Português",
         },
+      },
+      place_detail: {
+        translation_pending: "EN",
+        loading: "A carregar lugar…",
+        error: "Não foi possível carregar. Tente novamente.",
+        not_found: "Lugar não encontrado.",
+        actions: {
+          navigate: "Navegar",
+          call: "Ligar",
+          message: "Mensagem",
+        },
+        wa_prefill: "Olá! Estou em {{placeName}}, podes recomendar o próximo lugar?",
       },
     },
   },
