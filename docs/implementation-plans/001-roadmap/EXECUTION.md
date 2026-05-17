@@ -40,6 +40,59 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 17 — 2026-05-17 — T-1.2.2 (parallel half) — second clean Sonnet self-commit this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------------ | ------------------------ |
+| t1-2-2 | T-1.2.2 | jmeireles/t1-2-2 | claude-sonnet-yolo | PWA components: PlaceCard + ActionGroupHeader + LocationToggle + RangeSlider + tests | Done (clean self-commit) |
+
+#### Agent: t1-2-2 (T-1.2.2) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 03:20
+- **Finished**: agent ~30 min (clean self-commit `f5309ce`); orchestrator verify + push ~5 min
+- **Predicted time**: 60–90 min
+- **Actual time**: ~35 min total
+- **Complexity**: Medium (4 components + 11 tests + 4 shadcn primitives to add; design spec was tight)
+- **LOC changed**: 14 files (+3001 / −564 — bulk is the lockfile from adding 4 @radix-ui primitives)
+- **Commit**: ✅ `f5309ce` — clean Sonnet self-commit. No orchestrator rescue.
+- **PR**: [#36](https://github.com/zmeireles/daily-tour/pull/36) (merged as `31ffd49`, all 6 CI checks green; human-merged per doctrine since Phase 1+ commits escalate)
+- **Acceptance**: 4/4 criteria met. Each component matches `02-ui-design-system.md §5` (16:9 PlaceCard hero, distance pill via Badge top-left, Fraunces title, snap-x scrollable action chips, ≥56px tap targets, ActionGroupHeader full-row link with chevron-90° hover, LocationToggle motion.layoutId morphing pill, RangeSlider discrete `[1,3,5,10,25]` km snap with 250ms inline debounce + tabular-nums above thumb). 11 vitest cases (RTL + a11y) including a `vi.useFakeTimers()` debounce assertion.
+- **Issues**: None on this branch. PR title needed orchestrator rename via `gh pr edit` (cs-agent default "T1 2 2" violates conventional commits) — same pattern as prior PRs; well-understood.
+- **New lessons**:
+  - **shadcn CLI bulk-add works cleanly** (`pnpm dlx shadcn@latest add slider badge toggle-group`). Toggle gets pulled as transitive dep. No prompt fights. Lockfile churn is bulky (~2700 lines) but expected for first @radix-ui addition.
+  - **`motion`'s `layoutId` for same-tree morphs** doesn't need `AnimatePresence` — plain `motion.div layout` is sufficient. Useful pattern for the LocationToggle's active-pill swap.
+  - **Inline debounce via `useRef + setTimeout`** beats pulling in lodash for a single use. ~10 LOC; cleanup in `useEffect` return prevents the unmount-mid-debounce warning.
+- **Decisions made on the fly (agent)**:
+  - Semantic Tailwind tokens (`bg-secondary text-secondary-foreground`) for the distance pill rather than the palette `--tea-500` — keeps it palette-portable for dark mode.
+  - lucide-react icons with `aria-hidden=true` on action chips since the action text is also rendered (matches WAI-ARIA recommendation).
+
+### Wave 18 — 2026-05-17 — T-1.3.0 (parallel half) — third clean Sonnet self-commit this session
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                     | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------- | ------------------------ |
+| t1-3-0 | T-1.3.0 | jmeireles/t1-3-0 | claude-sonnet-yolo | BFF /v1/places/:id hydrated + catalog-svc /v1/places/:id/hydrated + tests | Done (clean self-commit) |
+
+#### Agent: t1-3-0 (T-1.3.0) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 03:21
+- **Finished**: agent ~30 min (clean self-commit `19cfd41`); orchestrator verify + push ~5 min
+- **Predicted time**: 60–75 min
+- **Actual time**: ~35 min total
+- **Complexity**: Medium-high (auth-chain integration + cross-service join + 4 vitest cases covering authed/unauth/404/503 paths)
+- **LOC changed**: 7 files (+458 / −2)
+- **Commit**: ✅ `19cfd41` — clean Sonnet self-commit. No orchestrator rescue.
+- **PR**: [#37](https://github.com/zmeireles/daily-tour/pull/37) (merged as `e6c795e`, all 6 CI checks green after `gh pr update-branch` because PR #36 merged in between; human-merged per doctrine — auth-chain)
+- **Acceptance**: 2/3 criteria met directly; p95<200ms acceptance requires PWA T-1.3.2 for real-world smoke (unit-tested with mocked catalog client). Hydrated payload includes place + media[] + actions[] + wishes[] + i18n description + `weather_ok_today: true` (stubbed, with code/PR/README markers; real IPMA in T-3.2.x).
+- **Issues**:
+  1. **PR title subject-case** — same cs-agent default-title pattern; orchestrator rename. Habit by now.
+  2. **`gh pr update-branch` needed** because PR #36 merged ~3 min before PR #37's CI completed (lockfile conflict resolves automatically on rebase). Standard parallel-launch pattern.
+- **New lessons**:
+  - **Catalog-svc scope expansion pattern continues to pay off.** T-1.2.0 added `/v1/places-by-action/:slug`; T-1.3.0 adds `/v1/places/:id/hydrated`. Both follow the "join everything the BFF needs in one query" shape. Future BFF aggregator tasks can lift this idiom (e.g. T-1.6.x owner-side endpoints).
+  - **`weather_ok_today: true` placeholder strategy** preserves the BFF response shape so T-1.3.2 (PWA Place Detail) can render the indicator UI now, with the real IPMA call landing transparently in Phase 3 without contract changes.
+- **Decisions made on the fly (agent)**:
+  - Dedicated `/v1/places/:id/hydrated` endpoint (vs adding `?hydrate=true` query flag to existing `/v1/places/:id`) — separate route is clearer for the response-shape difference (different consumer = different endpoint).
+  - 404 propagation rather than wrapping — keeps PWA's error handling simple.
+
 ### Wave 15 — 2026-05-17 — T-1.1.2 (parallel half, recovery) — second Sonnet autocommit-fallback
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                  | Status                  |

@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 8      | 0           | 5     | 12      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 10     | 0           | 4     | 11      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **23** | **0**       | **5** | **72**  |
+| **Total**                       | **31** | **100** | **25** | **0**       | **4** | **71**  |
 
 ---
 
@@ -364,7 +364,9 @@
   - Locale auto from token; locale switcher in header overflow.
   - "Plan my day" + "Message João" entries below the fold (stubbed routes for now).
 
-#### 🟢 T-1.2.2 — PWA: PlaceCard + ActionGroupHeader + LocationToggle + RangeSlider components
+#### ✅ T-1.2.2 — PWA: PlaceCard + ActionGroupHeader + LocationToggle + RangeSlider components
+
+> **Resolved 2026-05-17 via [PR #36](https://github.com/zmeireles/daily-tour/pull/36).** 1 clean Sonnet self-commit (`f5309ce`, 14 files, +3001/−564 — bulk is the lockfile from adding 4 shadcn primitives). Profile: claude-sonnet-yolo. **No orchestrator rescue.** Built the 4 custom components verbatim from `02-ui-design-system.md §5`: PlaceCard (16:9 hero + distance pill via Badge + Fraunces title + snap-x scrollable action chips + ≥56px tap targets), ActionGroupHeader (icon + label + "→ Explore" full-row link + chevron-90° hover), LocationToggle (shadcn ToggleGroup + `motion`'s `layoutId` morphing pill + disabled-on-permission-denied), RangeSlider (shadcn Slider wrapper + discrete `[1,3,5,10,25]` km snap + 250ms inline debounce + tabular-nums value above thumb). 11 vitest cases (RTL + a11y; 3 PlaceCard + 2 ActionGroupHeader + 3 LocationToggle + 3 RangeSlider including `vi.useFakeTimers()` debounce assertion). Added 4 shadcn primitives via `pnpm dlx shadcn@latest add slider badge toggle-group` (toggle as transitive). All 5/5 PWA turbo tasks green; PWA build emits service worker (421 KiB precache). Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ feature commits escalate — human-merged.
 
 - **owns**: `apps/pwa/src/components/place-card.tsx`, `apps/pwa/src/components/action-group-header.tsx`, `apps/pwa/src/components/location-toggle.tsx`, `apps/pwa/src/components/range-slider.tsx`, `apps/pwa/src/components/__tests__/**`
 - **deps**: T-0.4.0, T-0.4.1
@@ -376,7 +378,7 @@
   - PlaceCard renders distance pill + action chips.
   - RangeSlider supports discrete steps `[1,3,5,10,25]`, debounced 250 ms.
 
-#### ⬜ T-1.2.3 — PWA: Action drill-down route (`/a/:action`) with grouped-by-wish list
+#### 🟢 T-1.2.3 — PWA: Action drill-down route (`/a/:action`) with grouped-by-wish list
 
 - **owns**: `apps/pwa/src/routes/_authed.a.$action.tsx`, `apps/pwa/src/features/discover/**`
 - **deps**: T-1.2.0, T-1.2.1, T-1.2.2
@@ -393,7 +395,9 @@
 
 ### Slice 1.3 — Place Detail page (FR-PDT-01..04)
 
-#### 🟢 T-1.3.0 — BFF: `GET /v1/places/:id` hydrated payload
+#### ✅ T-1.3.0 — BFF: `GET /v1/places/:id` hydrated payload
+
+> **Resolved 2026-05-17 via [PR #37](https://github.com/zmeireles/daily-tour/pull/37).** 1 clean Sonnet self-commit (`19cfd41`, 7 files, +458/−2). Profile: claude-sonnet-yolo. **No orchestrator rescue.** **Second authed BFF feature route** (after T-1.2.0's discover). Same scope-expansion pattern: added dedicated `GET /v1/places/:id/hydrated` to catalog-svc (~123 LOC + 1 test) that leftJoins place_media + place_action_wish + action + wish in a single query, deduplicates in JS, returns one hydrated object with media[]+actions[]+wishes[] arrays. BFF route is a thin proxy (38 LOC) that injects `weather_ok_today: true` stub (real IPMA call lands in T-3.2.x). 4 vitest cases (happy authed, 401 unauth proves onRoute hook applies, 404 propagation, catalog 500 → BFF 503 no-leak). catalog-svc tests 16 → 17; BFF tests 10 → 14. All 10/10 turbo tasks green. Per [doctrine](../../operations/auto-merge-doctrine.md), auth-chain feature routes escalate — human-merged.
 
 - **owns**: `services/bff/src/routes/places.ts`
 - **deps**: T-1.1.1, T-1.0.2
