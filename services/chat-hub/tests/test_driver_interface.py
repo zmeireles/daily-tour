@@ -63,13 +63,13 @@ def test_stub_drivers_short_circuit_when_credentials_missing() -> None:
     telegram = TelegramDriver(bot_token=None)
     whatsapp = WhatsAppDriver(phone_number_id=None, access_token=None)
 
-    # No NotImplementedError — disabled drivers must no-op so the service
-    # boots in dev/CI without real credentials (D9, planner posture).
+    # Telegram no-ops (no bot token); WhatsApp returns a wa.me deep-link
+    # (credentials not required for v1 deep-link mode, D9 posture).
     tg_id = asyncio.run(
         telegram.send(OutboundMessage(channel="telegram", recipient_id="123", body="hi")),
     )
-    wa_id = asyncio.run(
+    wa_url = asyncio.run(
         whatsapp.send(OutboundMessage(channel="whatsapp", recipient_id="351911...", body="hi")),
     )
     assert tg_id == ""
-    assert wa_id == ""
+    assert wa_url.startswith("https://wa.me/351911")

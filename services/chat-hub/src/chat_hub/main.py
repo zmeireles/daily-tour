@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .drivers.in_app import mount_in_app_driver
 from .drivers.telegram import mount_telegram_driver
+from .drivers.whatsapp import build_wa_me_url
 from .routes import health_router
 from .version import __version__
 
@@ -30,6 +31,14 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     mount_in_app_driver(app)
     mount_telegram_driver(app)
+
+    @app.get("/v1/chat/whatsapp/draft")
+    async def whatsapp_draft(
+        phone: str = Query(..., description="E.164 phone number, e.g. 15551234567"),
+        text: str = Query(..., description="Pre-filled message body"),
+    ) -> dict[str, str]:
+        """Return a wa.me deep-link for the PWA to open on the user's device."""
+        return {"url": build_wa_me_url(phone, text)}
 
     @app.on_event("startup")
     async def _startup() -> None:
