@@ -13,3 +13,4 @@ CREATE SCHEMA IF NOT EXISTS media;         -- media_asset references to MinIO ob
 CREATE SCHEMA IF NOT EXISTS notif;         -- notification_log, outbound queue state
 CREATE SCHEMA IF NOT EXISTS audit;         -- append-only audit trail (read by all)
 CREATE SCHEMA IF NOT EXISTS search;        -- place_embedding (pgvector) + RAG indexes
+CREATE SCHEMA IF NOT EXISTS analytics;     -- tour_event + future funnel tables (T-3.4.1)

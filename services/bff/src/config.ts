@@ -37,6 +37,11 @@ const ConfigSchema = z.object({
   // in either `aud` or the `groups` array — Authentik puts the group name
   // in `groups` when the staff-only policy fires (see owner-app.yaml).
   AUTHENTIK_OWNER_AUDIENCE: z.string().default("staff"),
+  // Postgres connection for analytics writes (T-3.4.1). The bff role owns
+  // INSERT on analytics.tour_event via ALTER DEFAULT PRIVILEGES in 02-roles.sql.
+  ANALYTICS_DATABASE_URL: z
+    .string()
+    .default("postgres://bff:change-me-please-bff@dt_postgres:5432/dailytour"),
 });
 
 export type BffConfig = z.infer<typeof ConfigSchema>;
