@@ -40,7 +40,10 @@ async function signAndUpload(file: File, jwt: string): Promise<UploadedAsset> {
   return { assetId: asset_id, previewUrl: URL.createObjectURL(file), name: file.name };
 }
 
-export function MediaUploader({ onUploaded, label = "Drag & drop images or click to select" }: Props) {
+export function MediaUploader({
+  onUploaded,
+  label = "Drag & drop images or click to select",
+}: Props) {
   const jwt = useOwnerJwt();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,12 +107,14 @@ export function MediaUploader({ onUploaded, label = "Drag & drop images or click
           className="hidden"
           onChange={(e) => void handleFiles(e.target.files)}
         />
-        <p className="text-sm text-muted-foreground">
-          {uploading ? "Uploading…" : label}
-        </p>
+        <p className="text-sm text-muted-foreground">{uploading ? "Uploading…" : label}</p>
       </div>
 
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
 
       {assets.length > 0 && (
         <div className="flex flex-wrap gap-2">

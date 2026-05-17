@@ -66,7 +66,7 @@ export function useCreatePlace() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`create place ${res.status}`);
-      return res.json();
+      return res.json() as unknown;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
   });
@@ -83,7 +83,7 @@ export function useUpdatePlace(id: string) {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`update place ${res.status}`);
-      return res.json();
+      return res.json() as unknown;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
   });

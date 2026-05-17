@@ -23,7 +23,9 @@ export function PlaceList() {
     return <p className="text-muted-foreground text-sm">{t("places.list.loading", "Loading…")}</p>;
   }
   if (isError) {
-    return <p className="text-destructive text-sm">{t("places.list.error", "Failed to load places.")}</p>;
+    return (
+      <p className="text-destructive text-sm">{t("places.list.error", "Failed to load places.")}</p>
+    );
   }
 
   const places = data?.data ?? [];
@@ -45,9 +47,15 @@ export function PlaceList() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-4 py-2 text-left font-medium">{t("places.list.name", "Name")}</th>
-                <th className="px-4 py-2 text-left font-medium">{t("places.list.status", "Status")}</th>
-                <th className="px-4 py-2 text-left font-medium">{t("places.list.address", "Address")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("places.list.actions", "Actions")}</th>
+                <th className="px-4 py-2 text-left font-medium">
+                  {t("places.list.status", "Status")}
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
+                  {t("places.list.address", "Address")}
+                </th>
+                <th className="px-4 py-2 text-right font-medium">
+                  {t("places.list.actions", "Actions")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -71,8 +79,8 @@ export function PlaceList() {
                       >
                         {t("places.list.edit", "Edit")}
                       </Button>
-                      {place.status !== "archived" && (
-                        confirmId === place.id ? (
+                      {place.status !== "archived" &&
+                        (confirmId === place.id ? (
                           <div className="flex gap-1">
                             <Button
                               size="sm"
@@ -86,24 +94,15 @@ export function PlaceList() {
                             >
                               {t("places.archive.yes", "Archive")}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setConfirmId(null)}
-                            >
+                            <Button size="sm" variant="outline" onClick={() => setConfirmId(null)}>
                               {t("places.archive.no", "Cancel")}
                             </Button>
                           </div>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setConfirmId(place.id)}
-                          >
+                          <Button size="sm" variant="ghost" onClick={() => setConfirmId(place.id)}>
                             {t("places.archive.button", "Archive")}
                           </Button>
-                        )
-                      )}
+                        ))}
                     </div>
                   </td>
                 </tr>

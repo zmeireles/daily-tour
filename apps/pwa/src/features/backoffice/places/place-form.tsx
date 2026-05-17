@@ -48,10 +48,10 @@ export function PlaceForm({ initialData, id }: Props) {
     resolver: zodResolver(FormSchema),
     defaultValues: initialData
       ? {
-          name_en: (initialData.name["en"] as string | undefined) ?? "",
-          name_pt: (initialData.name["pt-PT"] as string | undefined) ?? "",
-          description_en: (initialData.description["en"] as string | undefined) ?? "",
-          description_pt: (initialData.description["pt-PT"] as string | undefined) ?? "",
+          name_en: initialData.name["en"] ?? "",
+          name_pt: initialData.name["pt-PT"] ?? "",
+          description_en: initialData.description["en"] ?? "",
+          description_pt: initialData.description["pt-PT"] ?? "",
           address: initialData.address,
           geom_lat: initialData.geom_lat,
           geom_lng: initialData.geom_lng,
@@ -135,7 +135,9 @@ export function PlaceForm({ initialData, id }: Props) {
               )}
             </label>
             <label className="flex flex-col gap-1 mt-3">
-              <span className="text-sm font-medium">{t("places.form.description", "Description")} (EN)</span>
+              <span className="text-sm font-medium">
+                {t("places.form.description", "Description")} (EN)
+              </span>
               <textarea
                 {...register("description_en")}
                 rows={3}
@@ -156,7 +158,9 @@ export function PlaceForm({ initialData, id }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1 mt-3">
-              <span className="text-sm font-medium">{t("places.form.description", "Description")} (PT)</span>
+              <span className="text-sm font-medium">
+                {t("places.form.description", "Description")} (PT)
+              </span>
               <textarea
                 {...register("description_pt")}
                 rows={3}
@@ -239,11 +243,7 @@ export function PlaceForm({ initialData, id }: Props) {
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Saving…" : t("places.form.save", "Save")}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void navigate("/admin/places")}
-          >
+          <Button type="button" variant="outline" onClick={() => void navigate("/admin/places")}>
             {t("places.form.cancel", "Cancel")}
           </Button>
         </div>
