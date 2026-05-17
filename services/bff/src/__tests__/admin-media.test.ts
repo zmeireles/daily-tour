@@ -31,7 +31,9 @@ async function buildTestApp(keypair: AuthentikTestKeypair): Promise<FastifyInsta
   await app.register(ownerAuthPlugin, { jwks });
 
   const mockMediaSvc: MediaSvc = {
-    signUpload: vi.fn().mockResolvedValue({ put_url: "https://minio/put", asset_id: "asset-uuid-1" }),
+    signUpload: vi
+      .fn()
+      .mockResolvedValue({ put_url: "https://minio/put", asset_id: "asset-uuid-1" }),
     completeUpload: vi.fn().mockResolvedValue(undefined),
   };
   app.decorate("mediaSvc", mockMediaSvc);
@@ -99,14 +101,11 @@ describe("BFF admin-media routes", () => {
       payload: { mime_type: "image/jpeg", size_bytes: 2048 },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json() as { put_url: string; asset_id: string };
+    const body: { put_url: string; asset_id: string } = res.json();
     expect(body.put_url).toBe("https://minio/put");
     expect(body.asset_id).toBe("asset-uuid-1");
-    expect((app.mediaSvc.signUpload as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
-      "owner-1",
-      "image/jpeg",
-      2048,
-    );
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.mocked() reads the mock metadata, doesn't invoke
+    expect(vi.mocked(app.mediaSvc.signUpload)).toHaveBeenCalledWith("owner-1", "image/jpeg", 2048);
   });
 
   it("POST /v1/admin/media/complete — valid owner JWT → calls mediaSvc.completeUpload, returns 204", async () => {
@@ -121,7 +120,8 @@ describe("BFF admin-media routes", () => {
       payload: { asset_id: "00000000-0000-0000-0000-000000000001" },
     });
     expect(res.statusCode).toBe(204);
-    expect((app.mediaSvc.completeUpload as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.mocked() reads the mock metadata, doesn't invoke
+    expect(vi.mocked(app.mediaSvc.completeUpload)).toHaveBeenCalledWith(
       "00000000-0000-0000-0000-000000000001",
     );
   });
