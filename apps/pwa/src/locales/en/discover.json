@@ -28,5 +28,11 @@
   "hosts_picks": {
     "title": "Host's picks",
     "subtitle": "Personally recommended by your host"
+  },
+  "tour": {
+    "timeline": {
+      "reorder_hint": "Drag to reorder",
+      "duration": "{{min}} min"
+    }
   }
 }

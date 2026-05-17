@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@/store/session";
 import { useTourPlan } from "@/features/tour/use-tour-plan";
+import { DailyTourTimeline, type TourStop } from "@/components/daily-tour-timeline";
 
 export default function TourPlanRoute() {
   const { planId } = useParams<{ planId: string }>();
@@ -49,13 +50,11 @@ export default function TourPlanRoute() {
   }
 
   if (plan?.status === "ready") {
+    const stops = (plan.plan_payload as { stops?: TourStop[] })?.stops ?? [];
     return (
       <main className="min-h-svh px-4 py-8 max-w-lg mx-auto">
-        <h1 className="text-2xl font-semibold mb-4">{t("tour.status.ready")}</h1>
-        {/* T-3.1.1 populates with timeline — this is the placeholder shell */}
-        <pre className="overflow-auto rounded-md bg-muted p-4 text-xs">
-          {JSON.stringify(plan.plan_payload, null, 2)}
-        </pre>
+        <h1 className="text-2xl font-semibold mb-6">{t("tour.status.ready")}</h1>
+        <DailyTourTimeline stops={stops} />
         <Link
           to="/"
           className="mt-6 inline-block text-primary underline underline-offset-4 text-sm"

@@ -28,5 +28,11 @@
   "hosts_picks": {
     "title": "Escolhas do anfitrião",
     "subtitle": "Recomendado pessoalmente pelo seu anfitrião"
+  },
+  "tour": {
+    "timeline": {
+      "reorder_hint": "Arrastar para reordenar",
+      "duration": "{{min}} min"
+    }
   }
 }
