@@ -12,5 +12,47 @@
   "placeholder": {
     "title": "Coming soon",
     "body": "This section is wired up in a follow-up task."
+  },
+  "places": {
+    "title": "Places",
+    "new": "New Place",
+    "edit": "Edit Place",
+    "list": {
+      "loading": "Loading…",
+      "error": "Failed to load places.",
+      "empty": "No places yet.",
+      "name": "Name",
+      "status": "Status",
+      "address": "Address",
+      "actions": "Actions",
+      "edit": "Edit"
+    },
+    "form": {
+      "loading": "Loading…",
+      "load_error": "Failed to load place.",
+      "name": "Name",
+      "description": "Description",
+      "address": "Address",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "status": "Status",
+      "is_hosts_pick": "Host's Pick",
+      "save": "Save",
+      "cancel": "Cancel",
+      "tabs": {
+        "en": "English",
+        "pt_PT": "Portuguese"
+      },
+      "media": {
+        "title": "Media",
+        "upload_hint": "Drag & drop images or click to select"
+      }
+    },
+    "archive": {
+      "button": "Archive",
+      "confirm": "Archive this place?",
+      "yes": "Archive",
+      "no": "Cancel"
+    }
   }
 }

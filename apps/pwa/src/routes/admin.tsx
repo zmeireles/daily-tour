@@ -4,12 +4,6 @@ import { useTranslation } from "react-i18next";
 import { ownerUserManager } from "@/lib/auth/owner-oidc";
 import { useOwnerSessionStore } from "@/store/owner-session";
 import { BackofficeShell } from "@/features/backoffice/shell";
-import {
-  GuesthousesPage,
-  PlacesPage,
-  ReservationsPage,
-  ProfilePage,
-} from "@/features/backoffice/placeholder-pages";
 
 export default function AdminRoute() {
   const { t } = useTranslation("admin");
@@ -45,12 +39,5 @@ export default function AdminRoute() {
     );
   }
 
-  return (
-    <BackofficeShell>
-      <GuesthousesPage />
-      <PlacesPage />
-      <ReservationsPage />
-      <ProfilePage />
-    </BackofficeShell>
-  );
+  return <BackofficeShell />;
 }
