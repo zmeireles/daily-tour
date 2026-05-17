@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { CatalogError, fetchPlaceHydrated } from "../lib/catalog-client.js";
+import { isWeatherOkToday } from "../lib/ipma-client.js";
 
 const IdParamSchema = z.object({ id: z.string().uuid() });
 
@@ -29,9 +30,8 @@ const placesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       throw err;
     }
 
-    // weather_ok_today: stub true for all places — real IPMA call lands in Phase 3 (T-3.2.x).
-    // Will compute per place.kind once Phase 3 adds the kind column via schema migration.
-    return { ...place, weather_ok_today: true };
+    const weather_ok_today = await isWeatherOkToday();
+    return { ...place, weather_ok_today };
   });
 };
 
