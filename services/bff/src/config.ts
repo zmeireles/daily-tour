@@ -18,6 +18,8 @@ const ConfigSchema = z.object({
   SEARCH_SVC_URL: z.string().url().default("http://dt_search_svc:8082"),
   // Internal HTTP base URL for media-svc on dt_internal (T-1.4.0).
   MEDIA_SVC_URL: z.string().url().default("http://dt_media_svc:8087"),
+  // Internal HTTP base URL for planner-svc on dt_internal (T-3.1.0).
+  PLANNER_SVC_URL: z.string().url().default("http://dt_planner_svc:8083"),
   // Shared secret forwarded as X-Internal-Token to media-svc. Temporary auth
   // posture until T-1.6.x wires Authentik OIDC (see media-svc/src/plugins/internal-auth.ts).
   MEDIA_SVC_INTERNAL_TOKEN: z.string().default("change-me-please-media-svc-internal-token-min-32c"),

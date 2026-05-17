@@ -5,6 +5,8 @@ import IndexRoute from "@/routes/index";
 import RTokenRoute from "@/routes/r.$token";
 import PlaceDetailRoute from "@/routes/_authed.p.$id";
 import ActionDrillDownRoute from "@/routes/_authed.a.$action";
+import TourNewRoute from "@/routes/_authed.tour.new";
+import TourPlanRoute from "@/routes/_authed.tour.$planId";
 import AdminRoute from "@/routes/admin";
 import AdminCallbackRoute from "@/routes/admin.callback";
 import AdminPlacesRoute from "@/routes/admin.places";
@@ -23,6 +25,8 @@ const router = createBrowserRouter([
   { path: "/r/:token", element: <RTokenRoute /> },
   { path: "/p/:id", element: <PlaceDetailRoute /> },
   { path: "/a/:action", element: <ActionDrillDownRoute /> },
+  { path: "/tour/new", element: <TourNewRoute /> },
+  { path: "/tour/:planId", element: <TourPlanRoute /> },
   {
     path: "/admin",
     element: <AdminRoute />,

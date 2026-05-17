@@ -17,5 +17,40 @@
   "locale": {
     "en": "English",
     "pt-PT": "Português"
+  },
+  "tour": {
+    "new": {
+      "title": "Planear o Seu Dia",
+      "subtitle": "Diga-nos o que gostaria de fazer",
+      "wishes_label": "O que apetece fazer?",
+      "duration_label": "Quanto tempo tem?",
+      "vehicle_label": "Como se vai deslocar?",
+      "notes_label": "Mais alguma coisa?",
+      "notes_placeholder": "Ex: Quero evitar os sítios muito turísticos...",
+      "voice_hint": "Toque para falar",
+      "voice_recording": "A ouvir...",
+      "submit": "Planear o meu dia",
+      "error": "Algo correu mal. Por favor tente novamente.",
+      "vehicles": {
+        "car": "Carro",
+        "bike": "Bicicleta",
+        "walking": "A pé",
+        "bus": "Autocarro"
+      },
+      "durations": {
+        "1": "1 hora",
+        "2": "2 horas",
+        "3": "3 horas",
+        "4": "4 horas",
+        "6": "Meio dia",
+        "8": "Dia inteiro"
+      }
+    },
+    "status": {
+      "queued": "A planear o seu dia...",
+      "ready": "O seu plano está pronto!",
+      "rejected": "Não foi possível criar um plano. Por favor tente novamente.",
+      "back": "Voltar ao início"
+    }
   }
 }
