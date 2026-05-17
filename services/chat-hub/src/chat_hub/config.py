@@ -22,13 +22,19 @@ class Settings(BaseSettings):
     otel_service_name: str = "chat-hub"
     otel_exporter_otlp_endpoint: str | None = None
 
-    # Driver credentials (T-4.2 / T-4.3 fill in). Leave unset in dev/CI —
+    # Driver credentials (T-4.2 / T-4.3 / T-5.6). Leave unset in dev/CI —
     # the corresponding driver short-circuits with a warning rather than
     # failing health checks (same posture as planner-svc's ANTHROPIC_API_KEY).
     telegram_bot_token: str | None = None
     telegram_webhook_secret: str | None = None
     whatsapp_phone_number_id: str | None = None
     whatsapp_access_token: str | None = None
+    # Arbitrary string returned to Meta during webhook registration (GET challenge).
+    # Generate: openssl rand -hex 16
+    whatsapp_verify_token: str | None = None
+    # App secret from Meta developer console — used to verify X-Hub-Signature-256.
+    # Leave unset to skip HMAC verification (not recommended in production).
+    whatsapp_app_secret: str | None = None
 
     # Anthropic Messages API (T-4.4.0 — AI reservation drafter).
     # When ANTHROPIC_API_KEY is unset, the drafter returns a deterministic
