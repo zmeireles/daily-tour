@@ -18,6 +18,7 @@
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
     "seed": "tsx seeds/dev.ts",
+    "seed:places": "tsx seeds/places.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "clean": "rm -rf dist node_modules .turbo coverage"
