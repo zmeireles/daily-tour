@@ -41,6 +41,13 @@
       "timeout_body": "Está a demorar mais do que o esperado. Pode tentar novamente ou editar as suas preferências.",
       "retry": "Tentar novamente",
       "edit": "Editar preferências"
+    },
+    "share": {
+      "button": "Partilhar",
+      "copied": "Ligação copiada!",
+      "title": "O Meu Roteiro",
+      "heading": "Roteiro Partilhado",
+      "not_found": "Este plano de visita não está disponível."
     }
   }
 }
