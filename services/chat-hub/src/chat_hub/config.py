@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # the corresponding driver short-circuits with a warning rather than
     # failing health checks (same posture as planner-svc's ANTHROPIC_API_KEY).
     telegram_bot_token: str | None = None
+    telegram_webhook_secret: str | None = None
     whatsapp_phone_number_id: str | None = None
     whatsapp_access_token: str | None = None
 
