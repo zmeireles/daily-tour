@@ -27,8 +27,14 @@ vi.mock("../lib/catalog-client.js", () => ({
   fetchPlacesByAction: vi.fn(),
 }));
 
+vi.mock("../lib/ipma-client.js", () => ({
+  isWeatherOkToday: vi.fn(),
+}));
+
 const catalogClient = await import("../lib/catalog-client.js");
 const fetchMock = catalogClient.fetchPlaceHydrated as ReturnType<typeof vi.fn>;
+const ipmaClient = await import("../lib/ipma-client.js");
+const ipmaMock = ipmaClient.isWeatherOkToday as ReturnType<typeof vi.fn>;
 const { createApp } = await import("../app.js");
 const { resetConfigCache } = await import("../config.js");
 const { setRedisForTest, closeRedis } = await import("../lib/redis.js");
@@ -89,6 +95,8 @@ describe("GET /v1/places/:id", () => {
   beforeEach(async () => {
     await flushRedis(ctx.client);
     fetchMock.mockReset();
+    ipmaMock.mockReset();
+    ipmaMock.mockResolvedValue(true);
   });
 
   afterAll(async () => {
@@ -97,7 +105,7 @@ describe("GET /v1/places/:id", () => {
     await stopTestRedis(ctx);
   });
 
-  it("happy authed — returns hydrated place with weather_ok_today stub", async () => {
+  it("happy authed — returns hydrated place with weather_ok_today from IPMA", async () => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
     fetchMock.mockResolvedValueOnce(FIXTURE_HYDRATED);
@@ -157,5 +165,37 @@ describe("GET /v1/places/:id", () => {
     });
     expect(res.statusCode).toBe(503);
     expect(res.json<{ error: string }>().error).toBe("catalog_unavailable");
+  });
+
+  it("dry day (precipitaProb < 60) — weather_ok_today is true", async () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
+    fetchMock.mockResolvedValueOnce(FIXTURE_HYDRATED);
+    ipmaMock.mockResolvedValueOnce(true);
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/v1/places/${FIXTURE_PLACE_ID}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json<{ weather_ok_today: boolean }>().weather_ok_today).toBe(true);
+  });
+
+  it("rainy day (precipitaProb >= 60) — weather_ok_today is false for outdoor place", async () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
+    fetchMock.mockResolvedValueOnce(FIXTURE_HYDRATED);
+    ipmaMock.mockResolvedValueOnce(false);
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/v1/places/${FIXTURE_PLACE_ID}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json<{ weather_ok_today: boolean }>().weather_ok_today).toBe(false);
   });
 });
