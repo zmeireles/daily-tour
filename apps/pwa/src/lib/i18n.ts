@@ -34,6 +34,27 @@ const resources = {
           "pt-PT": "Português",
         },
       },
+      home: {
+        greeting: "Welcome back",
+        locale_hint: "Showing in {{locale}}",
+        actions: {
+          eat: "Eat",
+          drink: "Drink",
+          see: "See",
+          do: "Do",
+          buy: "Buy",
+          move: "Move",
+        },
+        premium: {
+          plan_my_day: "Plan my day",
+          message_owner: "Message João",
+          coming_soon: "Coming soon",
+        },
+        locale: {
+          en: "English",
+          "pt-PT": "Português",
+        },
+      },
       place_detail: {
         translation_pending: "EN",
         loading: "Loading place…",
@@ -73,6 +94,27 @@ const resources = {
         },
         cta: {
           check_availability: "Consultar disponibilidade",
+        },
+        locale: {
+          en: "English",
+          "pt-PT": "Português",
+        },
+      },
+      home: {
+        greeting: "Bem-vindo de volta",
+        locale_hint: "A mostrar em {{locale}}",
+        actions: {
+          eat: "Comer",
+          drink: "Beber",
+          see: "Ver",
+          do: "Fazer",
+          buy: "Comprar",
+          move: "Deslocar-se",
+        },
+        premium: {
+          plan_my_day: "Planear o meu dia",
+          message_owner: "Falar com o João",
+          coming_soon: "Em breve",
         },
         locale: {
           en: "English",
