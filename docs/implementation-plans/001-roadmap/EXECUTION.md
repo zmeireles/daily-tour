@@ -40,6 +40,29 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 28 — 2026-05-17 — T-1.6.0 (sequential, post-Slice-1.4) — **first Opus self-commit** this session; unblocks Slice 1.6
+
+| Agent  | Task ID | Branch           | Profile     | Scope                                                                        | Status                   |
+| ------ | ------- | ---------------- | ----------- | ---------------------------------------------------------------------------- | ------------------------ |
+| t1-6-0 | T-1.6.0 | jmeireles/t1-6-0 | claude-yolo | Authentik blueprint + BFF owner-auth posture (jose-backed JWKS verification) | Done (clean self-commit) |
+
+#### Agent: t1-6-0 (T-1.6.0) — clean Opus self-commit; unblocks the entire backoffice slice
+
+- **Started**: 2026-05-17 13:50
+- **Finished**: agent ~10 min (clean self-commit `7e5ba43`); orchestrator verify + push + auto-merge ~7 min
+- **Predicted time**: 90–150 min
+- **Actual time**: ~17 min total (drastically under estimate — first Opus run in this burst delivered like Sonnet)
+- **Complexity**: High (Authentik blueprint authoring + multi-issuer JWKS integration + new auth posture)
+- **LOC changed**: 10 files (+677 / −15)
+- **Commit**: ✅ `7e5ba43` — clean Opus self-commit.
+- **PR**: [#54](https://github.com/zmeireles/daily-tour/pull/54) (auto-merged per session-level orchestrator autonomy)
+- **Acceptance**: 3/3 criteria met. Versionable blueprint at `infra/authentik/blueprints/owner-app.yaml`; BFF owner-auth plugin verifies via Authentik JWKS; `route.config.auth = 'owner'` middleware enforces `aud: staff`.
+- **New lessons**:
+  - **Opus performs comparably to Sonnet on this class of work** (~10 min for a 677-LOC auth refactor). TODO.md `[opus]` flag is conservative; Sonnet may handle similar work too.
+  - **`@fastify/jwt` v10 has no native JWKS** — `jose` directly is cleaner than wrapping a second @fastify/jwt namespace.
+  - **401/403 split** for auth failures (signature vs audience) enables better client-side error recovery.
+  - **`createLocalJWKSet` from `jose`** = clean test seam for JWKS-verified auth without a live Authentik.
+
 ### Wave 27 — 2026-05-17 — T-1.4.1 (sequential after Wave 26) — twelfth clean Sonnet self-commit; **Slice 1.4 closed**
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                                | Status                   |
