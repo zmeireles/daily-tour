@@ -2,7 +2,13 @@ import type { FastifyInstance } from "fastify";
 import { eq, ne, and, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../db/client.js";
-import { placeTable, type Place } from "../db/schema.js";
+import {
+  placeTable,
+  placeActionWishTable,
+  actionTable,
+  wishTable,
+  type Place,
+} from "../db/schema.js";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +70,11 @@ const ListQuerySchema = z.object({
     .string()
     .transform((v) => v === "true")
     .optional(),
+});
+
+const PlacesByActionQuerySchema = z.object({
+  action_slug: z.string().min(1).max(64),
+  status: PlaceStatusSchema.optional().default("published"),
 });
 
 const IdParamSchema = z.object({ id: z.string().uuid() });
@@ -291,6 +302,73 @@ export function placesRoutes(app: FastifyInstance): void {
       .returning();
 
     return formatPlace(updated!);
+  });
+
+  // GET /v1/places-by-action — places tagged with an action, grouped with their wish slugs.
+  // Called by the BFF discover aggregator (T-1.2.0). Returns a flat list of places with
+  // their wish slugs for the given action, ready for BFF-side geo-filter + wish grouping.
+  app.get("/v1/places-by-action", async (req, reply) => {
+    const parsed = PlacesByActionQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
+    }
+    const { action_slug, status } = parsed.data;
+
+    const db = getDb();
+    const rows = await db
+      .select({
+        id: placeTable.id,
+        name: placeTable.name,
+        description: placeTable.description,
+        geomLat: placeTable.geomLat,
+        geomLng: placeTable.geomLng,
+        address: placeTable.address,
+        isHostsPick: placeTable.isHostsPick,
+        status: placeTable.status,
+        createdAt: placeTable.createdAt,
+        wishSlug: wishTable.slug,
+      })
+      .from(placeTable)
+      .innerJoin(placeActionWishTable, eq(placeActionWishTable.placeId, placeTable.id))
+      .innerJoin(actionTable, eq(placeActionWishTable.actionId, actionTable.id))
+      .innerJoin(wishTable, eq(placeActionWishTable.wishId, wishTable.id))
+      .where(and(eq(actionTable.slug, action_slug), eq(placeTable.status, status)));
+
+    type PlaceItem = {
+      id: string;
+      name: Record<string, string>;
+      description: Record<string, string>;
+      geom_lat: number;
+      geom_lng: number;
+      address: string;
+      is_hosts_pick: boolean;
+      status: string;
+      created_at: string;
+      wishes: string[];
+    };
+
+    const placeMap = new Map<string, PlaceItem>();
+    for (const row of rows) {
+      let entry = placeMap.get(row.id);
+      if (!entry) {
+        entry = {
+          id: row.id,
+          name: row.name,
+          description: row.description,
+          geom_lat: row.geomLat,
+          geom_lng: row.geomLng,
+          address: row.address,
+          is_hosts_pick: row.isHostsPick,
+          status: row.status,
+          created_at: row.createdAt,
+          wishes: [],
+        };
+        placeMap.set(row.id, entry);
+      }
+      entry.wishes.push(row.wishSlug);
+    }
+
+    return { items: [...placeMap.values()] };
   });
 
   // DELETE /v1/places/:id — soft-delete (idempotent)

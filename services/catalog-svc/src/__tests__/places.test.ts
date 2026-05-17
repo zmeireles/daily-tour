@@ -119,4 +119,37 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     });
     expect(res.statusCode).toBe(400);
   });
+
+  it("GET /v1/places-by-action — returns published places with wish slugs for action", async () => {
+    // seedReferenceData (called by beforeEach) inserts action id "11111111-..." with slug "eat".
+    const actionId = "11111111-1111-4111-8111-111111111111";
+    const wishId = "22222222-2222-4222-8222-222222222222";
+
+    await ctx.pool.query(
+      `INSERT INTO catalog.wish (id, action_id, slug, i18n, sort_order)
+       VALUES ($1, $2, 'sea-view', '{"en":"Sea view"}'::jsonb, 1)
+       ON CONFLICT DO NOTHING`,
+      [wishId, actionId],
+    );
+
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    expect(create.statusCode).toBe(201);
+    const { id: placeId } = create.json<{ id: string }>();
+
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
+      [placeId, actionId, wishId],
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/places-by-action?action_slug=eat",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ items: { id: string; wishes: string[]; geom_lat: number }[] }>();
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]!.id).toBe(placeId);
+    expect(body.items[0]!.wishes).toContain("sea-view");
+    expect(body.items[0]!.geom_lat).toBe(37.74);
+  });
 });

@@ -11,6 +11,9 @@ const ConfigSchema = z.object({
   // Internal HTTP base URL for the token-svc on dt_internal. The BFF calls
   // /v1/tokens/:opaque/exchange to mint a JWT from a URL-borne opaque token.
   TOKEN_SVC_URL: z.string().url().default("http://dt_token_svc:8088"),
+  // Internal HTTP base URL for catalog-svc on dt_internal. Called by the
+  // discover aggregator and future place-detail route.
+  CATALOG_SVC_URL: z.string().url().default("http://dt_catalog_svc:8081"),
   // ioredis-compatible connection URL. Used for the JTI revocation cache —
   // the BFF reads `jti:revoked:<jti>` on every authed request.
   REDIS_URL: z.string().default("redis://dt_redis:6379/0"),
