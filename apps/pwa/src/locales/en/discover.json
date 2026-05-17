@@ -29,6 +29,13 @@
     "title": "Host's picks",
     "subtitle": "Personally recommended by your host"
   },
+  "chat": {
+    "title": "Chat",
+    "placeholder": "Message your host…",
+    "send": "Send",
+    "empty": "No messages yet. Say hello!",
+    "connecting": "Connecting…"
+  },
   "tour": {
     "timeline": {
       "reorder_hint": "Drag to reorder",
