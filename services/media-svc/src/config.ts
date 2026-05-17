@@ -13,6 +13,8 @@ const ConfigSchema = z.object({
   // Shared secret: BFF sends X-Internal-Token, media-svc validates it.
   // Temporary auth posture until T-1.6.x integrates Authentik (see plugins/internal-auth.ts).
   MEDIA_SVC_INTERNAL_TOKEN: z.string().min(32),
+  // RabbitMQ AMQP connection URL. Worker + publisher degrade gracefully if unreachable.
+  RABBITMQ_URL: z.string().default("amqp://dailytour:change-me-please-rabbit@rabbitmq:5672/"),
 });
 
 export type MediaSvcConfig = z.infer<typeof ConfigSchema>;
