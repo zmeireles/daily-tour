@@ -72,29 +72,31 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 - **n8n** — workflow automation. Owns the ingest scheduling, owner-approval reminders, daily digests, and low-code integrations described in [`03-architecture.md §2`](../docs/exploration/03-architecture.md). Pinned to LTS line `>=1.123.26` per the CVE floor in [`04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md). Runs SQLite-backed in dev/QA (single container, no separate DB). Reachable via Traefik at `http://n8n.dt.localhost`. **Auth via n8n's built-in User Management** — first boot serves the owner-setup wizard at `http://n8n.dt.localhost/setup` where the first user becomes the instance owner (`N8N_BASIC_AUTH_*` env vars were removed upstream in v0.184 and are silently ignored). Authentik forward-auth integration lands in a follow-up task once the Authentik Proxy Provider is wired to the embedded outpost. Never expose n8n's UI to the public internet — even with Authentik, keep host bindings on `127.0.0.1`.
 - **bff** — Fastify v5.8.5 backend-for-frontend (T-0.4.2 + T-1.0.2). Single ingress for the PWA. Aggregates downstream services, owns the reservation-token JWT verify path (calls `token-svc` for opaque→JWT exchange, checks `jti` against Redis revocation cache on every authed request). Secure-by-default: every route requires auth unless it opts out via `config: { auth: 'public' }`. OTel auto-instrumented. Reachable via Traefik at `http://api.dt.localhost`. Built locally from `services/bff/Dockerfile`.
 - **token-svc** — Fastify v5.8.5 reservation-token service (T-1.0.1). Owns the `auth_tokens` schema (guest, reservation, token_grant). Issues opaque tokens (`POST /v1/reservations/:id/token`), exchanges them for HS256 JWTs (`GET /v1/tokens/:opaque/exchange`), revokes by jti (`DELETE /v1/tokens/:jti`). **Internal-only** — no host port binding, no Traefik labels; the BFF is the sole consumer via `dt_internal` at `http://dt_token_svc:8088`. T-1.6.x may add Traefik for owner-side ops. Built locally from `services/token-svc/Dockerfile`.
+- **catalog-svc** — Fastify v5.8.5 catalog CRUD service (T-1.1.1). Owns the `catalog` schema (action, wish, guesthouse, owner_profile, place, place_action_wish, place_media, place_candidate). REST endpoints under `/v1` for places, guesthouses, and owner-profiles (list with base64 cursor pagination + filters, get-by-id with `?include_archived`, create with 409 on dup-slug, patch, soft-delete for places / hard-delete for the others). **Internal-only** — no host port binding, no Traefik labels; the BFF aggregates on top via `dt_internal` at `http://dt_catalog_svc:8081`. T-1.4.x (owner backoffice slice) wraps the write endpoints with an Authentik gate. Built locally from `services/catalog-svc/Dockerfile`.
 - **pwa-static** — nginx-served static build of the React 19 + Vite 6.4.2 PWA (T-0.4.0 + T-0.4.1). Reads `apps/pwa/dist/` via read-only bind mount; SPA fallback to `index.html` so the React router handles unknown routes. Reachable via Traefik at `http://app.dt.localhost`. **Requires `pnpm --filter @daily-tour/pwa build` first** — there's no inline build step in dev. For hot-reload, use `pnpm --filter @daily-tour/pwa dev` natively (Vite on `:5173`) and skip this service. Phase 5 may switch to an image-based deploy with the dist baked in.
 
 ## Ports (host bindings, all on 127.0.0.1)
 
 Daily-tour reserves the **27xxx** host-port block to avoid collisions with sibling dev stacks (`cc-dev`/codecomedy on 5432/6379/9000/9001/80/443/8080, po-platform on the same set, fit on 35432/38080, supabase on 5432/6543/8000/8443). Override any port via the matching `DT_HOST_PORT_*` env var in `.env` (defaults shown in parentheses).
 
-| Service             | Container       | Host                                                | Notes                                                                               |
-| ------------------- | --------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Traefik HTTP        | 80              | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_HTTP` (27080)      | redirects to HTTPS                                                                  |
-| Traefik HTTPS       | 443             | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_HTTPS` (27443)     | TLS termination                                                                     |
-| Traefik Dashboard   | 8080            | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_DASHBOARD` (27088) | dev/QA only; basic-auth protected                                                   |
-| Postgres            | 5432            | 127.0.0.1:`$DT_HOST_PORT_POSTGRES` (27432)          | dev access (run `psql -h 127.0.0.1 -p 27432`)                                       |
-| Redis               | 6379            | 127.0.0.1:`$DT_HOST_PORT_REDIS` (27379)             | requires password                                                                   |
-| RabbitMQ AMQP       | 5672            | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_AMQP` (27672)     | clients                                                                             |
-| RabbitMQ Management | 15672           | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_MGMT` (27673)     | admin UI                                                                            |
-| MinIO S3 API        | 9000            | 127.0.0.1:`$DT_HOST_PORT_MINIO_API` (27900)         | service-to-service                                                                  |
-| MinIO Console       | 9001            | 127.0.0.1:`$DT_HOST_PORT_MINIO_CONSOLE` (27901)     | admin UI                                                                            |
-| Authentik           | 9000 (internal) | —                                                   | No host bind; Traefik routes `http://auth.dt.localhost` → `authentik-server:9000`   |
-| authentik-postgres  | 5432 (internal) | —                                                   | No host bind; internal to `dt_internal` network only                                |
-| n8n                 | 5678 (internal) | —                                                   | No host bind; Traefik routes `http://n8n.dt.localhost` → `dt_n8n:5678`              |
-| bff                 | 8080 (internal) | —                                                   | No host bind; Traefik routes `http://api.dt.localhost` → `dt_bff:8080`              |
-| token-svc           | 8088 (internal) | —                                                   | No host bind, no Traefik. BFF-only consumer via `dt_internal` → `dt_token_svc:8088` |
-| pwa-static          | 80 (internal)   | —                                                   | No host bind; Traefik routes `http://app.dt.localhost` → `dt_pwa_static:80`         |
+| Service             | Container       | Host                                                | Notes                                                                                 |
+| ------------------- | --------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Traefik HTTP        | 80              | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_HTTP` (27080)      | redirects to HTTPS                                                                    |
+| Traefik HTTPS       | 443             | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_HTTPS` (27443)     | TLS termination                                                                       |
+| Traefik Dashboard   | 8080            | 127.0.0.1:`$DT_HOST_PORT_TRAEFIK_DASHBOARD` (27088) | dev/QA only; basic-auth protected                                                     |
+| Postgres            | 5432            | 127.0.0.1:`$DT_HOST_PORT_POSTGRES` (27432)          | dev access (run `psql -h 127.0.0.1 -p 27432`)                                         |
+| Redis               | 6379            | 127.0.0.1:`$DT_HOST_PORT_REDIS` (27379)             | requires password                                                                     |
+| RabbitMQ AMQP       | 5672            | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_AMQP` (27672)     | clients                                                                               |
+| RabbitMQ Management | 15672           | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_MGMT` (27673)     | admin UI                                                                              |
+| MinIO S3 API        | 9000            | 127.0.0.1:`$DT_HOST_PORT_MINIO_API` (27900)         | service-to-service                                                                    |
+| MinIO Console       | 9001            | 127.0.0.1:`$DT_HOST_PORT_MINIO_CONSOLE` (27901)     | admin UI                                                                              |
+| Authentik           | 9000 (internal) | —                                                   | No host bind; Traefik routes `http://auth.dt.localhost` → `authentik-server:9000`     |
+| authentik-postgres  | 5432 (internal) | —                                                   | No host bind; internal to `dt_internal` network only                                  |
+| n8n                 | 5678 (internal) | —                                                   | No host bind; Traefik routes `http://n8n.dt.localhost` → `dt_n8n:5678`                |
+| catalog-svc         | 8081 (internal) | —                                                   | No host bind, no Traefik. BFF-only consumer via `dt_internal` → `dt_catalog_svc:8081` |
+| bff                 | 8080 (internal) | —                                                   | No host bind; Traefik routes `http://api.dt.localhost` → `dt_bff:8080`                |
+| token-svc           | 8088 (internal) | —                                                   | No host bind, no Traefik. BFF-only consumer via `dt_internal` → `dt_token_svc:8088`   |
+| pwa-static          | 80 (internal)   | —                                                   | No host bind; Traefik routes `http://app.dt.localhost` → `dt_pwa_static:80`           |
 
 All bound to `127.0.0.1` deliberately — dev exposes nothing on `0.0.0.0`. Production reaches these through Traefik (T-0.3.1) with auth. **Note**: `127.0.0.1` bindings still collide with `0.0.0.0` bindings from other Docker stacks on the same port — Docker rejects `bind: address already in use` regardless of interface, hence the 27xxx remap.
 
@@ -127,7 +129,7 @@ docker compose --env-file dev-environment \
 **Wait ≥3 min** for Authentik to migrate its DB on first boot, n8n to initialize, and the BFF image to build (first build is slow; subsequent ones reuse the deps layer):
 
 ```bash
-docker compose --env-file dev-environment -f ... ps  # wait until all 12 services healthy
+docker compose --env-file dev-environment -f ... ps  # wait until all 13 services healthy
 ```
 
 **Verify health**:

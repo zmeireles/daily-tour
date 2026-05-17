@@ -1,7 +1,8 @@
-# Daily Tour — application overlay (BFF + token-svc + static PWA)
+# Daily Tour — application overlay (BFF + token-svc + catalog-svc + static PWA)
 #
-# Three services that round out the request path: PWA → Traefik → BFF →
-# token-svc (+ Postgres + Redis on dt_internal from the base overlay).
+# Four services that round out the request path: PWA → Traefik → BFF →
+# {token-svc, catalog-svc} (+ Postgres + Redis on dt_internal from the base
+# overlay).
 #
 #   - bff           → built locally from services/bff/Dockerfile (multi-stage,
 #                     ~216 MB). Listens on :8080. Reached as http://api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
@@ -124,6 +125,43 @@ services:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but the
       # Fastify listener binds 0.0.0.0 only.
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8088/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # catalog-svc — Fastify v5.8.5 places/guesthouses/owner-profiles CRUD (T-1.1.1)
+  # Owns catalog.{action, wish, guesthouse, owner_profile, place,
+  # place_action_wish, place_media, place_candidate}. Internal-only — the BFF
+  # aggregates on top. T-1.4.x (owner backoffice slice) may add an
+  # Authentik-gated Traefik route for the owner-side write endpoints.
+  # ─────────────────────────────────────────────────────────────────────────
+  catalog-svc:
+    build:
+      context: ../..
+      dockerfile: services/catalog-svc/Dockerfile
+    image: daily-tour/catalog-svc:dev
+    container_name: dt_catalog_svc
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    environment:
+      NODE_ENV: development
+      PORT: "8081"
+      HOST: 0.0.0.0
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: catalog-svc
+      CATALOG_SVC_DATABASE_URL: postgres://catalog_svc:${SERVICE_DB_PASSWORD_CATALOG}@dt_postgres:5432/dailytour
+    healthcheck:
+      # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
+      # Fastify only listens on 0.0.0.0.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/health || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 30s

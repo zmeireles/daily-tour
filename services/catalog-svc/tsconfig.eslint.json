@@ -9,5 +9,12 @@
     "allowJs": true,
     "baseUrl": "."
   },
-  "include": ["src/**/*", "seeds/**/*", "eslint.config.js", "drizzle.config.ts"]
+  "include": [
+    "src/**/*",
+    "seeds/**/*",
+    "eslint.config.js",
+    "drizzle.config.ts",
+    "tsup.config.ts",
+    "vitest.config.ts"
+  ]
 }
