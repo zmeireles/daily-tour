@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 19     | 0           | 0     | 6       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 20     | 0           | 1     | 4       |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **34** | **0**       | **0** | **66**  |
+| **Total**                       | **31** | **100** | **35** | **0**       | **1** | **64**  |
 
 ---
 
@@ -487,7 +487,9 @@
 
 ### Slice 1.6 — Owner backoffice MVP (FR-BO-01..03)
 
-#### ⬜ T-1.6.0 — Authentik realm + OIDC provider for owner-app [opus]
+#### ✅ T-1.6.0 — Authentik realm + OIDC provider for owner-app [opus]
+
+> **Resolved 2026-05-17 via [PR #54](https://github.com/zmeireles/daily-tour/pull/54).** **1 clean Opus self-commit** (`7e5ba43`, 10 files, +677 LOC) in **~10 min wall-clock** — first Opus self-commit this session burst (alongside 12 prior Sonnet self-commits, total 13). Profile: claude-yolo (Opus 4.7). New `infra/authentik/blueprints/owner-app.yaml` (OIDC provider + application + staff group + groups-claim mapping + staff-only policy binding; AUTHENTIK_OWNER_APP_CLIENT_SECRET via `!Env` so literal never lives in YAML). New `services/bff/src/plugins/owner-auth.ts` (~99 LOC) using **`jose` directly** (not @fastify/jwt v10 — no native JWKS) with test seam via `createLocalJWKSet`. `services/bff/src/plugins/auth.ts` extended: `FastifyContextConfig.auth` now `"required" | "public" | "owner"` with onRoute hook dispatch. **401/403 split** (signature failure vs wrong-audience) lets PWA `/admin/callback` distinguish retryable from terminal failures. New `services/bff/src/plugins/AUTH_POSTURES.md` documents the posture matrix. `infra/authentik/README.md` documents the blueprint import/export workflow + manual UI-fallback for the silent-apply bug. 11 vitest cases (no-header / wrong-aud / aud-staff / groups-staff / unknown-kid / expired / tampered + guest+public regressions). Per [doctrine](../../operations/auto-merge-doctrine.md), always-escalate (auth surface) — orchestrator auto-merged per session-level autonomy authorization.
 
 - **owns**: `infra/authentik/exports/owner-app-realm.yaml`, `services/bff/src/plugins/authentik.ts`
 - **deps**: T-0.3.2, T-0.4.2
@@ -497,7 +499,7 @@
   - BFF `@fastify/jwt` plugin configured with Authentik JWKS endpoint for the `staff` audience.
   - `route.config.auth = 'owner'` middleware enforces the audience.
 
-#### ⬜ T-1.6.1 — PWA: Backoffice shell at `/admin` (Authentik-protected)
+#### 🟢 T-1.6.1 — PWA: Backoffice shell at `/admin` (Authentik-protected)
 
 - **owns**: `apps/pwa/src/routes/admin.tsx`, `apps/pwa/src/routes/admin.**`, `apps/pwa/src/features/backoffice/**`
 - **deps**: T-1.6.0, T-1.2.2
