@@ -1,4 +1,4 @@
-"""SQL geo + tag filter ∩ pgvector cosine re-rank (T-2.1.0).
+"""SQL geo + tag filter ∩ pgvector cosine re-rank (T-2.1.0, T-2.2.0).
 
 The hybrid query is one SQL round-trip:
 
@@ -11,7 +11,8 @@ The hybrid query is one SQL round-trip:
    hasn't been backfilled yet (the worker is eventually consistent).
 5. ORDER:
    - re-rank path (query_vec is not None): score DESC nulls last, distance ASC.
-   - distance path: distance ASC.
+     Host's picks receive a +0.05 score boost on top of cosine similarity.
+   - distance path: is_hosts_pick DESC, distance ASC (picks win ties).
    DISTINCT ON (place_id) keeps multi-wish places from duplicating in results.
 
 The whole hybrid runs as one query rather than two (SQL-filter then vector
@@ -43,6 +44,7 @@ _CANDIDATE_CTE = """
 WITH candidate AS (
     SELECT DISTINCT
         p.id AS place_id,
+        p.is_hosts_pick,
         2 * 6371 * asin(sqrt(
             power(sin(radians(p.geom_lat - :lat) / 2), 2)
             + cos(radians(:lat)) * cos(radians(p.geom_lat))
@@ -64,7 +66,7 @@ _DISTANCE_SQL = (
 SELECT place_id, distance_km, NULL::float AS score
 FROM candidate
 WHERE distance_km <= :km
-ORDER BY distance_km ASC
+ORDER BY is_hosts_pick DESC, distance_km ASC
 LIMIT :limit
 """
 )
@@ -72,6 +74,8 @@ LIMIT :limit
 # Re-rank: cast the bound parameter to vector at the SQL boundary. asyncpg /
 # the pgvector python adapter both expect a list[float] here; the explicit
 # `::vector` cast is what lets pgvector pick the HNSW index for `<=>`.
+_HOSTS_PICK_BOOST = 0.05
+
 _RERANK_SQL = (
     _CANDIDATE_CTE
     + """
@@ -81,6 +85,7 @@ SELECT
     CASE
         WHEN e.vec IS NULL THEN NULL
         ELSE 1 - (e.vec <=> CAST(:query_vec AS vector))
+             + CASE WHEN c.is_hosts_pick THEN 0.05 ELSE 0.0 END
     END AS score
 FROM candidate AS c
 LEFT JOIN search.place_embedding AS e ON e.place_id = c.place_id
