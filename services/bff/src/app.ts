@@ -6,8 +6,10 @@ import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import mediaSvcPlugin from "./plugins/media-client.js";
 import ownerAuthPlugin from "./plugins/owner-auth.js";
+import adminGuesthousesRoute from "./routes/admin-guesthouses.js";
 import adminMediaRoute from "./routes/admin-media.js";
 import adminPlacesRoute from "./routes/admin-places.js";
+import adminProfileRoute from "./routes/admin-profile.js";
 import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
@@ -83,6 +85,8 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(placesRoute);
   await app.register(adminMediaRoute);
   await app.register(adminPlacesRoute);
+  await app.register(adminProfileRoute);
+  await app.register(adminGuesthousesRoute);
 
   return app;
 }

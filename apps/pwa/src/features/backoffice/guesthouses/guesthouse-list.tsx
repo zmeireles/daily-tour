@@ -1,0 +1,87 @@
+import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
+import { useGuesthouses } from "./use-guesthouses";
+import { Button } from "@/components/ui/button";
+
+export function GuesthouseList() {
+  const { t } = useTranslation("admin");
+  const navigate = useNavigate();
+  const { data, isLoading, isError } = useGuesthouses();
+
+  if (isLoading) {
+    return (
+      <p className="text-muted-foreground text-sm">{t("guesthouses.list.loading", "Loading…")}</p>
+    );
+  }
+  if (isError) {
+    return (
+      <p className="text-destructive text-sm">
+        {t("guesthouses.list.error", "Failed to load guesthouses.")}
+      </p>
+    );
+  }
+
+  const guesthouses = data?.data ?? [];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">{t("guesthouses.title", "Guesthouses")}</h1>
+        <Button size="sm" onClick={() => void navigate("/admin/guesthouses/new")}>
+          {t("guesthouses.new", "New Guesthouse")}
+        </Button>
+      </div>
+
+      {guesthouses.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          {t("guesthouses.list.empty", "No guesthouses yet.")}
+        </p>
+      ) : (
+        <div className="rounded-md border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">
+                  {t("guesthouses.list.name", "Name")}
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
+                  {t("guesthouses.list.slug", "Slug")}
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
+                  {t("guesthouses.list.address", "Address")}
+                </th>
+                <th className="px-4 py-2 text-right font-medium">
+                  {t("guesthouses.list.actions", "Actions")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {guesthouses.map((gh) => (
+                <tr key={gh.id} className="border-t hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium">
+                    {gh.name["en"] ?? Object.values(gh.name)[0] ?? gh.id}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{gh.slug}</td>
+                  <td className="px-4 py-3 text-muted-foreground truncate max-w-xs">
+                    {gh.address}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void navigate(`/admin/guesthouses/${gh.id}`)}
+                      >
+                        {t("guesthouses.list.edit", "Edit")}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

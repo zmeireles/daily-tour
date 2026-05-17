@@ -13,6 +13,60 @@
     "title": "Coming soon",
     "body": "This section is wired up in a follow-up task."
   },
+  "profile": {
+    "title": "Owner Profile",
+    "form": {
+      "loading": "Loading…",
+      "load_error": "Failed to load profile.",
+      "bio": "Bio",
+      "phone": "Phone",
+      "email": "Email",
+      "photo": "Photo asset ID",
+      "contact_options": "Contact options",
+      "call_enabled": "Allow calls",
+      "dm_in_app": "In-app messages",
+      "dm_telegram": "Telegram",
+      "dm_whatsapp_link": "WhatsApp (link)",
+      "dm_whatsapp_cloud": "WhatsApp (Cloud API)",
+      "save": "Save",
+      "saved": "Saved.",
+      "tabs": {
+        "en": "English",
+        "pt_PT": "Portuguese"
+      }
+    }
+  },
+  "guesthouses": {
+    "title": "Guesthouses",
+    "new": "New Guesthouse",
+    "edit": "Edit Guesthouse",
+    "list": {
+      "loading": "Loading…",
+      "error": "Failed to load guesthouses.",
+      "empty": "No guesthouses yet.",
+      "name": "Name",
+      "slug": "Slug",
+      "address": "Address",
+      "actions": "Actions",
+      "edit": "Edit"
+    },
+    "form": {
+      "loading": "Loading…",
+      "load_error": "Failed to load guesthouse.",
+      "name": "Name",
+      "slug": "Slug",
+      "address": "Address",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "map_placeholder": "Map picker deferred to Phase 2 — use numeric inputs for now.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "tabs": {
+        "en": "English",
+        "pt_PT": "Portuguese"
+      }
+    }
+  },
   "places": {
     "title": "Places",
     "new": "New Place",
