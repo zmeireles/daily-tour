@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .drivers.in_app import mount_in_app_driver
 from .drivers.telegram import mount_telegram_driver
-from .drivers.whatsapp import build_wa_me_url
+from .drivers.whatsapp import build_wa_me_url, mount_whatsapp_driver
 from .routes import draft_router, health_router
 from .version import __version__
 
@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
     app.include_router(draft_router)
     mount_in_app_driver(app)
     mount_telegram_driver(app)
+    mount_whatsapp_driver(app)
 
     @app.get("/v1/chat/whatsapp/draft")
     async def whatsapp_draft(
