@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 18     | 0           | 1     | 6       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 19     | 0           | 0     | 6       |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **33** | **0**       | **1** | **66**  |
+| **Total**                       | **31** | **100** | **34** | **0**       | **0** | **66**  |
 
 ---
 
@@ -455,7 +455,9 @@
   - Max file size + MIME whitelist enforced (jpeg/webp/mp4).
   - Listens on `:8087`.
 
-#### 🟢 T-1.4.1 — Image transcode worker (sharp → multiple sizes + AVIF/WebP)
+#### ✅ T-1.4.1 — Image transcode worker (sharp → multiple sizes + AVIF/WebP)
+
+> **Resolved 2026-05-17 via [PR #52](https://github.com/zmeireles/daily-tour/pull/52).** 1 clean Sonnet self-commit (`a4072a6`) in **~12 min wall-clock** (twelfth clean self-commit this session). Profile: claude-sonnet-yolo. **Closes Slice 1.4.** New `services/media-svc/src/workers/transcode.ts`: RabbitMQ consumer on queue `media.transcode` bound to exchange `media` / routing key `media.uploaded`. On each message: fetches original from MinIO via `GetObjectCommand`, generates 6 sharp variants (200w/600w/1200w × AVIF+WebP), uploads under `derived/{asset_id}/{size}w.{fmt}` via `PutObjectCommand`, updates `media.asset.variants` jsonb with all 6 keys. Ack on success, nack (no requeue) on error. Also adds **new endpoint `POST /v1/uploads/complete`** (zod-validated `{ asset_id: uuid }`) that sets `uploaded_at=now()` + best-effort publishes `media.uploaded` (HTTP succeeds even if MQ is down). New `src/lib/mq.ts`: lazy publisher singleton with auto-reconnect on close. **Single-container path** — worker boots inside the same process as the HTTP server in `index.ts` (simpler compose; trade-off documented — horizontal scale axes coupled, separate container deferred to Phase 5). Sharp 0.34.5 on `node:22-alpine` (prebuilt linux-x64-musl binary works; no libvips packages needed). `prefetch(4)` per instance for worker concurrency. BFF client extended with `completeUpload(assetId)`. 3 vitest cases (happy / idempotent / bad message). Per [doctrine](../../operations/auto-merge-doctrine.md), borderline (new worker + queue contract) — orchestrator auto-merged per session-level autonomy authorization.
 
 - **owns**: `services/media-svc/src/workers/transcode.ts`
 - **deps**: T-1.4.0
