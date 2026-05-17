@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "title": "Daily Tour",
+    "tagline": "São Miguel · Açores · Where you stay, what you'll love"
+  },
+  "owner_pitch": {
+    "line1": "Your host's curated picks for São Miguel.",
+    "line2": "Real places, honest recommendations, zero fuss.",
+    "line3": "Drop in as a guest. Walk out as a local."
+  },
+  "sample_places": {
+    "title": "A taste of São Miguel"
+  },
+  "cta": {
+    "check_availability": "Check availability"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português"
+  }
+}

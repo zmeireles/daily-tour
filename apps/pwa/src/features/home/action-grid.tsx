@@ -2,16 +2,16 @@ import { useTranslation } from "react-i18next";
 import { ActionGroupHeader } from "@/components/action-group-header";
 
 const ACTIONS = [
-  { slug: "eat", iconName: "Utensils", key: "home.actions.eat" },
-  { slug: "drink", iconName: "Wine", key: "home.actions.drink" },
-  { slug: "see", iconName: "Eye", key: "home.actions.see" },
-  { slug: "do", iconName: "Footprints", key: "home.actions.do" },
-  { slug: "buy", iconName: "ShoppingBag", key: "home.actions.buy" },
-  { slug: "move", iconName: "Car", key: "home.actions.move" },
+  { slug: "eat", iconName: "Utensils", key: "actions.eat" },
+  { slug: "drink", iconName: "Wine", key: "actions.drink" },
+  { slug: "see", iconName: "Eye", key: "actions.see" },
+  { slug: "do", iconName: "Footprints", key: "actions.do" },
+  { slug: "buy", iconName: "ShoppingBag", key: "actions.buy" },
+  { slug: "move", iconName: "Car", key: "actions.move" },
 ] as const;
 
 export function ActionGrid() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("home");
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-4 py-2">

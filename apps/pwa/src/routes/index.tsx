@@ -10,7 +10,7 @@ import AuthedIndexRoute from "@/routes/_authed.index";
 
 function PublicIndex() {
   const [searchParams] = useSearchParams();
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const isExpired = searchParams.get("reason") === "expired";
 
   return (

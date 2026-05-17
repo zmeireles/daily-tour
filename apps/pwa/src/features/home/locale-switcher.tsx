@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 const LOCALES = ["en", "pt-PT"] as const;
 
 export function LocaleSwitcher() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("home");
 
   return (
     <div className="flex gap-1" role="group" aria-label="Language switcher">
@@ -21,7 +21,7 @@ export function LocaleSwitcher() {
           )}
           aria-pressed={i18n.language === locale}
         >
-          {t(`home.locale.${locale}`)}
+          {t(`locale.${locale}`)}
         </button>
       ))}
     </div>

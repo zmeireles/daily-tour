@@ -14,7 +14,7 @@ export default function RTokenRoute() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const setSession = useSessionStore((s) => s.setSession);
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
 
   useEffect(() => {
     if (!token) return;

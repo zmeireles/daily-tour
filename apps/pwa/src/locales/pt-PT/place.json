@@ -1,0 +1,12 @@
+{
+  "translation_pending": "EN",
+  "loading": "A carregar lugar…",
+  "error": "Não foi possível carregar. Tente novamente.",
+  "not_found": "Lugar não encontrado.",
+  "actions": {
+    "navigate": "Navegar",
+    "call": "Ligar",
+    "message": "Mensagem"
+  },
+  "wa_prefill": "Olá! Estou em {{placeName}}, podes recomendar o próximo lugar?"
+}

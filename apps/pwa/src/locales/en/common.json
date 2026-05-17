@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "exchanging": "Logging you in…",
+    "token_expired": "Your link has expired. Ask your host for a new one.",
+    "exchange_failed": "Something went wrong. Try again."
+  },
+  "landing": {
+    "expired_message": "Your link expired. Please ask your host for a new one."
+  }
+}
