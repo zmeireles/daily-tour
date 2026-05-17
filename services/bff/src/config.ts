@@ -14,6 +14,8 @@ const ConfigSchema = z.object({
   // Internal HTTP base URL for catalog-svc on dt_internal. Called by the
   // discover aggregator and future place-detail route.
   CATALOG_SVC_URL: z.string().url().default("http://dt_catalog_svc:8081"),
+  // Internal HTTP base URL for search-svc on dt_internal (T-2.1.1).
+  SEARCH_SVC_URL: z.string().url().default("http://dt_search_svc:8082"),
   // Internal HTTP base URL for media-svc on dt_internal (T-1.4.0).
   MEDIA_SVC_URL: z.string().url().default("http://dt_media_svc:8087"),
   // Shared secret forwarded as X-Internal-Token to media-svc. Temporary auth
