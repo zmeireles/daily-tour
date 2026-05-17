@@ -6,6 +6,7 @@ import IndexRoute from "@/routes/index";
 import RTokenRoute from "@/routes/r.$token";
 import PlaceDetailRoute from "@/routes/_authed.p.$id";
 import ActionDrillDownRoute from "@/routes/_authed.a.$action";
+import ChatRoute from "@/routes/_authed.chat";
 import TourNewRoute from "@/routes/_authed.tour.new";
 import TourPlanRoute from "@/routes/_authed.tour.$planId";
 import TourShareRoute from "@/routes/tour.share.$planId";
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
   { path: "/r/:token", element: <RTokenRoute /> },
   { path: "/p/:id", element: <PlaceDetailRoute /> },
   { path: "/a/:action", element: <ActionDrillDownRoute /> },
+  { path: "/chat", element: <ChatRoute /> },
   { path: "/tour/new", element: <TourNewRoute /> },
   { path: "/tour/share/:planId", element: <TourShareRoute /> },
   { path: "/tour/:planId", element: <TourPlanRoute /> },
