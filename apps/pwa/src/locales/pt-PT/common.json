@@ -6,5 +6,11 @@
   },
   "landing": {
     "expired_message": "O seu link expirou. Por favor peça ao seu anfitrião um novo."
+  },
+  "pwa_install": {
+    "title": "Instalar Daily Tour",
+    "body": "Adicione ao ecrã principal para acesso instantâneo.",
+    "install": "Instalar",
+    "dismiss": "Agora não"
   }
 }
