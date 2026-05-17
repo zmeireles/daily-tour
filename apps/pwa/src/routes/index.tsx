@@ -1,7 +1,10 @@
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Hero } from "@/features/public-landing/hero";
+import { OwnerPitch } from "@/features/public-landing/owner-pitch";
+import { SamplePlaces } from "@/features/public-landing/sample-places";
+import { CheckAvailabilityCta } from "@/features/public-landing/check-availability-cta";
+import { LocaleSwitcher } from "@/features/public-landing/locale-switcher";
 
 export default function IndexRoute() {
   const [searchParams] = useSearchParams();
@@ -9,26 +12,24 @@ export default function IndexRoute() {
   const isExpired = searchParams.get("reason") === "expired";
 
   return (
-    <main className="min-h-svh grid place-items-center bg-background p-6">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <CardTitle>
-            <h1 className="text-3xl font-[var(--font-display)]">Hello, Daily Tour</h1>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-3">
-          {isExpired && (
-            <p className="text-sm text-destructive text-center" data-testid="expired-message">
-              {t(
-                "landing.expired_message",
-                "Your link expired. Please ask your host for a new one.",
-              )}
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground text-center">São Miguel · Açores</p>
-          <Button>Click me</Button>
-        </CardContent>
-      </Card>
-    </main>
+    <div className="min-h-svh bg-background flex flex-col">
+      <header className="flex justify-end px-6 py-4">
+        <LocaleSwitcher />
+      </header>
+      <main className="flex-1">
+        {isExpired && (
+          <p
+            className="mx-auto max-w-md mt-2 px-6 text-sm text-destructive text-center"
+            data-testid="expired-message"
+          >
+            {t("landing.expired_message", "Your link expired. Please ask your host for a new one.")}
+          </p>
+        )}
+        <Hero />
+        <OwnerPitch />
+        <SamplePlaces />
+        <CheckAvailabilityCta />
+      </main>
+    </div>
   );
 }
