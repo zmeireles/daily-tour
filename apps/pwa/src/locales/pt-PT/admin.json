@@ -13,6 +13,60 @@
     "title": "Em breve",
     "body": "Esta secção será implementada numa tarefa seguinte."
   },
+  "profile": {
+    "title": "Perfil do Anfitrião",
+    "form": {
+      "loading": "A carregar…",
+      "load_error": "Erro ao carregar perfil.",
+      "bio": "Bio",
+      "phone": "Telefone",
+      "email": "Email",
+      "photo": "ID do ativo de foto",
+      "contact_options": "Opções de contacto",
+      "call_enabled": "Permitir chamadas",
+      "dm_in_app": "Mensagens na app",
+      "dm_telegram": "Telegram",
+      "dm_whatsapp_link": "WhatsApp (link)",
+      "dm_whatsapp_cloud": "WhatsApp (Cloud API)",
+      "save": "Guardar",
+      "saved": "Guardado.",
+      "tabs": {
+        "en": "Inglês",
+        "pt_PT": "Português"
+      }
+    }
+  },
+  "guesthouses": {
+    "title": "Alojamentos",
+    "new": "Novo Alojamento",
+    "edit": "Editar Alojamento",
+    "list": {
+      "loading": "A carregar…",
+      "error": "Erro ao carregar alojamentos.",
+      "empty": "Nenhum alojamento encontrado.",
+      "name": "Nome",
+      "slug": "Slug",
+      "address": "Morada",
+      "actions": "Ações",
+      "edit": "Editar"
+    },
+    "form": {
+      "loading": "A carregar…",
+      "load_error": "Erro ao carregar alojamento.",
+      "name": "Nome",
+      "slug": "Slug",
+      "address": "Morada",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "map_placeholder": "Seletor de mapa adiado para a Fase 2 — use campos numéricos por agora.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "tabs": {
+        "en": "Inglês",
+        "pt_PT": "Português"
+      }
+    }
+  },
   "places": {
     "title": "Locais",
     "new": "Novo Local",

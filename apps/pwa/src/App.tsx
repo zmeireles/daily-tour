@@ -10,6 +10,10 @@ import AdminCallbackRoute from "@/routes/admin.callback";
 import AdminPlacesRoute from "@/routes/admin.places";
 import AdminPlacesNewRoute from "@/routes/admin.places.new";
 import AdminPlacesEditRoute from "@/routes/admin.places.$id";
+import AdminProfileRoute from "@/routes/admin.profile";
+import AdminGuesthousesRoute from "@/routes/admin.guesthouses";
+import AdminGuesthousesNewRoute from "@/routes/admin.guesthouses.new";
+import AdminGuesthousesEditRoute from "@/routes/admin.guesthouses.$id";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
 
 const queryClient = new QueryClient();
@@ -26,6 +30,10 @@ const router = createBrowserRouter([
       { path: "places", element: <AdminPlacesRoute /> },
       { path: "places/new", element: <AdminPlacesNewRoute /> },
       { path: "places/:id", element: <AdminPlacesEditRoute /> },
+      { path: "profile", element: <AdminProfileRoute /> },
+      { path: "guesthouses", element: <AdminGuesthousesRoute /> },
+      { path: "guesthouses/new", element: <AdminGuesthousesNewRoute /> },
+      { path: "guesthouses/:id", element: <AdminGuesthousesEditRoute /> },
     ],
   },
   { path: "/admin/callback", element: <AdminCallbackRoute /> },
