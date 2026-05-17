@@ -14,6 +14,11 @@ const ConfigSchema = z.object({
   // Internal HTTP base URL for catalog-svc on dt_internal. Called by the
   // discover aggregator and future place-detail route.
   CATALOG_SVC_URL: z.string().url().default("http://dt_catalog_svc:8081"),
+  // Internal HTTP base URL for media-svc on dt_internal (T-1.4.0).
+  MEDIA_SVC_URL: z.string().url().default("http://dt_media_svc:8087"),
+  // Shared secret forwarded as X-Internal-Token to media-svc. Temporary auth
+  // posture until T-1.6.x wires Authentik OIDC (see media-svc/src/plugins/internal-auth.ts).
+  MEDIA_SVC_INTERNAL_TOKEN: z.string().default("change-me-please-media-svc-internal-token-min-32c"),
   // ioredis-compatible connection URL. Used for the JTI revocation cache —
   // the BFF reads `jti:revoked:<jti>` on every authed request.
   REDIS_URL: z.string().default("redis://dt_redis:6379/0"),
