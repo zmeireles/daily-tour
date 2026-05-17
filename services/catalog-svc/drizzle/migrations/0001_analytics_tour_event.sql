@@ -1,4 +1,8 @@
--- analytics schema is created by infra/postgres/init/01-schemas.sql.
+-- analytics schema is created by infra/postgres/init/01-schemas.sql in prod;
+-- tests use ephemeral testcontainers without those init scripts, so we
+-- defensively create the schema here too. Idempotent.
+CREATE SCHEMA IF NOT EXISTS "analytics";
+
 -- This migration runs under catalog_svc (schema owner); catalog_svc also owns
 -- analytics per 02-roles.sql. bff INSERT grant is via ALTER DEFAULT PRIVILEGES.
 CREATE TABLE "analytics"."tour_event" (
