@@ -6,6 +6,7 @@ import { useTourPlan } from "@/features/tour/use-tour-plan";
 import { useTourTelemetry } from "@/features/tour/use-tour-telemetry";
 import { DailyTourTimeline, type TourStop } from "@/components/daily-tour-timeline";
 import { FailureFallback } from "@/features/tour/failure-fallback";
+import { ShareButton } from "@/features/tour/share-button";
 
 const TIMEOUT_MS = 2 * 60 * 1000;
 
@@ -93,7 +94,10 @@ export default function TourPlanRoute() {
     const stops = (plan.plan_payload as { stops?: TourStop[] })?.stops ?? [];
     return (
       <main className="min-h-svh px-4 py-8 max-w-lg mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">{t("tour.status.ready")}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold">{t("tour.status.ready")}</h1>
+          <ShareButton planId={planId!} />
+        </div>
         <DailyTourTimeline stops={stops} />
         <Link
           to="/"

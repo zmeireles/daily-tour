@@ -41,6 +41,13 @@
       "timeout_body": "This is taking longer than expected. You can retry or edit your preferences.",
       "retry": "Try again",
       "edit": "Edit preferences"
+    },
+    "share": {
+      "button": "Share",
+      "copied": "Link copied!",
+      "title": "My Daily Tour",
+      "heading": "Shared Tour",
+      "not_found": "This tour plan is not available."
     }
   }
 }
