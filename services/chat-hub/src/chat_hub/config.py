@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     whatsapp_phone_number_id: str | None = None
     whatsapp_access_token: str | None = None
 
+    # Anthropic Messages API (T-4.4.0 — AI reservation drafter).
+    # When ANTHROPIC_API_KEY is unset, the drafter returns a deterministic
+    # fallback so dev/CI bring chat-hub up without a real key (mirrors
+    # planner-svc).
+    anthropic_api_key: str | None = None
+    anthropic_model: str = "claude-sonnet-4-6"
+    anthropic_max_tokens: int = 1024
+    anthropic_request_timeout_seconds: float = 30.0
+
 
 _cached: Settings | None = None
 
