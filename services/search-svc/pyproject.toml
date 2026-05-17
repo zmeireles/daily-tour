@@ -18,6 +18,9 @@ dependencies = [
   "pgvector>=0.3.6,<0.4",
 ]
 
+[project.scripts]
+backfill = "search_svc.scripts.backfill:main"
+
 [dependency-groups]
 dev = [
   "pytest>=8.3,<9",
