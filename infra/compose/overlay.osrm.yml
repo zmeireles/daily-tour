@@ -1,0 +1,68 @@
+# Daily Tour — OSRM self-hosted routing overlay (T-3.3.0)
+#
+# Adds osrm-routed for real drive-time estimates. On first start, downloads the
+# Azores PBF from Geofabrik (~15 MB) and runs extract + contract (~60 s for
+# São Miguel). Subsequent starts reuse the volume-cached processed data (<5 s).
+#
+# Alternative (not used here to preserve no-external-deps posture):
+#   Mapbox Distance Matrix API — set MAPBOX_TOKEN in .env and call:
+#   GET https://api.mapbox.com/directions-matrix/v1/mapbox/driving/{coords}?access_token={token}
+#
+# Consume from planner-svc via $OSRM_BASE_URL=http://dt_osrm:5000 (T-3.3.1).
+#
+# Compose alongside the full app stack:
+#   docker compose \
+#     --env-file dev-environment \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     -f infra/compose/docker-compose.app.yml \
+#     -f infra/compose/overlay.osrm.yml \
+#     up -d --build
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+volumes:
+  osrm_data:
+    name: dt_osrm_data
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # osrm — self-hosted OSRM routing engine (T-3.3.0)
+  # First run downloads the Azores PBF and runs extract + contract. The
+  # processed data is persisted in the osrm_data volume so subsequent starts
+  # skip the init step. Internal-only — planner-svc is the sole consumer.
+  # ─────────────────────────────────────────────────────────────────────────
+  osrm:
+    build:
+      context: ../osrm
+      dockerfile: Dockerfile
+    image: daily-tour/osrm:dev
+    container_name: dt_osrm
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    volumes:
+      - osrm_data:/data
+    healthcheck:
+      # OSRM has no dedicated /health endpoint. Probe a fixed point-to-point
+      # route on São Miguel (Ponta Delgada area) so the check only passes once
+      # routing data is fully loaded and the server is accepting requests.
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O- 'http://127.0.0.1:5000/nearest/v1/driving/-25.6736,37.7412' | grep -q '\"code\"' || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
