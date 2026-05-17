@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # (T-3.0.1 adds the actual /v1/query call; the skeleton just carries the URL).
     search_svc_url: str = "http://dt_search_svc:8082"
 
+    osrm_url: str = "http://osrm-routed:5000"
+
     otel_service_name: str = "planner-svc"
     otel_exporter_otlp_endpoint: str | None = None
 
