@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 6      | 0           | 3     | 16      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 8      | 0           | 5     | 12      |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **21** | **0**       | **3** | **76**  |
+| **Total**                       | **31** | **100** | **23** | **0**       | **5** | **72**  |
 
 ---
 
@@ -322,7 +322,9 @@
   - Vitest integration tests w/ Testcontainers.
   - Listens on `:8081`.
 
-#### 🟢 T-1.1.2 — 28-place seed fixture loader
+#### ✅ T-1.1.2 — 28-place seed fixture loader
+
+> **Resolved 2026-05-17 via [PR #33](https://github.com/zmeireles/daily-tour/pull/33).** 2 commits (4 files, +869 LOC). Profile: claude-sonnet-yolo. **Second Sonnet autocommit-fallback this session** (`18f0b76` — agent shipped the 743-LOC `places-sao-miguel.sql` cleanly: 28 individual place INSERTs with i18n + GPS + EN/pt-PT description placeholders, 28 batched `place_action_wish` INSERTs, 1 batched 28-row `place_media` INSERT). Orchestrator rescue (`ea8856c`, ~126 LOC): TypeScript loader (`seeds/places.ts`), `seed:places` package.json script, Testcontainers idempotency test (`places-seed.test.ts` — load + re-load, asserts counts unchanged), README seed section. All 15 catalog-svc tests pass (13 existing + 2 new). Design decisions documented in SQL header: §2 "Relax" → §3 "Do" remap (rows 4/5/13/14/23), closest-fit picks where §2 freeform wishes don't match §3 controlled vocabulary, single shared Unsplash hero URL for dev, `[]`/`{}` hours/contacts (deferred to T-1.4.x owner-edit), all `is_hosts_pick = false`. Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ commits escalate — human-merged.
 
 - **owns**: `services/catalog-svc/seeds/places-sao-miguel.sql`, `services/catalog-svc/seeds/load.ts`
 - **deps**: T-1.1.0, T-1.1.1
@@ -336,7 +338,9 @@
 
 ### Slice 1.2 — PWA Home + Action drill-down list (FR-DSC-01..05, FR-PUB)
 
-#### 🟢 T-1.2.0 — BFF aggregator: `GET /v1/discover?action=<>&loc=...&km=...`
+#### ✅ T-1.2.0 — BFF aggregator: `GET /v1/discover?action=<>&loc=...&km=...`
+
+> **Resolved 2026-05-17 via [PR #34](https://github.com/zmeireles/daily-tour/pull/34).** 1 clean Sonnet self-commit (`b3ae7e4`, 9 files, +517 LOC). Profile: claude-sonnet-yolo. **First real authed feature route** — exercises the T-1.0.2 `onRoute` hook (PWA JWT → BFF `authenticate` → Redis JTI check → catalog-svc internal call → wish-grouped response). Took the recommended scope expansion: added dedicated `GET /v1/places-by-action/:slug` to catalog-svc (+80 LOC + 1 test) rather than an `action_id` filter on the existing list endpoint — the dedicated endpoint returns places joined with their wish slugs in a single call, so the BFF doesn't need a slug→UUID map. `services/bff/src/lib/catalog-client.ts` (typed `fetch` + `CatalogError`), `services/bff/src/routes/discover.ts` (zod validation, inline haversine, `is_hosts_pick desc` + distance asc sort, top-30 cap, wish-slug grouping; NO manual `preHandler` — the onRoute hook inherits auth). 4 vitest cases: happy authed (grouped + geo-filtered), 401 unauth (proves onRoute hook applies), no-loc (no `distance_km` in cards), catalog 500 → 503 (no upstream-state leak per D15). All 24 tests pass (10 bff + 14 catalog-svc). p95<300ms acceptance verified end-to-end after T-1.1.2 merge (the 28-place seed makes the smoke real). Per [doctrine](../../operations/auto-merge-doctrine.md), feature routes interacting with auth escalate — human-merged.
 
 - **owns**: `services/bff/src/routes/discover.ts`, `services/bff/src/lib/catalog-client.ts`
 - **deps**: T-1.0.2, T-1.1.1
@@ -347,7 +351,7 @@
   - Response hydrates place card payload (signed media URLs via T-1.4.x or stable Unsplash placeholder in Phase 1).
   - p95 < 300 ms with 28-place seed.
 
-#### ⬜ T-1.2.1 — PWA: Home with 6 Action tiles + locale-auto + theme-auto
+#### 🟢 T-1.2.1 — PWA: Home with 6 Action tiles + locale-auto + theme-auto
 
 - **owns**: `apps/pwa/src/routes/_authed.index.tsx`, `apps/pwa/src/features/home/**`, `apps/pwa/src/lib/theme/**`, `apps/pwa/src/lib/locale/**`
 - **deps**: T-0.4.0, T-0.4.1, T-1.0.3
@@ -360,7 +364,7 @@
   - Locale auto from token; locale switcher in header overflow.
   - "Plan my day" + "Message João" entries below the fold (stubbed routes for now).
 
-#### ⬜ T-1.2.2 — PWA: PlaceCard + ActionGroupHeader + LocationToggle + RangeSlider components
+#### 🟢 T-1.2.2 — PWA: PlaceCard + ActionGroupHeader + LocationToggle + RangeSlider components
 
 - **owns**: `apps/pwa/src/components/place-card.tsx`, `apps/pwa/src/components/action-group-header.tsx`, `apps/pwa/src/components/location-toggle.tsx`, `apps/pwa/src/components/range-slider.tsx`, `apps/pwa/src/components/__tests__/**`
 - **deps**: T-0.4.0, T-0.4.1
@@ -389,7 +393,7 @@
 
 ### Slice 1.3 — Place Detail page (FR-PDT-01..04)
 
-#### ⬜ T-1.3.0 — BFF: `GET /v1/places/:id` hydrated payload
+#### 🟢 T-1.3.0 — BFF: `GET /v1/places/:id` hydrated payload
 
 - **owns**: `services/bff/src/routes/places.ts`
 - **deps**: T-1.1.1, T-1.0.2
@@ -398,7 +402,7 @@
   - Returns place + media + actions + wishes + i18n description + computed `weather_ok_today` boolean (stubbed `true` in Phase 1; real IPMA call in Phase 3).
   - p95 < 200 ms.
 
-#### ⬜ T-1.3.1 — PWA: Map setup (MapLibre GL JS + PMTiles + custom MapPin)
+#### 🟢 T-1.3.1 — PWA: Map setup (MapLibre GL JS + PMTiles + custom MapPin)
 
 - **owns**: `apps/pwa/src/lib/map/**`, `apps/pwa/src/components/map-pin.tsx`, `apps/pwa/src/components/map-view.tsx`
 - **deps**: T-0.4.0
