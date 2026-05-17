@@ -40,6 +40,60 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 25 — 2026-05-17 — T-1.7.1 (parallel half) — tenth clean Sonnet self-commit; **Slice 1.7 closed**
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                          | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------ | ------------------------ |
+| t1-7-1 | T-1.7.1 | jmeireles/t1-7-1 | claude-sonnet-yolo | PWA install polish: real icons + manifest theme + install banner + SW shell | Done (clean self-commit) |
+
+#### Agent: t1-7-1 (T-1.7.1) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 12:04 (parallel with t1-7-0)
+- **Finished**: agent ~10 min (clean self-commit `a80b752`); orchestrator verify + push + auto-merge ~5 min
+- **Predicted time**: 60–90 min
+- **Actual time**: ~15 min total
+- **Complexity**: Medium (Zustand store + hook + banner UI + 6 icon variants via vite-pwa/assets-generator + vite.config tuning + 3 RTL tests)
+- **LOC changed**: 15 files (10 source + 5 icon binaries) (+222 / −0)
+- **Commit**: ✅ `a80b752` — clean Sonnet self-commit.
+- **PR**: [#47](https://github.com/zmeireles/daily-tour/pull/47) (auto-merged per session-level orchestrator autonomy; needed `gh pr update-branch` after #46 merged — `package.json` overlapped in different sections; auto-resolved)
+- **Acceptance**: 3/4 criteria met (manifest + SW + install banner). **Lighthouse audit deferred** — local Chrome harness not wired; deferred to first staging deploy. Documented in commit body.
+- **Issues**: None on the agent side; orchestrator handled `update-branch` after #46 merged via the monitor's automated path.
+- **New lessons**:
+  - **`@vite-pwa/assets-generator`** (preset `minimal-2023`) is the idiomatic VitePWA path for icon generation from a single source SVG. Output: 6 icon variants (`pwa-64x64.png`, `pwa-192x192.png`, `pwa-512x512.png`, `maskable-icon-512x512.png`, `apple-touch-icon-180x180.png`, `favicon.ico`). One-shot CLI; no need to maintain icon files manually.
+  - **`beforeinstallprompt` capture pattern**: store the event on a Zustand singleton (not React state) so it survives StrictMode double-mount + HMR. The deferred-prompt API requires calling `.prompt()` from a user-gesture handler — the banner's "Install" button satisfies this.
+  - **i18n `defaultValue` fallback** is the right escape hatch when parallel work is refactoring the i18n surface. The follow-up to add real pt-PT translations is a 4-line patch into `locales/{en,pt-PT}/common.json` once the agent has the new namespace shape.
+- **Decisions made on the fly (agent)**:
+  - Option 1 chosen (`@vite-pwa/assets-generator`) over hand-authored PNGs — gives correct maskable + apple-touch variants out of the box.
+  - Lighthouse skipped per the prompt's "defer if not wired" rule — documented in commit body.
+  - Banner mount in App.tsx (not in `_authed.index.tsx`) — visible across all authed routes; banner self-gates via visitCount + deferredPrompt.
+
+### Wave 24 — 2026-05-17 — T-1.7.0 (parallel half) — ninth clean Sonnet self-commit
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                  | Status                   |
+| ------ | ------- | ---------------- | ------------------ | -------------------------------------------------------------------------------------- | ------------------------ |
+| t1-7-0 | T-1.7.0 | jmeireles/t1-7-0 | claude-sonnet-yolo | PWA i18n refactor: split monolithic resources into 12 namespace JSON files + CI check | Done (clean self-commit) |
+
+#### Agent: t1-7-0 (T-1.7.0) — clean Sonnet self-commit
+
+- **Started**: 2026-05-17 12:04 (parallel with t1-7-1)
+- **Finished**: agent ~9 min (clean self-commit `b86964f`); orchestrator verify + push + auto-merge ~5 min
+- **Predicted time**: 60–90 min
+- **Actual time**: ~14 min total
+- **Complexity**: Medium (12 JSON namespace files + lib/i18n refactor + every call site updated + new CI script)
+- **LOC changed**: 26 files (+~280 / −197)
+- **Commit**: ✅ `b86964f` — clean Sonnet self-commit.
+- **PR**: [#46](https://github.com/zmeireles/daily-tour/pull/46) (auto-merged per session-level orchestrator autonomy; first to merge of the 1.7 parallel pair — no conflicts)
+- **Acceptance**: 4/4 criteria met. react-i18next 15 + namespace lazy-load via static imports; 6 namespaces (`common`/`public`/`home`/`place`/`discover`/`admin`); all UI strings extracted; CI check (`scripts/check-i18n-keys.mjs`) passes + wired into `ci.yml`.
+- **Issues**: None — clean self-commit; auto-merge fired cleanly.
+- **New lessons**:
+  - **`useTranslation("<ns>")` per component** + stripping ns-prefix from key strings is the i18next-idiomatic refactor pattern. Less verbose than `t("ns:key")` at every call site; the namespace is declared once per file.
+  - **Plain Node CLI script** (`scripts/check-i18n-keys.mjs` using `import` + `readdirSync` + `JSON.parse`) is sufficient for the missing-keys CI check. No need to add `ajv` / `i18next-parser` — those are heavier tools for richer linting which v1 doesn't need.
+  - **`lib/i18n/index.ts`** vs `lib/i18n.ts`: TypeScript path resolution treats them identically when the import is `@/lib/i18n`. Means the refactor doesn't break any existing imports — Sonnet got this right without needing prompt elaboration.
+- **Decisions made on the fly (agent)**:
+  - Static imports of 12 JSON files (no lazy backend) — documented as v1 simplification.
+  - `scripts/` added to ESLint ignore (the script uses Node `import` and isn't part of the TS project).
+  - The `admin` namespace ships empty (`{}`) per the prompt; populated in future Slice 1.6 tasks.
+
 ### Wave 23 — 2026-05-17 — T-1.2.3 (sequential after Waves 21+22) — eighth clean Sonnet self-commit; **Slice 1.2 + 1.3 closed**
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                                                                | Status                   |
