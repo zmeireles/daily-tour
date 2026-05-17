@@ -16,13 +16,13 @@ function PremiumStub({ label, hint }: { label: string; hint: string }) {
 }
 
 export function PremiumStubs() {
-  const { t } = useTranslation();
-  const comingSoon = t("home.premium.coming_soon");
+  const { t } = useTranslation("home");
+  const comingSoon = t("premium.coming_soon");
 
   return (
     <div className="flex flex-col gap-2 px-4 py-4">
-      <PremiumStub label={t("home.premium.plan_my_day")} hint={comingSoon} />
-      <PremiumStub label={t("home.premium.message_owner")} hint={comingSoon} />
+      <PremiumStub label={t("premium.plan_my_day")} hint={comingSoon} />
+      <PremiumStub label={t("premium.message_owner")} hint={comingSoon} />
     </div>
   );
 }

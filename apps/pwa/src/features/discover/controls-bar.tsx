@@ -39,7 +39,7 @@ export function ControlsBar({
   onSortChange,
   onGroupChange,
 }: ControlsBarProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("discover");
 
   return (
     <div className="flex flex-col gap-3 px-4 py-3 bg-muted/40 border-b border-border">
@@ -54,7 +54,7 @@ export function ControlsBar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1">
-                {t(`discover.controls.sort.${sortBy}`)}
+                {t(`controls.sort.${sortBy}`)}
                 <ChevronDown size={14} aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
@@ -64,13 +64,13 @@ export function ControlsBar({
                 onValueChange={(v) => onSortChange(v as SortBy)}
               >
                 <DropdownMenuRadioItem value="distance">
-                  {t("discover.controls.sort.distance")}
+                  {t("controls.sort.distance")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="rating">
-                  {t("discover.controls.sort.rating")}
+                  {t("controls.sort.rating")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="name">
-                  {t("discover.controls.sort.name")}
+                  {t("controls.sort.name")}
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
@@ -85,11 +85,11 @@ export function ControlsBar({
             variant="outline"
             size="sm"
           >
-            <ToggleGroupItem value="grouped" aria-label={t("discover.controls.group.grouped")}>
-              {t("discover.controls.group.grouped")}
+            <ToggleGroupItem value="grouped" aria-label={t("controls.group.grouped")}>
+              {t("controls.group.grouped")}
             </ToggleGroupItem>
-            <ToggleGroupItem value="flat" aria-label={t("discover.controls.group.flat")}>
-              {t("discover.controls.group.flat")}
+            <ToggleGroupItem value="flat" aria-label={t("controls.group.flat")}>
+              {t("controls.group.flat")}
             </ToggleGroupItem>
           </ToggleGroup>
         </div>

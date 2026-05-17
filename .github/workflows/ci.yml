@@ -55,6 +55,9 @@ jobs:
 
       # On PRs, scope the turbo graph to packages affected by the PR diff
       # vs origin/main. On push-to-main, run the full graph (no filter).
+      - name: i18n key parity
+        run: pnpm --filter @daily-tour/pwa check:i18n
+
       - name: Lint
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
