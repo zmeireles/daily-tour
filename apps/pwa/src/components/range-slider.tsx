@@ -80,11 +80,7 @@ export function RangeSlider({ value, onChange, debounceMs = 250 }: RangeSliderPr
         step={1}
         value={[displayValue]}
         onValueChange={handleValueChange}
-        aria-label={`Distance: ${displayValue} km`}
-        aria-valuemin={MIN}
-        aria-valuemax={MAX}
-        aria-valuenow={displayValue}
-        aria-valuetext={`${displayValue} km`}
+        thumbAriaLabel={`Distance: ${displayValue} km`}
       />
     </div>
   );
