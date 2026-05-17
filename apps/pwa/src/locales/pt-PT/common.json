@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "exchanging": "A iniciar sessão…",
+    "token_expired": "O seu link expirou. Peça ao seu anfitrião um novo.",
+    "exchange_failed": "Algo correu mal. Tente novamente."
+  },
+  "landing": {
+    "expired_message": "O seu link expirou. Por favor peça ao seu anfitrião um novo."
+  }
+}

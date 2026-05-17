@@ -23,7 +23,7 @@ export default function PlaceDetailRoute() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const jwt = useSessionStore((s) => s.jwt);
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("place");
 
   useEffect(() => {
     if (!jwt) {
@@ -38,7 +38,7 @@ export default function PlaceDetailRoute() {
   if (isLoading) {
     return (
       <main className="min-h-svh grid place-items-center" aria-live="polite" aria-busy="true">
-        <p className="text-muted-foreground">{t("place_detail.loading")}</p>
+        <p className="text-muted-foreground">{t("loading")}</p>
       </main>
     );
   }
@@ -47,9 +47,9 @@ export default function PlaceDetailRoute() {
   if (isError && err?.status === 404) {
     return (
       <main className="min-h-svh flex flex-col items-center justify-center gap-4 p-6">
-        <p className="text-muted-foreground">{t("place_detail.not_found")}</p>
+        <p className="text-muted-foreground">{t("not_found")}</p>
         <Link to="/" className="text-primary underline underline-offset-4 text-sm">
-          ← {t("place_detail.actions.navigate", "Back")}
+          ← {t("actions.navigate", "Back")}
         </Link>
       </main>
     );
@@ -58,7 +58,7 @@ export default function PlaceDetailRoute() {
   if (isError) {
     return (
       <main className="min-h-svh flex flex-col items-center justify-center gap-4 p-6">
-        <p className="text-muted-foreground">{t("place_detail.error")}</p>
+        <p className="text-muted-foreground">{t("error")}</p>
         <Link to="/" className="text-primary underline underline-offset-4 text-sm">
           ← Home
         </Link>
@@ -78,7 +78,7 @@ export default function PlaceDetailRoute() {
       .sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? "";
 
   const phone = place.contacts.phone ?? GUESTHOUSE_CONTACT_PHONE;
-  const waText = t("place_detail.wa_prefill", {
+  const waText = t("wa_prefill", {
     placeName: nameResult.text,
     defaultValue: `Hi! I'm at ${nameResult.text}, can you recommend the next stop?`,
   });
@@ -92,7 +92,7 @@ export default function PlaceDetailRoute() {
             className="inline-block rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground"
             aria-label="name in English (translation pending)"
           >
-            {t("place_detail.translation_pending")}
+            {t("translation_pending")}
           </span>
         </div>
       )}
@@ -100,16 +100,16 @@ export default function PlaceDetailRoute() {
       <Description
         text={descResult.text}
         fallback={descResult.fallback}
-        translationPendingLabel={t("place_detail.translation_pending")}
+        translationPendingLabel={t("translation_pending")}
       />
       <PlaceMap lat={place.geom_lat} lng={place.geom_lng} />
       <ActionRow
         navigateHref={appleMapsHref(place.geom_lat, place.geom_lng)}
         callHref={telHref(phone)}
         waHref={waMeHref(phone, waText)}
-        navigateLabel={t("place_detail.actions.navigate")}
-        callLabel={t("place_detail.actions.call")}
-        messageLabel={t("place_detail.actions.message")}
+        navigateLabel={t("actions.navigate")}
+        callLabel={t("actions.call")}
+        messageLabel={t("actions.message")}
       />
     </main>
   );

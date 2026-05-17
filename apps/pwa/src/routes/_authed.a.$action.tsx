@@ -37,7 +37,7 @@ function getGuesthouseLoc(guesthouseId: string | undefined): { lat: number; lng:
 export default function ActionDrillDownRoute() {
   const { action } = useParams<{ action: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation("discover");
 
   useThemeAuto();
   useLocaleAuto();
@@ -75,7 +75,7 @@ export default function ActionDrillDownRoute() {
           setGeolocationDenied(true);
           setLocValue("guesthouse");
           setActiveLoc(defaultLoc);
-          toast.error(t("discover.geolocation_denied"));
+          toast.error(t("geolocation_denied"));
         },
       );
     } else {
@@ -105,7 +105,7 @@ export default function ActionDrillDownRoute() {
           className="font-display text-2xl leading-tight flex-1"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {t("discover.title")} · {actionLabel}
+          {t("title")} · {actionLabel}
         </h1>
       </header>
 
@@ -128,13 +128,13 @@ export default function ActionDrillDownRoute() {
             aria-live="polite"
             aria-busy="true"
           >
-            <p className="text-muted-foreground">{t("discover.loading")}</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         )}
 
         {isError && (
           <div className="flex items-center justify-center py-16">
-            <p className="text-muted-foreground">{t("discover.error")}</p>
+            <p className="text-muted-foreground">{t("error")}</p>
           </div>
         )}
 

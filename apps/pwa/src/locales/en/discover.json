@@ -1,0 +1,24 @@
+{
+  "title": "Discover",
+  "controls": {
+    "location": {
+      "me": "Near me",
+      "guesthouse": "From here"
+    },
+    "range": "Within {{km}} km",
+    "sort": {
+      "label": "Sort",
+      "distance": "Distance",
+      "rating": "Rating",
+      "name": "Name"
+    },
+    "group": {
+      "grouped": "Grouped",
+      "flat": "List"
+    }
+  },
+  "geolocation_denied": "Location access denied. Showing nearby from your guesthouse.",
+  "empty": "Nothing here for {{action}} within {{km}} km.",
+  "loading": "Loading…",
+  "error": "Couldn't load. Try again."
+}

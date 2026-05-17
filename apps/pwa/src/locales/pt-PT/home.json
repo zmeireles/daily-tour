@@ -1,0 +1,21 @@
+{
+  "greeting": "Bem-vindo de volta",
+  "locale_hint": "A mostrar em {{locale}}",
+  "actions": {
+    "eat": "Comer",
+    "drink": "Beber",
+    "see": "Ver",
+    "do": "Fazer",
+    "buy": "Comprar",
+    "move": "Deslocar-se"
+  },
+  "premium": {
+    "plan_my_day": "Planear o meu dia",
+    "message_owner": "Falar com o João",
+    "coming_soon": "Em breve"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português"
+  }
+}
