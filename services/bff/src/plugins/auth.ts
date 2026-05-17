@@ -9,9 +9,12 @@ declare module "fastify" {
     authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
   interface FastifyContextConfig {
-    // Routes opt OUT of the global authenticate hook by setting auth: 'public'.
-    // The default (undefined) is required-auth — secure by default.
-    auth?: "required" | "public";
+    // Three postures:
+    //   'required' (default) → guest path (HS256, token-svc issued).
+    //   'public'             → no auth (probes, /r/:token).
+    //   'owner'              → Authentik RS256 (JWKS) + aud/group check.
+    // See services/bff/src/plugins/AUTH_POSTURES.md.
+    auth?: "required" | "public" | "owner";
   }
 }
 
@@ -39,19 +42,28 @@ async function authPlugin(fastify: FastifyInstance): Promise<void> {
     },
   );
 
-  // Secure-by-default: every route gets the authenticate preHandler unless
-  // it explicitly opts out via `config: { auth: 'public' }`. /health and
-  // /r/:token must opt out — /health is a probe, /r/:token IS the auth
-  // ceremony itself (no JWT exists yet at that point).
+  // Secure-by-default: every route gets a preHandler unless it explicitly
+  // opts out via `config: { auth: 'public' }`. /health and /r/:token must
+  // opt out — /health is a probe, /r/:token IS the auth ceremony itself
+  // (no JWT exists yet at that point). Owner-tagged routes dispatch to
+  // fastify.authenticateOwner (registered by the owner-auth plugin); we
+  // resolve the decorator at request time rather than at onRoute time so
+  // that owner-auth can be registered after this plugin without breaking
+  // route registration order.
   fastify.addHook("onRoute", (routeOptions) => {
-    if (routeOptions.config?.auth === "public") return;
+    const posture = routeOptions.config?.auth;
+    if (posture === "public") return;
+    const handler =
+      posture === "owner"
+        ? async (req: FastifyRequest, reply: FastifyReply) => fastify.authenticateOwner(req, reply)
+        : fastify.authenticate;
     const existing = routeOptions.preHandler;
     if (!existing) {
-      routeOptions.preHandler = [fastify.authenticate];
+      routeOptions.preHandler = [handler];
     } else if (Array.isArray(existing)) {
-      routeOptions.preHandler = [fastify.authenticate, ...existing];
+      routeOptions.preHandler = [handler, ...existing];
     } else {
-      routeOptions.preHandler = [fastify.authenticate, existing];
+      routeOptions.preHandler = [handler, existing];
     }
   });
 }

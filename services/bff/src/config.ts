@@ -22,6 +22,17 @@ const ConfigSchema = z.object({
   // ioredis-compatible connection URL. Used for the JTI revocation cache —
   // the BFF reads `jti:revoked:<jti>` on every authed request.
   REDIS_URL: z.string().default("redis://dt_redis:6379/0"),
+  // Authentik JWKS endpoint for owner-app RS256 verification (T-1.6.0). Path
+  // derives from the application slug declared in
+  // infra/authentik/blueprints/owner-app.yaml — rename in lockstep.
+  AUTHENTIK_JWKS_URL: z
+    .string()
+    .url()
+    .default("http://dt_authentik_server:9000/application/o/owner-app/jwks/"),
+  // Required token claim for owner-route access. The BFF accepts the value
+  // in either `aud` or the `groups` array — Authentik puts the group name
+  // in `groups` when the staff-only policy fires (see owner-app.yaml).
+  AUTHENTIK_OWNER_AUDIENCE: z.string().default("staff"),
 });
 
 export type BffConfig = z.infer<typeof ConfigSchema>;
