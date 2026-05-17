@@ -1,8 +1,19 @@
-# Session Handoff — 2026-05-17 12:18 → next session (SESSION CLOSEOUT)
+# Session Handoff — 2026-05-17 13:46 → next session (SESSION CLOSEOUT — extended burst)
 
 > Read this file first on next session, alongside [`CLAUDE.md`](../../CLAUDE.md), [`docs/REQUIREMENTS.md`](../REQUIREMENTS.md), and [`docs/implementation-plans/001-roadmap/`](../implementation-plans/001-roadmap/).
 >
-> **Session closeout.** **5 feature PRs merged this session burst (#42, #43, #44, #46, #47).** Phase 1 at **17/25 (68%)** — Slice 1.0 + 1.1 + 1.2 + 1.3 + 1.5 + 1.7 closed. **All worktrees clean.** Only Slice 1.4 (Media + MinIO) and Slice 1.6 (Authentik OIDC + backoffice) remain in Phase 1. First session ever with **auto-merged Phase 1+ feature PRs** via `/goal` session-level autonomy authorization.
+> **Session closeout (extended).** **7 feature PRs + 4 docs PRs merged this session burst** (#42, #43, #44, #45, #46, #47, #48, #49, #50, #51, #52). Phase 1 at **19/25 (76%)** — Slice 1.0 + 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 1.7 closed. **All worktrees clean.** Only **Slice 1.6** (Authentik OIDC + backoffice — 4 tasks) remains in Phase 1. First session ever with **auto-merged Phase 1+ feature PRs** via `/goal` session-level autonomy authorization.
+
+## Extension after first closeout — Waves 26+27 added
+
+After the initial 12:18 closeout, the goal hook re-engaged and 2 more feature PRs landed:
+
+- **PR #50 (Wave 26 / T-1.4.0)** — new `media-svc` Fastify microservice (4th service) with pre-signed PUT/GET + `media.asset` schema + BFF client wire. 18 min Sonnet wall-clock.
+- **PR #52 (Wave 27 / T-1.4.1)** — sharp transcode worker + `POST /v1/uploads/complete` endpoint + RabbitMQ producer/consumer wiring. **Closes Slice 1.4.** 12 min Sonnet wall-clock.
+
+**12 consecutive clean Sonnet self-commits across this session burst** (added T-1.4.0 + T-1.4.1 to the prior 10). 0 orchestrator rescues.
+
+**Next session entry point**: T-1.6.0 (Authentik OIDC — opus profile). Pre-written prompt available at `temp/prompt-t-1.6.0.md` (gitignored, local-only — re-derive from TODO.md if missing).
 
 ## TL;DR — exactly what to do next session
 
@@ -24,30 +35,30 @@
 
 ## Where we are
 
-| Slice                              | Status                    | Tasks                          |
-| ---------------------------------- | ------------------------- | ------------------------------ |
-| **Phase 0 — Foundation**           | ✅ closed (15/16; T-0.4.4 🔒 VPS) | All slices ✅            |
-| 1.0 — Reservation token & access   | ✅ closed (4/4)            | —                              |
-| 1.1 — Catalog data model           | ✅ closed (3/3)            | —                              |
-| 1.2 — Discover (6-action grid)     | ✅ closed (4/4)            | **closed this session**        |
-| 1.3 — Place detail                 | ✅ closed (3/3)            | **closed this session**        |
-| 1.4 — Owner CRUD + Media pipeline  | 🔒 (0/2)                  | T-1.4.0 + T-1.4.1 — **next batch candidate** |
-| 1.5 — Public landing               | ✅ closed (1/1)            | —                              |
-| 1.6 — Authentik integration        | 🔒 (0/4)                  | T-1.6.0 (opus) + 3 follow-ups |
-| **1.7 — i18n + theme + PWA install** | ✅ closed (2/2)         | **closed this session**        |
+| Slice                                | Status                            | Tasks                                        |
+| ------------------------------------ | --------------------------------- | -------------------------------------------- |
+| **Phase 0 — Foundation**             | ✅ closed (15/16; T-0.4.4 🔒 VPS) | All slices ✅                                |
+| 1.0 — Reservation token & access     | ✅ closed (4/4)                   | —                                            |
+| 1.1 — Catalog data model             | ✅ closed (3/3)                   | —                                            |
+| 1.2 — Discover (6-action grid)       | ✅ closed (4/4)                   | **closed this session**                      |
+| 1.3 — Place detail                   | ✅ closed (3/3)                   | **closed this session**                      |
+| 1.4 — Owner CRUD + Media pipeline    | 🔒 (0/2)                          | T-1.4.0 + T-1.4.1 — **next batch candidate** |
+| 1.5 — Public landing                 | ✅ closed (1/1)                   | —                                            |
+| 1.6 — Authentik integration          | 🔒 (0/4)                          | T-1.6.0 (opus) + 3 follow-ups                |
+| **1.7 — i18n + theme + PWA install** | ✅ closed (2/2)                   | **closed this session**                      |
 
 **Phase 1: 17/25 done (68%)**. Only Slice 1.4 (2 tasks) + Slice 1.6 (4 tasks) remain.
 
 ## All merges this session burst (5 feature + 3 docs)
 
-| PR  | Wave | Task    | Title                                                                                            | Merge type        | Sonnet wall-clock |
-| --- | ---- | ------- | ------------------------------------------------------------------------------------------------ | ----------------- | ----------------- |
-| #42 | 21   | T-1.2.1 | feat(pwa): add authed home with 6 action tiles + locale-auto + theme-auto                        | Auto (Phase 1+)  | ~9 min            |
-| #43 | 22   | T-1.3.2 | feat(pwa): add place detail route with gallery + map + deep-link actions                         | Auto (Phase 1+)  | ~12 min           |
-| #44 | 23   | T-1.2.3 | feat(pwa): add action drill-down route with grouped wish list + controls + virtualisation        | Auto (Phase 1+)  | ~26 min           |
-| #45 | —    | docs    | docs(plan-001): close T-1.2.1 + T-1.3.2 + T-1.2.3, log Waves 21-23, mid-session handoff          | Auto (docs)      | —                 |
-| #46 | 24   | T-1.7.0 | feat(pwa): split i18n into namespaced locale bundles (common/public/home/place/discover/admin)  | Auto (i18n)      | ~9 min            |
-| #47 | 25   | T-1.7.1 | feat(pwa): polish PWA install — icons + manifest theme + install banner + service worker shell  | Auto (PWA install) | ~10 min           |
+| PR  | Wave | Task    | Title                                                                                          | Merge type         | Sonnet wall-clock |
+| --- | ---- | ------- | ---------------------------------------------------------------------------------------------- | ------------------ | ----------------- |
+| #42 | 21   | T-1.2.1 | feat(pwa): add authed home with 6 action tiles + locale-auto + theme-auto                      | Auto (Phase 1+)    | ~9 min            |
+| #43 | 22   | T-1.3.2 | feat(pwa): add place detail route with gallery + map + deep-link actions                       | Auto (Phase 1+)    | ~12 min           |
+| #44 | 23   | T-1.2.3 | feat(pwa): add action drill-down route with grouped wish list + controls + virtualisation      | Auto (Phase 1+)    | ~26 min           |
+| #45 | —    | docs    | docs(plan-001): close T-1.2.1 + T-1.3.2 + T-1.2.3, log Waves 21-23, mid-session handoff        | Auto (docs)        | —                 |
+| #46 | 24   | T-1.7.0 | feat(pwa): split i18n into namespaced locale bundles (common/public/home/place/discover/admin) | Auto (i18n)        | ~9 min            |
+| #47 | 25   | T-1.7.1 | feat(pwa): polish PWA install — icons + manifest theme + install banner + service worker shell | Auto (PWA install) | ~10 min           |
 
 Plus **this PR** (docs cycle for Waves 24+25 + session closeout) — pending auto-merge.
 
@@ -80,6 +91,7 @@ T-1.2.1 → T-1.3.2 → T-1.2.3 → T-1.7.0 → T-1.7.1 — plus 5 from earlier 
 ## Open in-flight cs-agent worktrees
 
 **None.** All worktrees cleaned up:
+
 - ✅ `t1-2-1` killed (post-merge)
 - ✅ `t1-3-2` killed (post-merge + post-conflict-resolve)
 - ✅ `t1-2-3` killed (post-merge)
@@ -91,31 +103,32 @@ T-1.2.1 → T-1.3.2 → T-1.2.3 → T-1.7.0 → T-1.7.1 — plus 5 from earlier 
 
 (Mostly unchanged from prior handoff; updated where this burst landed something or surfaced something.)
 
-| Deferral / cross-cut                                                       | Owner / next task                          |
-| -------------------------------------------------------------------------- | ------------------------------------------ |
-| **Real `pwa_install.*` EN+pt-PT translations** (banner uses defaultValue) | Quick patch — 4 keys × 2 locales           |
-| **Lighthouse PWA audit** (T-1.7.1 deferred)                                | First staging deploy or local Chrome harness |
-| **`@types/suncalc` devDep** (added by T-1.2.1)                             | Track if maintainers add bundled types upstream |
-| **Stitch mockups (Home + Place Detail + Discover)**                        | Stitch DS attachment + generate (or skip permanently) |
-| **Playwright e2e specs (full BFF round-trip)**                             | Phase 0 CI work (dev server harness + seeded fixtures) |
-| **Per-place phones + season + soft-delete + hours**                        | T-1.4.x owner CRUD                         |
-| **`GUESTHOUSE_LOCATIONS` real lookup**                                     | T-1.4.x                                    |
-| **Per-place rating sort**                                                  | Catalog gains rating column or T-2.x search-svc |
-| **Authentik OIDC + forward-auth + outpost**                                | T-1.6.0 (next session top candidate)       |
-| **token-svc RS256/ES256 + JWKS**                                           | T-1.6.0                                    |
-| **CI deploy gate to QA VPS**                                               | T-0.4.4 (blocked on Ubuntu 24 host)        |
-| **Distroless Docker images** (200 MB+ BFF/token/catalog)                   | Phase 0 / Phase 5                          |
-| **Real IPMA weather call**                                                 | T-3.2.x                                    |
-| **n8n on dedicated Postgres + revoke flow**                                | Phase 5                                    |
-| **Public BFF endpoint for featured places**                                | Phase 1.5+ if pattern needed elsewhere     |
-| **Soft-delete on guesthouses + owner-profiles**                            | T-1.4.x                                    |
-| **`place.season` column**                                                  | T-1.4.x owner-edit                         |
-| **`is_hosts_pick = true` on any seeded place**                             | T-1.4.x owner UI                           |
-| **Per-guesthouse place scoping** (all currently `{"all": true}`)          | Phase 1.4+ owner flow                      |
+| Deferral / cross-cut                                                      | Owner / next task                                      |
+| ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Real `pwa_install.*` EN+pt-PT translations** (banner uses defaultValue) | Quick patch — 4 keys × 2 locales                       |
+| **Lighthouse PWA audit** (T-1.7.1 deferred)                               | First staging deploy or local Chrome harness           |
+| **`@types/suncalc` devDep** (added by T-1.2.1)                            | Track if maintainers add bundled types upstream        |
+| **Stitch mockups (Home + Place Detail + Discover)**                       | Stitch DS attachment + generate (or skip permanently)  |
+| **Playwright e2e specs (full BFF round-trip)**                            | Phase 0 CI work (dev server harness + seeded fixtures) |
+| **Per-place phones + season + soft-delete + hours**                       | T-1.4.x owner CRUD                                     |
+| **`GUESTHOUSE_LOCATIONS` real lookup**                                    | T-1.4.x                                                |
+| **Per-place rating sort**                                                 | Catalog gains rating column or T-2.x search-svc        |
+| **Authentik OIDC + forward-auth + outpost**                               | T-1.6.0 (next session top candidate)                   |
+| **token-svc RS256/ES256 + JWKS**                                          | T-1.6.0                                                |
+| **CI deploy gate to QA VPS**                                              | T-0.4.4 (blocked on Ubuntu 24 host)                    |
+| **Distroless Docker images** (200 MB+ BFF/token/catalog)                  | Phase 0 / Phase 5                                      |
+| **Real IPMA weather call**                                                | T-3.2.x                                                |
+| **n8n on dedicated Postgres + revoke flow**                               | Phase 5                                                |
+| **Public BFF endpoint for featured places**                               | Phase 1.5+ if pattern needed elsewhere                 |
+| **Soft-delete on guesthouses + owner-profiles**                           | T-1.4.x                                                |
+| **`place.season` column**                                                 | T-1.4.x owner-edit                                     |
+| **`is_hosts_pick = true` on any seeded place**                            | T-1.4.x owner UI                                       |
+| **Per-guesthouse place scoping** (all currently `{"all": true}`)          | Phase 1.4+ owner flow                                  |
 
 ## Riff project state (DAILY-TOUR)
 
 Synced this session via mcp tasks-prod:
+
 - **All Slice 1.0, 1.1, 1.2, 1.3, 1.5, 1.7 tasks done** (17 Phase 1 tasks total).
 - **Slice 1.4, 1.6 backlog** (6 tasks).
 - **Phase 1 epic**: in-progress (68% done).

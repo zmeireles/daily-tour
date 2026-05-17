@@ -40,6 +40,33 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 27 — 2026-05-17 — T-1.4.1 (sequential after Wave 26) — twelfth clean Sonnet self-commit; **Slice 1.4 closed**
+
+| Agent  | Task ID | Branch           | Profile            | Scope                                                                                | Status                   |
+| ------ | ------- | ---------------- | ------------------ | ------------------------------------------------------------------------------------ | ------------------------ |
+| t1-4-1 | T-1.4.1 | jmeireles/t1-4-1 | claude-sonnet-yolo | media-svc transcode worker (sharp → 6 variants) + POST /v1/uploads/complete endpoint | Done (clean self-commit) |
+
+#### Agent: t1-4-1 (T-1.4.1) — clean Sonnet self-commit; closes Slice 1.4
+
+- **Started**: 2026-05-17 13:31
+- **Finished**: agent ~12 min (clean self-commit `a4072a6`); orchestrator verify + push + auto-merge ~5 min
+- **Predicted time**: 60–90 min
+- **Actual time**: ~17 min total (well under estimate)
+- **Complexity**: Medium (RabbitMQ consumer + sharp pipeline + MQ publisher singleton + new HTTP endpoint + BFF client extension + 3 tests)
+- **Commit**: ✅ `a4072a6` — clean Sonnet self-commit.
+- **PR**: [#52](https://github.com/zmeireles/daily-tour/pull/52) (auto-merged per session-level orchestrator autonomy)
+- **Acceptance**: 4/4 criteria met. RabbitMQ consumer on `media.transcode` queue + 6 sharp variants per asset + variants jsonb populated + `derived/` prefix in MinIO.
+- **Issues**: None — clean self-commit; auto-merge fired cleanly.
+- **New lessons**:
+  - **`sharp` on `node:22-alpine`** works out-of-box (prebuilt linux-x64-musl binary).
+  - **Lazy MQ publisher singleton with on-close reset** is the cleanest pattern for "publish-and-forget" semantics. HTTP `/complete` succeeds even when RabbitMQ is down.
+  - **Single-container worker + HTTP server in same process** is fine for v1; scale-axis coupling defers to Phase 5.
+  - **`prefetch(4)` per channel** caps in-flight concurrency. Good default for image work.
+- **Decisions made on the fly (agent)**:
+  - `POST /v1/uploads/complete` is a NEW endpoint added in this task — bridges the client PUT → MQ event boundary.
+  - Single-container path over separate worker container.
+  - Best-effort publish (HTTP succeeds even when MQ is down).
+
 ### Wave 26 — 2026-05-17 — T-1.4.0 (sequential, post-Slice-1.7) — eleventh clean Sonnet self-commit; opens Slice 1.4
 
 | Agent  | Task ID | Branch           | Profile            | Scope                                                                                  | Status                   |
