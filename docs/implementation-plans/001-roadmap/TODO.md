@@ -13,12 +13,12 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 12     | 0           | 2     | 11      |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 15     | 0           | 2     | 8       |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **27** | **0**       | **2** | **71**  |
+| **Total**                       | **31** | **100** | **30** | **0**       | **2** | **68**  |
 
 ---
 
@@ -351,7 +351,9 @@
   - Response hydrates place card payload (signed media URLs via T-1.4.x or stable Unsplash placeholder in Phase 1).
   - p95 < 300 ms with 28-place seed.
 
-#### 🟢 T-1.2.1 — PWA: Home with 6 Action tiles + locale-auto + theme-auto
+#### ✅ T-1.2.1 — PWA: Home with 6 Action tiles + locale-auto + theme-auto
+
+> **Resolved 2026-05-17 via [PR #42](https://github.com/zmeireles/daily-tour/pull/42).** 1 clean Sonnet self-commit (`7ec2427`, 12 files, +363 LOC) in **~9 min wall-clock** (well under 75-110 min estimate — sixth clean Sonnet self-commit this session). Profile: claude-sonnet-yolo. **No orchestrator rescue.** **Polymorphic dispatcher pattern** in `index.tsx`: renders `<AuthedIndexRoute />` when `useSessionStore.jwt` is present, otherwise renders the frozen T-1.5.0 `<PublicIndex />` composition — preserves all 4 existing public-landing tests + the `?reason=expired` toast. Authed home composes `Greeting` (anonymous "Welcome back" since `sub` is UUID; greeting-by-name deferred) + `ActionGrid` (3×2 of `ActionGroupHeader` tiles, lucide icons `Utensils`/`Wine`/`Eye`/`Footprints`/`ShoppingBag`/`Car`, `href={/a/:slug}`) + `PremiumStubs` (`Plan my day` + `Message João` with `data-premium="true"` + `aria-disabled`). `useThemeAuto` (~63 LOC) computes São Miguel sunrise/sunset via `suncalc` 1.9, falls back to `prefers-color-scheme`, re-evaluates on `window.focus` + every 30 min, sets `data-theme` on `<html>`. `useLocaleAuto` (~16 LOC) syncs `i18n.language` from `useSessionStore.guest.locale` on mount when differs (guard against infinite loop). 11 new i18n keys (EN + pt-PT). 4 new RTL cases (dispatcher both branches + locale-auto spy + theme-auto data-attribute via `vi.setSystemTime`). All 34 tests pass. `@types/suncalc` added as devDep (suncalc 1.9 ships no bundled types). **No App.tsx edit** (parallel-safe with T-1.3.2). Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ feature commits escalate — orchestrator auto-merged per session-level autonomy authorization.
 
 - **owns**: `apps/pwa/src/routes/_authed.index.tsx`, `apps/pwa/src/features/home/**`, `apps/pwa/src/lib/theme/**`, `apps/pwa/src/lib/locale/**`
 - **deps**: T-0.4.0, T-0.4.1, T-1.0.3
@@ -378,7 +380,9 @@
   - PlaceCard renders distance pill + action chips.
   - RangeSlider supports discrete steps `[1,3,5,10,25]`, debounced 250 ms.
 
-#### 🟢 T-1.2.3 — PWA: Action drill-down route (`/a/:action`) with grouped-by-wish list
+#### ✅ T-1.2.3 — PWA: Action drill-down route (`/a/:action`) with grouped-by-wish list
+
+> **Resolved 2026-05-17 via [PR #44](https://github.com/zmeireles/daily-tour/pull/44).** 1 clean Sonnet self-commit (`7cc1ee1`, 17 files, +1201 LOC) in **~26 min wall-clock** (well under 100-130 min estimate — eighth clean Sonnet self-commit this session). Profile: claude-sonnet-yolo. **No orchestrator rescue.** **Closes Slice 1.2.** Route at `/a/:action`: unauthed → `navigate("/?reason=expired", { replace: true })`; authed → composes header (action label + locale switcher) + `ControlsBar` (`LocationToggle` + `RangeSlider` + sort `DropdownMenu` + group `ToggleGroup`) + grouped/flat list. TanStack Query hook `useDiscover` calls BFF `/v1/discover?action&loc&km` with Authorization header; `queryKey: ["discover", action, loc, km]`. Default location = guesthouse from `GUESTHOUSE_LOCATIONS` map in `lib/config.ts` (placeholder — São Miguel center; real per-guesthouse coords land in T-1.4.x). Toggling to "me" requests `navigator.geolocation`; graceful denial → toast (`discover.geolocation_denied`) + snap back to guesthouse. Pure sort helpers in `sort-utils.ts` (`sortPlaces` distance/name/rating + `flattenGroups` dedupe). `WishGroupList` renders grouped via `ActionGroupHeader`; `FlatList` renders all places. Both use `react-window` `FixedSizeList` at threshold ≥30 items (under threshold = plain `.map`). `EmptyState` when `count === 0` ("Nothing here for {action} within {km} km"). 13 new i18n keys (EN + pt-PT). 6 RTL cases (grouped render, geolocation denial flow, RangeSlider refetch, group-toggle, sort-by-name) + 3 unit cases on the pure helpers. Playwright spec is auth-guard smoke only (full BFF stack deferred — same constraint as T-1.3.2). `ResizeObserver` polyfilled in `setup.ts` for Radix Slider (jsdom no-op). Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ feature commits escalate — orchestrator auto-merged per session-level autonomy authorization.
 
 - **owns**: `apps/pwa/src/routes/_authed.a.$action.tsx`, `apps/pwa/src/features/discover/**`
 - **deps**: T-1.2.0, T-1.2.1, T-1.2.2
@@ -419,7 +423,9 @@
   - `MapPin` custom SVG (basalt teardrop + tea-green dot + selected ring) per [`02 §5`](../../exploration/02-ui-design-system.md).
   - `MapView` accepts `{center, zoom, pins[]}`; `prefers-reduced-motion` disables fly-to.
 
-#### ⬜ T-1.3.2 — PWA: Place Detail route (`/p/:id`) with gallery + map + actions
+#### ✅ T-1.3.2 — PWA: Place Detail route (`/p/:id`) with gallery + map + actions
+
+> **Resolved 2026-05-17 via [PR #43](https://github.com/zmeireles/daily-tour/pull/43).** 1 clean Sonnet self-commit (`32c7487`, 19 files, +862 LOC) in **~12 min wall-clock** (well under 90-120 min estimate — seventh clean Sonnet self-commit this session). Profile: claude-sonnet-yolo. **No orchestrator rescue** (one merge-conflict resolve on `i18n.ts` after T-1.2.1 merged in between — additive home+place_detail keys both kept; 42 tests still pass on resolved branch). Route at `/p/:id`: unauthed → `navigate("/?reason=expired", { replace: true })`; authed → fetch via TanStack Query against T-1.3.0's hydrated BFF payload. Composition: `Hero` (16:9 cover, Fraunces title overlay) → `Gallery` (embla `Carousel` via shadcn primitive, skipped when media≤1) → `Description` (per-field i18n with fallback `Badge` "EN" when active locale missing) → `PlaceMap` (`MapView` from T-1.3.1 with single selected pin, h-64) → `ActionRow` (3 native `<a>` buttons ≥56px: Navigate → `https://maps.apple.com/?q=`, Call → `tel:`, Message → `https://wa.me/` with locale-aware prefill text via `t("place_detail.wa_prefill", { placeName })`). 4 pure deep-link helpers in `lib/maps/deep-links.ts` (appleMaps/geo/tel/waMe). `GUESTHOUSE_CONTACT_PHONE` placeholder in `lib/config.ts` (+351912345678 — clearly fake; real per-place phones land in T-1.4.x). **QueryClientProvider wrapped at App.tsx** (TanStack Query v5 needs it; Slice 1.7 dep wired early). 8 new i18n keys (EN + pt-PT). 4 RTL cases (render + fallback badge + href contracts + unauthed redirect) + 4 deep-link unit tests + 1 Playwright smoke spec (full `tel:` intercept deferred — unreliable headless). `URL.createObjectURL` polyfilled in `setup.ts` for maplibre+jsdom. `vite.config.ts` `maximumFileSizeToCacheInBytes` raised to 4 MiB (maplibre+embla push main chunk to ~2.5 MiB; code-splitting is Phase 2). Per [doctrine](../../operations/auto-merge-doctrine.md), Phase 1+ feature commits escalate — orchestrator auto-merged per session-level autonomy authorization.
 
 - **owns**: `apps/pwa/src/routes/_authed.p.$id.tsx`, `apps/pwa/src/features/place-detail/**`
 - **deps**: T-1.3.0, T-1.3.1, T-1.2.2
@@ -519,7 +525,7 @@
 
 ### Slice 1.7 — i18n + theme + PWA install (FR-XC-01..04)
 
-#### ⬜ T-1.7.0 — i18n bundles + namespaces (en, pt-PT)
+#### 🟢 T-1.7.0 — i18n bundles + namespaces (en, pt-PT)
 
 - **owns**: `apps/pwa/src/locales/en/**`, `apps/pwa/src/locales/pt-PT/**`, `apps/pwa/src/lib/i18n/**`
 - **deps**: T-1.2.3, T-1.3.2, T-1.5.0
@@ -529,7 +535,7 @@
   - All UI strings extracted; no hardcoded text remains.
   - Translation files validated by a CI check (no missing keys per locale).
 
-#### ⬜ T-1.7.1 — PWA install + service worker + offline shell (Workbox `generateSW`)
+#### 🟢 T-1.7.1 — PWA install + service worker + offline shell (Workbox `generateSW`)
 
 - **owns**: `apps/pwa/vite.config.ts` (PWA config block), `apps/pwa/public/manifest.webmanifest`, `apps/pwa/src/lib/pwa/**`
 - **deps**: T-1.2.3, T-1.3.2, T-1.5.0
