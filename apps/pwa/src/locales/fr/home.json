@@ -1,0 +1,60 @@
+{
+  "greeting": "Bienvenue",
+  "locale_hint": "Affiché en {{locale}}",
+  "actions": {
+    "eat": "Manger",
+    "drink": "Boire",
+    "see": "Voir",
+    "do": "Faire",
+    "buy": "Acheter",
+    "move": "Se déplacer"
+  },
+  "premium": {
+    "plan_my_day": "Planifier ma journée",
+    "message_owner": "Écrire à João",
+    "coming_soon": "Bientôt"
+  },
+  "locale": {
+    "en": "English",
+    "pt-PT": "Português",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "pt-BR": "Português (BR)"
+  },
+  "tour": {
+    "new": {
+      "title": "Planifier Votre Journée",
+      "subtitle": "Dites-nous ce que vous aimeriez faire",
+      "wishes_label": "Qu'est-ce qui vous ferait plaisir ?",
+      "duration_label": "Combien de temps avez-vous ?",
+      "vehicle_label": "Comment vous déplacez-vous ?",
+      "notes_label": "Autre chose ?",
+      "notes_placeholder": "Ex : Je veux éviter les pièges à touristes…",
+      "voice_hint": "Appuyer pour parler",
+      "voice_recording": "Écoute en cours...",
+      "submit": "Planifier ma journée",
+      "error": "Une erreur s'est produite. Veuillez réessayer.",
+      "vehicles": {
+        "car": "Voiture",
+        "bike": "Vélo",
+        "walking": "À pied",
+        "bus": "Bus"
+      },
+      "durations": {
+        "1": "1 heure",
+        "2": "2 heures",
+        "3": "3 heures",
+        "4": "4 heures",
+        "6": "Demi-journée",
+        "8": "Journée entière"
+      }
+    },
+    "status": {
+      "queued": "Planification de votre journée...",
+      "ready": "Votre plan est prêt !",
+      "rejected": "Impossible de créer un plan. Veuillez réessayer.",
+      "back": "Retour à l'accueil"
+    }
+  }
+}
