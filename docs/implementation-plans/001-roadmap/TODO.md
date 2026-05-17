@@ -13,12 +13,14 @@
 | Phase                           | Slices | Tasks   | Done   | In Progress | Ready | Blocked |
 | ------------------------------- | ------ | ------- | ------ | ----------- | ----- | ------- |
 | 0 — Foundation                  | 4      | 16      | 15     | 0           | 0     | 1       |
-| 1 — Guest Landing & Catalog v1  | 7      | 25      | 21     | 0           | 2     | 2       |
+| 1 — Guest Landing & Catalog v1  | 7      | 25      | 23     | 0           | 0     | 2       |
 | 2 — Discovery & Search          | 4      | 11      | 0      | 0           | 0     | 11      |
 | 3 — Daily Tour Planner          | 5      | 16      | 0      | 0           | 0     | 16      |
 | 4 — Chat & Reservation Drafting | 5      | 15      | 0      | 0           | 0     | 15      |
 | 5 — Hardening & Growth          | 6      | 17      | 0      | 0           | 0     | 17      |
-| **Total**                       | **31** | **100** | **36** | **0**       | **2** | **62**  |
+| **Total**                       | **31** | **100** | **38** | **0**       | **0** | **62**  |
+
+**🎉 Phase 1 effectively closed at 23/25 (92%)** — only T-0.4.4 🔒 VPS-blocked remains.
 
 ---
 
@@ -510,7 +512,9 @@
   - Hits `/admin` redirect to Authentik login if no session; back to dashboard on success.
   - Dashboard shell with nav: Guesthouses, Places, Reservations, Profile.
 
-#### 🟢 T-1.6.2 — Backoffice: Place CRUD with media upload
+#### ✅ T-1.6.2 — Backoffice: Place CRUD with media upload
+
+> **Resolved 2026-05-17 via [PR #58](https://github.com/zmeireles/daily-tour/pull/58).** End-to-end Place CRUD inside /admin/places (list + create/edit form with EN+pt-PT tabs + drag-and-drop media uploader calling BFF → media-svc pre-signed PUT → /complete). BFF adds owner-auth-gated /v1/admin/places/_ + /v1/admin/media/_ proxy routes (T-1.6.0 posture). 1135 LOC, 16 files. Sonnet committed via cs-agent auto-closer fallback (not self-commit). 2 orchestrator lint-fix rounds resolved no-unnecessary-type-assertion + unbound-method false-positives. Per [doctrine](../../operations/auto-merge-doctrine.md), auto-merged via session `/goal` autonomy.
 
 - **owns**: `apps/pwa/src/features/backoffice/places/**`
 - **deps**: T-1.6.1, T-1.1.1, T-1.4.0
@@ -520,7 +524,9 @@
   - Action + wish multi-select with the seeded taxonomy.
   - i18n fields (EN + pt-PT) entered as separate tabs.
 
-#### 🟢 T-1.6.3 — Backoffice: Owner profile + Guesthouse CRUD
+#### ✅ T-1.6.3 — Backoffice: Owner profile + Guesthouse CRUD
+
+> **Resolved 2026-05-17 via [PR #59](https://github.com/zmeireles/daily-tour/pull/59).** **Closes Phase 1 (excl. T-0.4.4 VPS-blocked).** 1 clean Sonnet self-commit (`1297aa8`, 19 files, +1405 LOC). Profile-form (bio + photo + phone + call_enabled toggle + preferred DM channels) at /admin/profile. Guesthouse list/create/edit at /admin/guesthouses (numeric lat/lng inputs; MapLibre picker deferred). BFF admin-profile + admin-guesthouses owner-auth-gated proxy routes. 6 RTL + 6 vitest cases. Title fix via gh pr edit (cs-agent default "T1 6 3" failed conventional-commits). Per [doctrine](../../operations/auto-merge-doctrine.md), auto-merged via session `/goal` autonomy.
 
 - **owns**: `apps/pwa/src/features/backoffice/profile/**`, `apps/pwa/src/features/backoffice/guesthouses/**`
 - **deps**: T-1.6.1, T-1.1.1
