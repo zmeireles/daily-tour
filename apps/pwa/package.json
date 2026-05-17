@@ -19,6 +19,8 @@
     "@daily-tour/shared-types": "workspace:*",
     "@hookform/resolvers": "^3.9.0",
     "@tanstack/react-query": "^5.100.0",
+    "jose": "^5.9.6",
+    "sonner": "^1.7.2",
     "@types/maplibre-gl": "^1.14.0",
     "date-fns": "^4.1.0",
     "i18next": "^25.0.0",
