@@ -12,5 +12,47 @@
   "placeholder": {
     "title": "Em breve",
     "body": "Esta secção será implementada numa tarefa seguinte."
+  },
+  "places": {
+    "title": "Locais",
+    "new": "Novo Local",
+    "edit": "Editar Local",
+    "list": {
+      "loading": "A carregar…",
+      "error": "Erro ao carregar locais.",
+      "empty": "Nenhum local encontrado.",
+      "name": "Nome",
+      "status": "Estado",
+      "address": "Morada",
+      "actions": "Ações",
+      "edit": "Editar"
+    },
+    "form": {
+      "loading": "A carregar…",
+      "load_error": "Erro ao carregar local.",
+      "name": "Nome",
+      "description": "Descrição",
+      "address": "Morada",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "status": "Estado",
+      "is_hosts_pick": "Escolha do Anfitrião",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "tabs": {
+        "en": "Inglês",
+        "pt_PT": "Português"
+      },
+      "media": {
+        "title": "Media",
+        "upload_hint": "Arraste imagens ou clique para selecionar"
+      }
+    },
+    "archive": {
+      "button": "Arquivar",
+      "confirm": "Arquivar este local?",
+      "yes": "Arquivar",
+      "no": "Cancelar"
+    }
   }
 }

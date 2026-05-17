@@ -1,0 +1,253 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
+import { MediaUploader, type UploadedAsset } from "./media-uploader";
+import { Button } from "@/components/ui/button";
+
+const FormSchema = z.object({
+  name_en: z.string().min(1, "Required"),
+  name_pt: z.string().default(""),
+  description_en: z.string().min(1, "Required"),
+  description_pt: z.string().default(""),
+  address: z.string().min(1, "Required"),
+  geom_lat: z.coerce.number().min(-90).max(90),
+  geom_lng: z.coerce.number().min(-180).max(180),
+  status: z.enum(["draft", "owner_approved", "published", "archived"]),
+  is_hosts_pick: z.boolean().default(false),
+});
+
+type FormValues = z.infer<typeof FormSchema>;
+
+interface Props {
+  initialData?: PlaceRow;
+  id?: string;
+}
+
+const TABS = ["en", "pt-PT"] as const;
+type Tab = (typeof TABS)[number];
+
+export function PlaceForm({ initialData, id }: Props) {
+  const { t } = useTranslation("admin");
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<Tab>("en");
+  const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>([]);
+
+  const createMutation = useCreatePlace();
+  const updateMutation = useUpdatePlace(id ?? "");
+  const isEdit = !!id;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: initialData
+      ? {
+          name_en: initialData.name["en"] ?? "",
+          name_pt: initialData.name["pt-PT"] ?? "",
+          description_en: initialData.description["en"] ?? "",
+          description_pt: initialData.description["pt-PT"] ?? "",
+          address: initialData.address,
+          geom_lat: initialData.geom_lat,
+          geom_lng: initialData.geom_lng,
+          status: initialData.status as FormValues["status"],
+          is_hosts_pick: initialData.is_hosts_pick,
+        }
+      : { status: "draft", is_hosts_pick: false, geom_lat: 37.75, geom_lng: -25.67 },
+  });
+
+  const onSubmit = handleSubmit(async (values) => {
+    const body = {
+      name: { en: values.name_en, "pt-PT": values.name_pt },
+      description: { en: values.description_en, "pt-PT": values.description_pt },
+      address: values.address,
+      geom_lat: values.geom_lat,
+      geom_lng: values.geom_lng,
+      status: values.status,
+      is_hosts_pick: values.is_hosts_pick,
+      guesthouse_scope: { all: true },
+      source_kind: "manual",
+      media: mediaAssets.map((a) => a.assetId),
+    };
+    if (isEdit) {
+      await updateMutation.mutateAsync(body);
+    } else {
+      await createMutation.mutateAsync(body);
+    }
+    void navigate("/admin/places");
+  });
+
+  const mutationError = isEdit ? updateMutation.error : createMutation.error;
+
+  return (
+    <div className="flex flex-col gap-6 max-w-2xl">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">
+          {isEdit ? t("places.edit", "Edit Place") : t("places.new", "New Place")}
+        </h1>
+        <Button variant="outline" size="sm" onClick={() => void navigate("/admin/places")}>
+          {t("places.form.cancel", "Cancel")}
+        </Button>
+      </div>
+
+      {mutationError && (
+        <p className="text-sm text-destructive" role="alert">
+          {mutationError instanceof Error ? mutationError.message : "Save failed"}
+        </p>
+      )}
+
+      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-5">
+        {/* i18n tabs */}
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-1 border-b">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-sm font-medium -mb-px transition-colors ${
+                  activeTab === tab
+                    ? "border-b-2 border-primary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab === "en"
+                  ? t("places.form.tabs.en", "English")
+                  : t("places.form.tabs.pt_PT", "Portuguese")}
+              </button>
+            ))}
+          </div>
+
+          <div className={activeTab === "en" ? "" : "hidden"}>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">{t("places.form.name", "Name")} (EN)</span>
+              <input
+                {...register("name_en")}
+                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {errors.name_en && (
+                <span className="text-xs text-destructive">{errors.name_en.message}</span>
+              )}
+            </label>
+            <label className="flex flex-col gap-1 mt-3">
+              <span className="text-sm font-medium">
+                {t("places.form.description", "Description")} (EN)
+              </span>
+              <textarea
+                {...register("description_en")}
+                rows={3}
+                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+              {errors.description_en && (
+                <span className="text-xs text-destructive">{errors.description_en.message}</span>
+              )}
+            </label>
+          </div>
+
+          <div className={activeTab === "pt-PT" ? "" : "hidden"}>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">{t("places.form.name", "Name")} (PT)</span>
+              <input
+                {...register("name_pt")}
+                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </label>
+            <label className="flex flex-col gap-1 mt-3">
+              <span className="text-sm font-medium">
+                {t("places.form.description", "Description")} (PT)
+              </span>
+              <textarea
+                {...register("description_pt")}
+                rows={3}
+                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Location & address */}
+        <fieldset className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("places.form.address", "Address")}</span>
+            <input
+              {...register("address")}
+              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {errors.address && (
+              <span className="text-xs text-destructive">{errors.address.message}</span>
+            )}
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">{t("places.form.latitude", "Latitude")}</span>
+              <input
+                type="number"
+                step="0.000001"
+                {...register("geom_lat")}
+                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {errors.geom_lat && (
+                <span className="text-xs text-destructive">{errors.geom_lat.message}</span>
+              )}
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">{t("places.form.longitude", "Longitude")}</span>
+              <input
+                type="number"
+                step="0.000001"
+                {...register("geom_lng")}
+                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {errors.geom_lng && (
+                <span className="text-xs text-destructive">{errors.geom_lng.message}</span>
+              )}
+            </label>
+          </div>
+        </fieldset>
+
+        {/* Status & hosts pick */}
+        <fieldset className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("places.form.status", "Status")}</span>
+            <select
+              {...register("status")}
+              className="rounded-md border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="draft">draft</option>
+              <option value="owner_approved">owner_approved</option>
+              <option value="published">published</option>
+              <option value="archived">archived</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" {...register("is_hosts_pick")} className="rounded" />
+            <span>{t("places.form.is_hosts_pick", "Host's Pick")}</span>
+          </label>
+        </fieldset>
+
+        {/* Media */}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium">{t("places.form.media.title", "Media")}</legend>
+          <MediaUploader
+            label={t("places.form.media.upload_hint", "Drag & drop images or click to select")}
+            onUploaded={setMediaAssets}
+          />
+        </fieldset>
+
+        <div className="flex gap-3 pt-2">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : t("places.form.save", "Save")}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => void navigate("/admin/places")}>
+            {t("places.form.cancel", "Cancel")}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

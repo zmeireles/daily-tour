@@ -1,0 +1,105 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOwnerJwt } from "@/store/owner-session";
+
+const PLACES_KEY = ["admin", "places"] as const;
+
+export interface PlaceRow {
+  id: string;
+  name: Record<string, string>;
+  description: Record<string, string>;
+  address: string;
+  status: string;
+  geom_lat: number;
+  geom_lng: number;
+  is_hosts_pick: boolean;
+  source_kind: string;
+  source_ref?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PlacesResponse {
+  data: PlaceRow[];
+  nextCursor: string | null;
+}
+
+function authHeader(jwt: string): Record<string, string> {
+  return { Authorization: `Bearer ${jwt}` };
+}
+
+export function usePlaces() {
+  const jwt = useOwnerJwt();
+  return useQuery<PlacesResponse>({
+    queryKey: PLACES_KEY,
+    enabled: !!jwt,
+    queryFn: async () => {
+      const res = await fetch("/v1/admin/places?include_archived=true", {
+        headers: authHeader(jwt!),
+      });
+      if (!res.ok) throw new Error(`places list ${res.status}`);
+      return res.json() as Promise<PlacesResponse>;
+    },
+  });
+}
+
+export function usePlace(id: string) {
+  const jwt = useOwnerJwt();
+  return useQuery<PlaceRow>({
+    queryKey: [...PLACES_KEY, id],
+    enabled: !!jwt && !!id,
+    queryFn: async () => {
+      const res = await fetch(`/v1/admin/places/${id}`, { headers: authHeader(jwt!) });
+      if (!res.ok) throw new Error(`place fetch ${res.status}`);
+      return res.json() as Promise<PlaceRow>;
+    },
+  });
+}
+
+export function useCreatePlace() {
+  const jwt = useOwnerJwt();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: unknown) => {
+      const res = await fetch("/v1/admin/places", {
+        method: "POST",
+        headers: { ...authHeader(jwt!), "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`create place ${res.status}`);
+      return res.json() as unknown;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
+  });
+}
+
+export function useUpdatePlace(id: string) {
+  const jwt = useOwnerJwt();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: unknown) => {
+      const res = await fetch(`/v1/admin/places/${id}`, {
+        method: "PATCH",
+        headers: { ...authHeader(jwt!), "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`update place ${res.status}`);
+      return res.json() as unknown;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
+  });
+}
+
+export function useArchivePlace() {
+  const jwt = useOwnerJwt();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/v1/admin/places/${id}`, {
+        method: "DELETE",
+        headers: authHeader(jwt!),
+      });
+      if (!res.ok && res.status !== 204) throw new Error(`archive place ${res.status}`);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
+  });
+}

@@ -6,6 +6,8 @@ import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import mediaSvcPlugin from "./plugins/media-client.js";
 import ownerAuthPlugin from "./plugins/owner-auth.js";
+import adminMediaRoute from "./routes/admin-media.js";
+import adminPlacesRoute from "./routes/admin-places.js";
 import discoverRoute from "./routes/discover.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
@@ -79,6 +81,8 @@ export async function createApp(): Promise<FastifyInstance> {
   // discoverRoute registers after authPlugin so the onRoute hook applies authentication.
   await app.register(discoverRoute);
   await app.register(placesRoute);
+  await app.register(adminMediaRoute);
+  await app.register(adminPlacesRoute);
 
   return app;
 }

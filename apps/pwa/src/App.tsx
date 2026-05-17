@@ -7,6 +7,9 @@ import PlaceDetailRoute from "@/routes/_authed.p.$id";
 import ActionDrillDownRoute from "@/routes/_authed.a.$action";
 import AdminRoute from "@/routes/admin";
 import AdminCallbackRoute from "@/routes/admin.callback";
+import AdminPlacesRoute from "@/routes/admin.places";
+import AdminPlacesNewRoute from "@/routes/admin.places.new";
+import AdminPlacesEditRoute from "@/routes/admin.places.$id";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
 
 const queryClient = new QueryClient();
@@ -16,7 +19,15 @@ const router = createBrowserRouter([
   { path: "/r/:token", element: <RTokenRoute /> },
   { path: "/p/:id", element: <PlaceDetailRoute /> },
   { path: "/a/:action", element: <ActionDrillDownRoute /> },
-  { path: "/admin", element: <AdminRoute /> },
+  {
+    path: "/admin",
+    element: <AdminRoute />,
+    children: [
+      { path: "places", element: <AdminPlacesRoute /> },
+      { path: "places/new", element: <AdminPlacesNewRoute /> },
+      { path: "places/:id", element: <AdminPlacesEditRoute /> },
+    ],
+  },
   { path: "/admin/callback", element: <AdminCallbackRoute /> },
   { path: "*", element: <IndexRoute /> },
 ]);
