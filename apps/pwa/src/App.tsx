@@ -5,6 +5,8 @@ import IndexRoute from "@/routes/index";
 import RTokenRoute from "@/routes/r.$token";
 import PlaceDetailRoute from "@/routes/_authed.p.$id";
 import ActionDrillDownRoute from "@/routes/_authed.a.$action";
+import AdminRoute from "@/routes/admin";
+import AdminCallbackRoute from "@/routes/admin.callback";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
 
 const queryClient = new QueryClient();
@@ -14,6 +16,8 @@ const router = createBrowserRouter([
   { path: "/r/:token", element: <RTokenRoute /> },
   { path: "/p/:id", element: <PlaceDetailRoute /> },
   { path: "/a/:action", element: <ActionDrillDownRoute /> },
+  { path: "/admin", element: <AdminRoute /> },
+  { path: "/admin/callback", element: <AdminCallbackRoute /> },
   { path: "*", element: <IndexRoute /> },
 ]);
 
