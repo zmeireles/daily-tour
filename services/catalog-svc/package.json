@@ -17,6 +17,7 @@
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
+    "db:migrate": "tsx src/migrate.ts",
     "seed": "tsx seeds/dev.ts",
     "seed:places": "tsx seeds/places.ts",
     "typecheck": "tsc --noEmit",

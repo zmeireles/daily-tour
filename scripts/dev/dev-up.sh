@@ -38,18 +38,20 @@ cd "$(dirname "$0")/../.." || { fail "cannot cd to repo root"; exit 1; }
 REPO_ROOT=$(pwd)
 info "repo root: $REPO_ROOT"
 
+# Activate Node 22 from .nvmrc — runs for every invocation (including --from N)
+# so subsequent stages (pnpm, tsx) don't trip the engines.node guard.
+if [[ -s ~/.nvm/nvm.sh ]]; then
+  # shellcheck disable=SC1090
+  source ~/.nvm/nvm.sh
+  nvm use --silent 2>/dev/null || true
+fi
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 1 — PREFLIGHT
 # ═══════════════════════════════════════════════════════════════════════════════
 if [[ $START_STAGE -le 1 ]]; then
   stage 1 "PREFLIGHT — node, pnpm, docker, .env"
 
-  # nvm + node 22
-  if [[ -s ~/.nvm/nvm.sh ]]; then
-    # shellcheck disable=SC1090
-    source ~/.nvm/nvm.sh
-    nvm use --silent 2>/dev/null || true
-  fi
   NODE_VER=$(node -v 2>/dev/null || echo "missing")
   if [[ ! "$NODE_VER" =~ ^v22\. ]]; then
     fail "Node 22 required (got: $NODE_VER). Run: nvm install 22 && nvm use"
@@ -90,6 +92,13 @@ if [[ $START_STAGE -le 1 ]]; then
   pass "JWT_SIGNING_KEY ≥32 chars"
 fi
 
+# Load .env into the shell so subsequent stages can use $REDIS_PASSWORD,
+# $POSTGRES_PASSWORD, etc. for direct-CLI auth (compose itself uses --env-file).
+set -a
+# shellcheck disable=SC1091
+source .env
+set +a
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 2 — INSTALL deps
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -122,7 +131,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 3 — INFRA (postgres + redis + rabbitmq + minio)
 # ═══════════════════════════════════════════════════════════════════════════════
-COMPOSE_BASE="-f infra/compose/docker-compose.base.yml"
+COMPOSE_BASE="--env-file .env -f infra/compose/docker-compose.base.yml"
 COMPOSE_APP="-f infra/compose/docker-compose.app.yml"
 COMPOSE_ALL="$COMPOSE_BASE $COMPOSE_APP"
 
@@ -151,7 +160,7 @@ if [[ $START_STAGE -le 3 ]]; then
   # Wait for redis
   info "waiting for redis (timeout 30s)…"
   for i in {1..30}; do
-    if docker compose $COMPOSE_BASE exec -T redis redis-cli PING 2>/dev/null | grep -q PONG; then
+    if docker compose $COMPOSE_BASE exec -T redis redis-cli -a "$REDIS_PASSWORD" --no-auth-warning PING 2>/dev/null | grep -q PONG; then
       pass "redis ready"
       break
     fi
@@ -186,13 +195,21 @@ fi
 if [[ $START_STAGE -le 4 ]]; then
   stage 4 "MIGRATIONS — catalog + token + media schemas"
 
+  # Build host-side per-service DATABASE_URLs from SERVICE_DB_PASSWORD_*
+  # (sourced from .env). Containers get these from docker-compose.app.yml,
+  # but host-run migrate.ts has nothing else to read from.
+  PG_HOST_PORT="${DT_HOST_PORT_POSTGRES:-27432}"
+  export CATALOG_SVC_DATABASE_URL="postgres://catalog_svc:${SERVICE_DB_PASSWORD_CATALOG}@localhost:${PG_HOST_PORT}/dailytour"
+  export TOKEN_SVC_DATABASE_URL="postgres://token_svc:${SERVICE_DB_PASSWORD_TOKEN}@localhost:${PG_HOST_PORT}/dailytour"
+  export MEDIA_SVC_DATABASE_URL="postgres://media_svc:${SERVICE_DB_PASSWORD_MEDIA}@localhost:${PG_HOST_PORT}/dailytour"
+
   for svc in catalog-svc token-svc media-svc; do
     info "migrating $svc…"
-    if pnpm --filter "@daily-tour/$svc" run migrate 2>&1 | tail -5; then
+    if pnpm --filter "@daily-tour/$svc" run db:migrate 2>&1 | tail -10; then
       pass "migrated $svc"
     else
       fail "$svc migrate failed"
-      info "  diagnose: pnpm --filter @daily-tour/$svc run migrate"
+      info "  diagnose: pnpm --filter @daily-tour/$svc run db:migrate"
       info "  reset: bash scripts/dev/dev-down.sh && bash scripts/dev/dev-up.sh"
       exit 1
     fi

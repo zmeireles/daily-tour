@@ -13,7 +13,7 @@ info()  { echo "${BLUE}ℹ${RESET}  $*"; }
 step()  { echo ""; echo "${BLUE}━━━ $* ━━━${RESET}"; }
 
 cd "$(dirname "$0")/../.." || exit 1
-COMPOSE_BASE="-f infra/compose/docker-compose.base.yml"
+COMPOSE_BASE="--env-file .env -f infra/compose/docker-compose.base.yml"
 COMPOSE_APP="-f infra/compose/docker-compose.app.yml"
 COMPOSE_ALL="$COMPOSE_BASE $COMPOSE_APP"
 

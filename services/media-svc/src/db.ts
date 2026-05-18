@@ -56,8 +56,10 @@ export async function runMigrations(_db: Db = getDb()): Promise<void> {
     const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
 
     for (const file of files) {
-      const sqlText = await readFile(join(MIGRATIONS_DIR, file), "utf8");
-      const hash = createHash("sha256").update(sqlText, "utf8").digest("hex");
+      const rawSql = await readFile(join(MIGRATIONS_DIR, file), "utf8");
+      const hash = createHash("sha256").update(rawSql, "utf8").digest("hex");
+      // See catalog-svc/src/db/client.ts for the CREATE SCHEMA rationale.
+      const sqlText = rawSql.replace(/CREATE\s+SCHEMA\s+IF\s+NOT\s+EXISTS\s+"?\w+"?\s*;\s*/gi, "");
 
       const existing = await client.query(
         "SELECT 1 FROM media.__drizzle_migrations WHERE hash = $1",
