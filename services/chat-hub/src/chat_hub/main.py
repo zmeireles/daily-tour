@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+from daily_tour_common.otel import init_otel
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,6 +15,8 @@ from .routes import draft_router, health_router
 from .version import __version__
 
 logger = logging.getLogger(__name__)
+
+init_otel("chat-hub")
 
 
 def create_app() -> FastAPI:

@@ -58,7 +58,7 @@ python_version = "3.12"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["aio_pika.*", "asyncpg.*"]
+module = ["aio_pika.*", "asyncpg.*", "daily_tour_common.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
