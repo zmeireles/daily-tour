@@ -11,6 +11,7 @@ This directory collects security artifacts for the Daily Tour project. It is com
 | [`threat-model-2026-05-18.md`](./threat-model-2026-05-18.md) | 2026-05-18 | STRIDE threat model for auth, media, chat, planner, and BFF surfaces |
 | [`secrets-rotation-playbook.md`](./secrets-rotation-playbook.md) | 2026-05-18 | Rotation procedures for all 16 secrets across the stack |
 | [`pii-inventory-gdpr.md`](./pii-inventory-gdpr.md) | 2026-05-18 | PII field inventory across all schemas + GDPR DSR playbook (SAR, erasure, rectification, portability) |
+| [`backup-recovery-runbook.md`](./backup-recovery-runbook.md) | 2026-05-18 | Backup schedule, RPO/RTO targets, restore procedures, and quarterly drill cadence for all stateful components |
 
 ---
 
