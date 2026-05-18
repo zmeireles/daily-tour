@@ -18,7 +18,7 @@ until mc alias set "${ALIAS}" "${ENDPOINT}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_P
 done
 echo "[minio-init] Connected as alias '${ALIAS}'."
 
-for bucket in media-place media-owner media-tour; do
+for bucket in media-place media-owner media-tour daily-tour-media; do
   if mc ls "${ALIAS}/${bucket}" >/dev/null 2>&1; then
     echo "[minio-init] Bucket exists: ${bucket}"
   else
@@ -30,4 +30,4 @@ for bucket in media-place media-owner media-tour; do
   mc anonymous set download "${ALIAS}/${bucket}/public/" >/dev/null 2>&1 || true
 done
 
-echo "[minio-init] Buckets ready: media-place, media-owner, media-tour"
+echo "[minio-init] Buckets ready: media-place, media-owner, media-tour, daily-tour-media"
