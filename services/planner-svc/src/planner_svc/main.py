@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+from daily_tour_common.otel import init_otel
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,6 +12,8 @@ from .routes import health_router, plans_router
 from .version import __version__
 
 logger = logging.getLogger(__name__)
+
+init_otel("planner-svc")
 
 
 def create_app() -> FastAPI:

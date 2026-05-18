@@ -1,0 +1,24 @@
+# OTel Collector — minimal pipeline for Daily Tour Python services.
+# Receives OTLP/HTTP traces from all Python services on port 4318.
+# Batches and logs to debug; swap in a Tempo/Grafana exporter for prod.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+
+exporters:
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
