@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background: tea-leaf green rounded square -->
   <rect width="64" height="64" rx="12" fill="#2F5D43"/>
-  <text x="32" y="42" font-family="serif" font-size="32" font-weight="600" fill="#F7F4EC" text-anchor="middle">DT</text>
+  <!-- Map-pin drop: cream fill, basalt outline — volcanic island + tour location marker -->
+  <path d="M 20 26 A 12 12 0 0 0 44 26 L 32 52 Z"
+        fill="#F7F4EC" stroke="#1C3A28" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Tea-leaf veins: central spine + lateral pairs — São Miguel identity -->
+  <path d="M 32 15 L 32 50" fill="none" stroke="#2F5D43" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M 32 20 Q 27 19 24 18" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M 32 20 Q 37 19 40 18" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M 32 27 Q 26 26 23 24" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M 32 27 Q 38 26 41 24" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
 </svg>
