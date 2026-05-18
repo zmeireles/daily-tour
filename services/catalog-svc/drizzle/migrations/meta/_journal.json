@@ -8,6 +8,27 @@
       "when": 1778973937022,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778973937100,
+      "tag": "0001_analytics_tour_event",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747612800000,
+      "tag": "0002_guest_feedback",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747612801000,
+      "tag": "0003_analytics_is_beta",
+      "breakpoints": true
     }
   ]
 }
