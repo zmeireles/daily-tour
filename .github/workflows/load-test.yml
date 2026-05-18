@@ -28,6 +28,7 @@ jobs:
       MINIO_ROOT_PASSWORD: ci_minio_pass
       RABBITMQ_PASSWORD: ci_rabbit_pass
       # JWT_SIGNING_KEY must be ≥32 chars; shared between token-svc and bff.
+      # gitleaks:allow (CI-only test key, not a real secret; literal also flagged with `-x` suffix)
       JWT_SIGNING_KEY: ci-test-jwt-signing-key-32-chars-x
       MEDIA_SVC_INTERNAL_TOKEN: ci-media-internal-token-32charsx
       # ── DB passwords — must match literals in infra/postgres/init/02-roles.sql
