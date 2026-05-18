@@ -5,6 +5,7 @@ import { insertTourEvent } from "../lib/analytics-db.js";
 const BodySchema = z.object({
   event_type: z.enum(["tour.started", "tour.completed"]),
   plan_id: z.string().uuid().optional(),
+  is_beta: z.boolean().optional(),
   payload: z.record(z.unknown()).optional(),
 });
 
@@ -23,6 +24,7 @@ const telemetryRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         eventType: parsed.data.event_type,
         planId: parsed.data.plan_id ?? null,
         guestId,
+        isBeta: parsed.data.is_beta,
         payload: parsed.data.payload,
       });
       return reply.code(204).send();
