@@ -1,0 +1,155 @@
+name: Load Tests
+
+on:
+  pull_request:
+    types: [labeled]
+  schedule:
+    # Nightly at 02:00 UTC — off-peak so it doesn't race normal CI.
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: load-tests-${{ github.ref }}
+  # Don't cancel: a mid-run abort leaves the Docker stack orphaned and the
+  # results artifact incomplete. Let it finish; the next run supersedes it.
+  cancel-in-progress: false
+
+jobs:
+  load-test:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'load-test')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      # ── Compose required vars (`:?` blocks startup without these) ───────────
+      POSTGRES_PASSWORD: ci_pg_pass
+      REDIS_PASSWORD: ci_redis_pass
+      MINIO_ROOT_PASSWORD: ci_minio_pass
+      RABBITMQ_PASSWORD: ci_rabbit_pass
+      # JWT_SIGNING_KEY must be ≥32 chars; shared between token-svc and bff.
+      # gitleaks:allow (CI-only test key, not a real secret; literal also flagged with `-x` suffix)
+      JWT_SIGNING_KEY: ci-test-jwt-signing-key-32-chars-x
+      MEDIA_SVC_INTERNAL_TOKEN: ci-media-internal-token-32charsx
+      # ── DB passwords — must match literals in infra/postgres/init/02-roles.sql
+      SERVICE_DB_PASSWORD_TOKEN: change-me-please-token
+      SERVICE_DB_PASSWORD_CATALOG: change-me-please-catalog
+      SERVICE_DB_PASSWORD_MEDIA: change-me-please-media
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Needed to run seed scripts directly on the runner (they connect to the
+      # host-mapped Postgres port 27432).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build images before starting the stack so `up --wait` can immediately
+      # pull from the local cache instead of building under the health timeout.
+      - name: Build service images
+        run: |
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            -f infra/compose/docker-compose.app.yml \
+            build bff token-svc catalog-svc media-svc
+        timeout-minutes: 20
+
+      # Start infra first so minio-init (one-shot bucket bootstrap) completes
+      # before media-svc tries to connect.
+      - name: Start base infrastructure
+        run: |
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            up -d --wait --wait-timeout 120
+
+      # Start only the services needed for the three k6 scenarios:
+      #   token-exchange → bff → token-svc
+      #   discover       → bff → catalog-svc
+      #   place-detail   → bff → catalog-svc
+      # bff depends_on token-svc + media-svc, so compose starts those too.
+      # tour-plan.js is excluded — it requires planner-svc (ANTHROPIC_API_KEY).
+      - name: Start app services
+        run: |
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            -f infra/compose/docker-compose.app.yml \
+            up -d --wait --wait-timeout 180 \
+            bff catalog-svc
+        timeout-minutes: 10
+
+      # Seed scripts default to localhost:27432 and the hardcoded role passwords,
+      # so no extra env vars are needed beyond what's already in the job env.
+      - name: Seed reservations (token-svc)
+        run: pnpm --filter @daily-tour/token-svc seed
+
+      # catalog seed:places has a FK dependency on action + wish rows (seed).
+      - name: Seed actions and wishes (catalog-svc)
+        run: pnpm --filter @daily-tour/catalog-svc seed
+
+      - name: Seed places (catalog-svc)
+        run: pnpm --filter @daily-tour/catalog-svc seed:places
+
+      - name: Create results directory
+        run: mkdir -p tests/load/k6/results
+
+      # k6 runs inside the dt_internal network so it can reach bff (dt_bff:8080)
+      # and token-svc (dt_token_svc:8088) directly — no host-port mapping needed.
+      # Each step exits non-zero (code 99) if any threshold is violated, failing
+      # the job and signalling the broken SLO in the PR / nightly report.
+      - name: k6 — token-exchange
+        run: |
+          docker run --rm \
+            --network dt_internal \
+            -v "${{ github.workspace }}/tests/load/k6:/tests" \
+            -e BASE_URL=http://dt_bff:8080 \
+            -e TOKEN_SVC_URL=http://dt_token_svc:8088 \
+            grafana/k6 run \
+              --out json=/tests/results/token-exchange.json \
+              /tests/scenarios/token-exchange.js
+
+      - name: k6 — discover
+        run: |
+          docker run --rm \
+            --network dt_internal \
+            -v "${{ github.workspace }}/tests/load/k6:/tests" \
+            -e BASE_URL=http://dt_bff:8080 \
+            -e TOKEN_SVC_URL=http://dt_token_svc:8088 \
+            grafana/k6 run \
+              --out json=/tests/results/discover.json \
+              /tests/scenarios/discover.js
+
+      - name: k6 — place-detail
+        run: |
+          docker run --rm \
+            --network dt_internal \
+            -v "${{ github.workspace }}/tests/load/k6:/tests" \
+            -e BASE_URL=http://dt_bff:8080 \
+            -e TOKEN_SVC_URL=http://dt_token_svc:8088 \
+            grafana/k6 run \
+              --out json=/tests/results/place-detail.json \
+              /tests/scenarios/place-detail.js
+
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-results-${{ github.run_id }}
+          path: tests/load/k6/results/
+          retention-days: 14
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: |
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            -f infra/compose/docker-compose.app.yml \
+            logs --tail=200

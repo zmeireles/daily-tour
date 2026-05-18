@@ -68,15 +68,35 @@ K6_OPAQUE_TOKENS=$(./scripts/mint-load-test-tokens.sh) \
 
 ## CI integration
 
-Add a step in `.github/workflows/` once the QA VPS exists (T-0.4.4):
+`.github/workflows/load-test.yml` runs three scenarios (token-exchange, discover,
+place-detail) against a Docker Compose stack on every PR that carries the
+`load-test` label, and nightly at 02:00 UTC.
 
-```yaml
-- name: k6 load test
-  run: |
-    k6 run tests/load/k6/scenarios/discover.js \
-      --env BASE_URL=${{ secrets.QA_API_URL }} \
-      --env K6_OPAQUE_TOKENS=${{ secrets.QA_OPAQUE_TOKENS }}
+`tour-plan.js` is excluded from the CI run — it requires `planner-svc` and an
+`ANTHROPIC_API_KEY`, neither of which is in the minimum CI stack.
+
+### Triggering on a PR
+
+Add the **`load-test`** label to a pull request. The workflow starts automatically
+and uploads results as a `k6-results-<run-id>` artifact (retained 14 days).
+
 ```
+gh pr edit <number> --add-label load-test
+```
+
+### How the CI stack works
+
+1. Base infrastructure starts first (postgres, redis, rabbitmq, minio).
+2. App services start next — only `bff`, `token-svc`, `media-svc`, `catalog-svc`.
+3. Seeds populate reservations (token-svc) and places (catalog-svc).
+4. k6 runs inside the `dt_internal` Docker network, reaching services by their
+   container names (`dt_bff:8080`, `dt_token_svc:8088`).
+5. Any threshold breach causes the job to fail with exit code 99.
+
+### Nightly run
+
+The scheduled run at `cron: '0 2 * * *'` exercises the same scenarios without
+needing a label. Check the **Actions → Load Tests** tab for results.
 
 ## Rate limit note (token-exchange)
 
