@@ -51,7 +51,8 @@ export const PLACE_IDS = (__ENV.K6_PLACE_IDS || "").split(",").filter(Boolean).l
     ];
 
 // São Miguel GPS centre — used as default loc for discover tests.
-export const DEFAULT_LOC = "37.7412,-25.6756";
+// Override via K6_LOC (lat,lng) for QA / prod targets.
+export const DEFAULT_LOC = __ENV.K6_LOC || "37.7412,-25.6756";
 export const VALID_ACTIONS = ["eat", "drink", "see", "do", "buy", "move"];
 
 // Dev-seed reservation IDs from services/token-svc/src/seed/run.ts.
