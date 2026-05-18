@@ -26,6 +26,9 @@ paths = [
   # Authentik blueprints contain placeholder client_secret literals
   # that match AUTHENTIK_OWNER_APP_CLIENT_SECRET in .env.example.
   "infra/authentik/blueprints/.*\\.yaml$",
+  # CI workflows have CI-only literal test secrets (JWT_SIGNING_KEY,
+  # MEDIA_SVC_INTERNAL_TOKEN, etc.) — never used outside the runner.
+  "\\.github/workflows/.*\\.ya?ml$",
 ]
 
 regexes = [
