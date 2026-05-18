@@ -229,7 +229,10 @@ services:
       MEDIA_SVC_DATABASE_URL: postgres://media_svc:${SERVICE_DB_PASSWORD_MEDIA}@dt_postgres:5432/dailytour
       # MinIO root creds used for dev; T-1.4.x follow-up can scope to a dedicated
       # media_svc IAM user via mc admin policy attach.
-      MINIO_ENDPOINT: http://dt_minio:9000
+      # Use the compose service alias (no underscore) — MinIO rejects Host
+      # headers containing underscores per RFC 952, so `dt_minio` fails even
+      # with forcePathStyle. The `minio` alias is provided by docker compose.
+      MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-dailytour}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD missing in .env}
       MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
@@ -278,7 +281,11 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     healthcheck:
       # Python 3.12-slim ships no wget/curl — exec python with a one-liner.
-      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8083/health\",timeout=2).status==200 else 1)'"]
+      test:
+        [
+          "CMD-SHELL",
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8083/health",timeout=2).status==200 else 1)''',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -313,7 +320,11 @@ services:
       SMTP_FROM: ${SMTP_FROM:-no-reply@daily-tour.example.local}
     healthcheck:
       # Python 3.12-slim ships no wget/curl — exec python with a one-liner.
-      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8085/health\",timeout=2).status==200 else 1)'"]
+      test:
+        [
+          "CMD-SHELL",
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8085/health",timeout=2).status==200 else 1)''',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -347,7 +358,11 @@ services:
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8082/health\",timeout=2).status==200 else 1)'"]
+      test:
+        [
+          "CMD-SHELL",
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8082/health",timeout=2).status==200 else 1)''',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -387,7 +402,11 @@ services:
       WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:8084/health\",timeout=2).status==200 else 1)'"]
+      test:
+        [
+          "CMD-SHELL",
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8084/health",timeout=2).status==200 else 1)''',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 30s

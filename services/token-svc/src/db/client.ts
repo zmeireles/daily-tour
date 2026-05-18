@@ -1,5 +1,6 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
@@ -32,7 +33,13 @@ export function getDb(): Db {
 // In production (bundled to /app/dist/index.js), the same relative path
 // → /app/drizzle/migrations (the Dockerfile COPYs the migrations there).
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = resolve(__dirname, "../../drizzle/migrations");
+// Dev (src/db/client.ts) → up two levels; prod (bundled dist/index.js) → up one.
+// Try the prod layout first since it's the runtime path; fall back to dev.
+const MIGRATIONS_DIR = (() => {
+  const prod = resolve(__dirname, "../drizzle/migrations");
+  const dev = resolve(__dirname, "../../drizzle/migrations");
+  return existsSync(prod) ? prod : dev;
+})();
 
 // Custom migrator — drizzle's bundled migrator unconditionally emits
 // `CREATE SCHEMA IF NOT EXISTS` for both the data and tracking schemas,
@@ -65,8 +72,10 @@ export async function runMigrations(_db: Db = getDb()): Promise<void> {
     const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
 
     for (const file of files) {
-      const sqlText = await readFile(join(MIGRATIONS_DIR, file), "utf8");
-      const hash = createHash("sha256").update(sqlText, "utf8").digest("hex");
+      const rawSql = await readFile(join(MIGRATIONS_DIR, file), "utf8");
+      const hash = createHash("sha256").update(rawSql, "utf8").digest("hex");
+      // See catalog-svc/src/db/client.ts for the CREATE SCHEMA rationale.
+      const sqlText = rawSql.replace(/CREATE\s+SCHEMA\s+IF\s+NOT\s+EXISTS\s+"?\w+"?\s*;\s*/gi, "");
 
       const existing = await client.query(
         "SELECT 1 FROM auth_tokens.__drizzle_migrations WHERE hash = $1",
