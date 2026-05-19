@@ -1,7 +1,6 @@
 # Claude Code
 .claude/
-temp/prompt-*.md
-temp/screenshots/
+temp/
 .mcp.json
 
 # Node / Turborepo
