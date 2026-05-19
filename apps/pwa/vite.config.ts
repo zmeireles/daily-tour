@@ -51,6 +51,21 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Proxy bff calls so the PWA stays same-origin in dev — no CORS, cookies
+    // (dt_refresh) flow naturally, and the frontend code reaches /r + /v1
+    // exactly as it does behind Traefik in prod. The bff container publishes
+    // its host port via DT_HOST_PORT_BFF in compose (default 28080).
+    proxy: {
+      "/r": {
+        target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
+        changeOrigin: false,
+      },
+      "/v1": {
+        target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
+        changeOrigin: false,
+        ws: true,
+      },
+    },
   },
   preview: {
     port: 5174,
