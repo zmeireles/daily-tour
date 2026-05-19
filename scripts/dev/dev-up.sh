@@ -214,18 +214,49 @@ if [[ $START_STAGE -le 4 ]]; then
       exit 1
     fi
   done
+
+  # Cross-schema SELECT grants. The init scripts in infra/postgres/init/
+  # declare these via `ALTER DEFAULT PRIVILEGES FOR ROLE <owner>` so future
+  # tables auto-grant — but existing dev DBs (volumes from before that fix)
+  # have tables already created without the grant. Apply explicitly so the
+  # reader services (search/planner/chat) can see existing tables today.
+  info "ensuring cross-schema SELECT grants (idempotent)…"
+  docker compose $COMPOSE_BASE exec -T \
+    -e PGPASSWORD="$POSTGRES_PASSWORD" \
+    postgres psql -U postgres -d dailytour -v ON_ERROR_STOP=1 -q -c "
+      GRANT SELECT ON ALL TABLES IN SCHEMA catalog TO search_svc, planner_svc;
+      GRANT SELECT ON ALL TABLES IN SCHEMA search  TO planner_svc;
+      GRANT SELECT ON ALL TABLES IN SCHEMA auth_tokens TO chat_svc;
+    " >/dev/null && pass "cross-schema grants applied"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 5 — SEED catalog
 # ═══════════════════════════════════════════════════════════════════════════════
 if [[ $START_STAGE -le 5 ]]; then
-  stage 5 "SEED — 28 São Miguel places"
+  stage 5 "SEED — actions + wishes taxonomy + 28 São Miguel places"
+  # Taxonomy first (6 actions + 36 wishes); place_action_wish FKs depend on it.
   if pnpm --filter @daily-tour/catalog-svc run seed 2>&1 | tail -5; then
-    pass "catalog seeded (28 places, idempotent)"
+    pass "catalog taxonomy seeded (actions + wishes)"
   else
-    fail "seed failed"
+    fail "taxonomy seed failed"
     info "  diagnose: pnpm --filter @daily-tour/catalog-svc run seed"
+    exit 1
+  fi
+  if pnpm --filter @daily-tour/catalog-svc run seed:places 2>&1 | tail -5; then
+    pass "catalog places seeded (28 São Miguel places, idempotent)"
+  else
+    fail "places seed failed"
+    info "  diagnose: pnpm --filter @daily-tour/catalog-svc run seed:places"
+    exit 1
+  fi
+  # token-svc seed creates 2 fixture reservations (UUIDs ccc00001-...-1/2),
+  # required for any smoke that mints + exchanges a guest token.
+  if pnpm --filter @daily-tour/token-svc run seed 2>&1 | tail -5; then
+    pass "token-svc fixtures seeded (2 guests + 2 reservations)"
+  else
+    fail "token-svc seed failed"
+    info "  diagnose: pnpm --filter @daily-tour/token-svc run seed"
     exit 1
   fi
 fi
@@ -246,21 +277,29 @@ if [[ $START_STAGE -le 6 ]]; then
   fi
 
   # Health probes (services should expose /health)
+  # Each service listens on its own container port (not host-published for the
+  # app tier). When the host has no published mapping, exec wget inside the
+  # container against the right localhost:<port>.
   for svc in token-svc catalog-svc media-svc bff; do
     info "waiting for $svc /health (timeout 60s)…"
+    case "$svc" in
+      bff)         INTERNAL_PORT=8080 ;;
+      catalog-svc) INTERNAL_PORT=8081 ;;
+      media-svc)   INTERNAL_PORT=8087 ;;
+      token-svc)   INTERNAL_PORT=8088 ;;
+      *)           INTERNAL_PORT=8080 ;;
+    esac
     PORT=$(docker compose $COMPOSE_ALL port "$svc" 2>/dev/null | head -1 | sed 's/.*:\([0-9]*\)/\1/')
     if [[ -z "$PORT" ]]; then
-      warn "  no published port for $svc — using docker exec health check"
       PORT_OK=0
       for i in {1..60}; do
-        if docker compose $COMPOSE_ALL exec -T "$svc" wget -q -O- http://localhost:8080/health >/dev/null 2>&1 \
-           || docker compose $COMPOSE_ALL exec -T "$svc" curl -sf http://localhost:8080/health >/dev/null 2>&1; then
+        if docker compose $COMPOSE_ALL exec -T "$svc" wget -q -O- "http://localhost:${INTERNAL_PORT}/health" >/dev/null 2>&1; then
           PORT_OK=1
           break
         fi
         sleep 1
       done
-      [[ $PORT_OK -eq 1 ]] && pass "$svc /health OK" || { warn "$svc /health unreachable — check logs"; }
+      [[ $PORT_OK -eq 1 ]] && pass "$svc /health OK (internal :${INTERNAL_PORT})" || { warn "$svc /health unreachable — check logs"; }
     else
       for i in {1..60}; do
         if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then

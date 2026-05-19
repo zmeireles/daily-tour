@@ -37,9 +37,11 @@ class QueryHit:
 
 
 # Common CTE: pre-filter the candidate set by action/wish slug + haversine ring.
-# `:wish_slug` is bound either to a slug or NULL (psycopg/asyncpg coerce None).
-# When NULL, the wish predicate is a no-op (`OR :wish_slug IS NULL`) so we don't
-# need two SQL strings.
+# `:wish_slug` is bound either to a slug or NULL — when NULL, the predicate is a
+# no-op. The explicit `CAST(:wish_slug AS text)` is required: asyncpg's prepared-
+# statement type inference can't disambiguate the parameter when it appears in
+# both `IS NULL` (no type constraint) and `= text` (text-constrained) in the
+# same statement (raises AmbiguousParameterError).
 _CANDIDATE_CTE = """
 WITH candidate AS (
     SELECT DISTINCT
@@ -56,7 +58,7 @@ WITH candidate AS (
     LEFT JOIN catalog.wish AS w ON w.id = paw.wish_id
     WHERE p.status = 'published'
       AND a.slug = :action_slug
-      AND (:wish_slug IS NULL OR w.slug = :wish_slug)
+      AND (CAST(:wish_slug AS text) IS NULL OR w.slug = CAST(:wish_slug AS text))
 )
 """
 
