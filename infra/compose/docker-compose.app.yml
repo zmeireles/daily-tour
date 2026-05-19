@@ -80,6 +80,11 @@ services:
     restart: unless-stopped
     networks:
       - dt_internal
+    # Bound to 127.0.0.1 so the host-side PWA (vite dev server on :5173) can
+    # proxy /r/ + /v1/ + WebSocket /v1/chat/ws to the bff. Production routes
+    # via Traefik (docker-compose.traefik.yml) and can keep bff internal-only.
+    ports:
+      - "127.0.0.1:${DT_HOST_PORT_BFF:-28080}:8080"
     depends_on:
       token-svc:
         condition: service_healthy
