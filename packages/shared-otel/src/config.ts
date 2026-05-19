@@ -38,8 +38,13 @@ function parseLogLevel(raw: string | undefined): DiagLogLevel {
 
 function resolveTraceEndpoint(): string | null {
   const envEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"];
+  // Explicit empty string = disabled. The compose files set `""` for dev so
+  // services don't retry-spam ECONNREFUSED at a collector that isn't wired
+  // up yet (T-0.5.x lands a real OTLP collector in Phase 5).
+  if (envEndpoint === "") return null;
   if (envEndpoint) return envEndpoint;
-  if (process.env["NODE_ENV"] === "test") return null;
+  // Without any signal, only assume a collector exists in non-dev/test.
+  if (process.env["NODE_ENV"] === "test" || process.env["NODE_ENV"] === "development") return null;
   return "http://localhost:4318";
 }
 

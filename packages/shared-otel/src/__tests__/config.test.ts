@@ -55,6 +55,24 @@ describe("readOtelConfig", () => {
     expect(config.traceEndpoint).toBeNull();
   });
 
+  it("disables traces when NODE_ENV=development and OTEL_EXPORTER_OTLP_ENDPOINT is unset", () => {
+    process.env["NODE_ENV"] = "development";
+
+    const config = readOtelConfig({ serviceName: "dev-svc" });
+
+    expect(config.traceEndpoint).toBeNull();
+  });
+
+  it("treats explicit empty OTEL_EXPORTER_OTLP_ENDPOINT as disabled", () => {
+    // Compose sets `""` in dev to suppress retries; our resolver must
+    // honour that rather than falling back to the localhost default.
+    process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] = "";
+
+    const config = readOtelConfig({ serviceName: "empty-endpoint-svc" });
+
+    expect(config.traceEndpoint).toBeNull();
+  });
+
   it("overrides win over env vars", () => {
     process.env["OTEL_SERVICE_NAME"] = "env-svc";
     process.env["OTEL_SERVICE_VERSION"] = "9.9.9";
