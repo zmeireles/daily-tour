@@ -66,8 +66,11 @@ export default defineConfig({
         target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
         changeOrigin: false,
         bypass: (req) => {
+          // Return "/index.html" (NOT req.url) so Vite serves the SPA shell
+          // — its internal middleware can resolve /index.html as a real file,
+          // whereas /r/<token> isn't a static asset and produces a 404.
           if (req.headers.accept?.includes("text/html")) {
-            return req.url ?? "/";
+            return "/index.html";
           }
           return undefined;
         },
