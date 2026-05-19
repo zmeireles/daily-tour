@@ -214,6 +214,20 @@ if [[ $START_STAGE -le 4 ]]; then
       exit 1
     fi
   done
+
+  # Cross-schema SELECT grants. The init scripts in infra/postgres/init/
+  # declare these via `ALTER DEFAULT PRIVILEGES FOR ROLE <owner>` so future
+  # tables auto-grant — but existing dev DBs (volumes from before that fix)
+  # have tables already created without the grant. Apply explicitly so the
+  # reader services (search/planner/chat) can see existing tables today.
+  info "ensuring cross-schema SELECT grants (idempotent)…"
+  docker compose $COMPOSE_BASE exec -T \
+    -e PGPASSWORD="$POSTGRES_PASSWORD" \
+    postgres psql -U postgres -d dailytour -v ON_ERROR_STOP=1 -q -c "
+      GRANT SELECT ON ALL TABLES IN SCHEMA catalog TO search_svc, planner_svc;
+      GRANT SELECT ON ALL TABLES IN SCHEMA search  TO planner_svc;
+      GRANT SELECT ON ALL TABLES IN SCHEMA auth_tokens TO chat_svc;
+    " >/dev/null && pass "cross-schema grants applied"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
