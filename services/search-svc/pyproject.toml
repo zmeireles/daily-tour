@@ -20,6 +20,7 @@ dependencies = [
 
 [project.scripts]
 backfill = "search_svc.scripts.backfill:main"
+embed-places = "search_svc.scripts.embed_places:main"
 
 [dependency-groups]
 dev = [
