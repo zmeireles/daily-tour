@@ -37,7 +37,11 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO catalog_svc;
 CREATE ROLE chat_svc WITH LOGIN PASSWORD 'change-me-please-chat';
 ALTER SCHEMA chat OWNER TO chat_svc;
 GRANT USAGE ON SCHEMA auth_tokens TO chat_svc;
-ALTER DEFAULT PRIVILEGES IN SCHEMA auth_tokens GRANT SELECT ON TABLES TO chat_svc;
+-- FOR ROLE: default privileges only apply to tables created by the named role.
+-- Without it, the grant scopes to tables postgres creates — but auth_tokens
+-- tables are created by token_svc, so chat_svc would silently lack SELECT.
+ALTER DEFAULT PRIVILEGES FOR ROLE token_svc IN SCHEMA auth_tokens
+  GRANT SELECT ON TABLES TO chat_svc;
 GRANT USAGE ON SCHEMA audit TO chat_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO chat_svc;
 
@@ -47,9 +51,11 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO chat_svc;
 CREATE ROLE planner_svc WITH LOGIN PASSWORD 'change-me-please-planner';
 ALTER SCHEMA planner OWNER TO planner_svc;
 GRANT USAGE ON SCHEMA catalog TO planner_svc;
-ALTER DEFAULT PRIVILEGES IN SCHEMA catalog GRANT SELECT ON TABLES TO planner_svc;
+ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA catalog
+  GRANT SELECT ON TABLES TO planner_svc;
 GRANT USAGE ON SCHEMA search TO planner_svc;
-ALTER DEFAULT PRIVILEGES IN SCHEMA search GRANT SELECT ON TABLES TO planner_svc;
+ALTER DEFAULT PRIVILEGES FOR ROLE search_svc IN SCHEMA search
+  GRANT SELECT ON TABLES TO planner_svc;
 GRANT USAGE ON SCHEMA audit TO planner_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO planner_svc;
 
@@ -59,7 +65,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO planner_svc;
 CREATE ROLE search_svc WITH LOGIN PASSWORD 'change-me-please-search';
 ALTER SCHEMA search OWNER TO search_svc;
 GRANT USAGE ON SCHEMA catalog TO search_svc;
-ALTER DEFAULT PRIVILEGES IN SCHEMA catalog GRANT SELECT ON TABLES TO search_svc;
+ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA catalog
+  GRANT SELECT ON TABLES TO search_svc;
 GRANT USAGE ON SCHEMA audit TO search_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO search_svc;
 
