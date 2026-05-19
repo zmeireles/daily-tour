@@ -16,15 +16,18 @@ ENV UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/app/.venv \
     PYTHONDONTWRITEBYTECODE=1
 COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
-WORKDIR /app
 
-# Copy the workspace sibling first so the path source in pyproject.toml resolves.
+# Mirror repo layout inside the container so the editable path
+# `../../packages/python-common` declared in pyproject.toml normalizes
+# (uv refuses to traverse past the filesystem root when it doesn't).
+WORKDIR /workspace/services/planner-svc
+
 COPY packages/python-common/ /workspace/packages/python-common/
-COPY services/planner-svc/pyproject.toml services/planner-svc/uv.lock* /app/
+COPY services/planner-svc/pyproject.toml services/planner-svc/uv.lock* ./
 RUN uv sync --frozen --no-install-project --no-dev || \
     uv sync --no-install-project --no-dev
 
-COPY services/planner-svc/src/ /app/src/
+COPY services/planner-svc/src/ ./src/
 RUN uv sync --frozen --no-dev || uv sync --no-dev
 
 # ─── runtime: non-root, minimal layer ────────────────────────────────────
@@ -34,7 +37,7 @@ RUN addgroup --system app && adduser --system --ingroup app app \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
-COPY --from=builder --chown=app:app /app/src /app/src
+COPY --from=builder --chown=app:app /workspace/services/planner-svc/src /app/src
 COPY --from=builder --chown=app:app /workspace/packages/python-common /workspace/packages/python-common
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONPATH="/app/src" \
