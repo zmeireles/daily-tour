@@ -56,9 +56,21 @@ export default defineConfig({
     // exactly as it does behind Traefik in prod. The bff container publishes
     // its host port via DT_HOST_PORT_BFF in compose (default 28080).
     proxy: {
+      // /r/:token is BOTH a SPA route (handled by react-router → RTokenRoute,
+      // which does the actual /r/:token fetch) AND a bff API path. The bypass
+      // lets the browser's initial navigation (Accept: text/html) fall through
+      // to Vite's SPA index.html, while the SPA's subsequent fetch (no
+      // text/html in Accept) gets proxied to bff. Without the bypass, the
+      // browser sees bff's raw JSON exchange response instead of the SPA.
       "/r": {
         target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
         changeOrigin: false,
+        bypass: (req) => {
+          if (req.headers.accept?.includes("text/html")) {
+            return req.url ?? "/";
+          }
+          return undefined;
+        },
       },
       "/v1": {
         target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
