@@ -39,6 +39,22 @@ export function initOtel(overrides?: Partial<OtelConfig>): { shutdown: () => Pro
 
   const config = readOtelConfig(overrides);
 
+  // When no OTLP endpoint is configured for traces, metrics, or logs, suppress
+  // the SDK's auto-config from constructing default exporters that would
+  // ECONNREFUSED-spam against localhost:4318. NodeSDK reads these env vars at
+  // .start() time, so we set them before the constructor below.
+  if (config.traceEndpoint === null) {
+    process.env["OTEL_TRACES_EXPORTER"] ??= "none";
+  }
+  if (config.metricsEndpoint === null) {
+    process.env["OTEL_METRICS_EXPORTER"] ??= "none";
+  }
+  // Logs aren't part of OtelConfig yet, but the auto-config bundle picks
+  // OTEL_EXPORTER_OTLP_ENDPOINT for logs too; silence it the same way.
+  if (config.traceEndpoint === null && config.metricsEndpoint === null) {
+    process.env["OTEL_LOGS_EXPORTER"] ??= "none";
+  }
+
   diag.setLogger(new DiagConsoleLogger(), config.logLevel);
 
   const resource = resourceFromAttributes({
