@@ -36,8 +36,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build PWA
-        run: pnpm --filter @daily-tour/pwa build
+      # Use turbo to build the PWA AND its workspace deps (shared-types,
+      # shared-config, etc.) in dep-graph order. The direct
+      # `pnpm --filter @daily-tour/pwa build` form skips deps and fails
+      # with `Cannot find module '@daily-tour/shared-types'` because the
+      # PWA's tsc step needs the dep's .d.ts files emitted first. Mirrors
+      # the build step in ci.yml.
+      - name: Build PWA (with deps)
+        run: pnpm exec turbo run build --filter=@daily-tour/pwa
 
       - name: Upload bundle analysis
         uses: actions/upload-artifact@v4
