@@ -12,6 +12,7 @@ import adminGuesthousesRoute from "./routes/admin-guesthouses.js";
 import adminMediaRoute from "./routes/admin-media.js";
 import adminPlacesRoute from "./routes/admin-places.js";
 import adminProfileRoute from "./routes/admin-profile.js";
+import authRefreshRoute from "./routes/auth-refresh.js";
 import chatWsRoute from "./routes/chat-ws.js";
 import discoverRoute from "./routes/discover.js";
 import feedbackRoute from "./routes/feedback.js";
@@ -91,6 +92,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(mediaSvcPlugin);
   await app.register(healthRoute);
   await app.register(tokenExchangeRoute);
+  await app.register(authRefreshRoute);
   // discoverRoute registers after authPlugin so the onRoute hook applies authentication.
   await app.register(discoverRoute);
   await app.register(placesRoute);
