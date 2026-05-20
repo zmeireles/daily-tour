@@ -47,11 +47,11 @@ Daily Tour has a paired Riff project `dt-tests` for human verification of UI-tou
 
 The reverse flow only works if the engineer-side picks up filed tasks reliably:
 
-1. **Every session start** — `mcp__tasks-prod__list_tasks(project_id=<dt-tests>, statuses=['review'])`. Triage anything found before picking up other work.
+1. **Every session start** — `mcp__tasks-prod__list_tasks(project_id='e03901a6-b656-4f38-a768-b98d4fa081cc', statuses=['review'])`. Triage anything found before picking up other work.
 2. **After every plan close-out wave** — same query, scoped to anything referencing the just-closed plan.
 3. **On user request** — "check dt-tests", "any failures?", or similar.
 
-**dt-tests project ID**: TBD (capture in `~/.claude/projects/.../memory/reference_dt_tests.md` when project created).
+**dt-tests project ID**: `e03901a6-b656-4f38-a768-b98d4fa081cc` (code `DT-TESTS`, Kanban workflow). Captured in `~/.claude/projects/-media-jmeireles-ssd3-my-projects-daily-tour/memory/reference_dt_tests.md`.
 
 ### Forward-flow trigger
 

@@ -114,7 +114,7 @@ Before flipping `review` → `todo`, the engineer **must**:
 
 The reverse flow only works if the engineer-side picks up filed tasks reliably. The orchestrator commits to:
 
-1. **Every session start** — `mcp__tasks-prod__list_tasks(project_id=<dt-tests project id>, statuses=['review'])`. Triage anything found before picking up other work.
+1. **Every session start** — `mcp__tasks-prod__list_tasks(project_id='e03901a6-b656-4f38-a768-b98d4fa081cc', statuses=['review'])`. Triage anything found before picking up other work.
 2. **After every plan-close-out wave** — same query, scoped to anything referencing the just-closed plan in title or description.
 3. **On user request** — "check dt-tests", "any failures?", or similar.
 
@@ -177,7 +177,7 @@ For reverse flow, `Pass criteria` is omitted (the tester already saw the bug —
 
 ## Bootstrap
 
-- Single Riff project `dt-tests` (TBD — create per `temp/uat-batch-2026-05-20.md` setup steps)
+- Single Riff project `dt-tests` (id `e03901a6-b656-4f38-a768-b98d4fa081cc`, code `DT-TESTS`, Kanban workflow, created 2026-05-20)
 - Backfill 8 verification tasks for already-shipped Plan-001 guest surfaces — see `temp/uat-batch-2026-05-20.md`
 
 ## Out of scope (today)
