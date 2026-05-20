@@ -37,6 +37,30 @@ See the doctrine for the full list, budget cap, kill switches, and rollback prot
 - Lint/test/audit gates: same locally (lefthook pre-push) as in CI (`turbo run lint/test --filter=...[HEAD]` and `pnpm audit --prod --audit-level=high`).
 - Plan task IDs: `T-<phase>.<slice>.<task>`. cs-agent names use hyphens only (`t0-1-1`), never dots — tmux can't target dotted pane names.
 
+## Human testing protocol
+
+Daily Tour has a paired Riff project `dt-tests` for human verification of UI-touching work. Two flows: **forward** (engineer pre-creates verification task before flipping plan/PR to DONE) and **reverse** (tester files in-the-wild bug at `review`, orchestrator picks up at checkpoint).
+
+**Full protocol**: [`docs/human/how-to/testing-protocol.md`](./docs/human/how-to/testing-protocol.md). Read it once; refer back at lifecycle decision points.
+
+### Orchestrator polling ritual (mandatory)
+
+The reverse flow only works if the engineer-side picks up filed tasks reliably:
+
+1. **Every session start** — `mcp__tasks-prod__list_tasks(project_id=<dt-tests>, statuses=['review'])`. Triage anything found before picking up other work.
+2. **After every plan close-out wave** — same query, scoped to anything referencing the just-closed plan.
+3. **On user request** — "check dt-tests", "any failures?", or similar.
+
+**dt-tests project ID**: TBD (capture in `~/.claude/projects/.../memory/reference_dt_tests.md` when project created).
+
+### Forward-flow trigger
+
+A plan / PR cannot flip to DONE until paired test tasks exist and at least one passed. Skip cases: pure infra, DB migration, docs, CI config, backend refactor with no consumer change, path covered by a green Playwright spec.
+
+### When the tasks-prod MCP isn't loaded
+
+If `mcp__tasks-prod__*` tools aren't visible in the session, deliver UAT content as a paste-ready markdown file under `temp/uat-batch-<date>.md`. See `temp/uat-batch-2026-05-20.md` for the reference batch.
+
 ## Operational reminders
 
 - Never `cs-agent kill <name>` before `cs-agent push <name>`. Kill removes the worktree; the branch is recoverable via direct `git push` if you forget, but it's an avoidable footgun.
