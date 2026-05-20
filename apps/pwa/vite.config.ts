@@ -51,6 +51,36 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Proxy bff calls so the PWA stays same-origin in dev — no CORS, cookies
+    // (dt_refresh) flow naturally, and the frontend code reaches /r + /v1
+    // exactly as it does behind Traefik in prod. The bff container publishes
+    // its host port via DT_HOST_PORT_BFF in compose (default 28080).
+    proxy: {
+      // /r/:token is BOTH a SPA route (handled by react-router → RTokenRoute,
+      // which does the actual /r/:token fetch) AND a bff API path. The bypass
+      // lets the browser's initial navigation (Accept: text/html) fall through
+      // to Vite's SPA index.html, while the SPA's subsequent fetch (no
+      // text/html in Accept) gets proxied to bff. Without the bypass, the
+      // browser sees bff's raw JSON exchange response instead of the SPA.
+      "/r": {
+        target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
+        changeOrigin: false,
+        bypass: (req) => {
+          // Return "/index.html" (NOT req.url) so Vite serves the SPA shell
+          // — its internal middleware can resolve /index.html as a real file,
+          // whereas /r/<token> isn't a static asset and produces a 404.
+          if (req.headers.accept?.includes("text/html")) {
+            return "/index.html";
+          }
+          return undefined;
+        },
+      },
+      "/v1": {
+        target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
+        changeOrigin: false,
+        ws: true,
+      },
+    },
   },
   preview: {
     port: 5174,
