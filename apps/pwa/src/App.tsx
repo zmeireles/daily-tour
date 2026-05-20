@@ -21,6 +21,7 @@ import AdminGuesthousesNewRoute from "@/routes/admin.guesthouses.new";
 import AdminGuesthousesEditRoute from "@/routes/admin.guesthouses.$id";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
 import { OfflineBanner } from "@/components/offline-banner";
+import { SessionBootstrap } from "@/components/session-bootstrap";
 import { queryPersister } from "@/lib/offline/cache";
 
 const queryClient = new QueryClient({
@@ -60,10 +61,12 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: queryPersister }}>
-      <RouterProvider router={router} />
-      <Toaster />
-      <InstallBanner />
-      <OfflineBanner />
+      <SessionBootstrap>
+        <RouterProvider router={router} />
+        <Toaster />
+        <InstallBanner />
+        <OfflineBanner />
+      </SessionBootstrap>
     </PersistQueryClientProvider>
   );
 }

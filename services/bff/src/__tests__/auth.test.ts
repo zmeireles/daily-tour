@@ -146,4 +146,81 @@ describe("BFF auth flow", () => {
     expect(res.statusCode).toBe(401);
     expect(res.json()).toEqual({ error: "unauthorized" });
   });
+
+  describe("GET /v1/auth/refresh", () => {
+    it("happy path — cookie present, returns fresh JWT + re-sets cookie", async () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 3600;
+      const jwt = await signJwt(
+        { sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" },
+        futureExp,
+      );
+      exchangeMock.mockResolvedValueOnce({ jwt, exp: futureExp });
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/auth/refresh",
+        cookies: { dt_refresh: "opaque-abc-123" },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json<{ jwt: string; exp: number }>()).toEqual({ jwt, exp: futureExp });
+      expect(exchangeMock).toHaveBeenCalledWith("opaque-abc-123");
+
+      const setCookie = res.headers["set-cookie"];
+      const cookieStr = Array.isArray(setCookie) ? setCookie.join("\n") : String(setCookie);
+      expect(cookieStr).toContain("dt_refresh=opaque-abc-123");
+      expect(cookieStr.toLowerCase()).toContain("httponly");
+
+      // jti cached active.
+      const active = await ctx.client.exists(`jti:active:${FIXTURE_JTI}`);
+      expect(active).toBe(1);
+    });
+
+    it("no cookie — 401 no_refresh_cookie", async () => {
+      const res = await app.inject({ method: "GET", url: "/v1/auth/refresh" });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.json()).toEqual({ error: "no_refresh_cookie" });
+      expect(exchangeMock).not.toHaveBeenCalled();
+    });
+
+    it("stale opaque (token-svc 401) — 401 invalid_refresh + clears cookie", async () => {
+      const { TokenExchangeError } = await import("../lib/token-svc-client.js");
+      exchangeMock.mockRejectedValueOnce(new TokenExchangeError(401, "invalid_token"));
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/auth/refresh",
+        cookies: { dt_refresh: "stale-opaque" },
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.json()).toEqual({ error: "invalid_refresh" });
+
+      // Cookie must be cleared (sentinel: Expires in the past or Max-Age=0).
+      const setCookie = res.headers["set-cookie"];
+      expect(setCookie).toBeTruthy();
+      const cookieStr = Array.isArray(setCookie) ? setCookie.join("\n") : String(setCookie);
+      expect(cookieStr).toContain("dt_refresh=");
+      expect(cookieStr.toLowerCase()).toMatch(/expires=thu, 01 jan 1970|max-age=0/);
+    });
+
+    it("token-svc unavailable — propagates as 5xx (not 401)", async () => {
+      const { TokenExchangeError } = await import("../lib/token-svc-client.js");
+      exchangeMock.mockRejectedValueOnce(new TokenExchangeError(503, "token-svc 503"));
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/auth/refresh",
+        cookies: { dt_refresh: "opaque-xyz" },
+      });
+
+      // Don't pin the exact 5xx code — Fastify's default handler echoes the
+      // error's .status (503 here). What matters: it's NOT 401 (which would
+      // silently clear the cookie and degrade the user to public landing on
+      // a transient backend failure) and NOT 2xx.
+      expect(res.statusCode).toBeGreaterThanOrEqual(500);
+      expect(res.statusCode).toBeLessThan(600);
+    });
+  });
 });
