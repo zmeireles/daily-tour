@@ -32,6 +32,39 @@ A plan / PR cannot flip its README or merge to DONE until paired test tasks exis
 
 When in doubt → spawn one. Cheap to skip, expensive to miss.
 
+## Env readiness gate (precondition for any UAT run)
+
+**The engineer MUST run `scripts/dev/dev-env-check.sh` before signalling the tester to pull a UAT task into `doing`.** The script snapshots repo state, container health, BFF route registration, PWA dev server, and a fast smoke. It exits 0 only when every check is green; exit 1 means env is NOT ready and the UAT does not run until env is fixed.
+
+**Why this is load-bearing:** a UAT result against a stale or partially-rebuilt dev env is worse than no test — it lies. We hit this exact failure mode in DT-TESTS-3 (UAT-G02): the tester ran the test against a local checkout that hadn't synced post-merge, and the resulting "FAIL" was an env artefact, not a code defect. The gate exists to prevent that recurrence.
+
+**Workflow:**
+
+1. Engineer runs `bash scripts/dev/dev-env-check.sh --markdown`. Output is a paste-ready fingerprint.
+2. If verdict is ❌ **ENV NOT READY** — fix the listed failure (rebuild BFF, restart Vite, sync git, etc.), re-run, repeat until ✅.
+3. If verdict is ✅ **ENV READY** — paste the fingerprint into the UAT task's `## Setup` section (under the existing setup steps) and signal the tester.
+4. Tester pulls task to `doing` only after the fingerprint is present in Setup.
+
+**What the gate checks:**
+
+- **REPO**: git HEAD short SHA + commit subject; current branch + upstream; working-tree cleanliness; ahead/behind state vs upstream.
+- **CONTAINERS**: every expected service (postgres, redis, rabbitmq, minio, token-svc, catalog-svc, media-svc, bff, search-svc, planner-svc, chat-hub, notif-svc) is `(healthy)`.
+- **BFF ENDPOINTS**: `/health` returns 200; `/r/:token` route registered (302/401/404 for an invalid path-segment); `/v1/auth/refresh` returns `401 no_refresh_cookie` for a cold call. The third probe catches "BFF wasn't rebuilt" — the single highest-payoff check.
+- **PWA**: vite dev server bound on :5173; key files for the latest change actually exist on disk (file-presence assertions catch stale local checkouts that no health probe would detect).
+- **SMOKE**: catalog has 28 seeded places. Fast (one DB query); skippable with `--skip-smoke` when iterating.
+
+**When the gate fails — common causes + fix:**
+
+| Symptom                         | Fix                                                                                                                                                            |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vs upstream: diverged ahead=N` | Stale local main. `git fetch && git reset --hard origin/main` (verify the diverged commits are squash-merged on origin first).                                 |
+| `/v1/auth/refresh: 404`         | BFF container is pre-fix. `docker compose --env-file .env -f infra/compose/docker-compose.base.yml -f infra/compose/docker-compose.app.yml up -d --build bff`. |
+| `vite dev :5173: not bound`     | Start the PWA dev server: `pnpm --filter @daily-tour/pwa dev`.                                                                                                 |
+| `<file>: missing`               | Local checkout is missing the latest code. Same fix as the divergence symptom.                                                                                 |
+| `catalog seeded: got '0'`       | Postgres reset without re-seed. `pnpm --filter @daily-tour/catalog-svc run seed`.                                                                              |
+
+**Anti-pattern**: skipping the gate "just this once" because env was green an hour ago. Container drift is real; rebuilds happen silently; HMR sometimes lies. The gate's runtime is ~3 s. Run it.
+
 ## Lifecycle
 
 `dt-tests` uses the **Kanban** workflow (`todo → doing → review → done`).
