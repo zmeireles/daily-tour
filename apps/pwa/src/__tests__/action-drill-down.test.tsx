@@ -29,7 +29,6 @@ vi.mock("maplibre-gl", () => ({
 
 // Suppress timer-based side effects from theme/locale auto hooks.
 vi.mock("@/lib/theme/use-theme-auto", () => ({ useThemeAuto: vi.fn() }));
-vi.mock("@/lib/locale/use-locale-auto", () => ({ useLocaleAuto: vi.fn() }));
 
 const MOCK_JWT = "header.payload.sig";
 const MOCK_CLAIMS = {

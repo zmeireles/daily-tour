@@ -14,7 +14,6 @@ vi.mock("@/lib/auth/owner-oidc", () => ({
 }));
 
 vi.mock("@/lib/theme/use-theme-auto", () => ({ useThemeAuto: vi.fn() }));
-vi.mock("@/lib/locale/use-locale-auto", () => ({ useLocaleAuto: vi.fn() }));
 
 const { ownerUserManager } = await import("@/lib/auth/owner-oidc");
 

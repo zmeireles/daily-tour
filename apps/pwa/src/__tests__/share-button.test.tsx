@@ -5,7 +5,6 @@ import i18n from "@/lib/i18n";
 import { ShareButton } from "@/features/tour/share-button";
 
 vi.mock("@/lib/theme/use-theme-auto", () => ({ useThemeAuto: vi.fn() }));
-vi.mock("@/lib/locale/use-locale-auto", () => ({ useLocaleAuto: vi.fn() }));
 
 const PLAN_ID = "eeeeeeee-0000-4000-8000-000000000001";
 

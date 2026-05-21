@@ -1,5 +1,4 @@
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
-import { useLocaleAuto } from "@/lib/locale/use-locale-auto";
 import { Greeting } from "@/features/home/greeting";
 import { ActionGrid } from "@/features/home/action-grid";
 import { HostsPicksSection } from "@/features/home/hosts-picks-section";
@@ -8,7 +7,6 @@ import { LocaleSwitcher } from "@/features/home/locale-switcher";
 
 export default function AuthedIndexRoute() {
   useThemeAuto();
-  useLocaleAuto();
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
