@@ -83,7 +83,14 @@ describe("Authed home (IndexRoute dispatcher)", () => {
     expect(document.querySelector("[data-premium='true']")).not.toBeNull();
   });
 
-  it("locale auto-applies from token claims (pt-PT)", () => {
+  it("does NOT call i18n.changeLanguage on mount — locale is applied at /r/:token exchange only", () => {
+    // Regression guard for DT-TESTS-10: applying the JWT's locale on every
+    // mount of AuthedIndexRoute (via the old useLocaleAuto hook) raced
+    // LanguageDetector reading localStorage and overrode the user's
+    // explicit toggle choice on F5. The fix moved locale application
+    // into RTokenRoute (verified in r-token-route.test.tsx). This test
+    // ensures AuthedIndexRoute stays out of the locale-management
+    // business — re-introducing useLocaleAuto here would flip this red.
     const spy = vi
       .spyOn(i18n, "changeLanguage")
       .mockImplementation(
@@ -98,7 +105,7 @@ describe("Authed home (IndexRoute dispatcher)", () => {
       renderRoute();
     });
 
-    expect(spy).toHaveBeenCalledWith("pt-PT");
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("theme auto sets data-theme to light during São Miguel daytime", () => {
