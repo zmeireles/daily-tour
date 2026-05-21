@@ -8,7 +8,6 @@ import TourNewRoute from "@/routes/_authed.tour.new";
 import TourPlanRoute from "@/routes/_authed.tour.$planId";
 
 vi.mock("@/lib/theme/use-theme-auto", () => ({ useThemeAuto: vi.fn() }));
-vi.mock("@/lib/locale/use-locale-auto", () => ({ useLocaleAuto: vi.fn() }));
 
 const MOCK_JWT = "header.payload.sig";
 const MOCK_CLAIMS = {

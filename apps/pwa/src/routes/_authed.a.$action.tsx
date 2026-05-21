@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
-import { useLocaleAuto } from "@/lib/locale/use-locale-auto";
 import { useSessionStore } from "@/store/session";
 import { GUESTHOUSE_LOCATIONS } from "@/lib/config";
 import { useDiscover } from "@/features/discover/use-discover";
@@ -42,7 +41,6 @@ export default function ActionDrillDownRoute() {
   const { t } = useTranslation("discover");
 
   useThemeAuto();
-  useLocaleAuto();
 
   const jwt = useSessionStore((s) => s.jwt);
   const reservation = useSessionStore((s) => s.reservation);
