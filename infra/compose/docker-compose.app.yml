@@ -325,13 +325,20 @@ services:
       SMTP_FROM: ${SMTP_FROM:-no-reply@daily-tour.example.local}
     healthcheck:
       # Python 3.12-slim ships no wget/curl — exec python with a one-liner.
+      # Timeout is 15s (not 5s) because the CMD-SHELL spawns a fresh Python
+      # interpreter on every probe; cold-start of the runtime regularly
+      # exceeds 5s under the 0.25 CPU limit below, flagging the container
+      # unhealthy even when /health responds 200 in milliseconds. Reproduced
+      # 2026-05-23 (env-check blocked a UAT cycle on a phantom-unhealthy
+      # notif-svc). 15s gives the interpreter generous headroom; widen
+      # further if it flakes again.
       test:
         [
           "CMD-SHELL",
           'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8085/health",timeout=2).status==200 else 1)''',
         ]
       interval: 30s
-      timeout: 5s
+      timeout: 15s
       start_period: 30s
       retries: 3
     deploy:
