@@ -51,4 +51,22 @@ describe("PlaceCard", () => {
     const wrapper = container.firstElementChild as HTMLElement;
     expect(wrapper.className).toMatch(/motion-reduce:transform-none/);
   });
+
+  it("renders the action-icon placeholder when heroImageUrl is null", () => {
+    // Today the catalog returns hero_image_url=null pending the media-svc
+    // signed-URL wire-up. The card should show a placeholder (using the
+    // first action's icon) rather than a broken-image icon. DT-TESTS-4
+    // FAIL surfaced this behaviour.
+    render(<PlaceCard {...baseProps} heroImageUrl={null} />);
+
+    expect(screen.getByTestId("place-card-hero-placeholder")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /Lagoa das Sete Cidades$/i })).toBeNull();
+    // The placeholder uses role="img" with a descriptive aria-label.
+    expect(screen.getByRole("img", { name: /image coming soon/i })).toBeInTheDocument();
+  });
+
+  it("renders the placeholder when heroImageUrl is empty string", () => {
+    render(<PlaceCard {...baseProps} heroImageUrl="" />);
+    expect(screen.getByTestId("place-card-hero-placeholder")).toBeInTheDocument();
+  });
 });

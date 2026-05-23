@@ -20,7 +20,7 @@ function PlaceList({ places }: { places: DiscoverPlace[] }) {
           id={place.id}
           name={place.name}
           description={place.description}
-          heroImageUrl={place.hero_image_url ?? ""}
+          heroImageUrl={place.hero_image_url}
           distanceKm={place.distance_km}
           wishes={place.wishes}
           actions={place.wishes.map((w) => ({ slug: w, icon: "MapPin" }))}
