@@ -13,9 +13,10 @@ const LIST_HEIGHT = typeof window !== "undefined" ? Math.max(window.innerHeight 
 type FlatListProps = {
   places: DiscoverPlace[];
   sortBy: SortBy;
+  placeholderIcon?: string | null;
 };
 
-export function FlatList({ places, sortBy }: FlatListProps) {
+export function FlatList({ places, sortBy, placeholderIcon }: FlatListProps) {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
 
@@ -34,6 +35,7 @@ export function FlatList({ places, sortBy }: FlatListProps) {
         distanceKm={place.distance_km}
         wishes={place.wishes}
         actions={place.wishes.map((w) => ({ slug: w, icon: "MapPin" }))}
+        placeholderIcon={placeholderIcon}
         onPress={() => void navigate(`/p/${place.id}`)}
       />
     );

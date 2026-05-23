@@ -10,7 +10,13 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ");
 }
 
-function PlaceList({ places }: { places: DiscoverPlace[] }) {
+function PlaceList({
+  places,
+  placeholderIcon,
+}: {
+  places: DiscoverPlace[];
+  placeholderIcon?: string | null;
+}) {
   const navigate = useNavigate();
   return (
     <div className="flex flex-col gap-4 px-4 pb-4">
@@ -24,6 +30,7 @@ function PlaceList({ places }: { places: DiscoverPlace[] }) {
           distanceKm={place.distance_km}
           wishes={place.wishes}
           actions={place.wishes.map((w) => ({ slug: w, icon: "MapPin" }))}
+          placeholderIcon={placeholderIcon}
           onPress={() => void navigate(`/p/${place.id}`)}
         />
       ))}
@@ -34,9 +41,10 @@ function PlaceList({ places }: { places: DiscoverPlace[] }) {
 type WishGroupListProps = {
   groups: WishGroup[];
   sortBy: SortBy;
+  placeholderIcon?: string | null;
 };
 
-export function WishGroupList({ groups, sortBy }: WishGroupListProps) {
+export function WishGroupList({ groups, sortBy, placeholderIcon }: WishGroupListProps) {
   const { i18n } = useTranslation();
 
   return (
@@ -51,7 +59,7 @@ export function WishGroupList({ groups, sortBy }: WishGroupListProps) {
               iconName="MapPin"
               href={`#${wish}`}
             />
-            <PlaceList places={sorted} />
+            <PlaceList places={sorted} placeholderIcon={placeholderIcon} />
           </section>
         );
       })}
