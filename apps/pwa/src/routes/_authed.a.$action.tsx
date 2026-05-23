@@ -27,6 +27,19 @@ const ACTION_LABELS: Record<string, string> = {
   move: "Move",
 };
 
+// Lucide icon names per action category. Passed down to PlaceCard's
+// hero placeholder so cards on /a/eat render Utensils (etc.) instead
+// of the wish-chip default. See DT-TESTS-12 for the regression that
+// motivated this map.
+const ACTION_ICONS: Record<string, string> = {
+  eat: "Utensils",
+  drink: "Wine",
+  see: "Eye",
+  do: "Footprints",
+  buy: "ShoppingBag",
+  move: "Car",
+};
+
 function getGuesthouseLoc(guesthouseId: string | undefined): { lat: number; lng: number } {
   if (guesthouseId && guesthouseId in GUESTHOUSE_LOCATIONS) {
     const entry = GUESTHOUSE_LOCATIONS[guesthouseId];
@@ -94,6 +107,7 @@ export default function ActionDrillDownRoute() {
   if (!jwt) return null;
 
   const actionLabel = ACTION_LABELS[action ?? ""] ?? action ?? "";
+  const actionIcon = ACTION_ICONS[action ?? ""] ?? null;
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
@@ -149,11 +163,15 @@ export default function ActionDrillDownRoute() {
         {data && data.count > 0 && <HostsPicksRibbon places={flattenGroups(data.groups)} />}
 
         {data && data.count > 0 && groupBy === "grouped" && (
-          <WishGroupList groups={data.groups} sortBy={sortBy} />
+          <WishGroupList groups={data.groups} sortBy={sortBy} placeholderIcon={actionIcon} />
         )}
 
         {data && data.count > 0 && groupBy === "flat" && (
-          <FlatList places={flattenGroups(data.groups)} sortBy={sortBy} />
+          <FlatList
+            places={flattenGroups(data.groups)}
+            sortBy={sortBy}
+            placeholderIcon={actionIcon}
+          />
         )}
       </main>
     </div>

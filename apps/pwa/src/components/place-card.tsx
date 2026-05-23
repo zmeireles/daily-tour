@@ -25,6 +25,13 @@ export type PlaceCardProps = {
   distanceKm?: number;
   wishes: string[];
   actions: PlaceCardAction[];
+  // Optional override for the hero placeholder's icon. Callers in
+  // action-context surfaces (e.g. ActionDrillDownRoute) pass the action
+  // category icon here (Utensils for eat, Eye for see, etc.) so the
+  // placeholder is context-relevant rather than borrowing the first wish
+  // chip's icon (which is currently hardcoded to MapPin everywhere — see
+  // DT-TESTS-12 for the regression that surfaced this).
+  placeholderIcon?: string | null;
   onPress?: () => void;
 };
 
@@ -34,12 +41,22 @@ function DynamicIcon({ name, ...props }: { name: string } & LucideProps) {
   return <IconComp {...props} />;
 }
 
-// Fallback rendered in the hero slot when heroImageUrl is missing. Picks
-// the first action's Lucide icon so the placeholder still carries
-// category-relevant context (Utensils for eat, Eye for see, etc.); falls
-// back to a generic ImageOff icon when actions are empty too.
-function HeroPlaceholder({ actions, label }: { actions: PlaceCardAction[]; label: string }) {
-  const firstIcon = actions[0]?.icon;
+// Fallback rendered in the hero slot when heroImageUrl is missing. Icon
+// resolution priority:
+//   1. placeholderIcon (explicit from caller — surfaces with action context)
+//   2. actions[0]?.icon (first chip's icon — currently always "MapPin"
+//      until the chip-icon registry lands; see daily-tour project task 127)
+//   3. ImageOff (generic fallback when neither is available)
+function HeroPlaceholder({
+  actions,
+  label,
+  placeholderIcon,
+}: {
+  actions: PlaceCardAction[];
+  label: string;
+  placeholderIcon?: string | null;
+}) {
+  const iconName = placeholderIcon ?? actions[0]?.icon;
   return (
     <div
       className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/60"
@@ -47,8 +64,8 @@ function HeroPlaceholder({ actions, label }: { actions: PlaceCardAction[]; label
       aria-label={`${label} — image coming soon`}
       data-testid="place-card-hero-placeholder"
     >
-      {firstIcon ? (
-        <DynamicIcon name={firstIcon} size={40} className="text-muted-foreground/60" />
+      {iconName ? (
+        <DynamicIcon name={iconName} size={40} className="text-muted-foreground/60" />
       ) : (
         <ImageOff size={40} className="text-muted-foreground/60" />
       )}
@@ -68,6 +85,7 @@ export function PlaceCard({
   distanceKm,
   wishes: _wishes,
   actions,
+  placeholderIcon,
   onPress,
 }: PlaceCardProps) {
   const { i18n } = useTranslation();
@@ -106,7 +124,11 @@ export function PlaceCard({
               className="h-full w-full object-cover"
             />
           ) : (
-            <HeroPlaceholder actions={actions} label={displayName} />
+            <HeroPlaceholder
+              actions={actions}
+              label={displayName}
+              placeholderIcon={placeholderIcon}
+            />
           )}
           {distanceLabel && (
             <Badge

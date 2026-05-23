@@ -69,4 +69,24 @@ describe("PlaceCard", () => {
     render(<PlaceCard {...baseProps} heroImageUrl="" />);
     expect(screen.getByTestId("place-card-hero-placeholder")).toBeInTheDocument();
   });
+
+  it("placeholderIcon override wins over actions[0].icon", () => {
+    // Regression guard for DT-TESTS-12: every wish chip is hardcoded to
+    // icon: "MapPin", so without the explicit placeholderIcon override,
+    // every action drill-down (Eat, See, etc.) shows MapPin instead of
+    // the category icon. Route passes placeholderIcon to override the
+    // chip-derived default. Verified by checking that the rendered icon
+    // matches the override name, not the first action's icon.
+    const { container } = render(
+      <PlaceCard {...baseProps} heroImageUrl={null} placeholderIcon="Utensils" />,
+    );
+
+    const placeholder = container.querySelector("[data-testid='place-card-hero-placeholder']");
+    expect(placeholder).not.toBeNull();
+    // Lucide icons render an <svg> with a class attribute that includes
+    // the kebab-case version of the icon name (e.g. "lucide-utensils").
+    const svg = placeholder?.querySelector("svg");
+    expect(svg?.getAttribute("class") ?? "").toMatch(/utensils/i);
+    expect(svg?.getAttribute("class") ?? "").not.toMatch(/mountain/i);
+  });
 });
