@@ -48,7 +48,7 @@ export function HostsPicksSection() {
               id={p.id}
               name={p.name}
               description={p.description}
-              heroImageUrl={p.hero_image_url ?? ""}
+              heroImageUrl={p.hero_image_url}
               distanceKm={p.distance_km}
               wishes={p.wishes}
               actions={p.wishes.map((w) => ({ slug: w, icon: "MapPin" }))}

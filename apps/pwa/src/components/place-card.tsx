@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as LucideIcons from "lucide-react";
-import { MapPin, type LucideProps } from "lucide-react";
+import { ImageOff, MapPin, type LucideProps } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,7 +17,11 @@ export type PlaceCardProps = {
   id: string;
   name: I18nText;
   description: I18nText;
-  heroImageUrl: string;
+  // null/empty when catalog hasn't yet wired media-svc signed URLs (the
+  // hero_image_url field in /v1/discover responses is currently null per
+  // bff/src/lib/catalog-client.ts:88 — TODO: T-1.4.x). Render a placeholder
+  // instead of a broken-image icon so the card still looks intentional.
+  heroImageUrl: string | null | undefined;
   distanceKm?: number;
   wishes: string[];
   actions: PlaceCardAction[];
@@ -28,6 +32,28 @@ function DynamicIcon({ name, ...props }: { name: string } & LucideProps) {
   const IconComp = (LucideIcons as unknown as Record<string, React.FC<LucideProps>>)[name];
   if (!IconComp) return <MapPin {...props} />;
   return <IconComp {...props} />;
+}
+
+// Fallback rendered in the hero slot when heroImageUrl is missing. Picks
+// the first action's Lucide icon so the placeholder still carries
+// category-relevant context (Utensils for eat, Eye for see, etc.); falls
+// back to a generic ImageOff icon when actions are empty too.
+function HeroPlaceholder({ actions, label }: { actions: PlaceCardAction[]; label: string }) {
+  const firstIcon = actions[0]?.icon;
+  return (
+    <div
+      className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/60"
+      role="img"
+      aria-label={`${label} — image coming soon`}
+      data-testid="place-card-hero-placeholder"
+    >
+      {firstIcon ? (
+        <DynamicIcon name={firstIcon} size={40} className="text-muted-foreground/60" />
+      ) : (
+        <ImageOff size={40} className="text-muted-foreground/60" />
+      )}
+    </div>
+  );
 }
 
 function formatDistance(km: number): string {
@@ -72,12 +98,16 @@ export function PlaceCard({
       >
         {/* 16:9 hero */}
         <div className="relative aspect-video w-full overflow-hidden bg-muted">
-          <img
-            src={heroImageUrl}
-            alt={displayName}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+          {heroImageUrl ? (
+            <img
+              src={heroImageUrl}
+              alt={displayName}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <HeroPlaceholder actions={actions} label={displayName} />
+          )}
           {distanceLabel && (
             <Badge
               variant="secondary"
