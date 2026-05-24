@@ -33,7 +33,13 @@
 --
 -- Hours: [] (empty) for all 28. Hours data entry is deferred to T-1.4.x owner-edit flow.
 -- Contacts: {} (empty object) for all 28. Owner-edit in T-1.4.x.
--- is_hosts_pick: false for all 28. Owner UI sets this in T-1.4.x.
+-- is_hosts_pick: true for 4 representative eat-tagged places (#18 Mercado da
+-- Graça, #19 Tony's Cozido das Furnas, #22 Cais 20, #25 Quinta dos Açores Ice
+-- Cream). All other 24 stay false. The proper editorial workflow (owner UI
+-- marking picks per guesthouse) is T-1.4.x admin work. This seed-level marking
+-- is a dev-env stopgap so the home page's hosts' picks ribbon renders in UAT
+-- and manual testing. Discovered via DT-TESTS-5 (UAT-G04 FAIL); admin gap
+-- tracked in daily-tour project ("Backoffice UI for is_hosts_pick management").
 -- guesthouse_scope: {"all": true} for all 28 (globally visible). Per-guesthouse scoping
 -- is a Phase 1.4+ flow.
 
@@ -324,7 +330,7 @@ VALUES (
   'Rua Machado dos Santos, Ponta Delgada, São Miguel, Açores',
   '{}'::jsonb,
   '[]'::jsonb,
-  'published', false, 'manual'
+  'published', true, 'manual'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- #19 Restaurante Tony's (Furnas) — cozido das Furnas
@@ -340,7 +346,7 @@ VALUES (
   'Furnas, Vila Franca do Campo, São Miguel, Açores',
   '{}'::jsonb,
   '[]'::jsonb,
-  'published', false, 'manual'
+  'published', true, 'manual'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- #20 Restaurante Alcides (PDL) — bife à regional
@@ -388,7 +394,7 @@ VALUES (
   'Ribeira Quente, Povoação, São Miguel, Açores',
   '{}'::jsonb,
   '[]'::jsonb,
-  'published', false, 'manual'
+  'published', true, 'manual'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- #23 Bar Caloura (sea pool + grilled fish)
@@ -436,7 +442,7 @@ VALUES (
   'Ribeira Grande, São Miguel, Açores',
   '{}'::jsonb,
   '[]'::jsonb,
-  'published', false, 'manual'
+  'published', true, 'manual'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- #26 Arruda Açores Pineapple Liqueur tasting
