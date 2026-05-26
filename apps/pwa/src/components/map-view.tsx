@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { MapPin } from "@/components/map-pin";
