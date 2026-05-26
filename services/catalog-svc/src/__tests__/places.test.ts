@@ -200,4 +200,59 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(body.items[0]!.wishes).toContain("sea-view");
     expect(body.items[0]!.geom_lat).toBe(37.74);
   });
+
+  it("GET /v1/places-by-action — hero_image_url is first image media (by sort_order), null when none", async () => {
+    const actionId = "11111111-1111-4111-8111-111111111111";
+    const wishId = "22222222-2222-4222-8222-222222222222";
+
+    await ctx.pool.query(
+      `INSERT INTO catalog.wish (id, action_id, slug, i18n, sort_order)
+       VALUES ($1, $2, 'sea-view', '{"en":"Sea view"}'::jsonb, 1)
+       ON CONFLICT DO NOTHING`,
+      [wishId, actionId],
+    );
+
+    // Place WITH image media.
+    const createWithMedia = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
+    const { id: placeWithMedia } = createWithMedia.json<{ id: string }>();
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
+      [placeWithMedia, actionId, wishId],
+    );
+    // A video (excluded by kind filter) at sort_order 0, plus two images; the
+    // lowest-sort_order image (sort_order 1) is the expected hero.
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_media (place_id, kind, url, sort_order) VALUES
+         ($1, 'video', 'https://example.com/clip.mp4', 0),
+         ($1, 'image', 'https://example.com/second.jpg', 2),
+         ($1, 'image', 'https://example.com/first.jpg', 1)`,
+      [placeWithMedia],
+    );
+
+    // Place WITHOUT any media.
+    const createNoMedia = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
+    const { id: placeNoMedia } = createNoMedia.json<{ id: string }>();
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
+      [placeNoMedia, actionId, wishId],
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/places-by-action?action_slug=eat",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ items: { id: string; hero_image_url: string | null }[] }>();
+    const byId = new Map(body.items.map((i) => [i.id, i.hero_image_url]));
+    expect(byId.get(placeWithMedia)).toBe("https://example.com/first.jpg");
+    expect(byId.get(placeNoMedia)).toBeNull();
+  });
 });

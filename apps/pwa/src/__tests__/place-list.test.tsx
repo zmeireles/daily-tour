@@ -1,0 +1,106 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import { PlaceList } from "@/features/backoffice/places/place-list";
+import type { PlaceRow } from "@/features/backoffice/places/use-places";
+
+vi.mock("@/features/backoffice/places/use-places", () => ({
+  usePlaces: vi.fn(),
+  useArchivePlace: vi.fn(),
+  useUpdatePlace: vi.fn(),
+}));
+
+const { usePlaces, useArchivePlace, useUpdatePlace } =
+  await import("@/features/backoffice/places/use-places");
+
+const mockUsePlaces = vi.mocked(usePlaces);
+const mockUseArchivePlace = vi.mocked(useArchivePlace);
+const mockUseUpdatePlace = vi.mocked(useUpdatePlace);
+
+const updateMutate = vi.fn();
+const archiveMutate = vi.fn();
+
+function makePlace(over: Partial<PlaceRow>): PlaceRow {
+  return {
+    id: "p1",
+    name: { en: "Place" },
+    description: { en: "" },
+    address: "Somewhere",
+    status: "published",
+    geom_lat: 0,
+    geom_lng: 0,
+    is_hosts_pick: false,
+    source_kind: "manual",
+    source_ref: null,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...over,
+  };
+}
+
+function setPlaces(places: PlaceRow[]) {
+  mockUsePlaces.mockReturnValue({
+    data: { data: places, nextCursor: null },
+    isLoading: false,
+    isError: false,
+  } as unknown as ReturnType<typeof usePlaces>);
+}
+
+function renderList() {
+  const router = createMemoryRouter([{ path: "/", element: <PlaceList /> }], {
+    initialEntries: ["/"],
+  });
+  return render(<RouterProvider router={router} />);
+}
+
+describe("PlaceList — host's pick column", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseArchivePlace.mockReturnValue({
+      mutate: archiveMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useArchivePlace>);
+    mockUseUpdatePlace.mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdatePlace>);
+  });
+
+  it("renders the pick badge reflecting each row's is_hosts_pick", () => {
+    setPlaces([
+      makePlace({ id: "pick", name: { en: "Lagoa" }, is_hosts_pick: true }),
+      makePlace({ id: "non", name: { en: "Bistro" }, is_hosts_pick: false }),
+    ]);
+
+    renderList();
+
+    // Pick row: filled badge + "Unmark" toggle.
+    expect(screen.getByText("Pick")).toBeInTheDocument();
+    const pickToggle = screen.getByLabelText("Toggle host's pick for Lagoa");
+    expect(pickToggle).toHaveTextContent("Unmark");
+
+    // Non-pick row: em-dash placeholder + "Mark pick" toggle.
+    expect(screen.getByText("—")).toBeInTheDocument();
+    const nonToggle = screen.getByLabelText("Toggle host's pick for Bistro");
+    expect(nonToggle).toHaveTextContent("Mark pick");
+
+    // Each toggle wires up its own per-place mutation hook.
+    expect(useUpdatePlace).toHaveBeenCalledWith("pick");
+    expect(useUpdatePlace).toHaveBeenCalledWith("non");
+  });
+
+  it("clicking the toggle calls the update mutation with the flipped is_hosts_pick", () => {
+    setPlaces([
+      makePlace({ id: "pick", name: { en: "Lagoa" }, is_hosts_pick: true }),
+      makePlace({ id: "non", name: { en: "Bistro" }, is_hosts_pick: false }),
+    ]);
+
+    renderList();
+
+    fireEvent.click(screen.getByLabelText("Toggle host's pick for Bistro"));
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true });
+
+    fireEvent.click(screen.getByLabelText("Toggle host's pick for Lagoa"));
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: false });
+  });
+});

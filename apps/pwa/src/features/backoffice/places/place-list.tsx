@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { usePlaces, useArchivePlace } from "./use-places";
+import { usePlaces, useArchivePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -10,6 +10,39 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
   if (status === "archived") return "destructive";
   if (status === "owner_approved") return "secondary";
   return "outline";
+}
+
+function placeDisplayName(place: PlaceRow): string {
+  return place.name["en"] ?? Object.values(place.name)[0] ?? place.id;
+}
+
+function HostsPickToggle({ place }: { place: PlaceRow }) {
+  const { t } = useTranslation("admin");
+  const mutation = useUpdatePlace(place.id);
+  const name = placeDisplayName(place);
+
+  return (
+    <div className="flex items-center gap-2">
+      {place.is_hosts_pick ? (
+        <Badge variant="default">{t("places.list.pick_badge", "Pick")}</Badge>
+      ) : (
+        <span className="text-muted-foreground" aria-hidden="true">
+          —
+        </span>
+      )}
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={mutation.isPending}
+        aria-label={t("places.list.hosts_pick_aria", "Toggle host's pick for {{name}}", { name })}
+        onClick={() => mutation.mutate({ is_hosts_pick: !place.is_hosts_pick })}
+      >
+        {place.is_hosts_pick
+          ? t("places.list.unmark_pick", "Unmark")
+          : t("places.list.mark_pick", "Mark pick")}
+      </Button>
+    </div>
+  );
 }
 
 export function PlaceList() {
@@ -51,6 +84,9 @@ export function PlaceList() {
                   {t("places.list.status", "Status")}
                 </th>
                 <th className="px-4 py-2 text-left font-medium">
+                  {t("places.list.hosts_pick", "Host's Pick")}
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
                   {t("places.list.address", "Address")}
                 </th>
                 <th className="px-4 py-2 text-right font-medium">
@@ -66,6 +102,9 @@ export function PlaceList() {
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={statusVariant(place.status)}>{place.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <HostsPickToggle place={place} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground truncate max-w-xs">
                     {place.address}
