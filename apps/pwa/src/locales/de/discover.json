@@ -6,6 +6,7 @@
       "guesthouse": "Von hier"
     },
     "range": "Innerhalb von {{km}} km",
+    "entireIsland": "Ganze Insel",
     "sort": {
       "label": "Sortieren",
       "distance": "Entfernung",

@@ -15,6 +15,7 @@ import type { LocationValue } from "@/components/location-toggle";
 import type { SortBy } from "@/features/discover/sort-utils";
 import { flattenGroups } from "@/features/discover/sort-utils";
 import { useVehiclePref, WALK_KM_LIMIT } from "@/lib/preferences/use-vehicle-pref";
+import { isEntireIsland, ISLAND_KM, type KmSelection } from "@/components/range-slider";
 
 const SAO_MIGUEL_CENTER = { lat: 37.74, lng: -25.67 };
 
@@ -66,13 +67,18 @@ export default function ActionDrillDownRoute() {
   const [locValue, setLocValue] = React.useState<LocationValue>("guesthouse");
   const [geolocationDenied, setGeolocationDenied] = React.useState(false);
   const [activeLoc, setActiveLoc] = React.useState(defaultLoc);
-  const [kmRange, setKmRange] = React.useState(10);
+  const [kmRange, setKmRange] = React.useState<KmSelection>(10);
   const [sortBy, setSortBy] = React.useState<SortBy>("distance");
   const [groupBy, setGroupBy] = React.useState<GroupBy>("grouped");
 
   const vehicleMode = useVehiclePref((s) => s.mode);
   const setVehicleMode = useVehiclePref((s) => s.setMode);
-  const effectiveKm = vehicleMode === "foot" ? Math.min(kmRange, WALK_KM_LIMIT) : kmRange;
+  // "Entire island" means "show everything" — it bypasses the foot-mode clamp.
+  const effectiveKm = isEntireIsland(kmRange)
+    ? ISLAND_KM
+    : vehicleMode === "foot"
+      ? Math.min(kmRange, WALK_KM_LIMIT)
+      : kmRange;
 
   React.useEffect(() => {
     if (!jwt) {
@@ -158,7 +164,9 @@ export default function ActionDrillDownRoute() {
           </div>
         )}
 
-        {data && data.count === 0 && <EmptyState action={action ?? ""} km={kmRange} />}
+        {data && data.count === 0 && (
+          <EmptyState action={action ?? ""} km={isEntireIsland(kmRange) ? ISLAND_KM : kmRange} />
+        )}
 
         {data && data.count > 0 && <HostsPicksRibbon places={flattenGroups(data.groups)} />}
 
