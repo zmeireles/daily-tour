@@ -41,7 +41,7 @@ export function HostsPicksSection() {
         </h2>
         <p className="text-sm text-muted-foreground">{t("hosts_picks.subtitle")}</p>
       </div>
-      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-2">
+      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 scroll-px-4 pb-2">
         {picks.map((p) => (
           <div key={p.id} className="w-64 shrink-0 snap-start">
             <PlaceCard
