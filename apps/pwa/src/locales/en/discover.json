@@ -14,6 +14,7 @@
       "guesthouse": "From here"
     },
     "range": "Within {{km}} km",
+    "entireIsland": "Entire island",
     "sort": {
       "label": "Sort",
       "distance": "Distance",

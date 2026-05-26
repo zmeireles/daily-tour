@@ -6,6 +6,7 @@
       "guesthouse": "Desde aquí"
     },
     "range": "Dentro de {{km}} km",
+    "entireIsland": "Toda la isla",
     "sort": {
       "label": "Ordenar",
       "distance": "Distancia",

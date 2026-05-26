@@ -2,7 +2,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { LocationToggle, type LocationValue } from "@/components/location-toggle";
-import { RangeSlider } from "@/components/range-slider";
+import { RangeSlider, type KmSelection } from "@/components/range-slider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +21,12 @@ export type GroupBy = "grouped" | "flat";
 type ControlsBarProps = {
   locValue: LocationValue;
   geolocationDenied: boolean;
-  kmRange: number;
+  kmRange: KmSelection;
   sortBy: SortBy;
   groupBy: GroupBy;
   vehicleMode: VehicleMode;
   onLocationChange: (v: LocationValue) => void;
-  onKmChange: (v: number) => void;
+  onKmChange: (v: KmSelection) => void;
   onSortChange: (v: SortBy) => void;
   onGroupChange: (v: GroupBy) => void;
   onVehicleChange: (v: VehicleMode) => void;

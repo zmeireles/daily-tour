@@ -14,6 +14,7 @@
       "guesthouse": "Daqui"
     },
     "range": "Até {{km}} km",
+    "entireIsland": "Toda a ilha",
     "sort": {
       "label": "Ordenar",
       "distance": "Distância",
