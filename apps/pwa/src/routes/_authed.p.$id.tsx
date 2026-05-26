@@ -84,7 +84,7 @@ export default function PlaceDetailRoute() {
   });
 
   return (
-    <main className="min-h-svh pb-8">
+    <main className="min-h-svh pb-8 mx-auto w-full max-w-2xl">
       <Hero imageUrl={firstImageUrl} title={nameResult.text} />
       {nameResult.fallback && (
         <div className="px-4 pt-2">

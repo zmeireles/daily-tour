@@ -1,28 +1,29 @@
+import { lazy, Suspense, type ComponentType } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Toaster } from "sonner";
 import IndexRoute from "@/routes/index";
-import RTokenRoute from "@/routes/r.$token";
-import PlaceDetailRoute from "@/routes/_authed.p.$id";
-import ActionDrillDownRoute from "@/routes/_authed.a.$action";
-import ChatRoute from "@/routes/_authed.chat";
-import TourNewRoute from "@/routes/_authed.tour.new";
-import TourPlanRoute from "@/routes/_authed.tour.$planId";
-import TourShareRoute from "@/routes/tour.share.$planId";
-import AdminRoute from "@/routes/admin";
-import AdminCallbackRoute from "@/routes/admin.callback";
-import AdminPlacesRoute from "@/routes/admin.places";
-import AdminPlacesNewRoute from "@/routes/admin.places.new";
-import AdminPlacesEditRoute from "@/routes/admin.places.$id";
-import AdminProfileRoute from "@/routes/admin.profile";
-import AdminGuesthousesRoute from "@/routes/admin.guesthouses";
-import AdminGuesthousesNewRoute from "@/routes/admin.guesthouses.new";
-import AdminGuesthousesEditRoute from "@/routes/admin.guesthouses.$id";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
 import { OfflineBanner } from "@/components/offline-banner";
 import { SessionBootstrap } from "@/components/session-bootstrap";
 import { queryPersister } from "@/lib/offline/cache";
+
+// Route-based code splitting: only the landing route (IndexRoute) ships in the initial
+// bundle. Every other route — and its heavy deps (notably maplibre-gl + its CSS on place
+// detail) — is fetched on demand, keeping the home/initial bundle small and fast.
+function RouteFallback() {
+  return <main className="min-h-svh grid place-items-center" aria-busy="true" aria-live="polite" />;
+}
+
+function lazyRoute(factory: () => Promise<{ default: ComponentType }>) {
+  const Component = lazy(factory);
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Component />
+    </Suspense>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,27 +35,33 @@ const queryClient = new QueryClient({
 
 const router = createBrowserRouter([
   { path: "/", element: <IndexRoute /> },
-  { path: "/r/:token", element: <RTokenRoute /> },
-  { path: "/p/:id", element: <PlaceDetailRoute /> },
-  { path: "/a/:action", element: <ActionDrillDownRoute /> },
-  { path: "/chat", element: <ChatRoute /> },
-  { path: "/tour/new", element: <TourNewRoute /> },
-  { path: "/tour/share/:planId", element: <TourShareRoute /> },
-  { path: "/tour/:planId", element: <TourPlanRoute /> },
+  { path: "/r/:token", element: lazyRoute(() => import("@/routes/r.$token")) },
+  { path: "/p/:id", element: lazyRoute(() => import("@/routes/_authed.p.$id")) },
+  { path: "/a/:action", element: lazyRoute(() => import("@/routes/_authed.a.$action")) },
+  { path: "/chat", element: lazyRoute(() => import("@/routes/_authed.chat")) },
+  { path: "/tour/new", element: lazyRoute(() => import("@/routes/_authed.tour.new")) },
+  { path: "/tour/share/:planId", element: lazyRoute(() => import("@/routes/tour.share.$planId")) },
+  { path: "/tour/:planId", element: lazyRoute(() => import("@/routes/_authed.tour.$planId")) },
   {
     path: "/admin",
-    element: <AdminRoute />,
+    element: lazyRoute(() => import("@/routes/admin")),
     children: [
-      { path: "places", element: <AdminPlacesRoute /> },
-      { path: "places/new", element: <AdminPlacesNewRoute /> },
-      { path: "places/:id", element: <AdminPlacesEditRoute /> },
-      { path: "profile", element: <AdminProfileRoute /> },
-      { path: "guesthouses", element: <AdminGuesthousesRoute /> },
-      { path: "guesthouses/new", element: <AdminGuesthousesNewRoute /> },
-      { path: "guesthouses/:id", element: <AdminGuesthousesEditRoute /> },
+      { path: "places", element: lazyRoute(() => import("@/routes/admin.places")) },
+      { path: "places/new", element: lazyRoute(() => import("@/routes/admin.places.new")) },
+      { path: "places/:id", element: lazyRoute(() => import("@/routes/admin.places.$id")) },
+      { path: "profile", element: lazyRoute(() => import("@/routes/admin.profile")) },
+      { path: "guesthouses", element: lazyRoute(() => import("@/routes/admin.guesthouses")) },
+      {
+        path: "guesthouses/new",
+        element: lazyRoute(() => import("@/routes/admin.guesthouses.new")),
+      },
+      {
+        path: "guesthouses/:id",
+        element: lazyRoute(() => import("@/routes/admin.guesthouses.$id")),
+      },
     ],
   },
-  { path: "/admin/callback", element: <AdminCallbackRoute /> },
+  { path: "/admin/callback", element: lazyRoute(() => import("@/routes/admin.callback")) },
   { path: "*", element: <IndexRoute /> },
 ]);
 
