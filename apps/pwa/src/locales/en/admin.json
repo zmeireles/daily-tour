@@ -79,7 +79,12 @@
       "status": "Status",
       "address": "Address",
       "actions": "Actions",
-      "edit": "Edit"
+      "edit": "Edit",
+      "hosts_pick": "Host's Pick",
+      "pick_badge": "Pick",
+      "mark_pick": "Mark pick",
+      "unmark_pick": "Unmark",
+      "hosts_pick_aria": "Toggle host's pick for {{name}}"
     },
     "form": {
       "loading": "Loading…",
