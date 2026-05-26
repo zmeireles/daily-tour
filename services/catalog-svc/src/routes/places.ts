@@ -450,6 +450,11 @@ export function placesRoutes(app: FastifyInstance): void {
         status: placeTable.status,
         createdAt: placeTable.createdAt,
         wishSlug: wishTable.slug,
+        heroImageUrl: sql<string | null>`(
+          select pm.url from catalog.place_media pm
+          where pm.place_id = ${placeTable.id} and pm.kind = 'image'
+          order by pm.sort_order asc limit 1
+        )`,
       })
       .from(placeTable)
       .innerJoin(placeActionWishTable, eq(placeActionWishTable.placeId, placeTable.id))
@@ -468,6 +473,7 @@ export function placesRoutes(app: FastifyInstance): void {
       status: string;
       created_at: string;
       wishes: string[];
+      hero_image_url: string | null;
     };
 
     const placeMap = new Map<string, PlaceItem>();
@@ -485,6 +491,7 @@ export function placesRoutes(app: FastifyInstance): void {
           status: row.status,
           created_at: row.createdAt,
           wishes: [],
+          hero_image_url: row.heroImageUrl ?? null,
         };
         placeMap.set(row.id, entry);
       }

@@ -32,6 +32,7 @@ interface CatalogPlaceItem {
   status: string;
   created_at: string;
   wishes: string[];
+  hero_image_url: string | null;
 }
 
 export interface HydratedPlace {
@@ -67,7 +68,8 @@ export interface HydratedPlace {
 }
 
 // Calls catalog-svc GET /v1/places-by-action?action_slug=<slug>&status=published.
-// Returns typed PlaceCard[] with hero_image_url=null (signed URLs land in T-1.4.x).
+// Returns typed PlaceCard[] with hero_image_url forwarded from catalog-svc's place_media
+// (first image by sort_order; null when the place has none). Signed URLs remain future work.
 // Throws CatalogError on any non-2xx so the discover route can map 5xx → 503.
 export async function fetchPlacesByAction(actionSlug: string): Promise<PlaceCard[]> {
   const { CATALOG_SVC_URL } = loadConfig();
@@ -85,7 +87,7 @@ export async function fetchPlacesByAction(actionSlug: string): Promise<PlaceCard
     geom_lng: item.geom_lng,
     is_hosts_pick: item.is_hosts_pick,
     wishes: item.wishes,
-    hero_image_url: null,
+    hero_image_url: item.hero_image_url,
   }));
 }
 
