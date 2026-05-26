@@ -4,7 +4,8 @@
       "url": ["http://localhost:5174/"],
       "startServerCommand": "pnpm --filter @daily-tour/pwa preview",
       "startServerReadyPattern": "Local:",
-      "numberOfRuns": 1,
+      "startServerReadyTimeout": 30000,
+      "numberOfRuns": 3,
       "settings": {
         "budgetPath": "budget.json"
       }
