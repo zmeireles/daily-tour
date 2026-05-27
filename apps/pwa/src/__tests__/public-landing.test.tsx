@@ -65,4 +65,24 @@ describe("Public landing (IndexRoute)", () => {
     renderLanding();
     expect(document.querySelector("[data-premium='true']")).toBeNull();
   });
+
+  it("renders a persistent guest-preview signal so the surface reads as unauthenticated", () => {
+    renderLanding();
+    const banner = screen.getByTestId("guest-banner");
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent(/public preview/i);
+    expect(banner).toHaveTextContent(/booking link/i);
+  });
+
+  it("presents the sample places as non-interactive examples (no ghost-click affordance)", () => {
+    renderLanding();
+    const grid = screen.getByTestId("sample-places-grid");
+    // pointer-events-none removes the hover/tap affordance the cards would
+    // otherwise borrow from the authed home — they read as static examples.
+    expect(grid.className).toContain("pointer-events-none");
+    // one "Sample" tag per example card
+    expect(screen.getAllByText(/^sample$/i)).toHaveLength(4);
+    // none of the sample cards expose a button role / click target
+    expect(grid.querySelectorAll('[role="button"]')).toHaveLength(0);
+  });
 });

@@ -5,7 +5,7 @@ export function OwnerPitch() {
   return (
     <section className="py-10 px-6 max-w-xl mx-auto text-center flex flex-col gap-2">
       <p className="text-base text-foreground font-medium">
-        {t("owner_pitch.line1", "Your host's curated picks for São Miguel.")}
+        {t("owner_pitch.line1", "Every booking comes with your host's personal guide to São Miguel.")}
       </p>
       <p className="text-base text-muted-foreground">
         {t("owner_pitch.line2", "Real places, honest recommendations, zero fuss.")}
