@@ -21,7 +21,7 @@
       "bio": "Bio",
       "phone": "Phone",
       "email": "Email",
-      "photo": "Photo asset ID",
+      "photo": "Photo",
       "contact_options": "Contact options",
       "call_enabled": "Allow calls",
       "dm_in_app": "In-app messages",

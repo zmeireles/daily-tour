@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useUpsertProfile, type OwnerProfile } from "./use-profile";
+import { MediaUploader, type UploadedAsset } from "@/features/backoffice/places/media-uploader";
 import { Button } from "@/components/ui/button";
 
 const FormSchema = z.object({
@@ -65,11 +66,21 @@ export function ProfileForm({ initialData }: Props) {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: toDefaults(initialData),
   });
+
+  // The profile has a single photo; take the first uploaded asset and keep its
+  // id in the form. An existing photo (seeded from initialData) is preserved
+  // until a new upload replaces it.
+  const photo = watch("photo");
+  const handlePhotoUploaded = (assets: UploadedAsset[]) => {
+    setValue("photo", assets[0]?.assetId ?? "", { shouldDirty: true });
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     await upsertMutation.mutateAsync({
@@ -163,14 +174,16 @@ export function ProfileForm({ initialData }: Props) {
               <span className="text-xs text-destructive">{errors.email.message}</span>
             )}
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{t("profile.form.photo", "Photo asset ID")}</span>
-            <input
-              {...register("photo")}
-              placeholder="UUID"
-              className="rounded-md border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium">{t("profile.form.photo", "Photo")}</span>
+            <MediaUploader
+              label={t("places.form.media.upload_hint", "Drag & drop a photo or click to select")}
+              onUploaded={handlePhotoUploaded}
             />
-          </label>
+            {photo && (
+              <p className="text-xs text-muted-foreground font-mono break-all">{photo}</p>
+            )}
+          </div>
         </fieldset>
 
         {/* Contact options */}

@@ -21,7 +21,7 @@
       "bio": "Bio",
       "phone": "Teléfono",
       "email": "Correo electrónico",
-      "photo": "ID del recurso de foto",
+      "photo": "Foto",
       "contact_options": "Opciones de contacto",
       "call_enabled": "Permitir llamadas",
       "dm_in_app": "Mensajes en la app",
