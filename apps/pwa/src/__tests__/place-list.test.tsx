@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
+import { toast } from "sonner";
 import { PlaceList } from "@/features/backoffice/places/place-list";
 import type { PlaceRow } from "@/features/backoffice/places/use-places";
+
+vi.mock("sonner", () => ({
+  toast: { error: vi.fn() },
+  Toaster: () => null,
+}));
 
 vi.mock("@/features/backoffice/places/use-places", () => ({
   usePlaces: vi.fn(),
@@ -98,9 +104,26 @@ describe("PlaceList — host's pick column", () => {
     renderList();
 
     fireEvent.click(screen.getByLabelText("Toggle host's pick for Bistro"));
-    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true });
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
 
     fireEvent.click(screen.getByLabelText("Toggle host's pick for Lagoa"));
-    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: false });
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: false }, expect.anything());
+  });
+
+  it("surfaces an error toast when the backend rejects the toggle with 422", () => {
+    setPlaces([makePlace({ id: "non", name: { en: "Bistro" }, status: "draft" })]);
+
+    renderList();
+
+    fireEvent.click(screen.getByLabelText("Toggle host's pick for Bistro"));
+
+    // The component passes an onError handler to mutate; simulate the catalog-svc 422.
+    const onError = updateMutate.mock.calls[0]?.[1]?.onError as (err: unknown) => void;
+    expect(onError).toBeTypeOf("function");
+    onError(Object.assign(new Error("update place 422"), { status: 422 }));
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Only published places can be marked as a host's pick.",
+    );
   });
 });

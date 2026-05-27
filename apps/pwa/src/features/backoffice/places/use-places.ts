@@ -82,7 +82,11 @@ export function useUpdatePlace(id: string) {
         headers: { ...authHeader(jwt!), "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`update place ${res.status}`);
+      if (!res.ok) {
+        const err = new Error(`update place ${res.status}`) as Error & { status?: number };
+        err.status = res.status;
+        throw err;
+      }
       return res.json() as unknown;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),

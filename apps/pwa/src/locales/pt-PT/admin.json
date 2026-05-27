@@ -84,7 +84,9 @@
       "pick_badge": "Escolha",
       "mark_pick": "Marcar escolha",
       "unmark_pick": "Remover escolha",
-      "hosts_pick_aria": "Alternar escolha do anfitrião para {{name}}"
+      "hosts_pick_aria": "Alternar escolha do anfitrião para {{name}}",
+      "pick_requires_published": "Apenas locais publicados podem ser marcados como escolha do anfitrião.",
+      "pick_update_error": "Não foi possível atualizar a escolha do anfitrião."
     },
     "form": {
       "loading": "A carregar…",

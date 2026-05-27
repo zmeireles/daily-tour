@@ -344,6 +344,11 @@ export function placesRoutes(app: FastifyInstance): void {
     }
     const body = parsed.data;
 
+    // A host's pick is only meaningful for published places (guest discover hides the rest).
+    if (body.is_hosts_pick && body.status !== "published") {
+      return reply.code(422).send({ error: "hosts_pick_requires_published" });
+    }
+
     const db = getDb();
     try {
       const [created] = await db
@@ -403,6 +408,15 @@ export function placesRoutes(app: FastifyInstance): void {
     }
 
     const updates = bodyParsed.data;
+
+    // A host's pick must stay published: reject flipping a non-published place to a pick,
+    // and reject un-publishing a pick without also clearing it. Use the *resulting* values.
+    const resultingStatus = updates.status ?? existing.status;
+    const resultingPick = updates.is_hosts_pick ?? existing.isHostsPick;
+    if (resultingPick && resultingStatus !== "published") {
+      return reply.code(422).send({ error: "hosts_pick_requires_published" });
+    }
+
     const patch: Partial<typeof placeTable.$inferInsert> = {
       updatedAt: new Date().toISOString(),
     };
