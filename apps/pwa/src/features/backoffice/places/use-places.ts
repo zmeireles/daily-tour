@@ -3,6 +3,14 @@ import { useOwnerJwt } from "@/store/owner-session";
 
 const PLACES_KEY = ["admin", "places"] as const;
 
+export interface PlaceMediaItem {
+  id: string;
+  kind: string;
+  url: string;
+  alt?: Record<string, string> | null;
+  sort_order: number;
+}
+
 export interface PlaceRow {
   id: string;
   name: Record<string, string>;
@@ -16,6 +24,8 @@ export interface PlaceRow {
   source_ref?: string | null;
   created_at: string;
   updated_at: string;
+  // Present on the single-place GET (edit-load); absent on the list endpoint.
+  media?: PlaceMediaItem[];
 }
 
 interface PlacesResponse {
