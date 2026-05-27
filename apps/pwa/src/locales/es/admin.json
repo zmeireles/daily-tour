@@ -3,15 +3,11 @@
     "nav": {
       "guesthouses": "Alojamientos",
       "places": "Lugares",
-      "reservations": "Reservas",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "beta": "Métricas beta"
     },
     "loading": "Cargando admin…",
     "redirecting": "Redirigiendo al inicio de sesión…"
-  },
-  "placeholder": {
-    "title": "Próximamente",
-    "body": "Esta sección se configurará en una tarea posterior."
   },
   "profile": {
     "title": "Perfil del Anfitrión",
