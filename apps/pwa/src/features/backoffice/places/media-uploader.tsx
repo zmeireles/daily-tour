@@ -10,6 +10,7 @@ export interface UploadedAsset {
 interface Props {
   onUploaded: (assets: UploadedAsset[]) => void;
   label?: string;
+  initialAssets?: UploadedAsset[];
 }
 
 async function signAndUpload(file: File, jwt: string): Promise<UploadedAsset> {
@@ -43,11 +44,12 @@ async function signAndUpload(file: File, jwt: string): Promise<UploadedAsset> {
 export function MediaUploader({
   onUploaded,
   label = "Drag & drop images or click to select",
+  initialAssets = [],
 }: Props) {
   const jwt = useOwnerJwt();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [assets, setAssets] = useState<UploadedAsset[]>([]);
+  const [assets, setAssets] = useState<UploadedAsset[]>(initialAssets);
   const [dragging, setDragging] = useState(false);
 
   const handleFiles = useCallback(

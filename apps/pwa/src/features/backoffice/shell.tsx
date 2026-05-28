@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 const NAV_ITEMS = [
   { key: "guesthouses", to: "/admin/guesthouses" },
   { key: "places", to: "/admin/places" },
-  { key: "reservations", to: "/admin/reservations" },
   { key: "profile", to: "/admin/profile" },
+  { key: "beta", to: "/admin/beta" },
 ] as const;
 
 export function BackofficeShell({ children }: { children?: React.ReactNode }) {

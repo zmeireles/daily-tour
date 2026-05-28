@@ -3,15 +3,11 @@
     "nav": {
       "guesthouses": "Guesthouses",
       "places": "Places",
-      "reservations": "Reservations",
-      "profile": "Profile"
+      "profile": "Profile",
+      "beta": "Beta metrics"
     },
     "loading": "Loading admin…",
     "redirecting": "Redirecting to login…"
-  },
-  "placeholder": {
-    "title": "Coming soon",
-    "body": "This section is wired up in a follow-up task."
   },
   "profile": {
     "title": "Owner Profile",

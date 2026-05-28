@@ -30,11 +30,23 @@ interface Props {
 const TABS = ["en", "pt-PT"] as const;
 type Tab = (typeof TABS)[number];
 
+// Map a place's persisted media into the uploader's asset shape so the editor
+// shows + preserves existing media (assetId carries it back into the save body).
+function toUploadedAssets(media: PlaceRow["media"]): UploadedAsset[] {
+  return (media ?? []).map((m) => ({
+    assetId: m.id,
+    previewUrl: m.url,
+    name: m.url.split("/").pop() || m.id,
+  }));
+}
+
 export function PlaceForm({ initialData, id }: Props) {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("en");
-  const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>([]);
+  const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>(() =>
+    toUploadedAssets(initialData?.media),
+  );
 
   const createMutation = useCreatePlace();
   const updateMutation = useUpdatePlace(id ?? "");
@@ -235,6 +247,7 @@ export function PlaceForm({ initialData, id }: Props) {
           <legend className="text-sm font-medium">{t("places.form.media.title", "Media")}</legend>
           <MediaUploader
             label={t("places.form.media.upload_hint", "Drag & drop images or click to select")}
+            initialAssets={mediaAssets}
             onUploaded={setMediaAssets}
           />
         </fieldset>
