@@ -73,8 +73,8 @@ describe("AdminRoute", () => {
     await waitFor(() => {
       expect(getByText("Guesthouses")).toBeDefined();
       expect(getByText("Places")).toBeDefined();
-      expect(getByText("Reservations")).toBeDefined();
       expect(getByText("Profile")).toBeDefined();
+      expect(getByText("Beta metrics")).toBeDefined();
     });
 
     const state = useOwnerSessionStore.getState();
