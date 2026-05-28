@@ -3,15 +3,11 @@
     "nav": {
       "guesthouses": "Unterkünfte",
       "places": "Orte",
-      "reservations": "Reservierungen",
-      "profile": "Profil"
+      "profile": "Profil",
+      "beta": "Beta-Metriken"
     },
     "loading": "Admin wird geladen…",
     "redirecting": "Weiterleitung zur Anmeldung…"
-  },
-  "placeholder": {
-    "title": "Demnächst verfügbar",
-    "body": "Dieser Abschnitt wird in einer Folgeaufgabe eingerichtet."
   },
   "profile": {
     "title": "Gastgeberprofil",
@@ -21,7 +17,7 @@
       "bio": "Bio",
       "phone": "Telefon",
       "email": "E-Mail",
-      "photo": "Foto-Asset-ID",
+      "photo": "Foto",
       "contact_options": "Kontaktoptionen",
       "call_enabled": "Anrufe erlauben",
       "dm_in_app": "In-App-Nachrichten",

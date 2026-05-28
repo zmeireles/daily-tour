@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, ne, and, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { getDb } from "../db/client.js";
+import { getDb, type Db } from "../db/client.js";
 import {
   placeTable,
   placeMediaTable,
@@ -102,6 +102,29 @@ function decodeCursor(cursor: string): { updatedAt: string; id: string } | null 
   } catch {
     return null;
   }
+}
+
+// Media for a single place, in display (sort_order) order. Kept separate from
+// formatPlace so list/POST/PATCH responses don't trigger a per-row media query.
+async function fetchPlaceMedia(db: Db, placeId: string) {
+  const rows = await db
+    .select({
+      id: placeMediaTable.id,
+      kind: placeMediaTable.kind,
+      url: placeMediaTable.url,
+      alt: placeMediaTable.alt,
+      sortOrder: placeMediaTable.sortOrder,
+    })
+    .from(placeMediaTable)
+    .where(eq(placeMediaTable.placeId, placeId))
+    .orderBy(placeMediaTable.sortOrder);
+  return rows.map((m) => ({
+    id: m.id,
+    kind: m.kind,
+    url: m.url,
+    alt: m.alt ?? null,
+    sort_order: m.sortOrder,
+  }));
 }
 
 function formatPlace(row: Place) {
@@ -211,7 +234,8 @@ export function placesRoutes(app: FastifyInstance): void {
       return reply.code(404).send({ error: "place_not_found" });
     }
 
-    return formatPlace(row);
+    const media = await fetchPlaceMedia(db, row.id);
+    return { ...formatPlace(row), media };
   });
 
   // GET /v1/places/:id/hydrated — place + media + actions + wishes (joined).

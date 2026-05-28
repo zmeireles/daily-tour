@@ -3,15 +3,11 @@
     "nav": {
       "guesthouses": "Alojamientos",
       "places": "Lugares",
-      "reservations": "Reservas",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "beta": "Métricas beta"
     },
     "loading": "Cargando admin…",
     "redirecting": "Redirigiendo al inicio de sesión…"
-  },
-  "placeholder": {
-    "title": "Próximamente",
-    "body": "Esta sección se configurará en una tarea posterior."
   },
   "profile": {
     "title": "Perfil del Anfitrión",
@@ -21,7 +17,7 @@
       "bio": "Bio",
       "phone": "Teléfono",
       "email": "Correo electrónico",
-      "photo": "ID del recurso de foto",
+      "photo": "Foto",
       "contact_options": "Opciones de contacto",
       "call_enabled": "Permitir llamadas",
       "dm_in_app": "Mensajes en la app",
