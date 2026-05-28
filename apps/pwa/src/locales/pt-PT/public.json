@@ -3,13 +3,19 @@
     "title": "Daily Tour",
     "tagline": "São Miguel · Açores · Onde fica, o que vai adorar"
   },
+  "guest_banner": {
+    "badge": "Pré-visualização pública",
+    "text": "Abra o seu link de reserva pessoal para ver a sua estadia."
+  },
   "owner_pitch": {
-    "line1": "As escolhas do seu anfitrião para São Miguel.",
+    "line1": "Cada reserva inclui o guia pessoal do seu anfitrião para São Miguel.",
     "line2": "Lugares reais, recomendações honestas, sem complicações.",
     "line3": "Entre como hóspede. Saia como local."
   },
   "sample_places": {
-    "title": "Uma amostra de São Miguel"
+    "title": "Uma amostra de São Miguel",
+    "caption": "Uma amostra da ilha — abra o seu link de reserva para explorar o guia completo do seu anfitrião.",
+    "tag": "Exemplo"
   },
   "cta": {
     "check_availability": "Consultar disponibilidade"

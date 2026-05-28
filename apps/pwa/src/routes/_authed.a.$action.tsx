@@ -117,71 +117,73 @@ export default function ActionDrillDownRoute() {
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
-      <header className="flex items-center gap-3 px-4 py-4 border-b border-border">
-        <Link
-          to="/"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Back to home"
-        >
-          ←
-        </Link>
-        <h1
-          className="font-display text-2xl leading-tight flex-1"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {t("title")} · {actionLabel}
-        </h1>
-      </header>
-
-      <ControlsBar
-        locValue={locValue}
-        geolocationDenied={geolocationDenied}
-        kmRange={kmRange}
-        sortBy={sortBy}
-        groupBy={groupBy}
-        vehicleMode={vehicleMode}
-        onLocationChange={handleLocationChange}
-        onKmChange={setKmRange}
-        onSortChange={setSortBy}
-        onGroupChange={setGroupBy}
-        onVehicleChange={setVehicleMode}
-      />
-
-      <main className="flex-1">
-        {isLoading && (
-          <div
-            className="flex items-center justify-center py-16"
-            aria-live="polite"
-            aria-busy="true"
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+        <header className="flex items-center gap-3 px-4 py-4 border-b border-border">
+          <Link
+            to="/"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Back to home"
           >
-            <p className="text-muted-foreground">{t("loading")}</p>
-          </div>
-        )}
+            ←
+          </Link>
+          <h1
+            className="font-display text-2xl leading-tight flex-1"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {t("title")} · {actionLabel}
+          </h1>
+        </header>
 
-        {isError && (
-          <div className="flex items-center justify-center py-16">
-            <p className="text-muted-foreground">{t("error")}</p>
-          </div>
-        )}
+        <ControlsBar
+          locValue={locValue}
+          geolocationDenied={geolocationDenied}
+          kmRange={kmRange}
+          sortBy={sortBy}
+          groupBy={groupBy}
+          vehicleMode={vehicleMode}
+          onLocationChange={handleLocationChange}
+          onKmChange={setKmRange}
+          onSortChange={setSortBy}
+          onGroupChange={setGroupBy}
+          onVehicleChange={setVehicleMode}
+        />
 
-        {data && data.count === 0 && (
-          <EmptyState action={action ?? ""} km={isEntireIsland(kmRange) ? ISLAND_KM : kmRange} />
-        )}
+        <main className="flex-1">
+          {isLoading && (
+            <div
+              className="flex items-center justify-center py-16"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <p className="text-muted-foreground">{t("loading")}</p>
+            </div>
+          )}
 
-        {data && data.count > 0 && <HostsPicksRibbon places={flattenGroups(data.groups)} />}
+          {isError && (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-muted-foreground">{t("error")}</p>
+            </div>
+          )}
 
-        {data && data.count > 0 && groupBy === "grouped" && (
-          <WishGroupList groups={data.groups} sortBy={sortBy} placeholderIcon={actionIcon} />
-        )}
+          {data && data.count === 0 && (
+            <EmptyState action={action ?? ""} km={isEntireIsland(kmRange) ? ISLAND_KM : kmRange} />
+          )}
 
-        {data && data.count > 0 && groupBy === "flat" && (
-          <FlatList
-            places={flattenGroups(data.groups)}
-            sortBy={sortBy}
-            placeholderIcon={actionIcon}
-          />
-        )}
-      </main>
+          {data && data.count > 0 && <HostsPicksRibbon places={flattenGroups(data.groups)} />}
+
+          {data && data.count > 0 && groupBy === "grouped" && (
+            <WishGroupList groups={data.groups} sortBy={sortBy} placeholderIcon={actionIcon} />
+          )}
+
+          {data && data.count > 0 && groupBy === "flat" && (
+            <FlatList
+              places={flattenGroups(data.groups)}
+              sortBy={sortBy}
+              placeholderIcon={actionIcon}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
