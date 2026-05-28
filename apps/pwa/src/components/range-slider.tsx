@@ -92,18 +92,31 @@ export function RangeSlider({ value, onChange, debounceMs = 250 }: RangeSliderPr
     : t("controls.range", { km: selection });
   const thumbPct = (index / LAST_INDEX) * 100;
 
+  // Keep the floating label inside the track bounds. Centering on the thumb
+  // (-translate-x-1/2) overflows at the extremes, clipping the wide terminal
+  // "Entire island" label at 100%. Anchor to the track edge there instead.
+  const labelAlign = index === 0 ? "first" : index === LAST_INDEX ? "last" : "middle";
+  const labelStyle =
+    labelAlign === "first"
+      ? { left: 0 }
+      : labelAlign === "last"
+        ? { right: 0 }
+        : { left: `${thumbPct}%` };
+
   return (
     <div className="px-2 pt-8 pb-2">
       {/* Track-aligned wrapper: label, thumb and ticks all reference its width. */}
       <div className="relative">
-        {/* Floating current-value label, centered above the thumb */}
+        {/* Floating current-value label: centered on the thumb in the middle,
+            edge-anchored at the extremes so it never clips. */}
         <div
           className={cn(
-            "absolute bottom-full mb-2 -translate-x-1/2 flex items-center gap-1",
+            "absolute bottom-full mb-2 flex items-center gap-1",
+            labelAlign === "middle" ? "-translate-x-1/2" : "translate-x-0",
             "text-xs font-medium text-foreground tabular-nums whitespace-nowrap",
             "pointer-events-none select-none",
           )}
-          style={{ left: `${thumbPct}%` }}
+          style={labelStyle}
           aria-live="polite"
           aria-label={label}
           data-testid="range-slider-value"

@@ -1,131 +1,74 @@
-# Session Handoff — 2026-05-25 → next session (UAT cycle paused; pick up at G05 or backoffice)
+# Session Handoff — 2026-05-26 → 27 → next session
 
-> **10 PRs merged across 5-day arc (2026-05-21 → 2026-05-25).** Stood up the `dt-tests` Riff project (runbook + 8 UAT backfill tasks), passed UAT-G01/G02/G03/G04/G06 with retry trails preserved, codified the env-readiness gate as protocol doctrine, filed 11 substantive backlog items in the `daily-tour` Riff project. The PWA happy path is now verified end-to-end through the home + Eat drill-down. **Next: continue UAT (G05, then the likely-blocked G07/G08) OR pivot to a backoffice cycle (admin UI gap is now backlogged).**
+> **Big multi-cycle session.** Resumed from the 2026-05-25 handoff, ran the UAT chain forward, then an autonomous backoffice cycle. **7 PRs merged** (#144–#150), **4 backoffice PRs open for review** (#151–#154), **5 UATs passed** (G05 + hero + slider + retries), and the backoffice's buildable gaps are now either fixed-in-PR or logged-as-blocked. Next: review/merge the 4 open PRs, run the one staged UAT (#19), add the missing form tests, and unblock the product-decision items in #142.
 
-## TL;DR — exactly what to do next session
+## TL;DR — resume next session
 
-1. **Pull main + sync local state**:
+```bash
+git checkout main && git fetch origin --prune && git reset --hard origin/main
+bash scripts/dev/dev-env-check.sh --markdown          # env gate (Vite likely down — restart below)
+pnpm --filter @daily-tour/pwa dev                      # restart Vite if the gate says it's not bound
+```
 
-   ```bash
-   git checkout main && git fetch origin --prune && git reset --hard origin/main
-   ```
+**Then, in order:**
 
-2. **Verify env via the readiness gate** (mandatory before any UAT — see §Env-readiness gate below):
+1. **MCP gotcha:** if `mcp__tasks-prod__*` tools aren't visible, run `/mcp` (reconnect `tasks-prod`). At THIS session's start they showed "Connected" in `claude mcp list` but weren't registered to the tool surface until a `/mcp` reconnect. Don't burn time on it — just reconnect.
+2. **Polling ritual:** `mcp__tasks-prod__list_tasks(project_id='e03901a6-b656-4f38-a768-b98d4fa081cc', statuses=['review'])` (dt-tests review queue) — was empty at close.
+3. **Review/merge the 4 open backoffice PRs** (#151–#154) — see below.
 
-   ```bash
-   bash scripts/dev/dev-env-check.sh --markdown
-   # Exit 0 = ready; exit 1 lists the broken thing with a fix hint
-   ```
+## What got done (2026-05-26 → 27)
 
-3. **If env-check passes ✅** — pick one of:
-   - **Continue UAT chain** — UAT-G05 (place detail) is the next sensible test. Same authentication flow as G04 (it works). See dt-tests project task code 6.
-   - **Pivot to backoffice cycle** — `daily-tour` backlog #131 (Backoffice UI for `is_hosts_pick`) unblocks editorial workflow; #124 (signed media URLs) unblocks real images. Each is plan-sized.
+**Merged (7):**
+| # | What |
+|---|---|
+| #144 | bff,catalog-svc: forward `place_media` hero_image_url through `/v1/discover` (passthrough; signed-URL chain deferred to #135) |
+| #145 | pwa: G05 fixes — maplibre CSS import (map marker), detail `max-w-2xl`, ribbon `scroll-px-4`, **route code-split** (maplibre out of home bundle) |
+| #146 | pwa: inline `is_hosts_pick` toggle + badge in admin place list |
+| #147 | ci: Lighthouse median-of-3 + server-ready timeout (hardened the flaky single-run perf gate) |
+| #148 | pwa: distance slider granularity (1/2/3/5/10/15/20/30 + "Entire island") + tick marks + entire-island (large-km, PWA-only) |
+| #149 | pwa: distance-slider value label edge-clamp (no clip at ∞) |
+| #150 | pwa: public-landing clarity (GuestBanner + reworded copy) + static SamplePlaces + landing/action `max-w-5xl` |
 
-4. **If env-check fails ❌** — the script prints which check failed + the fix command. Common ones:
-   - `dt_notif_svc` unhealthy → `docker compose ... up -d notif-svc` (Python startup race; #140 already loosened the timeout 5s→15s)
-   - SSH tunnel to VPS Postgres dropped → `tasks-prod` MCP unreachable. Reconnect the tunnel (port 15432) before trying to use Riff MCP tools. See `~/.claude/projects/-media-jmeireles-ssd3-my-projects-codecomedy-platform/memory/reference_tasks_mcp.md`.
+**UATs (all PASS):** G05 retry (#17), hero image (#16), distance slider (#18, pass-with-2-issues → #137/#138, both now fixed+merged). **dt-tests #19** (landing clarity + samples + width + slider label) is **staged + fingerprinted but NOT yet run** — first UAT to run next session.
 
-5. **Polling ritual** (per project CLAUDE.md §Human testing protocol):
-   ```
-   mcp__tasks-prod__list_tasks(
-     project_id='e03901a6-b656-4f38-a768-b98d4fa081cc',  # dt-tests
-     statuses=['review']
-   )
-   ```
-   Currently empty (verified 2026-05-25 17:55 local). Anything new = process before picking up other work.
+**Open PRs — review/merge these first (all gate-green when pushed, escalated; some may be BEHIND main → use "Update branch" then merge):**
+| # | What | Risk |
+|---|---|---|
+| #151 | **place-form media-wipe data-loss fix** (catalog-svc GET returns media; form seeds + preserves it) | HIGH-value (silent data loss) |
+| #152 | wire orphaned Beta Dashboard (`/admin/beta` route+nav) + drop dead Reservations link + delete dead `placeholder-pages.tsx` | low |
+| #153 | published-only `is_hosts_pick` validation (catalog-svc 422 + toast) | low |
+| #154 | profile photo uploader (replaces raw asset-ID input with MediaUploader) | low |
 
-## What got done in this arc (2026-05-21 → 25)
+## Riff state (daily-tour project `e98dfe58-…d3df`)
 
-### dt-tests project bootstrap
+- **Done:** #124, #131, #132, #136, #137, #138 (+ the merged work above).
+- **qa (merged, awaiting #19 UAT):** #129, #130, #137, #138.
+- **review (open PRs):** #139 (→#151), #140 (→#152), #141 (→#153). #154 ≈ the profile-photo item in #142.
+- **#135** — signed media-svc URLs, backlog, gated on real photography (product decision).
 
-- Created `dt-tests` Riff project (id `e03901a6-b656-4f38-a768-b98d4fa081cc`, Kanban workflow)
-- Drafted the runbook task + 8 UAT backfill tasks (DT-TESTS-1..9) + 6 retry tasks during the arc
-- Adapted the cc-platform testing-protocol pattern verbatim — full doctrine at `docs/human/how-to/testing-protocol.md`
-- Memory: `~/.claude/projects/-media-jmeireles-ssd3-my-projects-daily-tour/memory/reference_dt_tests.md`
+## Blockers / backlog — need YOUR decision (logged in #142)
 
-### UAT cycles closed (5 PASS, with retry trails)
+1. **Max-5-picks-per-guesthouse cap** (T-2.2.0 unmet) — "per guesthouse" is ambiguous under the `guesthouse_scope` model (a place can scope to ALL guesthouses). Decide the rule before building.
+2. **Per-guesthouse place-scoping UI** — `place-form.tsx` hardcodes `guesthouse_scope:{all:true}`; catalog-svc supports `guesthouse_ids` but no UI. Single- vs multi-guesthouse product decision.
+3. **Reservations admin screen** — nav link removed (#152); no reservations backend/model exists. Needs scoping + backend.
+4. **Audit trail** for `is_hosts_pick` (low-pri; `audit` schema exists but unused).
 
-| UAT                           | Final task            | Outcome              | PRs that fixed defects                                     |
-| ----------------------------- | --------------------- | -------------------- | ---------------------------------------------------------- |
-| **G01** (token exchange)      | DT-TESTS-2            | ✅ PASS              | none (initial verification)                                |
-| **G02** (locale switch)       | DT-TESTS-11 (retry-2) | ✅ PASS              | #134 (SessionBootstrap) + #138 (locale-race)               |
-| **G06** (session persistence) | DT-TESTS-7            | ✅ PASS              | (same #134 fix)                                            |
-| **G03** (Eat drill-down)      | DT-TESTS-13 (retry-2) | ✅ PASS              | #139 (placeholder visibility) + #141 (action-context icon) |
-| **G04** (hosts' picks ribbon) | DT-TESTS-15 (retry-2) | ✅ PASS with backlog | #142 (seed marks 4 picks)                                  |
+## Operational notes / lessons
 
-Fail-trail preserved per protocol: DT-TESTS-3, DT-TESTS-5, DT-TESTS-10, DT-TESTS-12, DT-TESTS-14 stay at `done` with `failed` labels.
+- **Vite is flaky** on this box — died (SIGTERM) mid-session; restart with `pnpm --filter @daily-tour/pwa dev`. Don't trust it to survive across long gaps.
+- **cs-agent auto-commit fallback** fired on most agents this session (generic "agent work… auto-committed by closer" messages + agents skipping `pnpm install`/gates). Orchestrator had to: run gates manually, fix small issues (typecheck `noUncheckedIndexedAccess`, one unused-import lint error), and rely on PR titles (squash-merge) rather than amending. **Lesson:** keep telling agents to `pnpm install` + run gates + self-commit; always verify gates yourself before PR.
+- **Footgun avoided:** nearly lost #154's branch by `git branch -D` + `cs-agent kill` before pushing (the `-D` failed because the worktree held the branch, so it survived). **Never kill a worktree before the branch is pushed.**
+- **Lighthouse gate** is now median-of-3 (#147) — robust, but PWA PRs take ~2min on that check.
+- New memory saved: `feedback_uat_out_of_criteria_findings` (UAT findings outside pass criteria → file separately, still PASS).
 
-### PRs landed (this arc)
+## Suggested next-session start (in priority order)
 
-| #    | Title                                                                    | Cycle         |
-| ---- | ------------------------------------------------------------------------ | ------------- |
-| #133 | docs(testing): add human testing protocol + orchestrator polling ritual  | bootstrap     |
-| #134 | feat(bff,pwa): add /v1/auth/refresh + boot-time session rehydrate        | G02           |
-| #137 | chore(testing): add dev-env-check.sh + codify env-readiness gate         | systematic    |
-| #138 | fix(pwa): apply JWT locale once at /r/:token exchange, not on remount    | G02 retry     |
-| #139 | fix(pwa): render placeholder when PlaceCard heroImageUrl is null         | G03           |
-| #140 | fix(infra): bump notif-svc healthcheck timeout 5s → 15s                  | env-readiness |
-| #141 | fix(pwa): action-context icon for PlaceCard placeholder (eat → Utensils) | G03 retry     |
-| #142 | fix(catalog-svc): mark 4 eat-places as is_hosts_pick in dev seed         | G04           |
-
-(Plus #135 #136 — Lighthouse workflow + budget fixes — between #134 and #137.)
-
-### Env-readiness gate (the load-bearing process innovation of this arc)
-
-The most important meta-deliverable. Codified in #137:
-
-- `scripts/dev/dev-env-check.sh` — single-command env fingerprint (repo HEAD, container health, BFF endpoint registration, Vite, file-presence checks, smoke). Exit 0 = ready, exit 1 with explicit failure list. `--markdown` flag for paste-into-Riff.
-- `docs/human/how-to/testing-protocol.md` §Env readiness gate — mandates engineer runs the check before signalling tester. Anti-pattern: "skipping the gate once". This protocol pivot eliminated 2 false UAT failure attributions during the arc (notif-svc healthcheck flake + DT-TESTS-5 spec ambiguity).
-
-### daily-tour backlog filed from UAT cycles
-
-11 items (codes #124-#134) in `daily-tour` Riff project. Headline ones:
-
-- **#124** [bff,catalog-svc] Wire signed media URLs from media-svc into `/v1/discover` `hero_image_url` — substantive image fix (T-1.4.x admin gap)
-- **#131** [backoffice] Owner UI to manage `is_hosts_pick` on places (T-1.4.x admin gap)
-- **#125-#128** distance slider UX (granularity, tick marks, richer UX, "all island" option)
-- **#129** [pwa] PublicIndex vs AuthedIndex visual ambiguity
-- **#130** [pwa] SamplePlaces cards look clickable but aren't
-- **#132-#134** PlaceCard polish (left-padding, uniform heights, cross-view icon consistency)
-
-## State of `dt-tests` UATs still to run
-
-| Code | Title                            | Notes                                                |
-| ---- | -------------------------------- | ---------------------------------------------------- |
-| 6    | UAT-G05 — Place detail page      | Next sensible test. Independent path.                |
-| 8    | UAT-G07 — Daily tour intake form | Likely blocked ("Plan my day" still "Coming soon").  |
-| 9    | UAT-G08 — Chat with host (WS)    | Likely blocked ("Message João" still "Coming soon"). |
-
-## Operational quirks worth knowing
-
-- **`tasks-prod` MCP** = SSH tunnel to VPS PostgreSQL on port 15432. Tunnel sometimes drops between sessions; reconnect first thing if Riff tools fail.
-- **notif-svc healthcheck** is finicky under 0.25 CPU limit (Python startup races the 5s probe timeout). #140 bumped to 15s; if it still flakes, bump further or apply the same pattern to other Python services (search-svc, planner-svc, chat-hub).
-- **Tester-side env state** — fresh incognito windows are mandatory for any auth-surface UAT. Stale localStorage from previous tests is the load-bearing failure mode. Env-readiness fingerprint comments now boilerplate this.
-- **The local Vite dev process** at PID 2653385 has been running since 2026-05-24; it can be left running across sessions but expect it to die on OS reclaim. Restart with `pnpm --filter @daily-tour/pwa dev`.
-
-## Files of note (this arc)
-
-- `docs/human/how-to/testing-protocol.md` — the protocol doc, including §Env readiness gate
-- `scripts/dev/dev-env-check.sh` — the gate script
-- `apps/pwa/src/components/session-bootstrap.tsx` — boot-time session rehydrate (#134)
-- `apps/pwa/src/components/place-card.tsx` — placeholder + `placeholderIcon` prop (#139, #141)
-- `services/bff/src/routes/auth-refresh.ts` — refresh endpoint (#134)
-- `services/catalog-svc/seeds/places-sao-miguel.sql` — now marks 4 places as hosts' picks (#142)
-- `~/.claude/projects/-media-jmeireles-ssd3-my-projects-daily-tour/memory/reference_dt_tests.md` — dt-tests project ID + workflow + backfill table
-- `~/.claude/docs/riff-uat-product-spec-2026-05-20.md` — Riff product feedback queued for cc-platform pickup (also filed as Riff task in the `Riff improvements` project, code 27)
-
-## Decisions deferred / open questions
-
-1. **Backoffice cycle vs UAT continuation** — both are valuable; gut says start backoffice (#131 admin UI) because it unblocks editorial review of seed content + opens UAT G07/G08 in time.
-2. **Real hero images** — `daily-tour` #124 is the substantive fix; commissioning vs sourcing stock vs ML-generation is an open product decision.
-3. **Wish-chip vs action-chip semantics** — confusion surfaced in DT-TESTS-12 triage; current code conflates the two. May warrant a refactor task before more chip-UX work lands.
+1. **Run dt-tests #19** (the one staged UAT — landing clarity + sample cards + desktop width + slider label). Reconnect MCP + restart Vite + re-fingerprint first (the staged token may have expired). On PASS, flip #129/#130/#137/#138 → done.
+2. **Review + merge #151–#154.** #151 (data-loss fix) is the priority. They're independent; merge in any order, "Update branch" if BEHIND. After merge, pre-stage a backoffice UAT (needs an **Authentik staff login** — see human-testing caveat; admin UATs are the one surface that needs the staff IdP, not the guest token flow).
+3. **Tests gap (buildable, frontend-only, no decisions):** add RTL tests for `place-form.tsx`, `guesthouse-form.tsx`, `media-uploader.tsx` (recon found these are the only backoffice components with zero tests — and they hold the exact create/edit paths that had bugs this session). Good low-risk parallel agent work.
+4. **Unblock #142 items** — bring decisions on: the 5-pick cap rule, single-vs-multi guesthouse scoping, whether to build a reservations screen. Each unlocks a concrete backoffice task. The cap + published-only (#153) together complete T-2.2.0.
+5. **#135 signed media URLs** — only worth doing once real photography is sourced (open product decision #2 from the prior handoff; still open).
 
 ## Bus number
 
-1 (you). All state on origin + in this handoff + in Riff `dt-tests` and `daily-tour` projects.
-
----
-
-**Session arc**: Started at "fix the placeholder" (UAT-G03 follow-up from earlier session) and ended having closed 4 full UAT cycles (G02-retry, G03, G04, G06), codified the env-readiness gate as protocol, and filed 11 substantive backlog items. The systematic env-readiness pivot mid-session is the load-bearing innovation — it eliminated false-positive UAT failures (would have looked like code bugs, were actually env drift or spec ambiguity) and produced a reusable fingerprint that future UATs can attach as evidence.
-
-Resume cleanly: pull main → env-check → poll dt-tests review → pick next UAT or pivot to backoffice. Everything else is in this doc.
+1 (you). All state on origin + this doc + Riff (`daily-tour` + `dt-tests` projects).
