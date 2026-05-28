@@ -75,7 +75,9 @@
       "status": "Estado",
       "address": "Dirección",
       "actions": "Acciones",
-      "edit": "Editar"
+      "edit": "Editar",
+      "pick_requires_published": "Solo los lugares publicados pueden marcarse como elección del anfitrión.",
+      "pick_update_error": "No se pudo actualizar la elección del anfitrión."
     },
     "form": {
       "loading": "Cargando…",

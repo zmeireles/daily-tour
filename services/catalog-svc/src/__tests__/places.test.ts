@@ -120,6 +120,85 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("POST rejects is_hosts_pick=true on a non-published place (422)", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, status: "draft" as const, is_hosts_pick: true },
+    });
+    expect(res.statusCode).toBe(422);
+    expect(res.json<{ error: string }>().error).toBe("hosts_pick_requires_published");
+  });
+
+  it("POST allows is_hosts_pick=true on a published place (201)", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, status: "published" as const, is_hosts_pick: true },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json<{ is_hosts_pick: boolean }>().is_hosts_pick).toBe(true);
+  });
+
+  it("PATCH rejects flipping a draft place to a pick (422)", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, status: "draft" as const },
+    });
+    const { id } = create.json<{ id: string }>();
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { is_hosts_pick: true },
+    });
+    expect(patch.statusCode).toBe(422);
+    expect(patch.json<{ error: string }>().error).toBe("hosts_pick_requires_published");
+  });
+
+  it("PATCH rejects un-publishing a pick without clearing it (422)", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, status: "published" as const, is_hosts_pick: true },
+    });
+    const { id } = create.json<{ id: string }>();
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { status: "draft" },
+    });
+    expect(patch.statusCode).toBe(422);
+    expect(patch.json<{ error: string }>().error).toBe("hosts_pick_requires_published");
+  });
+
+  it("PATCH allows marking a pick on a published place + un-publishing when also clearing the pick", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, status: "published" as const },
+    });
+    const { id } = create.json<{ id: string }>();
+
+    const mark = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { is_hosts_pick: true },
+    });
+    expect(mark.statusCode).toBe(200);
+    expect(mark.json<{ is_hosts_pick: boolean }>().is_hosts_pick).toBe(true);
+
+    const unpublish = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { status: "draft", is_hosts_pick: false },
+    });
+    expect(unpublish.statusCode).toBe(200);
+    expect(unpublish.json<{ status: string }>().status).toBe("draft");
+  });
+
   it("GET /v1/places/:id/hydrated — returns joined media + actions + wishes", async () => {
     const actionId = "11111111-1111-4111-8111-111111111111";
     const wishId = "22222222-2222-4222-8222-222222222222";

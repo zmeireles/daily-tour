@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { usePlaces, useArchivePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,24 @@ function HostsPickToggle({ place }: { place: PlaceRow }) {
         variant="ghost"
         disabled={mutation.isPending}
         aria-label={t("places.list.hosts_pick_aria", "Toggle host's pick for {{name}}", { name })}
-        onClick={() => mutation.mutate({ is_hosts_pick: !place.is_hosts_pick })}
+        onClick={() =>
+          mutation.mutate(
+            { is_hosts_pick: !place.is_hosts_pick },
+            {
+              onError: (err) => {
+                const status = (err as { status?: number }).status;
+                toast.error(
+                  status === 422
+                    ? t(
+                        "places.list.pick_requires_published",
+                        "Only published places can be marked as a host's pick.",
+                      )
+                    : t("places.list.pick_update_error", "Could not update host's pick."),
+                );
+              },
+            },
+          )
+        }
       >
         {place.is_hosts_pick
           ? t("places.list.unmark_pick", "Unmark")

@@ -75,7 +75,9 @@
       "status": "Status",
       "address": "Adresse",
       "actions": "Aktionen",
-      "edit": "Bearbeiten"
+      "edit": "Bearbeiten",
+      "pick_requires_published": "Nur veröffentlichte Orte können als Gastgeberempfehlung markiert werden.",
+      "pick_update_error": "Gastgeberempfehlung konnte nicht aktualisiert werden."
     },
     "form": {
       "loading": "Wird geladen…",
