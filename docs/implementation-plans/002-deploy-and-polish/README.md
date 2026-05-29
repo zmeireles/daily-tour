@@ -61,7 +61,7 @@ Capture lessons learned + technical debt from plan-001:
 
 ### Slice 2.C — Hardening Retrospective
 
-- T-2.C.0 — TODO.md + EXECUTION.md bulk doc sync to plan-001 reality
+- ✅ T-2.C.0 — TODO.md + EXECUTION.md bulk doc sync to plan-001 reality _(resolved 2026-05-29: TODO.md verified accurate (83/84 done, PR refs intact, only `2026-MM-DD` was in the template instructions — false alarm). EXECUTION.md had a real gap: waves 29+ covering Phases 2-5 (45 tasks across PRs #61-#94) were never logged. Added a single retroactive "Wave 29-bulk" catch-up entry with the full PR→task mapping; flagged that the data needed for T-2.C.4 must be reconstructed from PR/commit timestamps rather than this log.)_
 - T-2.C.1 — T-4.1.0 retry (chat WebSocket eslint)
 - ✅ T-2.C.2 — cs-agent closer-fallback investigation + fix _(resolved 2026-05-29: not in cs-agent itself — the failure was the GitHub repo's `squash_merge_commit_title=COMMIT_OR_PR_TITLE` falling back to the first commit's headline whenever a branch had >1 commit. Patched the repo to `PR_TITLE` + `PR_BODY` so every squash uses the PR title verbatim. Eliminates the `--subject` workaround on `gh pr merge`.)_
 - ✅ T-2.C.3 — Project-wide eslint override for test files (`no-unsafe-*` exemption) _(already shipped: `packages/shared-config/eslint.base.js` lines 15-25 cover `**/__tests__/**` and `**/*.test.*` with the six `no-unsafe-*` and `unbound-method` rules disabled. Scope captured in plan-002 README before verification.)_
