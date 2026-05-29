@@ -11,6 +11,7 @@ Three concurrent thrusts:
 Stand up the QA VPS environment + first production-shaped deployment of the daily-tour stack. Currently the entire stack runs only on a developer laptop via Docker Compose; nothing has been live in front of real DNS, real TLS, real Authentik, real Anthropic API, real OSRM tiles.
 
 Outputs:
+
 - QA VPS provisioned (Ubuntu 24, 4-8 vCPU, 16-32 GB RAM)
 - Traefik + ACME staging working with `*.qa.dailytour.example`
 - Authentik realm imported + first staff user created
@@ -21,6 +22,7 @@ Outputs:
 ### Thrust B — Real Design Pass
 
 Replace placeholder visual identity with real designed surfaces:
+
 - Generate Stitch mockups for Home, Place Detail, Discover, Daily Tour, Chat
 - Reconcile palette + typography with Stitch outputs
 - Replace placeholder PWA icons with real brand mark
@@ -30,6 +32,7 @@ Replace placeholder visual identity with real designed surfaces:
 ### Thrust C — Hardening Retrospective
 
 Capture lessons learned + technical debt from plan-001:
+
 - T-4.1.0 retry (WebSocket eslint config quirks)
 - Docs sync (TODO.md/EXECUTION.md still mostly ⬜ at plan-001-close)
 - cs-agent closer-fallback commits — fix the pattern so agents always self-commit
@@ -60,8 +63,8 @@ Capture lessons learned + technical debt from plan-001:
 
 - T-2.C.0 — TODO.md + EXECUTION.md bulk doc sync to plan-001 reality
 - T-2.C.1 — T-4.1.0 retry (chat WebSocket eslint)
-- T-2.C.2 — cs-agent closer-fallback investigation + fix
-- T-2.C.3 — Project-wide eslint override for test files (`no-unsafe-*` exemption)
+- ✅ T-2.C.2 — cs-agent closer-fallback investigation + fix _(resolved 2026-05-29: not in cs-agent itself — the failure was the GitHub repo's `squash_merge_commit_title=COMMIT_OR_PR_TITLE` falling back to the first commit's headline whenever a branch had >1 commit. Patched the repo to `PR_TITLE` + `PR_BODY` so every squash uses the PR title verbatim. Eliminates the `--subject` workaround on `gh pr merge`.)_
+- ✅ T-2.C.3 — Project-wide eslint override for test files (`no-unsafe-*` exemption) _(already shipped: `packages/shared-config/eslint.base.js` lines 15-25 cover `**/__tests__/**` and `**/*.test.*` with the six `no-unsafe-*` and `unbound-method` rules disabled. Scope captured in plan-002 README before verification.)_
 - T-2.C.4 — Estimate recalibration based on actual plan-001 wall-clock data
 - T-2.C.5 — Lessons learned doc + agent playbook update
 
