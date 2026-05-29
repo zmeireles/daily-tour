@@ -10,15 +10,17 @@ export default function AuthedIndexRoute() {
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
-      <header className="flex justify-end px-6 py-4">
-        <LocaleSwitcher />
-      </header>
-      <main className="flex-1">
-        <Greeting />
-        <HostsPicksSection />
-        <ActionGrid />
-        <PremiumStubs />
-      </main>
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+        <header className="flex justify-end px-6 py-4">
+          <LocaleSwitcher />
+        </header>
+        <main className="flex-1">
+          <Greeting />
+          <HostsPicksSection />
+          <ActionGrid />
+          <PremiumStubs />
+        </main>
+      </div>
     </div>
   );
 }
