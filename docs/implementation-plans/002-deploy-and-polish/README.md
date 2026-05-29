@@ -66,7 +66,7 @@ Capture lessons learned + technical debt from plan-001:
 - ✅ T-2.C.2 — cs-agent closer-fallback investigation + fix _(resolved 2026-05-29: not in cs-agent itself — the failure was the GitHub repo's `squash_merge_commit_title=COMMIT_OR_PR_TITLE` falling back to the first commit's headline whenever a branch had >1 commit. Patched the repo to `PR_TITLE` + `PR_BODY` so every squash uses the PR title verbatim. Eliminates the `--subject` workaround on `gh pr merge`.)_
 - ✅ T-2.C.3 — Project-wide eslint override for test files (`no-unsafe-*` exemption) _(already shipped: `packages/shared-config/eslint.base.js` lines 15-25 cover `**/__tests__/**` and `**/*.test.*` with the six `no-unsafe-*` and `unbound-method` rules disabled. Scope captured in plan-002 README before verification.)_
 - T-2.C.4 — Estimate recalibration based on actual plan-001 wall-clock data
-- T-2.C.5 — Lessons learned doc + agent playbook update
+- ✅ T-2.C.5 — Lessons learned doc + agent playbook update _(resolved 2026-05-29: created `docs/ai/lessons/` with L019 (cross-route audit), L020 (nvm + Node 25 PATH drift), L021 (tasks-prod SSH tunnel diagnosis). Appended L017 (squash-merge title setting) + L018 (`cs-agent push` PR title gap) to the cross-project playbook at `~/.claude/docs/agent-playbook.md`.)_
 
 ## Dependencies + Sequence
 
