@@ -40,6 +40,68 @@ When an agent reports "done", before marking the task ✅:
 
 ## Waves
 
+### Wave 29-bulk — 2026-05-17 — Phases 2-5 push (retroactive catch-up entry)
+
+> **Retroactive entry written 2026-05-29 as part of T-2.C.0 (Plan-002 doc sync).** Individual waves 29+ were not logged at the time of execution. This single entry maps the 45 Phase 2-5 tasks to the 28 PRs that landed them, reconstructed from `TODO.md` PR references. Use TODO.md's per-task `> **Resolved …**` lines for the canonical commit SHA.
+
+**Scope**: All of Phase 2 (Discovery & Search), Phase 3 (Daily Tour Planner), Phase 4 (Chat & Reservation Draft), Phase 5 (Hardening & Growth).
+
+**Wall-clock**: All 45 tasks closed in a single calendar day (2026-05-17), continuing the Wave 1-28 cadence into the same date. Used both Opus and Sonnet profiles per the per-task tags in TODO.md (`[opus]` markers on T-2.0.0, T-3.0.x, T-4.0.0, T-4.1.0).
+
+**Bundling pattern**: Many PRs shipped multiple TODO tasks (e.g. PR #83 bundled T-4.0.0 + T-4.0.1 + T-4.1.0 + T-4.1.1 + T-4.1.2 — chat-hub skeleton + schemas + BFF WebSocket + guest chat UI + owner inbox in one delivery). Bundling notes are preserved in TODO.md's per-task `Bundled in T-X.Y.Z delivery` annotations.
+
+#### PR → task mapping (Phases 2-5)
+
+| PR # | Task IDs                                    | Slice closure                                                          |
+| ---- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| #61  | T-2.0.0                                     | search-svc skeleton                                                    |
+| #62  | T-2.0.1                                     | embeddings worker                                                      |
+| #63  | T-2.0.2                                     | embed backfill                                                         |
+| #64  | T-2.1.0                                     | hybrid `/query`                                                        |
+| #65  | T-2.1.1                                     | BFF switches to hybrid                                                 |
+| #66  | T-2.2.0                                     | `is_hosts_pick` + admin toggle                                         |
+| #67  | T-2.2.2                                     | vehicle toggle + filter                                                |
+| #68  | T-2.2.1                                     | hosts-picks ribbon (**Phase 2 ✅**)                                    |
+| #69  | T-3.0.0                                     | planner-svc skeleton                                                   |
+| #70  | T-3.0.1                                     | prompt assembler + RAG                                                 |
+| #71  | T-3.0.2                                     | server validators                                                      |
+| #72  | T-3.0.3                                     | async tour-plans + RabbitMQ                                            |
+| #73  | T-3.1.0                                     | PWA tour form + voice                                                  |
+| #74  | T-3.1.1                                     | DailyTourTimeline                                                      |
+| #75  | T-3.1.2                                     | tour failure fallback                                                  |
+| #76  | T-3.2.0                                     | IPMA forecast client                                                   |
+| #77  | T-3.2.2                                     | `weather_ok_today` enrichment                                          |
+| #78  | T-3.2.1                                     | rainy-slot swap                                                        |
+| #79  | T-3.3.0                                     | OSRM overlay                                                           |
+| #80  | T-3.3.1                                     | planner uses real drive times                                          |
+| #81  | T-3.4.1                                     | telemetry analytics                                                    |
+| #82  | T-3.4.0                                     | share tour link (**Phase 3 ✅**)                                       |
+| #83  | T-4.0.0, T-4.0.1, T-4.1.0, T-4.1.1, T-4.1.2 | chat-hub + WebSocket + UI bundle                                       |
+| #85  | T-4.2.0, T-4.2.1                            | Telegram driver + linking                                              |
+| #86  | T-4.3.0                                     | WhatsApp deep-link                                                     |
+| #87  | T-4.4.0, T-4.4.1                            | `/v1/draft-reservation` + UI (**Phase 4 ✅**)                          |
+| #88  | T-5.0.0                                     | service worker                                                         |
+| #89  | T-5.1.0, T-5.1.1, T-5.1.2                   | locale expansion (de/es/fr/pt-BR)                                      |
+| #90  | T-5.2.0, T-5.2.1                            | a11y axe + manual review                                               |
+| #91  | T-5.3.0                                     | Lighthouse-CI                                                          |
+| #92  | T-5.4.0, T-5.4.1                            | Loki + Grafana                                                         |
+| #93  | T-5.5.0, T-5.5.1                            | review push + rating UI                                                |
+| #94  | T-5.6.0, T-5.6.1                            | WhatsApp BSP + driver (**Phase 5 ✅, Plan-001 functionally complete**) |
+
+#### Why this is retroactive
+
+The Wave 1-28 entries (2026-05-14 through 2026-05-17, T-0.1.1 through T-1.6.0) were written contemporaneously with each cs-agent run and carry per-task wall-clock, LOC, context usage, issues, and fly-decision details. Waves 29+ were not written at the time — the planning attention shifted to Plan-002 (post-MVP work) once Phase 5 landed.
+
+**Implication for T-2.C.4** (estimate recalibration): wall-clock data for Phases 2-5 must be reconstructed from PR merge timestamps + commit timestamps rather than from this log. The data is recoverable but more involved than parsing Waves 1-28.
+
+#### Lessons surfaced (referenced from agent-playbook)
+
+- L011 (TDD prompt split) was established during Phases 2-5; see Plan 019 in the playbook.
+- L013-L016 (Docker/compose hardening) surfaced during the 2026-04-20 sprint adjacent to this push.
+- No new lessons L017+ were generated by this wave — those came from the 2026-05-28/29 backoffice sessions (see `docs/ai/lessons/`).
+
+---
+
 ### Wave 28 — 2026-05-17 — T-1.6.0 (sequential, post-Slice-1.4) — **first Opus self-commit** this session; unblocks Slice 1.6
 
 | Agent  | Task ID | Branch           | Profile     | Scope                                                                        | Status                   |
