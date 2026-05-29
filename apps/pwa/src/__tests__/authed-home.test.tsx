@@ -108,6 +108,22 @@ describe("Authed home (IndexRoute dispatcher)", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it("wraps content in max-w-5xl container so it doesn't go edge-to-edge on desktop", () => {
+    // Regression guard for dt-tests UAT #19 step C: PR #150 added the
+    // mx-auto/max-w-5xl wrapper to PublicIndex and the action pages but
+    // missed AuthedIndexRoute, so the authed home rendered full-bleed on
+    // wide desktops. Removing the wrapper would flip this red.
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+
+    renderRoute();
+
+    const wrapper = document.querySelector("div.max-w-5xl.mx-auto");
+    expect(wrapper).not.toBeNull();
+    expect(wrapper?.querySelector("main")).not.toBeNull();
+  });
+
   it("theme auto sets data-theme to light during São Miguel daytime", () => {
     // 2026-06-21T12:00:00Z — solar noon in UTC, São Miguel is UTC-1 so 11:00 local — well within daylight
     vi.useFakeTimers();
