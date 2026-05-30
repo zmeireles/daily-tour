@@ -215,6 +215,46 @@ if [[ $START_STAGE -le 4 ]]; then
     fi
   done
 
+  # Python services keep raw SQL migrations under services/<svc>/migrations/
+  # (each *.sql is idempotent via IF NOT EXISTS, so re-running is safe). The
+  # TS svc loop above uses pnpm db:migrate; Python svcs don't have an
+  # equivalent runner wired into __main__.py, so apply them here as the
+  # schema-owning role. Without this, planner.tour_plan / search.place_embedding
+  # silently miss in fresh local DBs and the worker errors with
+  # `relation … does not exist` (see daily-tour #145).
+  for svc in search-svc planner-svc; do
+    if [[ ! -d "services/$svc/migrations" ]]; then
+      continue
+    fi
+    # svc=search-svc → user=search_svc, pw_var=SERVICE_DB_PASSWORD_SEARCH
+    PG_USER="${svc//-/_}"
+    PW_SUFFIX=$(echo "${svc%-svc}" | tr '[:lower:]-' '[:upper:]_')
+    PW_VAR="SERVICE_DB_PASSWORD_${PW_SUFFIX}"
+    PW="${!PW_VAR:-}"
+    if [[ -z "$PW" ]]; then
+      fail "$svc migration: $PW_VAR is unset in .env"
+      exit 1
+    fi
+    info "migrating $svc (Python — raw SQL)…"
+    MIGRATION_OK=1
+    for sql in services/"$svc"/migrations/*.sql; do
+      [[ -f "$sql" ]] || continue
+      if ! docker compose $COMPOSE_BASE exec -T \
+            -e PGPASSWORD="$PW" \
+            postgres psql -U "$PG_USER" -d dailytour -v ON_ERROR_STOP=1 -q < "$sql" >/dev/null 2>&1; then
+        fail "$svc migration $(basename "$sql") failed"
+        info "  diagnose: docker compose $COMPOSE_BASE exec -e PGPASSWORD=… postgres psql -U $PG_USER -d dailytour < $sql"
+        MIGRATION_OK=0
+        break
+      fi
+    done
+    if [[ $MIGRATION_OK -eq 1 ]]; then
+      pass "migrated $svc"
+    else
+      exit 1
+    fi
+  done
+
   # Cross-schema SELECT grants. The init scripts in infra/postgres/init/
   # declare these via `ALTER DEFAULT PRIVILEGES FOR ROLE <owner>` so future
   # tables auto-grant — but existing dev DBs (volumes from before that fix)
