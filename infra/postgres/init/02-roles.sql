@@ -110,6 +110,12 @@ CREATE ROLE bff WITH LOGIN PASSWORD 'change-me-please-bff';
 GRANT USAGE ON SCHEMA catalog, chat, planner, ingest, auth_tokens,
                        media, notif, audit, search, analytics TO bff;
 -- analytics INSERT: catalog_svc creates tables; bff writes telemetry rows.
+-- The DEFAULT PRIVILEGES clause covers TABLES created AFTER this script runs.
+-- The explicit GRANT below covers tables that may have been created BEFORE
+-- this role/grant existed (e.g. a catalog-svc migration ran prior to a roles
+-- reconcile). Without it, BFF gets `permission denied for schema analytics`
+-- (PG 42501) when posting telemetry — see daily-tour #144.
+GRANT INSERT ON ALL TABLES IN SCHEMA analytics TO bff;
 ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA analytics
   GRANT INSERT ON TABLES TO bff;
 -- Default privileges are applied per-schema by the owning service when it
