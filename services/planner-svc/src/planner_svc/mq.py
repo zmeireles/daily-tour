@@ -36,7 +36,8 @@ from aio_pika.abc import (
 
 from .config import get_settings
 from .db import session_scope
-from .repository.plans import mark_ready
+from .repository.plans import get_by_id, mark_ready, mark_rejected
+from .workers.plan_worker import WorkerError, produce_plan
 
 logger = logging.getLogger(__name__)
 
@@ -88,37 +89,60 @@ async def publish_requested(plan_id: UUID) -> None:
         await connection.close()
 
 
-async def _process_stub(plan_id: UUID) -> None:
-    """Slice-A stub: mark the plan ready with a placeholder payload.
+async def _process_plan(plan_id: UUID) -> None:
+    """Slice-B real pipeline: load row → produce plan → mark_ready or mark_rejected.
 
-    Replaced by the real LLM + RAG + validator pipeline in 143.B. Tests
-    against this stub verify only that the transport landed: queued row
-    becomes ready, GET endpoint returns ready, polling stops.
+    Reads the queued ``planner.tour_plan`` row, runs the full RAG + LLM
+    pipeline via ``workers.plan_worker.produce_plan``, and writes the
+    terminal state back. Categorised ``WorkerError`` failures land in
+    ``mark_rejected`` with the reason slug + detail so the BFF GET
+    endpoint surfaces them to the PWA's failure-fallback UI (T-3.1.2).
+
+    Unexpected exceptions propagate so the message gets nacked (default
+    ``message.process()`` semantics in the caller) — operations can then
+    see a poison-pill in RabbitMQ and react.
     """
     async with session_scope() as session:
-        await mark_ready(
-            session,
-            plan_id,
-            {
-                "stub": True,
-                "note": "transport-only handler (143.A); LLM pipeline pending",
-                "steps": [],
-            },
+        row = await get_by_id(session, plan_id)
+    if row is None:
+        logger.warning(
+            "planner-svc.mq orphan message; plan row missing",
+            extra={"plan_id": str(plan_id)},
         )
+        return
+
+    try:
+        plan, _candidates = await produce_plan(
+            plan_id=plan_id,
+            request_payload=dict(row.request_payload),
+        )
+    except WorkerError as exc:
+        async with session_scope() as session:
+            await mark_rejected(session, plan_id, str(exc))
+            await session.commit()
+        logger.warning(
+            "planner-svc.mq marked rejected",
+            extra={"plan_id": str(plan_id), "reason": exc.reason, "detail": exc.detail},
+        )
+        return
+
+    async with session_scope() as session:
+        await mark_ready(session, plan_id, plan.model_dump(mode="json"))
         await session.commit()
     logger.info(
-        "planner-svc.mq marked ready (stub)",
-        extra={"plan_id": str(plan_id)},
+        "planner-svc.mq marked ready",
+        extra={"plan_id": str(plan_id), "step_count": len(plan.steps)},
     )
 
 
 async def _handle_requested(message: AbstractIncomingMessage) -> None:
     """Consumer handler — parses the message and dispatches to the processor.
 
-    We **don't** ack until processing succeeds (default ``message.process()``
-    semantics): if ``_process_stub`` raises, the message goes back into the
-    queue. For the stub that's fine; for 143.B the LLM call needs explicit
-    timeout + retry-count handling so we don't poison-pill the queue.
+    ``requeue=False`` on the process context-manager means an exception
+    raised by ``_process_plan`` ACKs the message (with a nack-no-requeue),
+    so we don't re-process poison-pill payloads in a tight loop.
+    ``WorkerError`` is caught and translated to ``mark_rejected`` inside
+    ``_process_plan``, so the handler only sees unexpected exceptions.
     """
     async with message.process(requeue=False):
         try:
@@ -130,7 +154,7 @@ async def _handle_requested(message: AbstractIncomingMessage) -> None:
                 extra={"err": str(exc), "body_preview": message.body[:200]},
             )
             return
-        await _process_stub(plan_id)
+        await _process_plan(plan_id)
 
 
 async def start_consumer(
