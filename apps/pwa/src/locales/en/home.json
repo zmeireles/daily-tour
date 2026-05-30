@@ -11,9 +11,7 @@
     "chat": "Chat with your host"
   },
   "premium": {
-    "plan_my_day": "Plan my day",
-    "message_owner": "Message João",
-    "coming_soon": "Coming soon"
+    "plan_my_day": "Plan my day"
   },
   "locale": {
     "en": "English",

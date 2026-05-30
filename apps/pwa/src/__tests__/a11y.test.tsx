@@ -93,7 +93,7 @@ describe("WCAG 2.2 AA — a11y audit (critical/serious violations only)", () => 
     });
 
     it("PremiumStubs has no critical/serious violations", async () => {
-      const { container } = render(<PremiumStubs />);
+      const { container } = render(withRouter(<PremiumStubs />));
       expect(await axe(container)).toHaveNoViolations();
     });
   });

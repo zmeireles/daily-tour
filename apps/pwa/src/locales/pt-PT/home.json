@@ -11,9 +11,7 @@
     "chat": "Falar com o anfitrião"
   },
   "premium": {
-    "plan_my_day": "Planear o meu dia",
-    "message_owner": "Falar com o João",
-    "coming_soon": "Em breve"
+    "plan_my_day": "Planear o meu dia"
   },
   "locale": {
     "en": "English",

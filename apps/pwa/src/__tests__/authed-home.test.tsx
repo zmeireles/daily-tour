@@ -79,8 +79,23 @@ describe("Authed home (IndexRoute dispatcher)", () => {
     expect(screen.getByRole("link", { name: /buy/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /move/i })).toBeInTheDocument();
 
-    // Premium stubs present
+    // Premium-namespaced CTA present (Plan my day) — now an enabled link, not a disabled stub
     expect(document.querySelector("[data-premium='true']")).not.toBeNull();
+  });
+
+  it("renders an enabled 'Plan my day' CTA linking to /tour/new on the authed home", () => {
+    // Regression for the pre-#164 state where the CTA was a disabled
+    // "Coming soon" stub even though T-3.1.0 had shipped the intake form.
+    // Removing the link or reverting to a disabled button would flip this red.
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+
+    renderRoute();
+
+    const planCta = screen.getByRole("link", { name: /plan my day/i });
+    expect(planCta).toBeInTheDocument();
+    expect(planCta.getAttribute("href")).toBe("/tour/new");
   });
 
   it("does NOT call i18n.changeLanguage on mount — locale is applied at /r/:token exchange only", () => {
