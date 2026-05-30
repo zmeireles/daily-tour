@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { SignJWT } from "jose";
-import { WebSocket as WSocket } from "ws";
+import { WebSocket as WSocket, WebSocketServer } from "ws";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 
 // Env MUST be set before any app import — config validates on first load.
 process.env["JWT_SIGNING_KEY"] = "test-signing-key-do-not-use-min-32-chars-long";
@@ -71,5 +73,93 @@ describe("GET /v1/chat/ws", () => {
     // Sanity-check that the test key isn't masquerading as the real one.
     const realKey = new TextEncoder().encode(SIGNING_KEY);
     expect(wrongKey).not.toEqual(realKey);
+  });
+});
+
+describe("GET /v1/chat/ws — frame forwarding (regression)", () => {
+  // Regression for the chat-hub `KeyError('text')` crash that broke UAT-G08
+  // (2026-05-30): the bridge forwarded text frames as binary because it
+  // called `upstream.send(data)` on a Buffer without the `{ binary: false }`
+  // hint, so ws defaulted to a binary frame. chat-hub's
+  // starlette `websocket.receive_text()` then crashed.
+
+  let app: Awaited<ReturnType<typeof import("../app.js").createApp>>;
+  let bffPort: number;
+  let upstreamServer: ReturnType<typeof createServer>;
+  let upstreamWss: WebSocketServer;
+  let upstreamPort: number;
+  const received: { isBinary: boolean; payload: string }[] = [];
+
+  beforeAll(async () => {
+    // Stand up a fake chat-hub that captures incoming frame types.
+    upstreamServer = createServer();
+    upstreamWss = new WebSocketServer({ server: upstreamServer });
+    upstreamWss.on("connection", (ws) => {
+      ws.on("message", (data: Buffer, isBinary: boolean) => {
+        received.push({ isBinary, payload: data.toString("utf-8") });
+      });
+    });
+    await new Promise<void>((resolve) => upstreamServer.listen(0, "127.0.0.1", resolve));
+    upstreamPort = (upstreamServer.address() as AddressInfo).port;
+
+    process.env["CHAT_HUB_URL"] = `http://127.0.0.1:${upstreamPort}`;
+    const { resetConfigCache: reset } = await import("../config.js");
+    reset();
+    const { createApp } = await import("../app.js");
+    app = await createApp();
+    const address = await app.listen({ port: 0, host: "127.0.0.1" });
+    bffPort = Number.parseInt(new URL(address).port, 10);
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await new Promise<void>((resolve) => {
+      upstreamWss.close(() => resolve());
+    });
+    await new Promise<void>((resolve) => upstreamServer.close(() => resolve()));
+  });
+
+  it("forwards text frames to upstream as text (not binary)", async () => {
+    const signingKey = new TextEncoder().encode(SIGNING_KEY);
+    const token = await new SignJWT({ sub: "guest-frame-test" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("1h")
+      .sign(signingKey);
+
+    // Wait for the BFF's upstream connection to open BEFORE sending — the
+    // bridge drops messages when upstream isn't OPEN yet, so a naive
+    // client-open-then-send race-loses against the BFF's async auth + upstream
+    // dial.
+    const upstreamReady = new Promise<void>((resolve) => {
+      upstreamWss.once("connection", () => resolve());
+    });
+
+    const client = new WSocket(
+      `ws://127.0.0.1:${bffPort}/v1/chat/ws?token=${encodeURIComponent(token)}`,
+    );
+    await new Promise<void>((resolve, reject) => {
+      client.on("open", resolve);
+      client.on("error", reject);
+    });
+    await upstreamReady;
+
+    received.length = 0;
+    client.send("hello");
+
+    // Wait for the upstream to receive + record the frame.
+    await new Promise<void>((resolve) => {
+      const start = Date.now();
+      const tick = (): void => {
+        if (received.length > 0 || Date.now() - start > 1000) return resolve();
+        setTimeout(tick, 10);
+      };
+      tick();
+    });
+
+    client.close();
+
+    expect(received).toHaveLength(1);
+    expect(received[0]?.isBinary).toBe(false);
+    expect(received[0]?.payload).toBe("hello");
   });
 });
