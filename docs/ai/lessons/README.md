@@ -11,6 +11,7 @@ Each lesson is an atomic markdown file named `L<NNN>-<slug>.md`. Codes continue 
 | L019 | Layout-wrapper changes must audit every route that shares the visual surface, not just the obviously-related one                                                                          | dt-tests UAT #19 → PR #156 (2026-05-29)                       |
 | L020 | Source nvm + `nvm use` before any `pnpm` command; `.nvmrc` pins 22.22.3 but PATH defaults to Node 25                                                                                      | session 2026-05-28 (Vite startup ERR_PNPM_UNSUPPORTED_ENGINE) |
 | L021 | tasks-prod MCP shows tool schemas reconnected but the underlying SSH tunnel to VPS Postgres on :15432 can be down — verify `ss -tlnp \| grep 15432` before assuming MCP failures are bugs | session 2026-05-28/29                                         |
+| L022 | "Marked done" in TODO.md is code-merged, not feature-works — bundled-task PRs need per-task acceptance evidence before each ✅, not just per-PR CI                                        | Plan-001 accounting retro (2026-05-30)                        |
 
 ## How to add a new lesson
 
