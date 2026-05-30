@@ -25,8 +25,12 @@ async function authenticate(token: string, secret: string): Promise<JWTPayload |
 }
 
 function bridgeFrames(client: WsSocket, upstream: WsSocket, log: FastifyRequest["log"]): void {
-  upstream.on("message", (data: RawData) => {
-    if (client.readyState === WSocket.OPEN) client.send(data);
+  // ws delivers `data` as a Buffer regardless of frame type; the second arg
+  // `isBinary` is the original frame's text/binary marker. Forward it through
+  // explicitly so chat-hub's `websocket.receive_text()` doesn't crash with
+  // KeyError('text') on what was actually a text frame relayed as binary.
+  upstream.on("message", (data: RawData, isBinary: boolean) => {
+    if (client.readyState === WSocket.OPEN) client.send(data, { binary: isBinary });
   });
   upstream.on("close", () => {
     if (client.readyState < WSocket.CLOSING) client.close();
@@ -36,8 +40,8 @@ function bridgeFrames(client: WsSocket, upstream: WsSocket, log: FastifyRequest[
     if (client.readyState < WSocket.CLOSING) client.close(1011, "upstream_error");
   });
 
-  client.on("message", (data: RawData) => {
-    if (upstream.readyState === WSocket.OPEN) upstream.send(data);
+  client.on("message", (data: RawData, isBinary: boolean) => {
+    if (upstream.readyState === WSocket.OPEN) upstream.send(data, { binary: isBinary });
   });
   client.on("close", () => {
     if (upstream.readyState < WSocket.CLOSING) upstream.close();
