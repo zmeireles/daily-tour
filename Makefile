@@ -132,8 +132,14 @@ sh:
 help:
 	@echo "Daily Tour — make targets (ENV=$(ENV), env-file=$(ENV_FILE))"
 	@echo ""
-	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/^## //' | \
-	  awk 'BEGIN{c=0} {desc[c++]=$$0} END{for(i=0;i<c;i++) print "  " desc[i]}'
+	@awk ' \
+	  /^## / { sub(/^## /, ""); desc = $$0; next } \
+	  /^[a-zA-Z][a-zA-Z0-9_-]*:/ && desc != "" { \
+	    name = $$0; sub(/:.*/, "", name); \
+	    printf "  %-13s %s\n", name, desc; desc = ""; next \
+	  } \
+	  { desc = "" } \
+	' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "Lifecycle targets: up start recreate down nuke stop restart build rebuild pull ps logs config sh env"
 	@echo "Vars: ENV=dev|qual|staging|prod  SVC=<service>  OVERLAYS='-f …'"
