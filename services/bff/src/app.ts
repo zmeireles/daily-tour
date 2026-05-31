@@ -13,6 +13,7 @@ import adminMediaRoute from "./routes/admin-media.js";
 import adminPlacesRoute from "./routes/admin-places.js";
 import adminProfileRoute from "./routes/admin-profile.js";
 import authRefreshRoute from "./routes/auth-refresh.js";
+import chatHistoryRoute from "./routes/chat-history.js";
 import chatWsRoute from "./routes/chat-ws.js";
 import discoverRoute from "./routes/discover.js";
 import feedbackRoute from "./routes/feedback.js";
@@ -105,6 +106,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(feedbackRoute);
   await app.register(adminBetaMetricsRoute);
   await app.register(publicTourPlansRoute);
+  await app.register(chatHistoryRoute);
   await app.register(chatWsRoute);
 
   return app;

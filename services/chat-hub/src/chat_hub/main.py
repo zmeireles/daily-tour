@@ -7,11 +7,13 @@ from daily_tour_common.otel import init_otel
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+from .chat_persistence import build_in_app_persister
 from .config import get_settings
+from .db import dispose_engine
 from .drivers.in_app import mount_in_app_driver
 from .drivers.telegram import mount_telegram_driver
 from .drivers.whatsapp import build_wa_me_url, mount_whatsapp_driver
-from .routes import draft_router, health_router
+from .routes import draft_router, health_router, history_router
 from .version import __version__
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,11 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(draft_router)
-    mount_in_app_driver(app)
+    app.include_router(history_router)
+    in_app_driver = mount_in_app_driver(app)
+    # Persist every inbound guest frame + ack it back (T-4.0.1). Without this
+    # callback the driver receives, normalizes, and drops frames.
+    in_app_driver.on_receive(build_in_app_persister(in_app_driver))
     mount_telegram_driver(app)
     mount_whatsapp_driver(app)
 
@@ -51,6 +57,10 @@ def create_app() -> FastAPI:
             "chat-hub starting",
             extra={"service": settings.service_name, "version": __version__},
         )
+
+    @app.on_event("shutdown")
+    async def _shutdown() -> None:
+        await dispose_engine()
 
     return app
 

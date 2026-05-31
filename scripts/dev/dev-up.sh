@@ -222,14 +222,28 @@ if [[ $START_STAGE -le 4 ]]; then
   # schema-owning role. Without this, planner.tour_plan / search.place_embedding
   # silently miss in fresh local DBs and the worker errors with
   # `relation … does not exist` (see daily-tour #145).
-  for svc in search-svc planner-svc; do
+  for svc in search-svc planner-svc chat-hub; do
     if [[ ! -d "services/$svc/migrations" ]]; then
       continue
     fi
-    # svc=search-svc → user=search_svc, pw_var=SERVICE_DB_PASSWORD_SEARCH
-    PG_USER="${svc//-/_}"
-    PW_SUFFIX=$(echo "${svc%-svc}" | tr '[:lower:]-' '[:upper:]_')
-    PW_VAR="SERVICE_DB_PASSWORD_${PW_SUFFIX}"
+    # Map the svc dir → schema-owning role + password env var. Most services
+    # follow the `<name>-svc` → role `<name>_svc` / SERVICE_DB_PASSWORD_<NAME>
+    # convention, so the generic derivation works. chat-hub is the exception:
+    # its dir is `chat-hub` but the role is `chat_svc` (02-roles.sql), so the
+    # `${svc//-/_}` (→ chat_hub) and `${svc%-svc}` (no -svc suffix) derivations
+    # both miss. Special-case it rather than rename the role/dir.
+    case "$svc" in
+      chat-hub)
+        PG_USER="chat_svc"
+        PW_VAR="SERVICE_DB_PASSWORD_CHAT"
+        ;;
+      *)
+        # svc=search-svc → user=search_svc, pw_var=SERVICE_DB_PASSWORD_SEARCH
+        PG_USER="${svc//-/_}"
+        PW_SUFFIX=$(echo "${svc%-svc}" | tr '[:lower:]-' '[:upper:]_')
+        PW_VAR="SERVICE_DB_PASSWORD_${PW_SUFFIX}"
+        ;;
+    esac
     PW="${!PW_VAR:-}"
     if [[ -z "$PW" ]]; then
       fail "$svc migration: $PW_VAR is unset in .env"

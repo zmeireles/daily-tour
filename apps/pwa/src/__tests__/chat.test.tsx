@@ -136,4 +136,53 @@ describe("Chat route", () => {
 
     expect(screen.getByTestId("chat-bubble-them")).toHaveTextContent("olá de volta");
   });
+
+  it("re-hydrates persisted history on mount (UAT-G08 step 5)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              messages: [
+                {
+                  id: "h1",
+                  direction: "inbound",
+                  body: " filed earlier ",
+                  ts: "2026-05-31T10:00:00Z",
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+        ),
+      ),
+    );
+
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-bubble-me")).toHaveTextContent("filed earlier");
+    });
+  });
+
+  it("ignores ack frames (no bubble — delivery receipt only)", () => {
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    const socket = MockWebSocket.instances[0];
+    if (!socket) throw new Error("no socket");
+
+    act(() => {
+      socket._open();
+      socket._message(JSON.stringify({ type: "ack", id: "m1", ts: "2026-05-31T10:00:00Z" }));
+    });
+
+    expect(screen.queryByTestId("chat-bubble-them")).not.toBeInTheDocument();
+  });
 });
