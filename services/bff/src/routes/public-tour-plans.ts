@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { getTourPlan, PlannerError } from "../lib/planner-client.js";
+import { withStops } from "../lib/tour-plan-view.js";
 
 const UUIDParamSchema = z.object({
   planId: z.string().uuid(),
@@ -22,7 +23,8 @@ const publicTourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance
         if (!plan || plan.status !== "ready") {
           return reply.code(404).send({ error: "not_found" });
         }
-        return { id: plan.id, status: plan.status, plan_payload: plan.plan_payload };
+        const enriched = await withStops(plan);
+        return { id: enriched.id, status: enriched.status, plan_payload: enriched.plan_payload };
       } catch (err) {
         if (err instanceof PlannerError) {
           req.log.error({ err }, "[bff:public-tour-plans] planner-svc error");

@@ -26,9 +26,24 @@ vi.mock("../lib/planner-client.js", () => ({
   getTourPlan: vi.fn(),
 }));
 
+vi.mock("../lib/catalog-client.js", () => ({
+  CatalogError: class CatalogError extends Error {
+    constructor(
+      public readonly status: number,
+      message: string,
+    ) {
+      super(message);
+      this.name = "CatalogError";
+    }
+  },
+  fetchPlaceHydrated: vi.fn(),
+}));
+
 const plannerClient = await import("../lib/planner-client.js");
 const createMock = plannerClient.createTourPlan as ReturnType<typeof vi.fn>;
 const getMock = plannerClient.getTourPlan as ReturnType<typeof vi.fn>;
+const catalogClient = await import("../lib/catalog-client.js");
+const fetchPlaceMock = catalogClient.fetchPlaceHydrated as ReturnType<typeof vi.fn>;
 const { createApp } = await import("../app.js");
 const { resetConfigCache } = await import("../config.js");
 const { setRedisForTest, closeRedis } = await import("../lib/redis.js");
@@ -62,6 +77,7 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
     await flushRedis(ctx.client);
     createMock.mockReset();
     getMock.mockReset();
+    fetchPlaceMock.mockReset();
   });
 
   afterAll(async () => {
@@ -144,6 +160,52 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
     const body = res.json<{ id: string; status: string }>();
     expect(body.id).toBe(PLAN_ID);
     expect(body.status).toBe("ready");
+  });
+
+  it("GET ready plan — plan_payload.stops is populated and enriched from catalog", async () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt({ sub: GUEST_ID, rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
+    const placeId = "c0000001-0000-4000-a000-000000000017";
+    getMock.mockResolvedValueOnce({
+      id: PLAN_ID,
+      status: "ready",
+      plan_payload: {
+        steps: [
+          {
+            slot: "lunch",
+            place_id: placeId,
+            start: "2026-05-31T12:30:00Z",
+            end: "2026-05-31T13:30:00Z",
+            rationale: "Time to eat.",
+            travel_to_minutes: 5,
+            locked: false,
+          },
+        ],
+      },
+    });
+    fetchPlaceMock.mockResolvedValueOnce({ id: placeId, name: { en: "Tasca da Praça" } });
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/v1/tour-plans/${PLAN_ID}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      plan_payload: { steps: unknown[]; stops: Record<string, unknown>[] };
+    }>();
+    expect(body.plan_payload.steps).toHaveLength(1);
+    expect(body.plan_payload.stops).toEqual([
+      {
+        id: placeId,
+        time: "12:30",
+        kind: "meal",
+        name: "Tasca da Praça",
+        description: "Time to eat.",
+        duration_min: 60,
+      },
+    ]);
   });
 
   it("GET not found — 404", async () => {
