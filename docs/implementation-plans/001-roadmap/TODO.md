@@ -884,8 +884,10 @@
 #### ✅ T-4.0.1 — Schemas: `chat.chat_thread`, `chat.message`, `chat.channel_binding`
 
 > **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery (chat schemas shipped alongside service scaffold + in-app WS).
+>
+> ⚠️ **Accounting correction (2026-05-31, retro #170 item 2):** #83 was a bundled false-resolve — the WS bridge + chat tile shipped, but the three `chat.*` tables never landed (chat-hub had zero Postgres code; the "owns" paths below are stale TS/Drizzle — the service is Python/FastAPI). Actually completed by [#175](https://github.com/zmeireles/daily-tour/pull/175): `migrations/0001_chat_core.sql` (the three tables) + persistence + ack + `GET /v1/history` read path. **Browser-verified end-to-end via UAT-G08 / DT-TESTS-23 PASS (2026-05-31)** — send → reload → message persists, send+ack frames visible. The 2nd of the four retro-flagged false-resolves now genuinely shipped _and_ browser-attested. Reservation-scoped threads (vs guest-scoped) deferred to the BFF `rid` forwarding — tracked in daily-tour Riff #147.
 
-- **owns**: `services/chat-hub/src/db/schema.ts`, `services/chat-hub/drizzle/migrations/0001_init.sql`
+- **owns** _(actual, Python)_: `services/chat-hub/migrations/0001_chat_core.sql`, `services/chat-hub/src/chat_hub/{db,models,chat_persistence}.py`, `services/chat-hub/src/chat_hub/repository/messages.py`, `services/chat-hub/src/chat_hub/routes/history.py`; bff `lib/chat-client.ts` + `routes/chat-history.ts`; pwa `features/chat/use-chat-ws.ts`
 - **deps**: T-4.0.0
 - **blocks**: T-4.1.0
 - **acceptance**:
