@@ -45,6 +45,20 @@ class InAppDriver:
         await socket.send_text(json.dumps({"body": message.body}))
         return ""
 
+    async def send_json(self, recipient_id: str, payload: dict[str, object]) -> bool:
+        """Push a typed JSON frame to a connected client.
+
+        Returns True if the client was online and the frame was sent, False
+        if the recipient has no live socket (e.g. acking after disconnect).
+        Used for the structured frame protocol ({"type": "ack"|"message", …})
+        that `send` (legacy `{"body": …}` shape) can't express.
+        """
+        socket = self._connections.get(recipient_id)
+        if socket is None:
+            return False
+        await socket.send_text(json.dumps(payload))
+        return True
+
     def on_receive(self, callback: InboundCallback) -> None:
         self._callbacks.append(callback)
 

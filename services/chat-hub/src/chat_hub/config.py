@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -44,6 +45,28 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-4-6"
     anthropic_max_tokens: int = 1024
     anthropic_request_timeout_seconds: float = 30.0
+
+    @field_validator(
+        "otel_exporter_otlp_endpoint",
+        "telegram_bot_token",
+        "telegram_webhook_secret",
+        "whatsapp_phone_number_id",
+        "whatsapp_access_token",
+        "whatsapp_verify_token",
+        "whatsapp_app_secret",
+        "anthropic_api_key",
+        mode="before",
+    )
+    @classmethod
+    def _blank_to_none(cls, value: object) -> object:
+        # docker-compose passes optional credentials as `VAR=${VAR:-}` → an
+        # empty string when unset in .env. The drivers treat None as "disabled"
+        # (the documented "leave blank in dev" posture), but a blank string is
+        # not None: aiogram's Bot("") raises TokenValidationError and crashes
+        # startup. Coerce blank → None so blank genuinely means disabled.
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
 
 
 _cached: Settings | None = None
