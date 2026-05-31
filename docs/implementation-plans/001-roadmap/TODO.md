@@ -10,15 +10,15 @@
 
 ## Progress Summary
 
-| Phase                           | Slices | Tasks  | Done   | In Progress | Ready | Blocked |
-| ------------------------------- | ------ | ------ | ------ | ----------- | ----- | ------- |
-| 0 — Foundation                  | 4      | 16     | 15     | 0           | 0     | 1       |
-| ✅ 1 — Guest Landing & Catalog v1 | 8    | 23     | 23     | 0           | 0     | 0       |
-| ✅ 2 — Discovery & Search        | 3      | 8      | 8      | 0           | 0     | 0       |
-| ✅ 3 — Daily Tour Planner        | 5      | 14     | 14     | 0           | 0     | 0       |
-| ✅ 4 — Chat & Reservation Draft  | 5      | 10     | 10     | 0           | 0     | 0       |
-| ✅ 5 — Hardening & Growth        | 7      | 13     | 13     | 0           | 0     | 0       |
-| **Total**                       | **32** | **84** | **83** | **0**       | **0** | **1**   |
+| Phase                             | Slices | Tasks  | Done   | In Progress | Ready | Blocked |
+| --------------------------------- | ------ | ------ | ------ | ----------- | ----- | ------- |
+| 0 — Foundation                    | 4      | 16     | 15     | 0           | 0     | 1       |
+| ✅ 1 — Guest Landing & Catalog v1 | 8      | 23     | 23     | 0           | 0     | 0       |
+| ✅ 2 — Discovery & Search         | 3      | 8      | 8      | 0           | 0     | 0       |
+| ✅ 3 — Daily Tour Planner         | 5      | 14     | 14     | 0           | 0     | 0       |
+| ✅ 4 — Chat & Reservation Draft   | 5      | 10     | 10     | 0           | 0     | 0       |
+| ✅ 5 — Hardening & Growth         | 7      | 13     | 13     | 0           | 0     | 0       |
+| **Total**                         | **32** | **84** | **83** | **0**       | **0** | **1**   |
 
 **🎉 Plan-001 implementation-complete: 83/84 tasks done** — only T-0.4.4 🔒 VPS-blocked (QA VPS not yet acquired).
 
@@ -579,7 +579,6 @@
 
 > **Resolved 2026-05-17 via [PR #61](https://github.com/zmeireles/daily-tour/pull/61), commit `279088c`.**
 
-
 - **owns**: `services/search-svc/**`
 - **deps**: T-0.2.2, T-0.3.0, T-1.1.0
 - **blocks**: T-2.0.1, T-2.1.0
@@ -592,7 +591,6 @@
 
 > **Resolved 2026-05-17 via [PR #62](https://github.com/zmeireles/daily-tour/pull/62), commit `0c8755a`.**
 
-
 - **owns**: `services/search-svc/src/embeddings/**`, `services/search-svc/alembic/versions/0001_place_embedding.py`
 - **deps**: T-2.0.0
 - **blocks**: T-2.1.0
@@ -604,7 +602,6 @@
 #### ✅ T-2.0.2 — Backfill: embed all 28 seeded places
 
 > **Resolved 2026-05-17 via [PR #63](https://github.com/zmeireles/daily-tour/pull/63), commit `c6adee9`.**
-
 
 - **owns**: `services/search-svc/scripts/backfill.py`
 - **deps**: T-2.0.1, T-1.1.2
@@ -620,7 +617,6 @@
 
 > **Resolved 2026-05-17 via [PR #64](https://github.com/zmeireles/daily-tour/pull/64), commit `e4b8403`.**
 
-
 - **owns**: `services/search-svc/src/api/query.py`
 - **deps**: T-2.0.1, T-2.0.2
 - **blocks**: T-2.1.1
@@ -634,7 +630,6 @@
 #### ✅ T-2.1.1 — BFF `/v1/discover` switches from naive sort to search-svc hybrid
 
 > **Resolved 2026-05-17 via [PR #65](https://github.com/zmeireles/daily-tour/pull/65), commit `4076295`.**
-
 
 - **owns**: `services/bff/src/routes/discover.ts`
 - **deps**: T-2.1.0
@@ -650,7 +645,6 @@
 
 > **Resolved 2026-05-17 via [PR #66](https://github.com/zmeireles/daily-tour/pull/66), commit `638174d`.**
 
-
 - **owns**: `services/catalog-svc/drizzle/migrations/0002_hosts_pick.sql`, `services/catalog-svc/src/routes/places.ts` (additive), `apps/pwa/src/features/backoffice/places/**` (additive — flag pickers ONLY; do not touch other backoffice files)
 - **deps**: T-1.6.2
 - **blocks**: T-2.2.1
@@ -662,7 +656,6 @@
 
 > **Resolved 2026-05-17 via [PR #68](https://github.com/zmeireles/daily-tour/pull/68), commit `1d58a0f`.**
 
-
 - **owns**: `apps/pwa/src/features/discover/hosts-picks-ribbon.tsx`, `apps/pwa/src/routes/_authed.a.$action.tsx` (additive only)
 - **deps**: T-2.2.0, T-1.2.3
 - **acceptance**:
@@ -672,7 +665,6 @@
 #### ✅ T-2.2.2 — PWA: Vehicle-aware toggle + filter
 
 > **Resolved 2026-05-17 via [PR #67](https://github.com/zmeireles/daily-tour/pull/67), commit `acc5a52`.**
-
 
 - **owns**: `apps/pwa/src/store/preferences.ts`, `apps/pwa/src/features/discover/vehicle-toggle.tsx`, `apps/pwa/src/routes/_authed.a.$action.tsx` (additive)
 - **deps**: T-1.2.3, T-2.1.1
@@ -696,7 +688,6 @@
 
 > **Resolved 2026-05-17 via [PR #69](https://github.com/zmeireles/daily-tour/pull/69), commit `1b5cdcd`.**
 
-
 - **owns**: `services/planner-svc/**`
 - **deps**: T-0.2.2, T-0.3.0, T-2.0.1
 - **blocks**: T-3.0.1
@@ -708,7 +699,6 @@
 #### ✅ T-3.0.1 — Prompt assembler + RAG retrieval (uses search-svc) [opus]
 
 > **Resolved 2026-05-17 via [PR #70](https://github.com/zmeireles/daily-tour/pull/70), commit `00dac08`.**
-
 
 - **owns**: `services/planner-svc/src/prompt/**`, `services/planner-svc/src/rag.py`
 - **deps**: T-3.0.0, T-2.1.0
@@ -722,7 +712,6 @@
 
 > **Resolved 2026-05-17 via [PR #71](https://github.com/zmeireles/daily-tour/pull/71), commit `5dc7cd3`.**
 
-
 - **owns**: `services/planner-svc/src/validators/**`
 - **deps**: T-3.0.1
 - **blocks**: T-3.0.3
@@ -735,7 +724,8 @@
 #### ✅ T-3.0.3 — `POST /v1/tour-plans` async flow with RabbitMQ `tour.requested/completed` [opus]
 
 > **Resolved 2026-05-17 via [PR #72](https://github.com/zmeireles/daily-tour/pull/72), commit `894dfb4`.**
-
+>
+> ⚠️ **Accounting correction (2026-05-30, retro #170):** #72 shipped only the API endpoint — the async consumer was never wired, so plans sat at `queued` forever. Actually completed by [#167](https://github.com/zmeireles/daily-tour/pull/167) (aio-pika publisher+consumer) + [#168](https://github.com/zmeireles/daily-tour/pull/168) (real LLM+RAG pipeline) + [#172](https://github.com/zmeireles/daily-tour/pull/172) (BFF `steps[]`→`stops[]` mapping). **Browser-verified end-to-end via UAT-G07 / DT-TESTS-21 PASS (2026-05-31).** Deferred enhancements (IPMA/OSRM/DLQ/real `reservation_id`) tracked in daily-tour Riff #147.
 
 - **owns**: `services/planner-svc/src/api/plans.py`, `services/bff/src/routes/tour-plans.ts`, `services/planner-svc/src/workers/plan_worker.py`
 - **deps**: T-3.0.2
@@ -753,7 +743,6 @@
 
 > **Resolved 2026-05-17 via [PR #73](https://github.com/zmeireles/daily-tour/pull/73), commit `02980e4`.**
 
-
 - **owns**: `apps/pwa/src/routes/_authed.tour.tsx`, `apps/pwa/src/features/tour/form/**`, `apps/pwa/src/components/voice-input-button.tsx`
 - **deps**: T-3.0.3, T-1.2.2
 - **blocks**: T-3.1.1
@@ -765,7 +754,6 @@
 #### ✅ T-3.1.1 — PWA: DailyTourTimeline component (FR-TUR-02, FR-TUR-06)
 
 > **Resolved 2026-05-17 via [PR #74](https://github.com/zmeireles/daily-tour/pull/74), commit `32be19e`.**
-
 
 - **owns**: `apps/pwa/src/components/daily-tour-timeline.tsx`, `apps/pwa/src/features/tour/timeline/**`
 - **deps**: T-3.1.0
@@ -779,7 +767,6 @@
 #### ✅ T-3.1.2 — PWA: Daily Tour failure fallback (FR-TUR-08)
 
 > **Resolved 2026-05-17 via [PR #75](https://github.com/zmeireles/daily-tour/pull/75), commit `0b6f79e`.**
-
 
 - **owns**: `apps/pwa/src/features/tour/fallback.tsx`
 - **deps**: T-3.1.1
@@ -795,7 +782,6 @@
 
 > **Resolved 2026-05-17 via [PR #76](https://github.com/zmeireles/daily-tour/pull/76), commit `e513c3a`.**
 
-
 - **owns**: `services/planner-svc/src/weather.py`, `services/planner-svc/src/cache.py`
 - **deps**: T-3.0.0
 - **blocks**: T-3.2.1, T-3.2.2
@@ -807,7 +793,6 @@
 
 > **Resolved 2026-05-17 via [PR #78](https://github.com/zmeireles/daily-tour/pull/78), commit `464b278`.**
 
-
 - **owns**: `services/planner-svc/src/validators/weather.py`, `services/planner-svc/src/prompt/**` (additive)
 - **deps**: T-3.2.0, T-3.0.2
 - **acceptance**:
@@ -817,7 +802,6 @@
 #### ✅ T-3.2.2 — BFF: `weather_ok_today` enrichment on `/v1/places/:id`
 
 > **Resolved 2026-05-17 via [PR #77](https://github.com/zmeireles/daily-tour/pull/77), commit `29058ba`.**
-
 
 - **owns**: `services/bff/src/routes/places.ts` (additive)
 - **deps**: T-3.2.0
@@ -833,7 +817,6 @@
 
 > **Resolved 2026-05-17 via [PR #79](https://github.com/zmeireles/daily-tour/pull/79), commit `e57376b`.**
 
-
 - **owns**: `infra/compose/docker-compose.osrm.yml` OR `services/planner-svc/src/distance.py`
 - **deps**: T-0.3.0 OR T-3.0.0
 - **acceptance**:
@@ -843,7 +826,6 @@
 #### ✅ T-3.3.1 — Planner validator uses real drive times
 
 > **Resolved 2026-05-17 via [PR #80](https://github.com/zmeireles/daily-tour/pull/80), commit `3bc38d5`.**
-
 
 - **owns**: `services/planner-svc/src/validators/travel.py`
 - **deps**: T-3.3.0, T-3.0.2
@@ -859,7 +841,6 @@
 
 > **Resolved 2026-05-17 via [PR #82](https://github.com/zmeireles/daily-tour/pull/82), commit `2d8f57b`.**
 
-
 - **owns**: `apps/pwa/src/features/tour/share.tsx`, `services/bff/src/routes/tour-plans.ts` (additive)
 - **deps**: T-3.1.1
 - **acceptance**:
@@ -869,7 +850,6 @@
 #### ✅ T-3.4.1 — Telemetry: "started stop" event + analytics table
 
 > **Resolved 2026-05-17 via [PR #81](https://github.com/zmeireles/daily-tour/pull/81), commit `8ca50a7`.**
-
 
 - **owns**: `services/bff/src/routes/telemetry.ts`, `services/catalog-svc/drizzle/migrations/0003_telemetry.sql` OR a dedicated `audit.telemetry` table
 - **deps**: T-3.1.1, T-1.0.2
@@ -893,7 +873,6 @@
 
 > **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.**
 
-
 - **owns**: `services/chat-hub/**`
 - **deps**: T-0.4.2, T-0.3.0
 - **blocks**: T-4.0.1, T-4.1.0
@@ -905,7 +884,6 @@
 #### ✅ T-4.0.1 — Schemas: `chat.chat_thread`, `chat.message`, `chat.channel_binding`
 
 > **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery (chat schemas shipped alongside service scaffold + in-app WS).
-
 
 - **owns**: `services/chat-hub/src/db/schema.ts`, `services/chat-hub/drizzle/migrations/0001_init.sql`
 - **deps**: T-4.0.0
@@ -922,7 +900,6 @@
 
 > **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery — in-app WebSocket channel is the PR's primary scope.
 
-
 - **owns**: `services/bff/src/routes/ws.ts`, `services/bff/src/lib/chat-client.ts`
 - **deps**: T-4.0.1, T-1.0.2
 - **blocks**: T-4.1.1
@@ -934,7 +911,6 @@
 #### ✅ T-4.1.1 — PWA: Guest chat UI (FR-CHT-01..04)
 
 > **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery — guest chat UI shipped in the same PR as the WS infrastructure.
-
 
 - **owns**: `apps/pwa/src/routes/_authed.chat.tsx`, `apps/pwa/src/features/chat/**`, `apps/pwa/src/components/chat-bubble.tsx`
 - **deps**: T-4.1.0, T-1.2.2
@@ -948,7 +924,6 @@
 #### ✅ T-4.1.2 — Backoffice: Owner chat inbox (FR-BO-06)
 
 > **Resolved 2026-05-17 via [PR #83](https://github.com/zmeireles/daily-tour/pull/83), commit `1d8522b`.** Bundled in T-4.0.0 delivery — owner inbox shipped alongside guest chat.
-
 
 - **owns**: `apps/pwa/src/features/backoffice/chat/**`
 - **deps**: T-4.1.0, T-1.6.1
@@ -964,7 +939,6 @@
 
 > **Resolved 2026-05-17 via [PR #85](https://github.com/zmeireles/daily-tour/pull/85), commit `cf3a202`.**
 
-
 - **owns**: `services/chat-hub/src/drivers/telegram.ts`
 - **deps**: T-4.0.0
 - **blocks**: T-4.2.1
@@ -976,7 +950,6 @@
 #### ✅ T-4.2.1 — Owner-side Telegram bot setup + linking flow
 
 > **Resolved 2026-05-17 via [PR #85](https://github.com/zmeireles/daily-tour/pull/85), commit `cf3a202`.** Bundled in T-4.2.0 delivery — Telegram bot linking flow shipped with the driver.
-
 
 - **owns**: `services/chat-hub/src/api/link-telegram.ts`, `apps/pwa/src/features/backoffice/channels/telegram.tsx`
 - **deps**: T-4.2.0, T-1.6.3
@@ -992,7 +965,6 @@
 
 > **Resolved 2026-05-17 via [PR #86](https://github.com/zmeireles/daily-tour/pull/86), commit `006cc3c`.**
 
-
 - **owns**: `services/chat-hub/src/drivers/whatsapp-link.ts`
 - **deps**: T-4.0.0
 - **acceptance**:
@@ -1007,7 +979,6 @@
 
 > **Resolved 2026-05-17 via [PR #87](https://github.com/zmeireles/daily-tour/pull/87), commit `d5bbb02`.**
 
-
 - **owns**: `services/planner-svc/src/api/draft_reservation.py`
 - **deps**: T-3.0.0
 - **acceptance**:
@@ -1018,7 +989,6 @@
 #### ✅ T-4.4.1 — PWA: "Reserve via Agent" → preview → send (dry-run preview)
 
 > **Resolved 2026-05-17 via [PR #87](https://github.com/zmeireles/daily-tour/pull/87), commit `d5bbb02`.** Bundled in T-4.4.0 delivery — PWA Reserve via Agent UI shipped with the drafter endpoint.
-
 
 - **owns**: `apps/pwa/src/features/place-detail/reserve-via-agent.tsx`
 - **deps**: T-4.4.0, T-1.3.2, T-4.3.0
@@ -1044,7 +1014,6 @@
 
 > **Resolved 2026-05-17 via [PR #88](https://github.com/zmeireles/daily-tour/pull/88), commit `daed089`.**
 
-
 - **owns**: `apps/pwa/src/lib/pwa/cache-strategies.ts`, `apps/pwa/vite.config.ts` (additive PWA block)
 - **deps**: T-1.7.1
 - **acceptance**:
@@ -1058,7 +1027,6 @@
 
 > **Resolved 2026-05-17 via [PR #89](https://github.com/zmeireles/daily-tour/pull/89), commit `928c52d`.**
 
-
 - **owns**: `apps/pwa/src/locales/de/**`, `apps/pwa/src/locales/es/**`
 - **deps**: T-1.7.0
 - **parallel-with**: T-5.1.1
@@ -1070,7 +1038,6 @@
 
 > **Resolved 2026-05-17 via [PR #89](https://github.com/zmeireles/daily-tour/pull/89), commit `928c52d`.** Bundled in T-5.1.0 delivery — fr + pt-BR included in the locale expansion PR.
 
-
 - **owns**: `apps/pwa/src/locales/fr/**`, `apps/pwa/src/locales/pt-BR/**`
 - **deps**: T-1.7.0
 - **parallel-with**: T-5.1.0
@@ -1080,7 +1047,6 @@
 #### ✅ T-5.1.2 — Place description translation workflow (LLM-drafted + owner review queue)
 
 > **Resolved 2026-05-17 via [PR #89](https://github.com/zmeireles/daily-tour/pull/89), commit `928c52d`.** Bundled in T-5.1.0 delivery — LLM-draft translation workflow wired alongside locale addition.
-
 
 - **owns**: `services/catalog-svc/src/translations/**`, `apps/pwa/src/features/backoffice/translations/**`
 - **deps**: T-1.6.2, T-5.1.0, T-5.1.1
@@ -1094,7 +1060,6 @@
 
 > **Resolved 2026-05-17 via [PR #90](https://github.com/zmeireles/daily-tour/pull/90), commit `92f311e`.**
 
-
 - **owns**: `apps/pwa/e2e/a11y.spec.ts`
 - **deps**: every Phase 1–4 PWA route
 - **acceptance**:
@@ -1106,7 +1071,6 @@
 
 > **Resolved 2026-05-17 via [PR #90](https://github.com/zmeireles/daily-tour/pull/90), commit `92f311e`.** Bundled in T-5.2.0 delivery — manual review findings documented in the same PR.
 
-
 - **owns**: `docs/a11y/audit-2026.md`
 - **deps**: T-5.2.0
 - **acceptance**:
@@ -1117,7 +1081,6 @@
 #### ✅ T-5.3.0 — Lighthouse-CI in pipeline
 
 > **Resolved 2026-05-17 via [PR #91](https://github.com/zmeireles/daily-tour/pull/91), commit `96ea7eb`.**
-
 
 - **owns**: `.github/workflows/lighthouse.yml`, `lighthouserc.json`
 - **deps**: T-1.7.1
@@ -1131,7 +1094,6 @@
 
 > **Resolved 2026-05-17 via [PR #92](https://github.com/zmeireles/daily-tour/pull/92), commit `eb13286`.**
 
-
 - **owns**: `infra/compose/docker-compose.observability.yml`, `infra/observability/**`
 - **deps**: T-0.4.4
 - **blocks**: T-5.4.1
@@ -1142,7 +1104,6 @@
 #### ✅ T-5.4.1 — Grafana dashboards: RED, RabbitMQ, Postgres, host
 
 > **Resolved 2026-05-17 via [PR #92](https://github.com/zmeireles/daily-tour/pull/92), commit `eb13286`.** Bundled in T-5.4.0 delivery — Grafana dashboards shipped in the same observability overlay PR.
-
 
 - **owns**: `infra/observability/grafana/dashboards/**`
 - **deps**: T-5.4.0
@@ -1155,7 +1116,6 @@
 
 > **Resolved 2026-05-17 via [PR #93](https://github.com/zmeireles/daily-tour/pull/93), commit `043f24e`.**
 
-
 - **owns**: `services/notif-svc/**` (skeleton if not already), `services/notif-svc/src/templates/post-stay.ts`
 - **deps**: T-1.0.1
 - **acceptance**:
@@ -1165,7 +1125,6 @@
 #### ✅ T-5.5.1 — Lightweight in-app rating UI
 
 > **Resolved 2026-05-17 via [PR #93](https://github.com/zmeireles/daily-tour/pull/93), commit `043f24e`.** Bundled in T-5.5.0 delivery — in-app rating UI shipped alongside the notification service.
-
 
 - **owns**: `apps/pwa/src/routes/_authed.review.tsx`, `apps/pwa/src/features/review/**`
 - **deps**: T-5.5.0
@@ -1179,7 +1138,6 @@
 
 > **Resolved 2026-05-17 via [PR #94](https://github.com/zmeireles/daily-tour/pull/94), commit `716d9be`.**
 
-
 - **owns**: `docs/operations/whatsapp-business-onboarding.md`
 - **deps**: none (calendar)
 - **acceptance**:
@@ -1189,7 +1147,6 @@
 #### ✅ T-5.6.1 — WhatsApp Business API driver in chat-hub
 
 > **Resolved 2026-05-17 via [PR #94](https://github.com/zmeireles/daily-tour/pull/94), commit `716d9be`.** Bundled in T-5.6.0 delivery — WhatsApp Cloud API driver shipped in the same PR.
-
 
 - **owns**: `services/chat-hub/src/drivers/whatsapp-cloud.ts`
 - **deps**: T-4.0.0, T-5.6.0 (calendar)
