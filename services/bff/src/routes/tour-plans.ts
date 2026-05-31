@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { createTourPlan, getTourPlan, PlannerError } from "../lib/planner-client.js";
+import { withStops } from "../lib/tour-plan-view.js";
 
 const CreatePlanBodySchema = z.object({
   wishes: z.array(z.string().min(1)).min(1).max(20),
@@ -49,7 +50,7 @@ const tourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       if (!plan) {
         return reply.code(404).send({ error: "not_found" });
       }
-      return plan;
+      return plan.status === "ready" ? await withStops(plan) : plan;
     } catch (err) {
       if (err instanceof PlannerError) {
         req.log.error({ err }, "[bff:tour-plans] planner-svc error on get");
