@@ -98,14 +98,15 @@ Without this block, the PR is reviewable but the orchestrator marks only the _fi
 
 ### P2 — End-to-end smoke tests, per cross-service path
 
-Add to CI (or to `scripts/dev/dev-smoke.sh` so it's runnable locally and in CI):
+**✅ Local smoke gate shipped (2026-05-31, PR pending).** `scripts/dev/dev-smoke.sh` now exercises all three journeys as Steps 6-8 (verified live, all green):
 
-- POST `/v1/tour-plans` → poll → assert non-queued terminal status within N seconds
-- WebSocket connect → send → reload → assert message persists
-- POST `/v1/telemetry/tour` → assert 204
-- ...one per acceptance journey listed in the plan
+- POST `/v1/tour-plans` → poll → assert non-queued terminal status within 30 s (ready+steps when `ANTHROPIC_API_KEY` set, else rejected+warn)
+- WS connect → send → read back via `GET /v1/chat/history` → assert message persists
+- POST `/v1/telemetry/tour` → assert 2xx (analytics INSERT)
 
 These don't replace unit tests; they catch the gaps unit tests structurally can't.
+
+**Still open:** wiring the smoke into **CI** needs the full stack up in GitHub Actions (compose services / testcontainers) — a heavier lift (escalate, touches `.github/workflows/`). Until then the gate is local + the env-check table assertions (P4). Run `bash scripts/dev/dev-smoke.sh` after `dev-up.sh` as the pre-UAT gate.
 
 ### P3 — TODO.md tick is provisional until UAT closes
 

@@ -20,12 +20,12 @@ bash scripts/dev/dev-up.sh           # cold bring-up again
 
 ## Files
 
-| Script              | Purpose                                                                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dev-up.sh`         | Idempotent bring-up: preflight → install → infra → migrations → seed → required services → optional services → PWA hint. Stops on first FAIL. |
-| `dev-smoke.sh`      | Post-bring-up smoke: mint token → exchange → discover → place detail. Run after `dev-up.sh` returns 0.                                        |
-| `dev-down.sh`       | Teardown. `--clean` drops volumes. `--hard` also removes `node_modules` + `dist` + `.turbo`.                                                  |
-| `PLAN.md`           | Strategic plan + decision tree for handling failures.                                                                                         |
+| Script         | Purpose                                                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev-up.sh`    | Idempotent bring-up: preflight → install → infra → migrations → seed → required services → optional services → PWA hint. Stops on first FAIL. |
+| `dev-smoke.sh` | Post-bring-up smoke: mint token → exchange → discover → place detail. Run after `dev-up.sh` returns 0.                                        |
+| `dev-down.sh`  | Teardown. `--clean` drops volumes. `--hard` also removes `node_modules` + `dist` + `.turbo`.                                                  |
+| `PLAN.md`      | Strategic plan + decision tree for handling failures.                                                                                         |
 
 ## Idempotency
 
@@ -39,16 +39,16 @@ Re-running `dev-up.sh` after a fix is the **fast path**. Each stage detects whet
 
 ## Stages (`dev-up.sh`)
 
-| # | Stage             | What it does                                                       | Common failures                                       |
-| - | ----------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
-| 1 | PREFLIGHT         | Node 22, pnpm 9, Docker daemon, `.env` exists, JWT key ≥32 chars   | Missing `.env` (copies from example), JWT too short   |
-| 2 | INSTALL           | `pnpm install --frozen-lockfile` (or skip if cached)               | Lockfile drift → re-run without `--frozen-lockfile`   |
-| 3 | INFRA             | postgres + redis + rabbitmq + minio via Compose base               | Port already in use → adjust `DT_HOST_PORT_*` in .env |
-| 4 | MIGRATIONS        | catalog-svc → token-svc → media-svc Drizzle migrations             | Schema mismatch from old volumes → `dev-down --clean` |
-| 5 | SEED              | 28 São Miguel places into catalog                                  | Catalog migration not applied yet                     |
-| 6 | REQUIRED SERVICES | bff + token-svc + catalog-svc + media-svc with `/health` probes    | Build failure → `pnpm --filter @daily-tour/<svc> run typecheck` |
-| 7 | OPTIONAL SERVICES | search-svc + planner-svc + chat-hub + notif-svc                    | Missing API keys (warns, continues); uv missing (warns, skips) |
-| 8 | PWA HINT          | Prints command to run vite dev server                              | (not run automatically; foreground process)           |
+| #   | Stage             | What it does                                                     | Common failures                                                 |
+| --- | ----------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1   | PREFLIGHT         | Node 22, pnpm 9, Docker daemon, `.env` exists, JWT key ≥32 chars | Missing `.env` (copies from example), JWT too short             |
+| 2   | INSTALL           | `pnpm install --frozen-lockfile` (or skip if cached)             | Lockfile drift → re-run without `--frozen-lockfile`             |
+| 3   | INFRA             | postgres + redis + rabbitmq + minio via Compose base             | Port already in use → adjust `DT_HOST_PORT_*` in .env           |
+| 4   | MIGRATIONS        | catalog-svc → token-svc → media-svc Drizzle migrations           | Schema mismatch from old volumes → `dev-down --clean`           |
+| 5   | SEED              | 28 São Miguel places into catalog                                | Catalog migration not applied yet                               |
+| 6   | REQUIRED SERVICES | bff + token-svc + catalog-svc + media-svc with `/health` probes  | Build failure → `pnpm --filter @daily-tour/<svc> run typecheck` |
+| 7   | OPTIONAL SERVICES | search-svc + planner-svc + chat-hub + notif-svc                  | Missing API keys (warns, continues); uv missing (warns, skips)  |
+| 8   | PWA HINT          | Prints command to run vite dev server                            | (not run automatically; foreground process)                     |
 
 ## Flags
 
@@ -81,16 +81,21 @@ Run after `dev-up.sh` returns 0. Exercises:
 3. Exchanges via BFF `/r/:token` (asserts JWT received)
 4. GET `/v1/discover?action=eat&loc=37.74,-25.67&km=10` (asserts ≥1 group)
 5. GET `/v1/places/:id/hydrated` (asserts media + actions)
+6. POST `/v1/tour-plans` → polls until the plan leaves `queued` (asserts the planner consumer is wired — T-3.0.3; `ready` with steps when `ANTHROPIC_API_KEY` is set, else `rejected` with a warn)
+7. Chat: sends a WS frame to chat-hub, then GET `/v1/chat/history` (asserts the message persisted + survives reload — T-4.0.1)
+8. POST `/v1/telemetry/tour` (asserts 2xx — BFF can INSERT into `analytics.tour_event`, GRANT #166)
+
+Steps 6-8 are the cross-service journeys the Plan-001 accounting retro found CI never exercised (P2): a regression here fails the smoke gate instead of surfacing mid-UAT.
 
 If it returns 0, the full guest journey works.
 
 ## Teardown (`dev-down.sh`)
 
-| Flag      | Behavior                                                                            |
-| --------- | ----------------------------------------------------------------------------------- |
-| (none)    | Stops containers; volumes retained (postgres + minio data persists)                 |
-| `--clean` | Stops containers + drops volumes (postgres + minio + rabbitmq state LOST)           |
-| `--hard`  | All of `--clean` + removes `node_modules`, `dist`, `.turbo` directories             |
+| Flag      | Behavior                                                                  |
+| --------- | ------------------------------------------------------------------------- |
+| (none)    | Stops containers; volumes retained (postgres + minio data persists)       |
+| `--clean` | Stops containers + drops volumes (postgres + minio + rabbitmq state LOST) |
+| `--hard`  | All of `--clean` + removes `node_modules`, `dist`, `.turbo` directories   |
 
 ## When to commit fixes
 
@@ -113,4 +118,4 @@ If `dev-up.sh` fails due to a configuration drift (e.g., new env var added), upd
 
 ---
 
-*Scripts authored during the autonomous orchestration session that shipped Plan-001. See `CHANGELOG.md` for context.*
+_Scripts authored during the autonomous orchestration session that shipped Plan-001. See `CHANGELOG.md` for context._
