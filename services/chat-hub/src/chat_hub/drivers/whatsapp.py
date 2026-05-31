@@ -185,7 +185,7 @@ def mount_whatsapp_driver(app: FastAPI) -> WhatsAppDriver:
         try:
             await driver.process_webhook(body, signature)
         except PermissionError:
-            raise HTTPException(status_code=403, detail="invalid webhook signature")
+            raise HTTPException(status_code=403, detail="invalid webhook signature") from None
         return {"ok": "true"}
 
     return get_whatsapp_driver()

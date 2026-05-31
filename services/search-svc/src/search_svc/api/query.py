@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,9 +40,9 @@ def get_embedder() -> Embedder:
 @router.post("/v1/query", response_model=QueryResponse)
 async def post_query(
     body: QueryRequest,
-    session: AsyncSession = Depends(get_session),
-    settings: Settings = Depends(get_settings),
-    embedder: Embedder = Depends(get_embedder),
+    session: Annotated[AsyncSession, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    embedder: Annotated[Embedder, Depends(get_embedder)],
 ) -> QueryResponse:
     rerank_text = _pick_rerank_text(body)
     query_vec: list[float] | None = None

@@ -6,7 +6,6 @@ import hmac as hmac_mod
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from httpx import ASGITransport, AsyncClient
 
 from chat_hub.drivers import InboundMessage, OutboundMessage

@@ -125,7 +125,7 @@ def mount_telegram_driver(app: FastAPI) -> TelegramDriver:
         try:
             await driver.process_update(body, secret_token=x_telegram_bot_api_secret_token)
         except PermissionError:
-            raise HTTPException(status_code=403, detail="invalid webhook secret")
+            raise HTTPException(status_code=403, detail="invalid webhook secret") from None
         return {"ok": "true"}
 
     return get_telegram_driver()

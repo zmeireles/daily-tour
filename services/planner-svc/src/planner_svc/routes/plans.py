@@ -25,13 +25,13 @@ router = APIRouter()
 
 class CreatePlanRequest(BaseModel):
     guest_id: UUID
-    request_payload: dict
+    request_payload: dict[str, object]
 
 
 class TourPlanOut(BaseModel):
     id: UUID
     status: str
-    plan_payload: dict | None
+    plan_payload: dict[str, object] | None
 
 
 @router.post("/v1/tour-plans", response_model=TourPlanOut, status_code=201)

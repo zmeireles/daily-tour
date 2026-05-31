@@ -10,7 +10,8 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, Float, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -20,7 +21,7 @@ class Base(DeclarativeBase):
 
 class Place(Base):
     __tablename__ = "place"
-    __table_args__ = {"schema": "catalog"}
+    __table_args__ = ({"schema": "catalog"},)
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     guesthouse_scope: Mapped[dict[str, object] | list[str]] = mapped_column(JSONB, nullable=False)

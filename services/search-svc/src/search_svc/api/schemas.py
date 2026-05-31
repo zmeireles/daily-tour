@@ -1,11 +1,11 @@
 """Pydantic request/response models for /v1/query (T-2.1.0)."""
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from daily_tour_common import Geom
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from typing_extensions import Annotated
 
 # Action / wish slugs match the lowercased pattern enforced by catalog-svc
 # (see daily_tour_common.models.common.Slug). We re-declare here rather than

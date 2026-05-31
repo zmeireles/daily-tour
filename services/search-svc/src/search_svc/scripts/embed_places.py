@@ -31,10 +31,12 @@ from ..models import Place
 logger = logging.getLogger(__name__)
 
 
-def _pick_text(localized: dict[str, str], locale_priority: tuple[str, ...] = ("en", "pt-PT")) -> str:
+def _pick_text(
+    localized: dict[str, str], locale_priority: tuple[str, ...] = ("en", "pt-PT")
+) -> str:
     """Pick the first available locale from the priority list, fallback to any."""
     for loc in locale_priority:
-        if loc in localized and localized[loc]:
+        if localized.get(loc):
             return localized[loc]
     # Fallback: any non-empty value.
     for value in localized.values():
@@ -114,7 +116,11 @@ async def embed_places() -> int:
                 return 0
 
             texts = [_build_embed_text(p) for p in places]
-            logger.info("embed_places: embedding %d places via %s", len(places), settings.embedding_model)
+            logger.info(
+                "embed_places: embedding %d places via %s",
+                len(places),
+                settings.embedding_model,
+            )
             vectors = await _embed_batch(texts, settings)
 
             assert len(vectors) == len(places), (
