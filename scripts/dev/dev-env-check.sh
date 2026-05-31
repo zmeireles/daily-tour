@@ -204,6 +204,24 @@ if [[ $SKIP_SMOKE -eq 0 ]]; then
     row "catalog seeded" "$NO got '$PLACES' (want 28)" "rerun seed: pnpm --filter @daily-tour/catalog-svc run seed"
     fail
   fi
+
+  # Schema-table existence (P4 — Plan-001 accounting retro). Migrations applied
+  # by a different role / a stale dev-up run silently leave a schema empty; the
+  # gap only surfaces mid-UAT as `relation "x" does not exist` (planner.tour_plan,
+  # chat.* — see retro items 2 & 4). Assert the migration-created core tables up
+  # front. `to_regclass` returns NULL for a missing relation without erroring,
+  # so one round-trip reports every gap at once.
+  EXPECTED_TABLES="catalog.place,auth_tokens.reservation,auth_tokens.token_grant,auth_tokens.guest,media.asset,search.place_embedding,planner.tour_plan,chat.chat_thread,chat.message,chat.channel_binding,analytics.tour_event"
+  TABLE_COUNT=$(($(echo "$EXPECTED_TABLES" | tr -cd ',' | wc -c) + 1))
+  MISSING_TABLES=$(docker compose --env-file .env -f infra/compose/docker-compose.base.yml exec -T postgres \
+    psql -U postgres -d dailytour -t -A -c \
+    "SELECT string_agg(t, ', ' ORDER BY t) FROM unnest(string_to_array('$EXPECTED_TABLES', ',')) AS t WHERE to_regclass(t) IS NULL;" 2>/dev/null | tr -d '\r\n')
+  if [[ -z "$MISSING_TABLES" ]]; then
+    row "schema tables" "$OK all present" "$TABLE_COUNT migration-created relations resolve"
+  else
+    row "schema tables" "$NO missing: $MISSING_TABLES" "apply migrations: bash scripts/dev/dev-up.sh --from 4"
+    fail
+  fi
 else
   section "SMOKE"
   row "(skipped)" "$WARN --skip-smoke flag set"
