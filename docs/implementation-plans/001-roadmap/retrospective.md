@@ -33,7 +33,7 @@ Symptom shape:
 
 **How surfaced**: UAT-G08 2026-05-30. WebSocket connected, message frame went to chat-hub, server accepted it, did nothing observable. Refresh lost the message (no persistence) because there's no place to load from.
 
-**Fixed in**: not yet (T-4.0.1 retry is open as a future task; UAT-G08 closed as `pass-with-issues` because the transport layer works).
+**Fixed in**: PR #175 (2026-05-31) — `migrations/0001_chat_core.sql` (the three `chat.*` tables) + inbound persistence + typed ack frame + `GET /v1/history` read path; bff `GET /v1/chat/history` proxy; pwa history re-hydration on mount. Browser-verified end-to-end via **UAT-G08 / DT-TESTS-23 PASS** (send → reload → message persists; send+ack frames visible). Also fixed a latent `config` bug surfaced on first rebuild since the telegram mount: blank `${VAR:-}` credentials now coerce to `None` (was crashing startup via `aiogram.Bot("")`).
 
 ### 3. Analytics GRANT — table-create-vs-default-privileges ordering bug
 
