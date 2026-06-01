@@ -31,6 +31,7 @@ async def insert_queued(
     *,
     guest_id: UUID,
     request_payload: dict[str, Any],
+    reservation_id: UUID | None = None,
     plan_id: UUID | None = None,
 ) -> TourPlanRow:
     """Insert a `queued` row and return the persisted entity (id assigned)."""
@@ -38,6 +39,7 @@ async def insert_queued(
     row = TourPlanRow(
         id=plan_id or uuid4(),
         guest_id=guest_id,
+        reservation_id=reservation_id,
         status="queued",
         request_payload=request_payload,
         plan_payload=None,

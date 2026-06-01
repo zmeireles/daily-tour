@@ -114,6 +114,7 @@ async def _process_plan(plan_id: UUID) -> None:
     try:
         plan, _candidates = await produce_plan(
             plan_id=plan_id,
+            reservation_id=row.reservation_id,
             request_payload=dict(row.request_payload),
         )
     except WorkerError as exc:

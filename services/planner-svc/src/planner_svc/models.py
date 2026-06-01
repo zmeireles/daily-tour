@@ -26,6 +26,7 @@ class TourPlanRow(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     guest_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    reservation_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="queued")
     request_payload: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     plan_payload: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)

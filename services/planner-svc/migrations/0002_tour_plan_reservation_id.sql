@@ -1,0 +1,12 @@
+-- 0002_tour_plan_reservation_id.sql — T-3.0.3 slice C (#147)
+--
+-- Real reservation reference. Slice B (#168) used plan_id as a placeholder for
+-- TourPlan.reservation_id because the BFF didn't forward a reservation id; the
+-- JWT already carries `rid`, and #147 wires the BFF to pass it through on POST
+-- /v1/tour-plans. Stored as a first-class column alongside guest_id.
+--
+-- Nullable by design: queued rows created before this column existed keep
+-- working — the worker falls back to plan_id when reservation_id is null. A
+-- logical ref to auth_tokens.reservation (no cross-schema FK; services own
+-- their schema, refs across boundaries stay logical).
+ALTER TABLE "planner"."tour_plan" ADD COLUMN IF NOT EXISTS "reservation_id" uuid;

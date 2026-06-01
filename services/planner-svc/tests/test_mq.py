@@ -207,3 +207,35 @@ async def test_process_plan_marks_ready_on_success(monkeypatch: pytest.MonkeyPat
     # plan_payload should be the dumped model
     assert args[2]["status"] == TourPlanStatus.COMPLETED.value
     assert len(args[2]["steps"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_process_plan_forwards_reservation_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The row's reservation_id is threaded into produce_plan (#147)."""
+    plan_id = uuid4()
+    reservation_id = uuid4()
+    session = MagicMock()
+    session.commit = AsyncMock()
+    row = MagicMock()
+    row.reservation_id = reservation_id
+    row.request_payload = {"wishes": ["eat"], "duration_hours": 4, "vehicle": "car"}
+
+    captured: dict[str, Any] = {}
+
+    async def _produce(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return _make_tour_plan(plan_id), []
+
+    @asynccontextmanager
+    async def _fake_scope() -> AsyncIterator[Any]:
+        yield session
+
+    monkeypatch.setattr(mq, "session_scope", _fake_scope)
+    monkeypatch.setattr(mq, "get_by_id", AsyncMock(return_value=row))
+    monkeypatch.setattr(mq, "mark_ready", AsyncMock())
+    monkeypatch.setattr(mq, "produce_plan", _produce)
+
+    await mq._process_plan(plan_id)
+
+    assert captured["plan_id"] == plan_id
+    assert captured["reservation_id"] == reservation_id
