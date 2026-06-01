@@ -110,9 +110,12 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
     expect(createMock).toHaveBeenCalledOnce();
     const callArg = createMock.mock.calls[0]![0] as {
       guestId: string;
+      reservationId?: string;
       requestPayload: { wishes: string[]; duration_hours: number; vehicle: string };
     };
     expect(callArg.guestId).toBe(GUEST_ID);
+    // The JWT `rid` claim is forwarded as the real reservation_id (#147).
+    expect(callArg.reservationId).toBe("res-1");
     expect(callArg.requestPayload.wishes).toEqual(["eat", "see"]);
     expect(callArg.requestPayload.vehicle).toBe("car");
   });

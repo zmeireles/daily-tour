@@ -18,6 +18,7 @@ export interface TourPlanResponse {
 
 interface CreatePlanParams {
   guestId: string;
+  reservationId?: string;
   requestPayload: Record<string, unknown>;
 }
 
@@ -28,6 +29,7 @@ export async function createTourPlan(params: CreatePlanParams): Promise<TourPlan
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       guest_id: params.guestId,
+      reservation_id: params.reservationId ?? null,
       request_payload: params.requestPayload,
     }),
   });

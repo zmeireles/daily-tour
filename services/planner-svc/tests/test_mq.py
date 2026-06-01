@@ -242,3 +242,32 @@ async def test_start_consumer_declares_dead_letter_args() -> None:
         "x-dead-letter-exchange": "dt.dlx",
         "x-dead-letter-routing-key": mq.REQUESTED_QUEUE,
     }
+async def test_process_plan_forwards_reservation_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The row's reservation_id is threaded into produce_plan (#147)."""
+    plan_id = uuid4()
+    reservation_id = uuid4()
+    session = MagicMock()
+    session.commit = AsyncMock()
+    row = MagicMock()
+    row.reservation_id = reservation_id
+    row.request_payload = {"wishes": ["eat"], "duration_hours": 4, "vehicle": "car"}
+
+    captured: dict[str, Any] = {}
+
+    async def _produce(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return _make_tour_plan(plan_id), []
+
+    @asynccontextmanager
+    async def _fake_scope() -> AsyncIterator[Any]:
+        yield session
+
+    monkeypatch.setattr(mq, "session_scope", _fake_scope)
+    monkeypatch.setattr(mq, "get_by_id", AsyncMock(return_value=row))
+    monkeypatch.setattr(mq, "mark_ready", AsyncMock())
+    monkeypatch.setattr(mq, "produce_plan", _produce)
+
+    await mq._process_plan(plan_id)
+
+    assert captured["plan_id"] == plan_id
+    assert captured["reservation_id"] == reservation_id
