@@ -32,8 +32,9 @@ from daily_tour_common import TourPlan, TourStep
 from daily_tour_common.models.common import Geom
 from daily_tour_common.models.enums import TourPlanStatus
 from daily_tour_common.models.tour import TourParams
-from daily_tour_common.weather import get_forecast
+from daily_tour_common.weather import ForecastDay, get_forecast
 from pydantic import ValidationError
+from redis.exceptions import RedisError
 
 from ..llm import LLMError, generate
 from ..prompt.assembler import (
@@ -352,7 +353,14 @@ async def process_plan(
     assert_provenance(plan, candidate_ids)
     assert_day_fits(plan, day_budget_minutes)
 
-    forecast = await get_forecast(redis_client)
+    # Weather is best-effort: a Redis outage (or IPMA failure, already handled
+    # inside get_forecast) must not fail an otherwise-valid plan — no swap, no
+    # raise. Only provenance / over-budget above are terminal.
+    forecast: list[ForecastDay] = []
+    try:
+        forecast = await get_forecast(redis_client)
+    except RedisError:
+        logger.warning("forecast cache unavailable; skipping weather swap")
     return swap_rainy_slots(plan, candidates, forecast)
 
 

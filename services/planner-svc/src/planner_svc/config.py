@@ -19,6 +19,11 @@ class Settings(BaseSettings):
         "amqp://dailytour:change-me-please-rabbit@dt_rabbitmq:5672/"
     )
 
+    # Redis — read-through cache for the IPMA weather forecast (slice C). The
+    # forecast feeds the rainy-slot swap in workers.plan_worker.process_plan;
+    # daily_tour_common.weather.get_forecast owns the cache key + 30-min TTL.
+    redis_url: str = "redis://default:change-me-please-redis@dt_redis:6379/0"
+
     # Internal URL of the search-svc — planner uses it for RAG retrieval
     # (T-3.0.1 adds the actual /v1/query call; the skeleton just carries the URL).
     search_svc_url: str = "http://dt_search_svc:8082"

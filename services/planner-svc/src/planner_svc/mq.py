@@ -33,11 +33,17 @@ from aio_pika.abc import (
     AbstractRobustQueue,
     DeliveryMode,
 )
+from daily_tour_common import TourPlan
 
+from .cache import get_redis
 from .config import get_settings
 from .db import session_scope
+from .rag.retriever import RetrievedPlace
+from .repository.places import get_place_coords
 from .repository.plans import get_by_id, mark_ready, mark_rejected
-from .workers.plan_worker import WorkerError, produce_plan
+from .validators.provenance import ProvenanceError
+from .validators.travel_time import TravelTimeError, annotate_travel_times
+from .workers.plan_worker import WorkerError, process_plan, produce_plan
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +125,7 @@ async def _process_plan(plan_id: UUID) -> None:
         return
 
     try:
-        plan, _candidates = await produce_plan(
+        plan, candidates = await produce_plan(
             plan_id=plan_id,
             reservation_id=row.reservation_id,
             request_payload=dict(row.request_payload),
@@ -134,6 +140,23 @@ async def _process_plan(plan_id: UUID) -> None:
         )
         return
 
+    # Slice C (#147): enrich the LLM plan with real inter-stop travel times
+    # (OSRM/haversine) and a weather-aware rainy-slot swap (IPMA forecast).
+    # Both degrade gracefully — only an over-budget day (TravelTimeError) or a
+    # provenance violation surfaces as a terminal reject.
+    try:
+        plan = await _enrich_plan(plan, candidates)
+    except (TravelTimeError, ProvenanceError) as exc:
+        reason = "travel_time" if isinstance(exc, TravelTimeError) else "provenance"
+        async with session_scope() as session:
+            await mark_rejected(session, plan_id, f"{reason}: {exc}")
+            await session.commit()
+        logger.warning(
+            "planner-svc.mq marked rejected (enrichment)",
+            extra={"plan_id": str(plan_id), "reason": reason, "detail": str(exc)},
+        )
+        return
+
     async with session_scope() as session:
         await mark_ready(session, plan_id, plan.model_dump(mode="json"))
         await session.commit()
@@ -141,6 +164,21 @@ async def _process_plan(plan_id: UUID) -> None:
         "planner-svc.mq marked ready",
         extra={"plan_id": str(plan_id), "step_count": len(plan.steps)},
     )
+
+
+async def _enrich_plan(plan: TourPlan, candidates: list[RetrievedPlace]) -> TourPlan:
+    """Apply slice-C refinement: real travel times then provenance + budget + weather.
+
+    Looks up step coordinates from ``catalog.place``, recomputes each step's
+    ``travel_to_minutes`` via OSRM/haversine, then runs ``process_plan`` (which
+    re-asserts provenance, checks the day budget against the real travel times,
+    and swaps rainy outdoor slots using the cached IPMA forecast).
+    """
+    async with session_scope() as session:
+        coords = await get_place_coords(session, [s.place_id for s in plan.steps])
+    vehicle = plan.params.vehicle == "car"
+    plan = await annotate_travel_times(plan, coords, vehicle=vehicle)
+    return await process_plan(plan, candidates, get_redis())
 
 
 async def _handle_requested(message: AbstractIncomingMessage) -> None:

@@ -10,7 +10,12 @@ from daily_tour_common import Geom, TourPlan, TourPlanStatus, TourSlot
 from daily_tour_common.models.tour import TourParams, TourStep
 from daily_tour_common.osrm import RouteResult
 
-from planner_svc.validators.travel_time import TravelTimeError, assert_day_fits, estimate_minutes
+from planner_svc.validators.travel_time import (
+    TravelTimeError,
+    annotate_travel_times,
+    assert_day_fits,
+    estimate_minutes,
+)
 
 # Ponta Delgada (~37.74°N -25.68°E) → Furnas (~37.77°N -25.46°E): ~19 km apart
 _PD = Geom(lat=37.7402, lng=-25.6783)
@@ -87,3 +92,69 @@ def test_assert_day_fits_raises_when_over_budget() -> None:
     )
     with pytest.raises(TravelTimeError, match="510"):
         assert_day_fits(plan, day_minutes_budget=480)
+
+
+# ── annotate_travel_times ────────────────────────────────────────────────────
+
+_LAGOA = Geom(lat=37.7402, lng=-25.5700)  # between PD and Furnas
+
+
+def _three_step_plan(p0: object, p1: object, p2: object) -> TourPlan:
+    start = datetime(2026, 6, 1, 9, 30, tzinfo=UTC)
+    mid = datetime(2026, 6, 1, 11, 0, tzinfo=UTC)
+    late = datetime(2026, 6, 1, 13, 0, tzinfo=UTC)
+    end = datetime(2026, 6, 1, 15, 0, tzinfo=UTC)
+    return TourPlan(
+        id=uuid4(),
+        reservation_id=uuid4(),
+        params=TourParams(
+            date=date(2026, 6, 1),
+            start_time="09:30",
+            end_time="15:00",
+            party_size=2,
+            vehicle="car",
+        ),
+        status=TourPlanStatus.VALIDATING,
+        steps=[
+            TourStep(slot=TourSlot.MORNING, place_id=p0, start=start, end=mid, rationale="a"),
+            TourStep(slot=TourSlot.LUNCH, place_id=p1, start=mid, end=late, rationale="b"),
+            TourStep(slot=TourSlot.AFTERNOON, place_id=p2, start=late, end=end, rationale="c"),
+        ],
+        created_at=start,
+    )
+
+
+@_no_osrm
+async def test_annotate_travel_times_recomputes_inter_stop_skipping_first(
+    _mock: AsyncMock,
+) -> None:
+    p0, p1, p2 = uuid4(), uuid4(), uuid4()
+    plan = _three_step_plan(p0, p1, p2)
+    coords = {p0: _PD, p1: _LAGOA, p2: _FUR}
+
+    result = await annotate_travel_times(plan, coords, vehicle=True)
+
+    # First step is left unset (travel from the placeholder guesthouse origin).
+    assert result.steps[0].travel_to_minutes is None
+    # Inter-stop steps get a positive integer estimate.
+    assert result.steps[1].travel_to_minutes is not None
+    assert result.steps[1].travel_to_minutes > 0
+    assert result.steps[2].travel_to_minutes is not None
+    assert result.steps[2].travel_to_minutes > 0
+    # Original plan is not mutated.
+    assert plan.steps[1].travel_to_minutes is None
+
+
+@_no_osrm
+async def test_annotate_travel_times_skips_step_with_missing_coords(
+    _mock: AsyncMock,
+) -> None:
+    p0, p1, p2 = uuid4(), uuid4(), uuid4()
+    plan = _three_step_plan(p0, p1, p2)
+    coords = {p0: _PD, p2: _FUR}  # p1 absent
+
+    result = await annotate_travel_times(plan, coords, vehicle=True)
+
+    # step[1] needs p1 (missing) → None; step[2] needs p1→p2, also missing → None.
+    assert result.steps[1].travel_to_minutes is None
+    assert result.steps[2].travel_to_minutes is None

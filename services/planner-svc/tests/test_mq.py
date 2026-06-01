@@ -22,6 +22,7 @@ from daily_tour_common.models.enums import TourPlanStatus, TourSlot
 from daily_tour_common.models.tour import TourParams
 
 from planner_svc import mq
+from planner_svc.validators.travel_time import TravelTimeError
 from planner_svc.workers.plan_worker import WorkerError
 
 
@@ -192,11 +193,17 @@ async def test_process_plan_marks_ready_on_success(monkeypatch: pytest.MonkeyPat
     async def _fake_scope() -> AsyncIterator[Any]:
         yield session
 
+    # _enrich_plan (travel-time + weather) is exercised in its own tests below;
+    # here we isolate the mark_ready flow by passing the plan through unchanged.
+    async def _enrich(p: TourPlan, _candidates: Any) -> TourPlan:
+        return p
+
     monkeypatch.setattr(mq, "session_scope", _fake_scope)
     monkeypatch.setattr(mq, "get_by_id", get_by_id_mock)
     monkeypatch.setattr(mq, "mark_ready", mark_ready_mock)
     monkeypatch.setattr(mq, "mark_rejected", mark_rejected_mock)
     monkeypatch.setattr(mq, "produce_plan", _produce)
+    monkeypatch.setattr(mq, "_enrich_plan", _enrich)
 
     await mq._process_plan(plan_id)
 
@@ -207,6 +214,79 @@ async def test_process_plan_marks_ready_on_success(monkeypatch: pytest.MonkeyPat
     # plan_payload should be the dumped model
     assert args[2]["status"] == TourPlanStatus.COMPLETED.value
     assert len(args[2]["steps"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_process_plan_marks_rejected_on_travel_time_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An over-budget day (TravelTimeError in enrichment) lands in mark_rejected."""
+    plan_id = uuid4()
+    session = MagicMock()
+    session.commit = AsyncMock()
+    row = MagicMock()
+    row.request_payload = {"wishes": ["eat"], "duration_hours": 4, "vehicle": "car"}
+
+    get_by_id_mock = AsyncMock(return_value=row)
+    mark_ready_mock = AsyncMock()
+    mark_rejected_mock = AsyncMock()
+
+    async def _produce(*_args: object, **_kwargs: object) -> Any:
+        return _make_tour_plan(plan_id), []
+
+    async def _enrich(*_args: object, **_kwargs: object) -> TourPlan:
+        raise TravelTimeError("plan requires ~700 min but day budget is 540 min")
+
+    @asynccontextmanager
+    async def _fake_scope() -> AsyncIterator[Any]:
+        yield session
+
+    monkeypatch.setattr(mq, "session_scope", _fake_scope)
+    monkeypatch.setattr(mq, "get_by_id", get_by_id_mock)
+    monkeypatch.setattr(mq, "mark_ready", mark_ready_mock)
+    monkeypatch.setattr(mq, "mark_rejected", mark_rejected_mock)
+    monkeypatch.setattr(mq, "produce_plan", _produce)
+    monkeypatch.setattr(mq, "_enrich_plan", _enrich)
+
+    await mq._process_plan(plan_id)
+
+    mark_ready_mock.assert_not_called()
+    mark_rejected_mock.assert_awaited_once()
+    args, _kwargs = mark_rejected_mock.call_args
+    assert args[1] == plan_id
+    assert args[2].startswith("travel_time:")
+
+
+@pytest.mark.asyncio
+async def test_enrich_plan_annotates_then_runs_process_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """_enrich_plan fetches coords, annotates travel, then hands off to process_plan."""
+    plan_id = uuid4()
+    plan = _make_tour_plan(plan_id)
+    session = MagicMock()
+    coords_mock = AsyncMock(return_value={})
+    process_mock = AsyncMock(return_value=plan)
+    redis_sentinel = MagicMock()
+
+    @asynccontextmanager
+    async def _fake_scope() -> AsyncIterator[Any]:
+        yield session
+
+    monkeypatch.setattr(mq, "session_scope", _fake_scope)
+    monkeypatch.setattr(mq, "get_place_coords", coords_mock)
+    monkeypatch.setattr(mq, "process_plan", process_mock)
+    monkeypatch.setattr(mq, "get_redis", lambda: redis_sentinel)
+
+    candidates: list[Any] = []
+    result = await mq._enrich_plan(plan, candidates)
+
+    coords_mock.assert_awaited_once()
+    process_mock.assert_awaited_once()
+    _passed_plan, passed_candidates, passed_redis = process_mock.call_args.args
+    assert passed_candidates is candidates
+    assert passed_redis is redis_sentinel
+    assert result is plan
 
 
 @pytest.mark.asyncio
@@ -262,10 +342,14 @@ async def test_process_plan_forwards_reservation_id(monkeypatch: pytest.MonkeyPa
     async def _fake_scope() -> AsyncIterator[Any]:
         yield session
 
+    async def _enrich(p: TourPlan, _candidates: Any) -> TourPlan:
+        return p
+
     monkeypatch.setattr(mq, "session_scope", _fake_scope)
     monkeypatch.setattr(mq, "get_by_id", AsyncMock(return_value=row))
     monkeypatch.setattr(mq, "mark_ready", AsyncMock())
     monkeypatch.setattr(mq, "produce_plan", _produce)
+    monkeypatch.setattr(mq, "_enrich_plan", _enrich)
 
     await mq._process_plan(plan_id)
 
