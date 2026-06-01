@@ -12,6 +12,7 @@ import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
@@ -322,6 +323,35 @@ async def test_start_consumer_declares_dead_letter_args() -> None:
         "x-dead-letter-exchange": "dt.dlx",
         "x-dead-letter-routing-key": mq.REQUESTED_QUEUE,
     }
+
+
+def test_topology_matches_canonical_definitions() -> None:
+    """Runtime topology must match infra/rabbitmq/definitions.json (#148).
+
+    Guards against the pre-#148 drift where planner declared its own `planner`
+    exchange + `planner.tour-plan.requested` queue at runtime, absent from the
+    declarative source of truth. The runtime constants must name the canonical
+    `dt.events` exchange, the pre-provisioned `tour.requested` queue (with the
+    same DLX args, so the re-declare is idempotent), and the matching binding.
+    """
+    repo_root = Path(__file__).resolve().parents[3]
+    definitions = json.loads(
+        (repo_root / "infra/rabbitmq/definitions.json").read_text()
+    )
+
+    assert mq.EXCHANGE_NAME == "dt.events"
+    assert mq.EXCHANGE_NAME in {e["name"] for e in definitions["exchanges"]}
+
+    queue = next(q for q in definitions["queues"] if q["name"] == mq.REQUESTED_QUEUE)
+    assert queue["arguments"]["x-dead-letter-exchange"] == mq.DEAD_LETTER_EXCHANGE
+    assert queue["arguments"]["x-dead-letter-routing-key"] == mq.REQUESTED_QUEUE
+
+    assert any(
+        b["source"] == mq.EXCHANGE_NAME
+        and b["destination"] == mq.REQUESTED_QUEUE
+        and b["routing_key"] == mq.REQUESTED_KEY
+        for b in definitions["bindings"]
+    )
 async def test_process_plan_forwards_reservation_id(monkeypatch: pytest.MonkeyPatch) -> None:
     """The row's reservation_id is threaded into produce_plan (#147)."""
     plan_id = uuid4()
