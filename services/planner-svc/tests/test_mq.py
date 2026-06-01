@@ -210,6 +210,38 @@ async def test_process_plan_marks_ready_on_success(monkeypatch: pytest.MonkeyPat
 
 
 @pytest.mark.asyncio
+async def test_start_consumer_declares_dead_letter_args() -> None:
+    """The main queue dead-letters poison pills to the canonical dt.dlx (#147)."""
+    queues: list[dict[str, Any]] = []
+
+    class _FakeQueue:
+        async def bind(self, *_a: object, **_k: object) -> None: ...
+        async def consume(self, *_a: object, **_k: object) -> None: ...
+
+    class _FakeChannel:
+        async def set_qos(self, **_k: object) -> None: ...
+
+        async def declare_exchange(self, *_a: object, **_k: object) -> Any:
+            return MagicMock()
+
+        async def declare_queue(self, name: str, **kwargs: object) -> Any:
+            queues.append({"name": name, "arguments": kwargs.get("arguments")})
+            return _FakeQueue()
+
+    class _FakeConnection:
+        async def channel(self) -> Any:
+            return _FakeChannel()
+
+    async def _factory(_url: str) -> Any:
+        return _FakeConnection()
+
+    await mq.start_consumer(connection_factory=_factory)
+
+    main = next(q for q in queues if q["name"] == mq.REQUESTED_QUEUE)
+    assert main["arguments"] == {
+        "x-dead-letter-exchange": "dt.dlx",
+        "x-dead-letter-routing-key": mq.REQUESTED_QUEUE,
+    }
 async def test_process_plan_forwards_reservation_id(monkeypatch: pytest.MonkeyPatch) -> None:
     """The row's reservation_id is threaded into produce_plan (#147)."""
     plan_id = uuid4()
