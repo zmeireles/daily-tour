@@ -49,6 +49,7 @@
       "queued": "A planear o seu dia...",
       "ready": "O seu plano está pronto!",
       "rejected": "Não foi possível criar um plano. Por favor tente novamente.",
+      "weather_adjusted": "Ajustado às condições meteorológicas",
       "back": "Voltar ao início"
     }
   }

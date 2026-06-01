@@ -9,6 +9,9 @@ export interface TourStop {
   name: string;
   description?: string;
   duration_min?: number;
+  // Drive time from the previous stop (OSRM/haversine, populated by planner-svc
+  // slice C). Omitted for the first stop and whenever it's absent or zero.
+  travel_to_minutes?: number;
 }
 
 // planner-svc step shape — what plan_payload.steps[] carries.
@@ -65,6 +68,9 @@ function toStop(step: PlanStep, name: string, idx: number, hasDuplicateId: boole
     name,
     description: step.rationale,
     ...(duration !== undefined ? { duration_min: duration } : {}),
+    ...(typeof step.travel_to_minutes === "number" && step.travel_to_minutes > 0
+      ? { travel_to_minutes: step.travel_to_minutes }
+      : {}),
   };
 }
 

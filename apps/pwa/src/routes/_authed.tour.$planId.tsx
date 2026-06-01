@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CloudRain } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@/store/session";
@@ -91,13 +92,21 @@ export default function TourPlanRoute() {
   }
 
   if (plan?.status === "ready") {
-    const stops = (plan.plan_payload as { stops?: TourStop[] })?.stops ?? [];
+    const payload = plan.plan_payload as { stops?: TourStop[]; weather_aware?: boolean } | null;
+    const stops = payload?.stops ?? [];
+    const weatherAware = payload?.weather_aware === true;
     return (
       <main className="min-h-svh px-4 py-8 max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">{t("tour.status.ready")}</h1>
           <ShareButton planId={planId!} />
         </div>
+        {weatherAware && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            <CloudRain className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{t("tour.status.weather_adjusted")}</span>
+          </div>
+        )}
         <DailyTourTimeline stops={stops} />
         <Link
           to="/"

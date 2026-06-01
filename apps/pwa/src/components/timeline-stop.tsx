@@ -1,3 +1,4 @@
+import { Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface TourStop {
@@ -7,6 +8,8 @@ export interface TourStop {
   name: string;
   description?: string;
   duration_min?: number;
+  // Drive time from the previous stop (minutes). Absent on the first stop.
+  travel_to_minutes?: number;
 }
 
 const DOT_CLASS: Record<TourStop["kind"], string> = {
@@ -50,6 +53,12 @@ export function TimelineStop({ stop, isLast, dragHandleProps }: TimelineStopProp
 
       {/* content card */}
       <div className="flex-1 pb-4 pl-3">
+        {stop.travel_to_minutes != null && stop.travel_to_minutes > 0 && (
+          <p className="mb-1 flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+            <Car className="h-3 w-3 shrink-0" aria-hidden="true" />
+            {stop.travel_to_minutes} min
+          </p>
+        )}
         <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
           <p className="text-sm font-medium leading-snug">{stop.name}</p>
           {stop.description && (

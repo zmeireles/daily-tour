@@ -64,7 +64,33 @@ describe("tour-plan-view withStops", () => {
       name: "Sete Cidades",
       description: "A great start to the day.",
       duration_min: 90,
+      travel_to_minutes: 10,
     });
+  });
+
+  it("carries travel_to_minutes when positive; omits it when absent or zero", async () => {
+    fetchMock
+      .mockResolvedValueOnce(hydrated(PLACE_A, { en: "First" }))
+      .mockResolvedValueOnce(hydrated(PLACE_B, { en: "Second" }))
+      .mockResolvedValueOnce(hydrated(PLACE_A, { en: "Third" }));
+
+    const plan = {
+      id: "p1",
+      status: "ready",
+      plan_payload: {
+        steps: [
+          step({ place_id: PLACE_A, travel_to_minutes: undefined }), // first stop — no travel
+          step({ place_id: PLACE_B, travel_to_minutes: 14 }),
+          step({ place_id: PLACE_A, travel_to_minutes: 0 }), // zero — omitted
+        ],
+      },
+    };
+    const out = await withStops(plan);
+    const stops = (out.plan_payload as { stops: Record<string, unknown>[] }).stops;
+
+    expect(stops[0]).not.toHaveProperty("travel_to_minutes");
+    expect(stops[1]!.travel_to_minutes).toBe(14);
+    expect(stops[2]).not.toHaveProperty("travel_to_minutes");
   });
 
   it.each([

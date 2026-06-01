@@ -207,6 +207,7 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
         name: "Tasca da Praça",
         description: "Time to eat.",
         duration_min: 60,
+        travel_to_minutes: 5,
       },
     ]);
   });
