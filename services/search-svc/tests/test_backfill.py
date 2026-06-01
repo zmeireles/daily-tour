@@ -7,8 +7,6 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
-import pytest
-
 from search_svc.scripts.backfill import ROUTING_KEY, backfill
 
 

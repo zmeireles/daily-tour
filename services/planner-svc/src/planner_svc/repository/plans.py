@@ -16,7 +16,7 @@ on updated_at so the DB clock is the source of truth.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -34,7 +34,7 @@ async def insert_queued(
     plan_id: UUID | None = None,
 ) -> TourPlanRow:
     """Insert a `queued` row and return the persisted entity (id assigned)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     row = TourPlanRow(
         id=plan_id or uuid4(),
         guest_id=guest_id,

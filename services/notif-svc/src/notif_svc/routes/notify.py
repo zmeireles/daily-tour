@@ -4,7 +4,7 @@ from __future__ import annotations
 import email.message
 import logging
 import urllib.parse
-from typing import Literal
+from typing import Annotated, Literal
 
 import aiosmtplib
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -36,7 +36,7 @@ class PostStayResponse(BaseModel):
 @router.post("/v1/notify/post-stay", response_model=PostStayResponse)
 async def post_stay_notify(
     body: PostStayRequest,
-    settings: Settings = Depends(get_settings),
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> PostStayResponse:
     content = render_post_stay(
         guest_name=body.guest_name,

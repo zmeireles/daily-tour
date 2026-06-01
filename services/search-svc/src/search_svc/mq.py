@@ -72,8 +72,10 @@ async def start_consumer(
     settings = get_settings()
     connect = connection_factory or aio_pika.connect_robust
 
-    connection: AbstractRobustConnection = await connect(settings.rabbitmq_url)  # type: ignore[misc, operator]
-    channel: AbstractRobustChannel = await connection.channel()
+    connection: AbstractRobustConnection = await connect(settings.rabbitmq_url)  # type: ignore[operator]
+    # connect_robust yields a robust channel at runtime; aio-pika types
+    # `.channel()` as the base AbstractChannel, hence the assignment cast.
+    channel: AbstractRobustChannel = await connection.channel()  # type: ignore[assignment]
     await channel.set_qos(prefetch_count=4)
 
     exchange = await channel.declare_exchange(

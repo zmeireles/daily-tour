@@ -12,8 +12,9 @@ in T-4.1.x; this skeleton stays minimal on purpose.
 """
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Literal, Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
 Channel = Literal["in_app", "telegram", "whatsapp"]
 

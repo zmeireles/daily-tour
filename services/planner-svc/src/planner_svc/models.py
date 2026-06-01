@@ -11,7 +11,8 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import DateTime, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -21,7 +22,7 @@ class Base(DeclarativeBase):
 
 class TourPlanRow(Base):
     __tablename__ = "tour_plan"
-    __table_args__ = {"schema": "planner"}
+    __table_args__ = ({"schema": "planner"},)
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     guest_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)

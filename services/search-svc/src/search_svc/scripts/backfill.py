@@ -40,7 +40,7 @@ async def _db_session(database_url: str) -> AsyncIterator[AsyncSession]:
 
 async def backfill(
     *,
-    session_context: Any | None = None,
+    session_context: Any | None = None,  # noqa: ANN401 — test-injection seam (fake session ctx)
     connection_factory: object | None = None,
 ) -> int:
     """Enqueue place.published for every published place.
@@ -61,7 +61,7 @@ async def backfill(
         return 0
 
     connect = connection_factory or aio_pika.connect_robust
-    connection = await connect(settings.rabbitmq_url)  # type: ignore[misc, operator]
+    connection = await connect(settings.rabbitmq_url)  # type: ignore[operator]
 
     try:
         channel = await connection.channel()

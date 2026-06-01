@@ -98,3 +98,42 @@ jobs:
           path: .turbo/runs
           retention-days: 7
           if-no-files-found: ignore
+
+  # Python services are NOT in the turbo graph (no package.json), so the
+  # `quality` job above never touched them — the Plan-001 accounting retro's
+  # root cause (false-resolves shipped because CI never exercised chat-hub /
+  # planner-svc / search-svc). This matrix runs each service's own gate
+  # (ruff + mypy --strict + pytest) on every PR. Suites are tiny (~64 tests
+  # total), so all four run unconditionally rather than path-scoped.
+  python:
+    name: Python (ruff + mypy + pytest)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [chat-hub, notif-svc, planner-svc, search-svc]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "services/${{ matrix.service }}/uv.lock"
+
+      - name: Sync dependencies (frozen)
+        run: uv sync --frozen
+
+      - name: Ruff
+        run: uv run ruff check .
+
+      - name: Mypy (strict)
+        run: uv run mypy src
+
+      - name: Pytest
+        run: uv run pytest -q
