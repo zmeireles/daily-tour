@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import math
+from uuid import UUID
 
 from daily_tour_common import Geom, TourPlan
 from daily_tour_common.osrm import get_route
@@ -46,6 +47,34 @@ async def estimate_minutes(a: Geom, b: Geom, vehicle: bool) -> float:
     return _haversine_minutes(a, b, vehicle)
 
 
+async def annotate_travel_times(
+    plan: TourPlan,
+    coords: dict[UUID, Geom],
+    *,
+    vehicle: bool,
+) -> TourPlan:
+    """Recompute each step's ``travel_to_minutes`` as drive time from the prior stop.
+
+    Replaces the LLM's guess (the prompt doesn't ask for travel times, so they
+    arrive as ``None``) with an OSRM/haversine estimate between consecutive
+    stops via ``estimate_minutes``. The first step is left unset: it would be
+    travel from the guesthouse, whose geo is still a placeholder default in the
+    worker, so anchoring to it would be fake precision. A step whose place_id is
+    absent from ``coords`` (or whose predecessor is) keeps ``None``.
+
+    Returns a copy with updated steps; the input plan is not mutated.
+    """
+    steps = list(plan.steps)
+    for i in range(1, len(steps)):
+        a = coords.get(steps[i - 1].place_id)
+        b = coords.get(steps[i].place_id)
+        if a is None or b is None:
+            continue
+        minutes = await estimate_minutes(a, b, vehicle)
+        steps[i] = steps[i].model_copy(update={"travel_to_minutes": round(minutes)})
+    return plan.model_copy(update={"steps": steps})
+
+
 def assert_day_fits(plan: TourPlan, day_minutes_budget: int) -> None:
     """Raise TravelTimeError if total step durations + travel times exceed budget.
 
@@ -64,4 +93,9 @@ def assert_day_fits(plan: TourPlan, day_minutes_budget: int) -> None:
         )
 
 
-__all__ = ["TravelTimeError", "assert_day_fits", "estimate_minutes"]
+__all__ = [
+    "TravelTimeError",
+    "annotate_travel_times",
+    "assert_day_fits",
+    "estimate_minutes",
+]

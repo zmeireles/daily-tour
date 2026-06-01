@@ -280,6 +280,10 @@ services:
       DATABASE_URL: postgresql://planner_svc:${SERVICE_DB_PASSWORD_PLANNER}@dt_postgres:5432/dailytour
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
       SEARCH_SVC_URL: http://dt_search_svc:8082
+      # Slice C: read-through cache for the IPMA weather forecast (rainy-slot
+      # swap). Weather degrades gracefully if Redis is unavailable.
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@dt_redis:6379/0
+      OSRM_URL: ${OSRM_URL:-http://osrm-routed:5000}
       # Anthropic key — leave blank in dev/CI; the LLM client warns and
       # short-circuits to None rather than failing health checks (matches
       # search-svc's EMBEDDING_API_KEY posture).
