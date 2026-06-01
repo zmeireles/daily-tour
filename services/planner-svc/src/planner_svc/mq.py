@@ -1,9 +1,19 @@
 """RabbitMQ publisher + consumer for tour-plan lifecycle (T-3.0.3 — slice A).
 
-Topology:
-    exchange   : `planner`                       (topic, durable)
-    routing key: `tour-plan.requested`           (api → worker)
-    queue      : `planner.tour-plan.requested`   (durable)
+Topology — the canonical project bus (#148). planner publishes and consumes
+on `dt.events`/`tour.requested`, pre-provisioned declaratively in
+`infra/rabbitmq/definitions.json` (queue + binding + DLX). The runtime
+declares below are idempotent against that definition (identical args) so
+they self-heal a broker that booted without the definitions file:
+    exchange   : `dt.events`        (topic, durable)
+    routing key: `tour.requested`   (api → worker)
+    queue      : `tour.requested`   (durable, x-dead-letter-exchange=dt.dlx)
+
+Before #148 planner used its own `planner` exchange + a runtime-only
+`planner.tour-plan.requested` queue (absent from definitions.json) — the lone
+service off the canonical bus. planner is both the producer (routes/plans.py)
+and the sole consumer of these messages, so the switch is self-contained
+(no cross-service contract).
 
 This slice (143.A) wires the transport end-to-end with a **stub handler**
 that marks every queued plan as ``ready`` with a placeholder payload. The
@@ -47,15 +57,15 @@ from .workers.plan_worker import WorkerError, process_plan, produce_plan
 
 logger = logging.getLogger(__name__)
 
-EXCHANGE_NAME = "planner"
-REQUESTED_KEY = "tour-plan.requested"
-REQUESTED_QUEUE = "planner.tour-plan.requested"
+EXCHANGE_NAME = "dt.events"
+REQUESTED_KEY = "tour.requested"
+REQUESTED_QUEUE = "tour.requested"
 # Dead-letter to the canonical project DLX (#147). A poison-pill message (an
 # unexpected exception in _process_plan → nack with requeue=False) is routed
 # to dt.dlx instead of being silently dropped; dt.dlx fans every dead message
 # into dt.dlx.unrouted for ops inspection (infra/rabbitmq/definitions.json).
-# This is the same convention every other project queue uses — planner's queue
-# was the lone exception (declared at runtime, off the canonical dt.events bus).
+# Matches the dt.dlx wiring definitions.json already declares for this queue,
+# so the consumer-side declare is idempotent (#148).
 DEAD_LETTER_EXCHANGE = "dt.dlx"
 
 
@@ -229,10 +239,12 @@ async def start_consumer(
         durable=True,
     )
 
-    # Point the main queue's dead-letters at the canonical dt.dlx (pre-declared
-    # in definitions.json). NOTE: queue arguments are immutable in RabbitMQ — an
-    # existing queue declared without this arg must be deleted so it re-declares
-    # with it (fresh deploys get it from the start; dev: see the PR verification).
+    # Re-declare the canonical `tour.requested` queue idempotently. These args
+    # match definitions.json exactly, so this is a no-op against a broker that
+    # loaded the definitions and self-heals one that didn't. NOTE (#148): the
+    # OLD `planner` exchange + `planner.tour-plan.requested` queue linger on
+    # brokers provisioned before this change — delete them once (they are not in
+    # definitions.json, so a fresh broker never creates them). See the PR.
     queue = await channel.declare_queue(
         REQUESTED_QUEUE,
         durable=True,
