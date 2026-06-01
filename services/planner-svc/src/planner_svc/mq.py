@@ -44,6 +44,13 @@ logger = logging.getLogger(__name__)
 EXCHANGE_NAME = "planner"
 REQUESTED_KEY = "tour-plan.requested"
 REQUESTED_QUEUE = "planner.tour-plan.requested"
+# Dead-letter to the canonical project DLX (#147). A poison-pill message (an
+# unexpected exception in _process_plan → nack with requeue=False) is routed
+# to dt.dlx instead of being silently dropped; dt.dlx fans every dead message
+# into dt.dlx.unrouted for ops inspection (infra/rabbitmq/definitions.json).
+# This is the same convention every other project queue uses — planner's queue
+# was the lone exception (declared at runtime, off the canonical dt.events bus).
+DEAD_LETTER_EXCHANGE = "dt.dlx"
 
 
 @dataclass
@@ -183,12 +190,27 @@ async def start_consumer(
         durable=True,
     )
 
-    queue = await channel.declare_queue(REQUESTED_QUEUE, durable=True)
+    # Point the main queue's dead-letters at the canonical dt.dlx (pre-declared
+    # in definitions.json). NOTE: queue arguments are immutable in RabbitMQ — an
+    # existing queue declared without this arg must be deleted so it re-declares
+    # with it (fresh deploys get it from the start; dev: see the PR verification).
+    queue = await channel.declare_queue(
+        REQUESTED_QUEUE,
+        durable=True,
+        arguments={
+            "x-dead-letter-exchange": DEAD_LETTER_EXCHANGE,
+            "x-dead-letter-routing-key": REQUESTED_QUEUE,
+        },
+    )
     await queue.bind(exchange, routing_key=REQUESTED_KEY)
     await queue.consume(_handle_requested)
     logger.info(
         "planner-svc.mq queue bound",
-        extra={"queue": REQUESTED_QUEUE, "routing_key": REQUESTED_KEY},
+        extra={
+            "queue": REQUESTED_QUEUE,
+            "routing_key": REQUESTED_KEY,
+            "dead_letter_exchange": DEAD_LETTER_EXCHANGE,
+        },
     )
 
     return ConsumerHandle(connection=connection, channel=channel, queue=queue)
@@ -204,6 +226,7 @@ async def run_consumer_forever() -> None:
 
 
 __all__ = [
+    "DEAD_LETTER_EXCHANGE",
     "EXCHANGE_NAME",
     "REQUESTED_KEY",
     "REQUESTED_QUEUE",
