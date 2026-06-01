@@ -25,6 +25,7 @@ router = APIRouter()
 
 class CreatePlanRequest(BaseModel):
     guest_id: UUID
+    reservation_id: UUID | None = None
     request_payload: dict[str, object]
 
 
@@ -40,6 +41,7 @@ async def create_tour_plan(body: CreatePlanRequest) -> TourPlanOut:
         row = await insert_queued(
             session,
             guest_id=body.guest_id,
+            reservation_id=body.reservation_id,
             request_payload=body.request_payload,
         )
         await session.commit()

@@ -259,21 +259,22 @@ def _parse_steps(raw: str) -> list[TourStep]:
 def _build_tour_plan(
     *,
     plan_id: UUID,
+    reservation_id: UUID | None,
     plan_request: PlanRequest,
     steps: list[TourStep],
 ) -> TourPlan:
     """Wrap LLM-produced steps into a full TourPlan with stable defaults.
 
-    The TourPlan schema demands ``reservation_id`` which the BFF doesn't
-    pass through today; slice B uses ``plan_id`` as a placeholder so the
-    rest of the system has a well-typed reservation reference. Closing
-    that gap properly is a slice-C+ follow-up that needs BFF + JWT
-    contract changes.
+    ``reservation_id`` is the real reservation reference forwarded from the
+    JWT ``rid`` claim via the BFF (#147). It is nullable on the queued row
+    (rows created before the column existed, or a caller that omits it), so
+    we fall back to ``plan_id`` to keep the TourPlan schema's required
+    ``reservation_id`` well-typed.
     """
     now = datetime.now(UTC)
     return TourPlan(
         id=plan_id,
-        reservation_id=plan_id,  # placeholder — see docstring
+        reservation_id=reservation_id or plan_id,
         params=TourParams(
             date=date.today().isoformat(),
             start_time=plan_request.start_time,
@@ -291,6 +292,7 @@ async def produce_plan(
     *,
     plan_id: UUID,
     request_payload: dict[str, Any],
+    reservation_id: UUID | None = None,
 ) -> tuple[TourPlan, list[RetrievedPlace]]:
     """Run the full pipeline: translate → RAG → LLM → parse → provenance.
 
@@ -317,7 +319,10 @@ async def produce_plan(
     steps = _parse_steps(raw)
 
     plan = _build_tour_plan(
-        plan_id=plan_id, plan_request=plan_request, steps=steps
+        plan_id=plan_id,
+        reservation_id=reservation_id,
+        plan_request=plan_request,
+        steps=steps,
     )
 
     candidate_ids = {c.place_id for c in flat_candidates}

@@ -22,11 +22,12 @@ const tourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
     }
 
-    const guestId = (req.user as { sub: string }).sub;
+    const { sub: guestId, rid: reservationId } = req.user as { sub: string; rid?: string };
 
     try {
       const plan = await createTourPlan({
         guestId,
+        reservationId,
         requestPayload: parsed.data,
       });
       return reply.code(201).send(plan);
