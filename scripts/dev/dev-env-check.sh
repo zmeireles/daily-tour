@@ -222,6 +222,22 @@ if [[ $SKIP_SMOKE -eq 0 ]]; then
     row "schema tables" "$NO missing: $MISSING_TABLES" "apply migrations: bash scripts/dev/dev-up.sh --from 4"
     fail
   fi
+
+  # Role-grant existence (P4 — #146). The GRANTs in 02-roles.sql run only on
+  # first DB init, so a live DB created before a grant was added never receives
+  # it. The bff→analytics USAGE grant was the exact drift that surfaced UAT-G07
+  # telemetry as a 500 (`permission denied for schema analytics`, PG 42501) —
+  # source was correct, the 12-day-old live DB stale. Assert the critical bff
+  # privileges directly so drift fails here, loudly, not mid-UAT.
+  BFF_GRANTS=$(docker compose --env-file .env -f infra/compose/docker-compose.base.yml exec -T postgres \
+    psql -U postgres -d dailytour -t -A -c \
+    "SELECT has_schema_privilege('bff', 'analytics', 'USAGE')::text || ',' || has_table_privilege('bff', 'analytics.tour_event', 'INSERT')::text;" 2>/dev/null | tr -d '\r\n')
+  if [[ "$BFF_GRANTS" == "true,true" ]]; then
+    row "bff analytics grants" "$OK usage+insert"
+  else
+    row "bff analytics grants" "$NO got '$BFF_GRANTS' (want true,true)" "reconcile: docker exec dt_postgres psql -U postgres -d dailytour -c 'GRANT USAGE ON SCHEMA analytics TO bff; GRANT INSERT ON ALL TABLES IN SCHEMA analytics TO bff;'"
+    fail
+  fi
 else
   section "SMOKE"
   row "(skipped)" "$WARN --skip-smoke flag set"
