@@ -1,4 +1,26 @@
-# Session Handoff — 2026-05-28 → 31 → 06-01 → next session
+# Session Handoff — 2026-05-28 → 31 → 06-01 → 06-02 → next session
+
+> **UPDATE 2026-06-02 (session close-out): five tasks landed — #147 slice-C fully shipped + consumed end-to-end, plus the telemetry-grant prevention work.** Everything below merged to `main`; the un-gated engineering backlog is now cleared. Remaining work is gated on the human (photography/product) or on dev-up (the stack is `make down` for another project).
+>
+> | Task         | What                                                             | PR   | Status                                                                      |
+> | ------------ | ---------------------------------------------------------------- | ---- | --------------------------------------------------------------------------- |
+> | #147 slice-C | OSRM travel-time + IPMA weather wired into planner pipeline      | #184 | ✅ merged; #147 **done**                                                    |
+> | #149         | PWA+BFF surface travel-time + weather-aware in the tour timeline | #186 | ✅ merged; task **in-progress** (UAT pending dev-up)                        |
+> | #148         | planner → canonical `dt.events`/`tour.requested` bus             | #187 | ✅ merged; task **done**                                                    |
+> | #144         | analytics GRANT INSERT (telemetry 500)                           | —    | ✅ **closed done** (already fixed in source `02-roles.sql` + live via #166) |
+> | #146         | `dev-env-check.sh` asserts bff analytics grants (P4 prevention)  | #188 | ✅ merged; task **in-progress** (live-run pending dev-up)                   |
+>
+> **Key arc:** #184 wired the slice-C enrichment into planner, but on close-out I found it was **not user-visible** — the BFF `toStop()` dropped `travel_to_minutes`/`weather_aware` and the PWA had no UI. #186 closed that gap (BFF carries the field; PWA renders a `Car`-icon drive time per stop + a translated `CloudRain` weather banner; i18n en/pt-PT/es). #187 moved planner off its bespoke `planner` exchange onto the `tour.requested` queue that `definitions.json` already provisioned (+ a regression test that reads the real definitions.json so topology can't drift again). #146 adds a grant assertion to the env-check SMOKE section (mirrors the #177 schema-table check) so the bff→analytics USAGE drift that caused a UAT-G07 telemetry 500 fails loudly at env-check time instead.
+>
+> **Deferred to next `make up` (all documented in the respective PRs/tasks):**
+>
+> - **#149 forward-flow UAT** — the genuine browser verification of travel/weather rendering (carried by the task; mint a dt-tests UAT then).
+> - **#148 one-time broker cleanup** — delete the now-dead `planner` exchange + `planner.tour-plan.requested` queue (cosmetic; nothing uses them). `rabbitmqadmin delete queue name=planner.tour-plan.requested` + `... exchange name=planner`.
+> - **#146 live env-check run** — `bash scripts/dev/dev-env-check.sh` against the live DB (verifies the new grant assertion passes; `bash -n` already clean).
+>
+> **Still gated (need the human):** #135 (signed media URLs — real photography), #142 (backoffice cap rule / per-guesthouse scoping / reservations — product decisions).
+>
+> **dt-tests `review` queue empty** at close-out. tasks-prod MCP required a `/mcp` reconnect this session.
 
 > **UPDATE 2026-06-01 (close-out): #184 MERGED (`1ab8310`), #147 slice-C CLOSED (done), two follow-ups spun out.** All four slice-C parts now on `main` (parts 1+2 #184, part 3 #181, part 4 #182). **Key finding on close-out:** the enrichment is **not actually user-visible** — planner produces `travel_to_minutes`/`weather_aware`, but the BFF `toStop()` (`services/bff/src/lib/tour-plan-view.ts` ≈L59-69) **drops both**, and the PWA `TimelineStop` has no travel/weather UI. So #147 closed as a **backend skip-case** (no rendered consumer change), and the genuine user-visible work + its forward-flow UAT moved to a new task:
 >
