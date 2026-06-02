@@ -62,6 +62,20 @@ describe("DailyTourTimeline", () => {
     expect(screen.getByText("90 min")).toBeInTheDocument();
   });
 
+  it("renders drive time from the previous stop, but not on the first stop", () => {
+    const withTravel: TourStop[] = [
+      { id: "a", time: "09:00", kind: "activity", name: "Stop A" },
+      { id: "b", time: "10:00", kind: "activity", name: "Stop B", travel_to_minutes: 14 },
+      { id: "c", time: "11:00", kind: "activity", name: "Stop C", travel_to_minutes: 0 },
+    ];
+    render(<DailyTourTimeline stops={withTravel} />);
+
+    // Second stop shows its inbound drive time; first stop and the zero-travel
+    // stop render no travel affordance.
+    expect(screen.getByText("14 min")).toBeInTheDocument();
+    expect(screen.queryByText("0 min")).not.toBeInTheDocument();
+  });
+
   it("calls onReorder and rerenders in new order after drag completes", () => {
     const onReorder = vi.fn();
     render(<DailyTourTimeline stops={stops} onReorder={onReorder} />);

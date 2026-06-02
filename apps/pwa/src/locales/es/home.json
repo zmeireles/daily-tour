@@ -53,6 +53,7 @@
       "queued": "Planeando tu día...",
       "ready": "¡Tu plan está listo!",
       "rejected": "No se pudo crear un plan. Por favor inténtalo de nuevo.",
+      "weather_adjusted": "Ajustado al clima",
       "back": "Volver al inicio"
     }
   }

@@ -49,6 +49,7 @@
       "queued": "Planning your day...",
       "ready": "Your plan is ready!",
       "rejected": "Could not create a plan. Please try again.",
+      "weather_adjusted": "Adjusted for weather",
       "back": "Back to home"
     }
   }
