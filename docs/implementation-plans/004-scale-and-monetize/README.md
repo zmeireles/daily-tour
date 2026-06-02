@@ -4,7 +4,7 @@
 
 ## Premise
 
-Plan-003 validates product-market fit with one guesthouse. Plan-004 answers: *can this scale to a portfolio of owners without proportional ops cost, and at what unit economics?*
+Plan-003 validates product-market fit with one guesthouse. Plan-004 answers: _can this scale to a portfolio of owners without proportional ops cost, and at what unit economics?_
 
 ## Scope
 
@@ -17,14 +17,21 @@ Today onboarding requires the founder to manually import Authentik users + seed 
 - T-4.A.2 — Onboarding wizard inside `/admin` (first-place creation, photo upload, first invite to a guest)
 - T-4.A.3 — Owner welcome email + 7-day nurture sequence (via notif-svc + n8n)
 
-### Slice 4.B — Multi-tenant data isolation
+### Slice 4.B — Multi-tenant data isolation — ⚠️ SUPERSEDED by Plan-006
 
-Currently `guesthouse_scope = {"all": true}` on every place. Multi-owner requires real scoping.
+> **Moved to [Plan-006 Slice 6.A](../006-owner-backoffice/) (2026-06-02).** The original
+> sketch below used `place.guesthouse_id` **non-null FK** (every place owned by exactly
+> one guesthouse — pure opt-in). The #142 product decision instead chose **shared
+> baseline + opt-out** (the 28 island staples stay global; owners add own places + hide
+> ones they dislike), which preserves the cold-start value. Plan-006 Slice 6.A is the
+> live design; this slice is struck. Cross-owner-isolation enforcement (owner_id in
+> WHERE clauses, no cross-owner leakage) still applies and is folded into 6.A.1/6.A.2.
 
-- T-4.B.0 — Schema: `place.guesthouse_id` non-null FK (migrate seed data)
-- T-4.B.1 — Catalog-svc owner-scoped CRUD (catalog enforces owner_id in WHERE clauses)
-- T-4.B.2 — BFF admin routes pass-through owner_id from JWT; no cross-owner leakage
-- T-4.B.3 — Discover endpoint shows global catalog filtered to the guest's guesthouse's catchment (configurable km radius)
+- ~~T-4.B.0 — Schema: `place.guesthouse_id` non-null FK~~ → replaced by
+  `guesthouse.hidden_place_ids[]` (Plan-006 T-6.A.0)
+- ~~T-4.B.1/4.B.2/4.B.3~~ → Plan-006 T-6.A.1 (owner-scoped CRUD), T-6.A.2 (BFF
+  guest-gh filter). Geographic catchment-radius filtering (4.B.3) remains a possible
+  future enhancement, tracked here.
 
 ### Slice 4.C — Billing & subscriptions
 
