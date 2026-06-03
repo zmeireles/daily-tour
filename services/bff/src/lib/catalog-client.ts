@@ -91,6 +91,21 @@ export async function fetchPlacesByAction(actionSlug: string): Promise<PlaceCard
   }));
 }
 
+// Calls catalog-svc GET /v1/guesthouses/:id and returns its hidden_place_ids
+// (Plan-006 6.A opt-out scoping — the global places this guesthouse's owner hides
+// from their guests). 404 → [] (unknown guesthouse / nothing hidden). Throws
+// CatalogError on other non-2xx so the caller can decide whether to degrade.
+export async function fetchHiddenPlaceIds(guesthouseId: string): Promise<string[]> {
+  const { CATALOG_SVC_URL } = loadConfig();
+  const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses/${encodeURIComponent(guesthouseId)}`);
+  if (res.status === 404) return [];
+  if (!res.ok) {
+    throw new CatalogError(res.status, `catalog-svc ${res.status}`);
+  }
+  const body = (await res.json()) as { hidden_place_ids?: string[] };
+  return body.hidden_place_ids ?? [];
+}
+
 // Calls catalog-svc GET /v1/places/:id/hydrated — single endpoint that returns
 // the place with its media, actions, and wishes already joined.
 // Throws CatalogError(404, ...) if not found; CatalogError(status, ...) for other errors.

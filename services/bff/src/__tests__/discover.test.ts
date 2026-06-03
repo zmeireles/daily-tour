@@ -24,6 +24,7 @@ vi.mock("../lib/catalog-client.js", () => ({
     }
   },
   fetchPlacesByAction: vi.fn(),
+  fetchHiddenPlaceIds: vi.fn(),
 }));
 
 // Mock search-client at the test boundary — BFF behaviour under test, not search-svc.
@@ -42,6 +43,7 @@ vi.mock("../lib/search-client.js", () => ({
 
 const catalogClient = await import("../lib/catalog-client.js");
 const fetchMock = catalogClient.fetchPlacesByAction as ReturnType<typeof vi.fn>;
+const hiddenMock = catalogClient.fetchHiddenPlaceIds as ReturnType<typeof vi.fn>;
 const searchClient = await import("../lib/search-client.js");
 const queryMock = searchClient.queryPlaces as ReturnType<typeof vi.fn>;
 const { createApp } = await import("../app.js");
@@ -98,12 +100,52 @@ describe("GET /v1/discover", () => {
     await flushRedis(ctx.client);
     fetchMock.mockReset();
     queryMock.mockReset();
+    hiddenMock.mockReset();
+    hiddenMock.mockResolvedValue([]); // default: nothing hidden
   });
 
   afterAll(async () => {
     await app.close();
     await closeRedis();
     await stopTestRedis(ctx);
+  });
+
+  it("opt-out scoping — excludes places the guest's guesthouse hid (6.A.2)", async () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const GH = "bbb00001-0000-4000-b000-000000000001";
+    const HIDDEN = "aabbccdd-0000-4000-8000-000000000001"; // place-near in FIXTURE_PLACES
+    const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: GH, locale: "en" }, futureExp);
+    fetchMock.mockResolvedValueOnce(FIXTURE_PLACES); // no loc → catalog-only path
+    hiddenMock.mockResolvedValueOnce([HIDDEN]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/discover?action=eat",
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ count: number; groups: { places: { id: string }[] }[] }>();
+    const ids = body.groups.flatMap((g) => g.places.map((p) => p.id));
+    expect(hiddenMock).toHaveBeenCalledWith(GH);
+    expect(ids).not.toContain(HIDDEN); // hidden place dropped
+    expect(ids.length).toBeGreaterThan(0); // other places still visible
+  });
+
+  it("scoping degrades gracefully — a hidden-places lookup failure still serves discover", async () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-x", locale: "en" }, futureExp);
+    fetchMock.mockResolvedValueOnce(FIXTURE_PLACES);
+    hiddenMock.mockRejectedValueOnce(new Error("catalog down"));
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/discover?action=eat",
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(200); // unfiltered, not a 5xx
+    expect(res.json<{ count: number }>().count).toBeGreaterThan(0);
   });
 
   it("happy authed — groups places by wish, geo-filters to km radius via search-svc", async () => {

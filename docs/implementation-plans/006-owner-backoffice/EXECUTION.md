@@ -36,5 +36,24 @@ verified against the live DB.
   it; wiring lands in the curation UI (T-6.A.3).
 - **Changes**: `services/catalog-svc/src/routes/guesthouses.ts`, `…/__tests__/guesthouses.test.ts` (+2).
 
-**Remaining in 6.A:** T-6.A.2 (BFF discover filter by guest `gh` claim — minus hidden,
-plus gh-scoped), T-6.A.3 (backoffice curation UI + the paired forward-flow UAT).
+## Wave 2 — 2026-06-03 (Slice 6.A — BFF filter)
+
+| Task    | Branch                                  | Scope                                                 | Status  |
+| ------- | --------------------------------------- | ----------------------------------------------------- | ------- |
+| T-6.A.2 | `feat/s603-plan006-6a2-discover-filter` | BFF discover filters out the guest gh's hidden places | ✅ Done |
+
+### T-6.A.2 — BFF discover filter
+
+- `discover` reads the JWT `gh` claim (= guesthouse_id) and drops places in that
+  guesthouse's `hidden_place_ids` (new `catalog-client.fetchHiddenPlaceIds`, 404 → `[]`),
+  filtered before TOP_N so hidden places don't consume visible slots.
+- **Resilient:** a hidden-places lookup failure logs and serves the unfiltered set —
+  scoping never turns discovery into a 5xx.
+- **Deferred:** the inclusion half (`+gh-scoped / − other-gh`) needs the catalog query to
+  be scope-aware; it's a no-op today (all 28 places `{all:true}`) and only matters once
+  owners add own places (6.C).
+- **Changes**: `services/bff/src/routes/discover.ts`, `services/bff/src/lib/catalog-client.ts`,
+  `…/__tests__/discover.test.ts` (+2). Full bff suite green (16 files).
+
+**Remaining in 6.A:** T-6.A.3 (backoffice curation UI + the paired forward-flow UAT) —
+the user-visible piece; ships like #149 with a browser UAT.

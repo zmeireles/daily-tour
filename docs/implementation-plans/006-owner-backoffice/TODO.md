@@ -1,19 +1,19 @@
 # Plan-006 — Owner Backoffice v2 — TODO
 
-Status: **In Progress** — 6.A executing (6.A.0 + 6.A.1 done, 2026-06-03). Decisions
+Status: **In Progress** — 6.A executing (6.A.0–6.A.2 done, 2026-06-03). Decisions
 locked (Riff #142, 2026-06-02). Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Progress
 
 | Slice     | Title                               | Tasks  | Done  | Riff       |
 | --------- | ----------------------------------- | ------ | ----- | ---------- |
-| 6.A       | Per-guesthouse scoping (foundation) | 4      | 2     | #142a      |
+| 6.A       | Per-guesthouse scoping (foundation) | 4      | 3     | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
 | 6.C       | Owner photo uploader                | 3      | 0     | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 0     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
-| **Total** |                                     | **15** | **2** |            |
+| **Total** |                                     | **15** | **3** |            |
 
 ---
 
@@ -54,14 +54,23 @@ locked (Riff #142, 2026-06-02). Task IDs `T-6.<slice>.<task>`. Riff cross-refs i
 > gh) folds into the place-create + curation UI in T-6.A.3 — no separate endpoint
 > needed (the existing place POST + `guesthouse_scope` already supports it).
 
-### ⬜ T-6.A.2 — BFF discover/search: filter by guest guesthouse
+### ✅ T-6.A.2 — BFF discover/search: filter by guest guesthouse
 
-- [ ] `discover` returns the effective set = `{all:true}` minus the guest gh's
+- [x] `discover` returns the effective set = `{all:true}` minus the guest gh's
       `hidden_place_ids`, plus places scoped to the guest gh. Keyed off JWT `gh`.
 - **owns**: `services/bff/src/routes/discover.ts`, `services/bff/src/lib/catalog-client.ts`
 - **deps**: T-6.A.0, T-6.A.1
 - **acceptance**: guest in gh-X sees baseline−hidden+gh-X; vitest covers hide + add +
   no-cross-gh-leak; no guest-facing schema/contract change.
+
+> **Resolved 2026-06-03.** `discover` reads the JWT `gh` claim (= guesthouse*id),
+> fetches the gh's `hidden_place_ids` via new `catalog-client.fetchHiddenPlaceIds`
+> (404 → `[]`), and drops them before TOP_N. **Scoping never breaks discovery** — a
+> lookup failure logs and serves the unfiltered set. +2 BFF tests (hide-exclusion,
+> graceful degrade); full bff suite green (16 files). **Deferred (follow-up):** the
+> `+gh-scoped / − other-gh` \_inclusion* half needs the catalog query to become
+> scope-aware; it's a no-op today (all 28 places are `{all:true}`, none gh-scoped)
+> and only matters once owners add own places (6.C). Tracked as a 6.A note.
 
 ### ⬜ T-6.A.3 — Backoffice: curation UI (list + hide toggle + add-place scope)
 
