@@ -1,9 +1,13 @@
-import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { JWTPayload } from "jose";
 import { z } from "zod";
 import { loadConfig } from "../config.js";
 
 const IdParamSchema = z.object({ id: z.string().uuid() });
+const HiddenPlaceParamSchema = z.object({
+  id: z.string().uuid(),
+  placeId: z.string().uuid(),
+});
 
 function ownerSub(req: FastifyRequest): string | undefined {
   return (req as FastifyRequest & { user: JWTPayload }).user?.sub;
@@ -67,6 +71,34 @@ const adminGuesthousesRoute: FastifyPluginAsync = async (fastify: FastifyInstanc
     const data = await res.json();
     return reply.code(res.status).send(data);
   });
+
+  // Hide / unhide a global place for this guesthouse's guests (Plan-006 6.A.3).
+  // Owner-gated proxy → catalog hide/unhide. Single-owner v1: the per-guesthouse
+  // owner_id ownership check is deferred (same posture as the routes above).
+  async function proxyHidden(req: FastifyRequest, reply: FastifyReply, method: "PUT" | "DELETE") {
+    const parsed = HiddenPlaceParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
+    }
+    const { CATALOG_SVC_URL } = loadConfig();
+    const res = await fetch(
+      `${CATALOG_SVC_URL}/v1/guesthouses/${parsed.data.id}/hidden-places/${parsed.data.placeId}`,
+      { method },
+    );
+    const data = await res.json();
+    return reply.code(res.status).send(data);
+  }
+
+  fastify.put(
+    "/v1/admin/guesthouses/:id/hidden-places/:placeId",
+    { config: { auth: "owner" } },
+    (req, reply) => proxyHidden(req, reply, "PUT"),
+  );
+  fastify.delete(
+    "/v1/admin/guesthouses/:id/hidden-places/:placeId",
+    { config: { auth: "owner" } },
+    (req, reply) => proxyHidden(req, reply, "DELETE"),
+  );
 };
 
 export default adminGuesthousesRoute;

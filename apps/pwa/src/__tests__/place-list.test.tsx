@@ -16,15 +16,31 @@ vi.mock("@/features/backoffice/places/use-places", () => ({
   useUpdatePlace: vi.fn(),
 }));
 
+vi.mock("@/features/backoffice/guesthouses/use-guesthouses", () => ({
+  useGuesthouses: vi.fn(),
+  useToggleHiddenPlace: vi.fn(),
+}));
+
 const { usePlaces, useArchivePlace, useUpdatePlace } =
   await import("@/features/backoffice/places/use-places");
+const { useGuesthouses, useToggleHiddenPlace } =
+  await import("@/features/backoffice/guesthouses/use-guesthouses");
 
 const mockUsePlaces = vi.mocked(usePlaces);
 const mockUseArchivePlace = vi.mocked(useArchivePlace);
 const mockUseUpdatePlace = vi.mocked(useUpdatePlace);
+const mockUseGuesthouses = vi.mocked(useGuesthouses);
+const mockUseToggleHiddenPlace = vi.mocked(useToggleHiddenPlace);
 
 const updateMutate = vi.fn();
 const archiveMutate = vi.fn();
+const toggleMutate = vi.fn();
+
+function setGuesthouse(hidden_place_ids: string[]) {
+  mockUseGuesthouses.mockReturnValue({
+    data: { data: [{ id: "gh1", hidden_place_ids }], nextCursor: null },
+  } as unknown as ReturnType<typeof useGuesthouses>);
+}
 
 function makePlace(over: Partial<PlaceRow>): PlaceRow {
   return {
@@ -70,6 +86,11 @@ describe("PlaceList — host's pick column", () => {
       mutate: updateMutate,
       isPending: false,
     } as unknown as ReturnType<typeof useUpdatePlace>);
+    mockUseToggleHiddenPlace.mockReturnValue({
+      mutate: toggleMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useToggleHiddenPlace>);
+    setGuesthouse([]); // default: nothing hidden
   });
 
   it("renders the pick badge reflecting each row's is_hosts_pick", () => {
@@ -85,8 +106,9 @@ describe("PlaceList — host's pick column", () => {
     const pickToggle = screen.getByLabelText("Toggle host's pick for Lagoa");
     expect(pickToggle).toHaveTextContent("Unmark");
 
-    // Non-pick row: em-dash placeholder + "Mark pick" toggle.
-    expect(screen.getByText("—")).toBeInTheDocument();
+    // Non-pick row: em-dash placeholder + "Mark pick" toggle. (Em-dashes also appear
+    // in the visibility column for non-hidden rows, so assert at least one exists.)
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
     const nonToggle = screen.getByLabelText("Toggle host's pick for Bistro");
     expect(nonToggle).toHaveTextContent("Mark pick");
 
@@ -124,6 +146,35 @@ describe("PlaceList — host's pick column", () => {
 
     expect(toast.error).toHaveBeenCalledWith(
       "Only published places can be marked as a host's pick.",
+    );
+  });
+
+  it("guest-visibility toggle reflects the gh hidden set + flips it (Plan-006 6.A.3)", () => {
+    setGuesthouse(["pick"]); // gh hides "pick"; "non" stays visible
+    setPlaces([
+      makePlace({ id: "pick", name: { en: "Lagoa" } }),
+      makePlace({ id: "non", name: { en: "Bistro" } }),
+    ]);
+
+    renderList();
+
+    // Hidden row: "Hidden" badge + "Show"; visible row: "Hide".
+    expect(screen.getByText("Hidden")).toBeInTheDocument();
+    expect(screen.getByLabelText("Toggle guest visibility for Lagoa")).toHaveTextContent("Show");
+    expect(screen.getByLabelText("Toggle guest visibility for Bistro")).toHaveTextContent("Hide");
+
+    // Hide the visible one → PUT (hide:true).
+    fireEvent.click(screen.getByLabelText("Toggle guest visibility for Bistro"));
+    expect(toggleMutate).toHaveBeenCalledWith(
+      { guesthouseId: "gh1", placeId: "non", hide: true },
+      expect.anything(),
+    );
+
+    // Show the hidden one → DELETE (hide:false).
+    fireEvent.click(screen.getByLabelText("Toggle guest visibility for Lagoa"));
+    expect(toggleMutate).toHaveBeenCalledWith(
+      { guesthouseId: "gh1", placeId: "pick", hide: false },
+      expect.anything(),
     );
   });
 });

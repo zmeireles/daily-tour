@@ -13,7 +13,7 @@ See [`LIFECYCLE.md`](./LIFECYCLE.md) for the plan lifecycle and conventions.
 | 003 | [Real-User Readiness](./003-real-user-readiness/)           | 🟡 Slices 3.A/3.B/3.C complete; 3.D partial           | `load-test` `security` `beta` `content`                 |
 | 004 | [Scale & Monetize](./004-scale-and-monetize/)               | 📋 Draft                                              | `multi-tenant` `billing` `marketing` `mobile`           |
 | 005 | [Operate](./005-operate/)                                   | 📋 Draft                                              | `slo` `incident-response` `support` `finops`            |
-| 006 | [Owner Backoffice v2](./006-owner-backoffice/)              | 🟡 In Progress — 6.A (3/15 tasks)                     | `backoffice` `multi-tenant` `media` `scoping` `feature` |
+| 006 | [Owner Backoffice v2](./006-owner-backoffice/)              | 🟡 In Progress — 6.A 4/4 (UAT pending)                | `backoffice` `multi-tenant` `media` `scoping` `feature` |
 
 ## Statistics
 
