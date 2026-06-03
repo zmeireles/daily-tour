@@ -1,6 +1,11 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { CatalogError, fetchPlacesByAction, type PlaceCard } from "../lib/catalog-client.js";
+import {
+  CatalogError,
+  fetchHiddenPlaceIds,
+  fetchPlacesByAction,
+  type PlaceCard,
+} from "../lib/catalog-client.js";
 import { queryPlaces, SearchError } from "../lib/search-client.js";
 
 const DiscoverQuerySchema = z.object({
@@ -88,6 +93,22 @@ const discoverRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           return reply.code(503).send({ error: "catalog_unavailable" });
         }
         throw err;
+      }
+    }
+
+    // Plan-006 6.A.2 — opt-out scoping: drop places this guest's guesthouse hid.
+    // Keyed off the JWT `gh` claim (guesthouse_id). Filtered before TOP_N so hidden
+    // places don't consume visible slots. Scoping must never break discovery, so a
+    // failed lookup logs and falls through to the unfiltered set.
+    const gh = (req.user as { gh?: string }).gh;
+    if (gh) {
+      try {
+        const hidden = new Set(await fetchHiddenPlaceIds(gh));
+        if (hidden.size > 0) {
+          annotated = annotated.filter((p) => !hidden.has(p.id));
+        }
+      } catch (err) {
+        req.log.warn({ err }, "[bff:discover] hidden-places lookup failed; skipping scope filter");
       }
     }
 
