@@ -1,0 +1,40 @@
+# Plan-006 — Execution Log
+
+## Wave 1 — 2026-06-03 (Slice 6.A foundation)
+
+Built directly (not cs-agent): 6.A is sequential (schema → API → BFF → UI) and the
+schema migration is a careful, escalate-only change. Dev stack up, so each step was
+verified against the live DB.
+
+| Task    | Branch                         | Scope                                                                   | Status  |
+| ------- | ------------------------------ | ----------------------------------------------------------------------- | ------- |
+| T-6.A.0 | `feat/s603-plan006-6a-scoping` | schema: `guesthouse.hidden_place_ids uuid[]` + migration + shared-types | ✅ Done |
+| T-6.A.1 | `feat/s603-plan006-6a-scoping` | catalog-svc hide/unhide endpoints + expose field                        | ✅ Done |
+
+### T-6.A.0 — Schema
+
+- **Model decision settled:** `guesthouse.hidden_place_ids uuid[]` (opt-out exclusion),
+  not `{all:true, except:[…]}`. Keeps `place.guesthouse_scope` for inclusion; the hidden
+  list is a per-guesthouse overlay. (The one open call from the plan — resolved as
+  recommended.)
+- `drizzle-kit generate --name guesthouse_hidden_places` → `0004_*.sql`, a clean single
+  `ADD COLUMN` (no schema-recreate noise). Applied via `db:migrate`; column verified
+  `hidden_place_ids | ARRAY` on the live DB.
+- `shared-types` GuesthouseSchema gains `hidden_place_ids: z.array(uuid)`; fixture updated.
+- **Changes**: `services/catalog-svc/src/db/schema.ts`, `drizzle/migrations/0004_*.sql`,
+  `packages/shared-types/src/guesthouse.ts`, `…/__tests__/fixtures.ts`.
+- **Tests**: shared-types 50 ✓, catalog-svc 25 ✓, catalog + bff typecheck clean.
+
+### T-6.A.1 — Catalog hide/unhide
+
+- `PUT /v1/guesthouses/:id/hidden-places/:placeId` — idempotent add (append-and-dedup via
+  `array_agg(DISTINCT …)`). `DELETE …` — `array_remove`. Both atomic; 404 if gh missing.
+- `formatGuesthouse` now returns `hidden_place_ids`.
+- Owner-ownership enforcement deferred to the BFF admin layer (T-6.A.2); these internal
+  catalog routes do the mutation (matches the existing no-auth-in-catalog pattern).
+- "Add own place" needs no new endpoint — existing place POST + `guesthouse_scope` covers
+  it; wiring lands in the curation UI (T-6.A.3).
+- **Changes**: `services/catalog-svc/src/routes/guesthouses.ts`, `…/__tests__/guesthouses.test.ts` (+2).
+
+**Remaining in 6.A:** T-6.A.2 (BFF discover filter by guest `gh` claim — minus hidden,
+plus gh-scoped), T-6.A.3 (backoffice curation UI + the paired forward-flow UAT).

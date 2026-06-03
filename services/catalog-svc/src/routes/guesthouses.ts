@@ -30,6 +30,11 @@ const ListQuerySchema = z.object({
 
 const IdParamSchema = z.object({ id: z.string().uuid() });
 
+const HiddenPlaceParamSchema = z.object({
+  id: z.string().uuid(),
+  placeId: z.string().uuid(),
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function encodeCursor(updatedAt: string, id: string): string {
@@ -57,6 +62,7 @@ function formatGuesthouse(row: Guesthouse) {
     geom_lat: row.geomLat,
     geom_lng: row.geomLng,
     media: row.media,
+    hidden_place_ids: row.hiddenPlaceIds,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   };
@@ -196,6 +202,50 @@ export function guesthousesRoutes(app: FastifyInstance): void {
       if (isUniqueViolation(err)) return reply.code(409).send({ error: "conflict" });
       throw err;
     }
+  });
+
+  // PUT /v1/guesthouses/:id/hidden-places/:placeId — opt-out scoping (Plan-006 6.A).
+  // Idempotently adds placeId to the guesthouse's hidden set (a global place the
+  // owner does not want shown to their guests). Owner-ownership is enforced at the
+  // BFF admin layer; this internal route performs the data mutation.
+  app.put("/v1/guesthouses/:id/hidden-places/:placeId", async (req, reply) => {
+    const parsed = HiddenPlaceParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
+    }
+    const { id, placeId } = parsed.data;
+    const db = getDb();
+    const [updated] = await db
+      .update(guesthouseTable)
+      .set({
+        // Append-and-dedup so the call is idempotent (re-hiding is a no-op).
+        hiddenPlaceIds: sql`(SELECT array_agg(DISTINCT x) FROM unnest(${guesthouseTable.hiddenPlaceIds} || ARRAY[${placeId}::uuid]) AS x)`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(guesthouseTable.id, id))
+      .returning();
+    if (!updated) return reply.code(404).send({ error: "guesthouse_not_found" });
+    return formatGuesthouse(updated);
+  });
+
+  // DELETE /v1/guesthouses/:id/hidden-places/:placeId — unhide (idempotent).
+  app.delete("/v1/guesthouses/:id/hidden-places/:placeId", async (req, reply) => {
+    const parsed = HiddenPlaceParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
+    }
+    const { id, placeId } = parsed.data;
+    const db = getDb();
+    const [updated] = await db
+      .update(guesthouseTable)
+      .set({
+        hiddenPlaceIds: sql`array_remove(${guesthouseTable.hiddenPlaceIds}, ${placeId}::uuid)`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(guesthouseTable.id, id))
+      .returning();
+    if (!updated) return reply.code(404).send({ error: "guesthouse_not_found" });
+    return formatGuesthouse(updated);
   });
 
   // DELETE /v1/guesthouses/:id — HARD delete (no status column on this table).

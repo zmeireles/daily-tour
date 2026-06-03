@@ -108,4 +108,61 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     const del2 = await app.inject({ method: "DELETE", url: `/v1/guesthouses/${id}` });
     expect(del2.statusCode).toBe(204);
   });
+
+  it("hide/unhide places — idempotent add + remove (Plan-006 6.A)", async () => {
+    const PLACE_A = "c0000001-0000-4000-a000-000000000001";
+    const PLACE_B = "c0000002-0000-4000-a000-000000000002";
+
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/guesthouses",
+      payload: VALID_BODY,
+    });
+    const { id, hidden_place_ids } = create.json<{ id: string; hidden_place_ids: string[] }>();
+    expect(hidden_place_ids).toEqual([]); // default empty
+
+    // Hide A, hide A again (idempotent), then hide B.
+    const h1 = await app.inject({
+      method: "PUT",
+      url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
+    });
+    expect(h1.statusCode).toBe(200);
+    expect(h1.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_A]);
+
+    const h2 = await app.inject({
+      method: "PUT",
+      url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
+    });
+    expect(h2.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_A]); // no dup
+
+    const h3 = await app.inject({
+      method: "PUT",
+      url: `/v1/guesthouses/${id}/hidden-places/${PLACE_B}`,
+    });
+    expect(h3.json<{ hidden_place_ids: string[] }>().hidden_place_ids.sort()).toEqual(
+      [PLACE_A, PLACE_B].sort(),
+    );
+
+    // Unhide A → only B remains; unhide A again is a no-op.
+    const u1 = await app.inject({
+      method: "DELETE",
+      url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
+    });
+    expect(u1.statusCode).toBe(200);
+    expect(u1.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_B]);
+
+    const u2 = await app.inject({
+      method: "DELETE",
+      url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
+    });
+    expect(u2.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_B]);
+  });
+
+  it("hide on a missing guesthouse → 404", async () => {
+    const res = await app.inject({
+      method: "PUT",
+      url: "/v1/guesthouses/00000000-0000-4000-8000-000000000000/hidden-places/c0000001-0000-4000-a000-000000000001",
+    });
+    expect(res.statusCode).toBe(404);
+  });
 });

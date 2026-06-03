@@ -1,0 +1,1 @@
+ALTER TABLE "catalog"."guesthouse" ADD COLUMN "hidden_place_ids" uuid[] DEFAULT '{}'::uuid[] NOT NULL;

@@ -62,6 +62,13 @@ export const guesthouseTable = catalogSchema.table("guesthouse", {
     .notNull()
     .default(sql`'[]'::jsonb`)
     .$type<string[]>(),
+  // Plan-006 6.A: opt-out scoping. Global places (place.guesthouse_scope = all)
+  // that this guesthouse's owner has hidden from their guests. The effective
+  // visible set = {all} minus hidden_place_ids, plus places scoped to this gh.
+  hiddenPlaceIds: uuid("hidden_place_ids")
+    .array()
+    .notNull()
+    .default(sql`'{}'::uuid[]`),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
 });
