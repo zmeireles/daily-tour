@@ -11,6 +11,8 @@ export const GuesthouseSchema = z
     address: z.string(),
     geom: GeomSchema,
     media: z.array(z.string().uuid()),
+    // Plan-006 6.A: global place_ids this guesthouse hides from its guests (opt-out scoping).
+    hidden_place_ids: z.array(z.string().uuid()),
     created_at: IsoDateTimeSchema,
     updated_at: IsoDateTimeSchema,
   })

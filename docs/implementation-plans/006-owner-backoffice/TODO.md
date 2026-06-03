@@ -1,19 +1,19 @@
 # Plan-006 — Owner Backoffice v2 — TODO
 
-Status: **Draft**. Decisions locked (Riff #142, 2026-06-02). All tasks need the dev
-stack up. Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
+Status: **In Progress** — 6.A executing (6.A.0 + 6.A.1 done, 2026-06-03). Decisions
+locked (Riff #142, 2026-06-02). Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Progress
 
 | Slice     | Title                               | Tasks  | Done  | Riff       |
 | --------- | ----------------------------------- | ------ | ----- | ---------- |
-| 6.A       | Per-guesthouse scoping (foundation) | 4      | 0     | #142a      |
+| 6.A       | Per-guesthouse scoping (foundation) | 4      | 2     | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
 | 6.C       | Owner photo uploader                | 3      | 0     | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 0     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
-| **Total** |                                     | **15** | **0** |            |
+| **Total** |                                     | **15** | **2** |            |
 
 ---
 
@@ -21,24 +21,38 @@ stack up. Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 > Shared-baseline opt-out model. **Do first** — carries the open exclusion-shape call.
 
-### ⬜ T-6.A.0 — Schema: guesthouse opt-out exclusion
+### ✅ T-6.A.0 — Schema: guesthouse opt-out exclusion
 
-- [ ] Add `guesthouse.hidden_place_ids uuid[]` (default `{}`) — recommended over
+- [x] Add `guesthouse.hidden_place_ids uuid[]` (default `{}`) — recommended over
       extending `guesthouse_scope` (keep that for inclusion of owner-added places).
-- **owns**: `services/catalog-svc/src/db/schema.ts`, `services/catalog-svc/drizzle/migrations/000N_guesthouse_hidden_places.sql`
+- **owns**: `services/catalog-svc/src/db/schema.ts`, `services/catalog-svc/drizzle/migrations/0004_guesthouse_hidden_places.sql`
 - **deps**: none
 - **blocks**: T-6.A.1, T-6.A.2, T-6.A.3, T-6.D.0
 - **acceptance**: migration applies idempotently; `hidden_place_ids` defaults `{}`;
   `shared-types` Guesthouse zod updated. **ESCALATE — schema migration.**
 
-### ⬜ T-6.A.1 — Catalog-svc: owner-scoped place curation endpoints
+> **Resolved 2026-06-03.** Migration `0004_guesthouse_hidden_places.sql` (clean
+> `ADD COLUMN hidden_place_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL`) applied to the
+> live DB and verified. `shared-types` GuesthouseSchema + fixtures updated. Tests:
+> 50 shared-types + 25 catalog-svc green; bff typecheck clean.
 
-- [ ] Owner can add an own place (scoped `guesthouse_ids:[gh]`) and hide/unhide a
+### ✅ T-6.A.1 — Catalog-svc: owner-scoped place curation endpoints
+
+- [x] Owner can add an own place (scoped `guesthouse_ids:[gh]`) and hide/unhide a
       global place (toggle id in the owning guesthouse's `hidden_place_ids`).
 - **owns**: `services/catalog-svc/src/routes/{places,guesthouses}.ts`
 - **deps**: T-6.A.0
 - **acceptance**: add/hide/unhide persist; owner can only mutate their own guesthouse
   (owner_id enforced); unit tests for each path.
+
+> **Resolved 2026-06-03.** Catalog-svc: `PUT`/`DELETE`
+> `/v1/guesthouses/:id/hidden-places/:placeId` — atomic, idempotent array add
+> (append-and-dedup) / remove (`array_remove`); `hidden_place_ids` now exposed in
+> `formatGuesthouse`. +2 tests (idempotent hide/unhide, 404). Owner-ownership is
+> enforced at the BFF admin layer (lands in T-6.A.2). **Scope note:** the
+> hide/unhide opt-out core shipped here; "add own place" (scoping a new place to a
+> gh) folds into the place-create + curation UI in T-6.A.3 — no separate endpoint
+> needed (the existing place POST + `guesthouse_scope` already supports it).
 
 ### ⬜ T-6.A.2 — BFF discover/search: filter by guest guesthouse
 
