@@ -3,6 +3,11 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { usePlaces, useArchivePlace, useUpdatePlace, type PlaceRow } from "./use-places";
+import {
+  useGuesthouses,
+  useToggleHiddenPlace,
+  type GuesthouseRow,
+} from "../guesthouses/use-guesthouses";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -63,10 +68,61 @@ function HostsPickToggle({ place }: { place: PlaceRow }) {
   );
 }
 
+// Plan-006 6.A.3 — per-row guest-visibility toggle. `gh` is the owner's guesthouse
+// (single-owner v1: the first row). A place whose id is in gh.hidden_place_ids is
+// hidden from this guesthouse's guests (see BFF discover filter, 6.A.2).
+function VisibilityToggle({ place, gh }: { place: PlaceRow; gh?: GuesthouseRow }) {
+  const { t } = useTranslation("admin");
+  const mutation = useToggleHiddenPlace();
+  const name = placeDisplayName(place);
+
+  if (!gh) {
+    return (
+      <span className="text-muted-foreground" aria-hidden="true">
+        —
+      </span>
+    );
+  }
+  const hidden = gh.hidden_place_ids.includes(place.id);
+
+  return (
+    <div className="flex items-center gap-2">
+      {hidden ? (
+        <Badge variant="secondary">{t("places.list.hidden_badge", "Hidden")}</Badge>
+      ) : (
+        <span className="text-muted-foreground" aria-hidden="true">
+          —
+        </span>
+      )}
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={mutation.isPending}
+        aria-label={t("places.list.visibility_aria", "Toggle guest visibility for {{name}}", {
+          name,
+        })}
+        onClick={() =>
+          mutation.mutate(
+            { guesthouseId: gh.id, placeId: place.id, hide: !hidden },
+            {
+              onError: () =>
+                toast.error(t("places.list.visibility_error", "Could not update visibility.")),
+            },
+          )
+        }
+      >
+        {hidden ? t("places.list.show_place", "Show") : t("places.list.hide_place", "Hide")}
+      </Button>
+    </div>
+  );
+}
+
 export function PlaceList() {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
   const { data, isLoading, isError } = usePlaces();
+  const { data: ghData } = useGuesthouses();
+  const gh = ghData?.data?.[0];
   const archiveMutation = useArchivePlace();
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
@@ -105,6 +161,9 @@ export function PlaceList() {
                   {t("places.list.hosts_pick", "Host's Pick")}
                 </th>
                 <th className="px-4 py-2 text-left font-medium">
+                  {t("places.list.guests", "Guests")}
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
                   {t("places.list.address", "Address")}
                 </th>
                 <th className="px-4 py-2 text-right font-medium">
@@ -123,6 +182,9 @@ export function PlaceList() {
                   </td>
                   <td className="px-4 py-3">
                     <HostsPickToggle place={place} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <VisibilityToggle place={place} gh={gh} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground truncate max-w-xs">
                     {place.address}

@@ -55,5 +55,27 @@ verified against the live DB.
 - **Changes**: `services/bff/src/routes/discover.ts`, `services/bff/src/lib/catalog-client.ts`,
   `…/__tests__/discover.test.ts` (+2). Full bff suite green (16 files).
 
-**Remaining in 6.A:** T-6.A.3 (backoffice curation UI + the paired forward-flow UAT) —
-the user-visible piece; ships like #149 with a browser UAT.
+## Wave 3 — 2026-06-03 (Slice 6.A — curation UI)
+
+| Task    | Branch                              | Scope                                                  | Status                    |
+| ------- | ----------------------------------- | ------------------------------------------------------ | ------------------------- |
+| T-6.A.3 | `feat/s603-plan006-6a3-curation-ui` | backoffice per-row visibility toggle + BFF owner proxy | 🔄 Code done, UAT pending |
+
+### T-6.A.3 — Backoffice curation UI
+
+- **BFF:** owner-gated `PUT`/`DELETE` `/v1/admin/guesthouses/:id/hidden-places/:placeId`
+  proxy → catalog (6.A.1). Single-owner v1: per-gh owner_id check deferred (same posture
+  as the other admin-guesthouses routes).
+- **PWA:** `place-list` gains a "Guests" column + `VisibilityToggle` — "Hidden" badge +
+  "Show" when in `hidden_place_ids`, else "Hide". Wired to `useToggleHiddenPlace` (new
+  hook) + `useGuesthouses` (the owner's gh = first row). `GuesthouseRow` gains
+  `hidden_place_ids`.
+- **Changes**: `services/bff/src/routes/admin-guesthouses.ts` (+2 tests),
+  `apps/pwa/src/features/backoffice/{guesthouses/use-guesthouses.ts,places/place-list.tsx}`,
+  `…/__tests__/place-list.test.tsx` (+1, fixed em-dash assertion). typecheck/lint clean.
+- **i18n note:** new toggle strings use inline English `t()` defaults (matches the existing
+  HostsPickToggle pattern); pt-PT/es translations are a minor follow-up.
+
+**Remaining gate for 6.A:** the **forward-flow UAT** for 6.A.3 — owner hides a place in
+`/admin` → that place vanishes from the guest's discover. Needs **Authentik up** (owner
+login) + bff/catalog containers rebuilt. Ships like #149.

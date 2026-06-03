@@ -131,4 +131,50 @@ describe("BFF admin-guesthouses routes", () => {
     expect(res.statusCode).toBe(201);
     expect((capturedBody[0] as Record<string, unknown>)["owner_id"]).toBe("owner-uuid-1");
   });
+
+  it("PUT/DELETE hidden-places — owner JWT proxies to catalog hide/unhide (6.A.3)", async () => {
+    const jwt = await signOwnerJwt({
+      privateKey: keypair.privateKey,
+      payload: { sub: "owner-uuid-1", aud: "staff" },
+    });
+    const calls: { url: string; method: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: unknown, init: unknown) => {
+        calls.push({ url: String(url), method: (init as { method: string }).method });
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(MOCK_GH) });
+      }),
+    );
+
+    const GH = "00000000-0000-0000-0000-000000000001";
+    const PLACE = "c0000001-0000-4000-a000-000000000001";
+
+    const hide = await app.inject({
+      method: "PUT",
+      url: `/v1/admin/guesthouses/${GH}/hidden-places/${PLACE}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+    expect(hide.statusCode).toBe(200);
+
+    const unhide = await app.inject({
+      method: "DELETE",
+      url: `/v1/admin/guesthouses/${GH}/hidden-places/${PLACE}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+    expect(unhide.statusCode).toBe(200);
+
+    const expectedUrl = `http://catalog.test/v1/guesthouses/${GH}/hidden-places/${PLACE}`;
+    expect(calls).toEqual([
+      { url: expectedUrl, method: "PUT" },
+      { url: expectedUrl, method: "DELETE" },
+    ]);
+  });
+
+  it("PUT hidden-places — no auth → 401", async () => {
+    const res = await app.inject({
+      method: "PUT",
+      url: "/v1/admin/guesthouses/00000000-0000-0000-0000-000000000001/hidden-places/c0000001-0000-4000-a000-000000000001",
+    });
+    expect(res.statusCode).toBe(401);
+  });
 });
