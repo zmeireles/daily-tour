@@ -2,6 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  // owner-auth.spec.ts is a local-only integration spec driven by its own
+  // config (playwright.owner.config.ts) against the dev server + a live
+  // Authentik. Exclude it from the default (CI) suite, which has neither.
+  testIgnore: "**/owner-auth.spec.ts",
   timeout: 30_000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:owner": "playwright test -c playwright.owner.config.ts",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-i18n-keys.mjs",
     "lint": "eslint .",
