@@ -8,6 +8,9 @@ export const ownerUserManager = new UserManager({
   redirect_uri: `${window.location.origin}/admin/callback`,
   post_logout_redirect_uri: `${window.location.origin}/`,
   response_type: "code",
-  scope: "openid profile email",
+  // `groups` is required: the BFF owner-auth plugin authorises staff by the
+  // `groups` claim, which Authentik only emits when the groups scope mapping
+  // is requested (see infra/authentik/blueprints/owner-app.yaml).
+  scope: "openid profile email groups",
   userStore: new WebStorageStateStore({ store: window.localStorage }),
 });
