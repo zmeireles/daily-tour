@@ -1,4 +1,39 @@
-# Session Handoff — 2026-05-28 → 31 → 06-01 → 06-02 → next session
+# Session Handoff — 2026-05-28 → 06-01 → 06-02 → 06-03/04 → next session
+
+> **UPDATE 2026-06-04 (session close-out): Plan-006 (Owner Backoffice v2) created + Slice 6.A shipped & verified end-to-end. Plus: #149 UAT passed, #146 closed, the full #142/#135 product+photo workstream.** Resume cold from this block.
+>
+> ### Where we are
+>
+> - **Plan-006 — Owner Backoffice v2** is the active plan: `docs/implementation-plans/006-owner-backoffice/` (README + TODO + EXECUTION, 3 waves logged). Status **In Progress**. It consolidates the #142 backoffice decisions + #135 media + #150/#151 field gaps into 6 slices (6.A–6.F) and **supersedes Plan-004 Slice 4.B** (scoping model reconciled).
+> - **Slice 6.A — per-guesthouse scoping — DONE (4/4 code) + functionally verified.** Merged: 6.A.0 schema `guesthouse.hidden_place_ids uuid[]` + 6.A.1 catalog hide/unhide (**#191**), 6.A.2 BFF discover filter (**#192**), 6.A.3 backoffice visibility toggle (**#193**). **API UAT passed live** (count 8→7→8: a hidden place vanishes from the guest's discover and returns on un-hide, via the real `gh` claim → `catalog.hidden_place_ids` → BFF discover filter). +5 unit tests across the slice.
+>   - **Model:** opt-out overlay — `place.guesthouse_scope` stays for inclusion; `guesthouse.hidden_place_ids[]` is the per-gh hide list. The 28 global staples remain the cold-start baseline.
+>   - **NOT done:** owner _clicking_ the toggle in `/admin` (6.A.3 UI→BFF proxy) — unit-tested but not browser-UAT'd because **Authentik isn't up** (owner login). Optional; the API loop proves the same effect. The "add own place" half of 6.A.3 was left light (folds into 6.C).
+>   - **Deferred in 6.A.2:** the `+gh-scoped / − other-gh` _inclusion_ filter needs the catalog query to be scope-aware — no-op today (all 28 places `{all:true}`); matters once owners add own places (6.C).
+>
+> ### Remaining Plan-006 slices (next-session candidates, in plan TODO with owns/deps/acceptance)
+>
+> - **6.C — Owner photo uploader** (`#142c`) — **recommended next.** Avatar + guesthouse hero uploaders on the media-svc signed-URL flow; unblocks the **14 #135 business hero photos** (the only lawful source). Reuses the T-1.6.2 media pipeline.
+> - **6.B — Place media pipeline** (`#135`) — add `place_media.attribution` column, then ingest the **landmark manifest** (`temp/place-photo-sourcing.md`: 5 verified Commons files, 4 public-domain) replacing the single placeholder Unsplash URL. Needs 6.C for business photos.
+> - **6.D — Hosts-pick cap** (`#142b`) — soft ~6–8/gh warn; trivial after 6.A.
+> - **6.E — Reservations screen** (`#142d`) — new `admin.reservations` route + BFF list/issue/revoke; on `auth_tokens.reservation`.
+> - **6.F — Field-editing gaps** (`#150` season col, `#151` verify hours/contacts in admin.places form).
+>
+> ### Environment (stack is UP)
+>
+> - `make up` done this session; **12 dt\_ containers healthy**. **bff + catalog-svc REBUILT** with 6.A code. PWA **vite on :5173** (started manually with **Node 22.22.3** — `.nvmrc` pins it; **Node 25 in PATH breaks pnpm/vite**, always `source ~/.nvm/nvm.sh && nvm use 22.22.3`). Vite log: `/tmp/dt-pwa.log`.
+> - **Authentik is NOT up** (separate overlay `docker-compose.authentik.yml`; needs server+worker boot + blueprint import + an owner staff user created — fiddly). Required only for the owner-side browser UAT.
+> - **Seed gap fixed for UAT (now Riff #152):** `catalog.guesthouse` was empty; I inserted `bbb00001-0000-4000-b000-000000000001` ("Casa do Sol", owner `aaa00001-…`) to match the seeded reservation's `gh`. The row is in the **live dev DB** (`hidden_place_ids` reset to `{}`) but NOT in any seed — so it survives until `make down`/volume reset.
+> - **Guest UAT entry:** reservation `ccc00001-…001` → mint via `docker exec dt_bff wget --post-data='{}' http://dt_token_svc:8088/v1/reservations/<res>/token`, exchange via host `curl localhost:28080/r/<token>` → JSON `.jwt` (gh=bbb00001-…). busybox `wget` has **no `--method`** (can't PUT/DELETE); set hidden state via psql for API UAT. bff internal `localhost:8080` resolves IPv6 → use host `:28080`.
+>
+> ### Riff state (daily-tour project)
+>
+> - **Done:** #147, #148, #144, #146, #149 (all this multi-day arc). #142a–d map to Plan-006 6.A–6.E.
+> - **Open:** #142 (umbrella, decisions locked — comment links Plan-006), #135 (manifest ready), #150, #151 (6.F), **#152 (new — catalog.guesthouse seed gap)**.
+> - dt-tests `review` queue empty at close-out. tasks-prod tunnel `:15432` has flaked repeatedly — `/mcp` reconnect when `*tasks-prod*` tools vanish.
+>
+> ### First task next session
+>
+> Promote/continue Plan-006: pick **6.C (uploader)** — most leveraged (unblocks #135 business photos + is the owner content path). Or 6.B landmark ingest (manifest ready, smaller). Read `006-owner-backoffice/TODO.md` for the task specs. Optional: bring up Authentik for the 6.A.3 browser UAT.
 
 > **UPDATE 2026-06-02 (session close-out): five tasks landed — #147 slice-C fully shipped + consumed end-to-end, plus the telemetry-grant prevention work.** Everything below merged to `main`; the un-gated engineering backlog is now cleared. Remaining work is gated on the human (photography/product) or on dev-up (the stack is `make down` for another project).
 >
