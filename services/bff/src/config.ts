@@ -32,10 +32,14 @@ const ConfigSchema = z.object({
   // Authentik JWKS endpoint for owner-app RS256 verification (T-1.6.0). Path
   // derives from the application slug declared in
   // infra/authentik/blueprints/owner-app.yaml — rename in lockstep.
+  // Host MUST be the hyphenated compose service alias `authentik-server`, not
+  // the `dt_authentik_server` container name: Authentik/Django reject Host
+  // headers containing underscores (RFC-invalid) with a 404, so JWKS fetch
+  // fails silently against the underscore name.
   AUTHENTIK_JWKS_URL: z
     .string()
     .url()
-    .default("http://dt_authentik_server:9000/application/o/owner-app/jwks/"),
+    .default("http://authentik-server:9000/application/o/owner-app/jwks/"),
   // Required token claim for owner-route access. The BFF accepts the value
   // in either `aud` or the `groups` array — Authentik puts the group name
   // in `groups` when the staff-only policy fires (see owner-app.yaml).

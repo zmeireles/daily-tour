@@ -21,6 +21,7 @@
     "vite.config.ts",
     "vitest.config.ts",
     "playwright.config.ts",
+    "playwright.owner.config.ts",
     "pwa-assets.config.ts"
   ]
 }

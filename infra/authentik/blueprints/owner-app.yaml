@@ -54,10 +54,14 @@ entries:
           "groups": [group.name for group in request.user.ak_groups.all()],
         }
 
-  # OIDC provider. Confidential client (BFF holds the secret; PWA does
-  # PKCE-only against the public client surface). Tokens are RS256 — the
-  # signing key is Authentik's default self-signed cert; Phase 5 swaps
-  # this for a Let's Encrypt or HSM-backed key.
+  # OIDC provider. PUBLIC client: the PWA is a browser SPA and runs the
+  # Authorization-Code + PKCE flow directly (oidc-client-ts, client_id
+  # `owner-app-public`) — it cannot hold a secret. The BFF is a pure
+  # resource server: it only verifies tokens via this provider's JWKS
+  # (services/bff/src/plugins/owner-auth.ts), never does a code exchange,
+  # so no confidential client is needed. Tokens are RS256 — the signing key
+  # is Authentik's default self-signed cert; Phase 5 swaps this for a
+  # Let's Encrypt or HSM-backed key.
   #
   # Token lifetimes: access 1 hour, refresh 14 days — matches D7
   # (refresh policy) in docs/REQUIREMENTS.md.
@@ -65,9 +69,8 @@ entries:
     identifiers:
       name: owner-app-oidc
     attrs:
-      client_type: confidential
-      client_id: owner-app
-      client_secret: !Env AUTHENTIK_OWNER_APP_CLIENT_SECRET
+      client_type: public
+      client_id: owner-app-public
       authorization_flow:
         !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]

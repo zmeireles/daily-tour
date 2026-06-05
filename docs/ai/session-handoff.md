@@ -1,4 +1,33 @@
-# Session Handoff — 2026-05-28 → 06-01 → 06-02 → 06-03/04 → next session
+# Session Handoff — 2026-05-28 → 06-01 → 06-02 → 06-03/04 → 06-04(authentik) → next session
+
+> **UPDATE 2026-06-04 (authentik session): Authentik brought up + owner-auth integration completed + Slice 6.A FULLY DONE (6.A.3 browser UAT passed).** Resume cold from this block.
+>
+> ### What happened
+>
+> - **Authentik is now UP and durable.** Booted the overlay (`authentik-postgres` + `-server` + `-worker`) and published the server on host **`:9000`** via an untracked override (`temp/authentik-ports.override.yml`) so the browser can reach OIDC discovery/auth directly (no Traefik/`/etc/hosts` needed).
+> - **Found + fixed 4 latent owner-auth bugs** that had silently blocked _any_ owner login (committed straight to **main, `e84b091`**, `fix(bff,pwa,authentik): complete owner-app OIDC integration`):
+>   1. **bff** `AUTHENTIK_JWKS_URL` default used the `dt_authentik_server` _container_ name — underscores are RFC-invalid in a Host header, so Authentik 404s and JWKS load fails silently. → hyphenated service alias `authentik-server` (`services/bff/src/config.ts` + `.env.example`).
+>   2. **pwa** owner-oidc requested only `openid profile email` → Authentik never emitted the `groups` claim the BFF authorises staff by (would 403). → added `groups` scope (`apps/pwa/src/lib/auth/owner-oidc.ts`).
+>   3. **env** `VITE_AUTHENTIK_URL` was `https`; Authentik dev serves http on :9000 → `.env.example` fixed to `http`.
+>   4. **blueprint** `owner-app.yaml` defined a _confidential_ client, but the PWA is a public PKCE SPA (`owner-app-public`) and the BFF is JWKS-only — and on every worker restart the blueprint re-bound the app to the confidential provider, breaking login. → rewrote to a **public** client so the blueprint converges to the working config (now the durable source of truth; verified across a worker restart).
+> - **Verified end-to-end twice** (headless `temp/authentik-e2e.py`: real PKCE login → staff token → `BFF /v1/admin/guesthouses` 200), then the **6.A.3 forward-flow UAT in a real headless Chromium** (`temp/uat-6a3.mjs`): owner login → `/admin/places` → click **Hide** on "Azores Sub-Dive" (`c0000001-…028`) → "Hidden" badge + catalog `hidden_place_ids` persisted → **Show** → reverted to `[]`. **Slice 6.A is now 4/4 DONE incl. the owner-UI path.**
+>
+> ### Dev-env state (for resume)
+>
+> - **Stack is UP**: 12 `dt_` app containers + **3 `dt_authentik_*`** healthy. BFF **rebuilt** with the JWKS fix. PWA **vite on :5173** (Node 22.22.3; `/tmp/dt-pwa.log`).
+> - **Authentik reachable at `http://localhost:9000`**; admin/owner login `akadmin` / `$AUTHENTIK_BOOTSTRAP_PASSWORD` (akadmin is in the `staff` group). Browser owner login: open `http://localhost:5173/admin`.
+> - **Gitignored dev-only files** (NOT committed, needed for the env to work): `apps/pwa/.env.local` (`VITE_AUTHENTIK_URL=http://localhost:9000/...`), `temp/authentik-ports.override.yml` (publishes :9000), `temp/authentik-setup.py` (idempotent realm setup — fallback if the blueprint ever fails to apply), `temp/authentik-e2e.py` + `temp/uat-6a3.mjs` (verification harnesses; the UAT pins chromium-1217 since the installed Playwright wants an un-cached headless-shell build).
+> - **To bring Authentik up next time**: `docker compose --env-file .env -f infra/compose/docker-compose.base.yml -f infra/compose/docker-compose.authentik.yml -f temp/authentik-ports.override.yml up -d authentik-postgres authentik-server authentik-worker`. The blueprint auto-applies the realm (public client + staff group + groups mapping). If akadmin isn't in `staff` after a volume reset, run `AK_TOKEN=$(grep …BOOTSTRAP_TOKEN .env|cut -d= -f2-) python3 temp/authentik-setup.py` (adds akadmin→staff) — or just add via the admin UI.
+>
+> ### Known minor follow-ups (non-blocking)
+>
+> - The `groups` claim is duplicated in the token (`["authentik Admins","staff","authentik Admins","staff"]`) — benign Authentik claim-merge quirk; BFF dedups via membership check. Not worth chasing.
+> - `AUTHENTIK_OWNER_APP_CLIENT_SECRET` is still a required compose env (`:?`) though the public blueprint no longer uses it — harmless; could be dropped from the authentik compose + `.env.example` in a later cleanup.
+> - Local `git push` of `e84b091` was left for the human (orchestrator only commits/pushes on request).
+>
+> ### Next-session candidates (Plan-006, unchanged + now all browser-UAT-able)
+>
+> **6.C owner photo uploader** (most leveraged; unblocks #135 business heroes) · **6.B landmark photos** (manifest ready; 6.B.0 is an escalate migration) · **6.D hosts-pick cap** (quick FE-only). See `006-owner-backoffice/TODO.md`.
 
 > **UPDATE 2026-06-04 (session close-out): Plan-006 (Owner Backoffice v2) created + Slice 6.A shipped & verified end-to-end. Plus: #149 UAT passed, #146 closed, the full #142/#135 product+photo workstream.** Resume cold from this block.
 >

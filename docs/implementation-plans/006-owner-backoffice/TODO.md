@@ -1,22 +1,21 @@
 # Plan-006 — Owner Backoffice v2 — TODO
 
-Status: **In Progress** — 6.A code complete (6.A.0–6.A.3, 2026-06-03); 6.A.3 forward-flow
-UAT pending (needs Authentik for owner login). Decisions locked (Riff #142, 2026-06-02).
+Status: **In Progress** — Slice 6.A DONE (6.A.0–6.A.3, code + forward-flow UAT, 2026-06-04;
+Authentik up + owner-auth integration completed, commit `e84b091`). Decisions locked
+(Riff #142, 2026-06-02).
 Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Progress
 
 | Slice     | Title                               | Tasks  | Done  | Riff       |
 | --------- | ----------------------------------- | ------ | ----- | ---------- |
-| 6.A       | Per-guesthouse scoping (foundation) | 4      | 4\*   | #142a      |
+| 6.A       | Per-guesthouse scoping (foundation) | 4      | 4     | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
 | 6.C       | Owner photo uploader                | 3      | 0     | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 0     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
 | **Total** |                                     | **15** | **4** |            |
-
-`*` 6.A.3 code complete; its forward-flow UAT is the remaining gate.
 
 ---
 
@@ -75,7 +74,7 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 > scope-aware; it's a no-op today (all 28 places are `{all:true}`, none gh-scoped)
 > and only matters once owners add own places (6.C). Tracked as a 6.A note.
 
-### 🔄 T-6.A.3 — Backoffice: curation UI (list + hide toggle) — code done, UAT pending
+### ✅ T-6.A.3 — Backoffice: curation UI (list + hide toggle)
 
 - [x] Place list distinguishes global vs own; per-row hide/show toggle; "add place" is
       scoped to the owner's guesthouse.
@@ -84,14 +83,20 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 - **acceptance**: owner hides a global place + adds an own place; RTL cases; **paired
   dt-tests forward-flow UAT** (owner hides → guest no longer sees it).
 
-> **Code complete 2026-06-03 (UAT pending).** PWA `place-list` gains a "Guests" column
-> with a per-row `VisibilityToggle`: a place in the owner guesthouse's `hidden_place_ids`
-> shows a "Hidden" badge + "Show", else "Hide". Wired to `useToggleHiddenPlace` → BFF
-> owner-gated `PUT`/`DELETE` `/v1/admin/guesthouses/:id/hidden-places/:placeId` → catalog
-> (6.A.1). Single-owner v1: uses the first guesthouse. +1 PWA test, +2 BFF test;
-> typecheck/lint clean. **Remaining gate:** the paired forward-flow UAT (owner hides →
-> guest's discover no longer shows it) — needs **Authentik up** for owner login +
-> bff/catalog rebuilt. "Add own place" stays light (existing place POST + scope).
+> **Code complete 2026-06-03; forward-flow UAT PASSED 2026-06-04.** PWA `place-list`
+> gains a "Guests" column with a per-row `VisibilityToggle`: a place in the owner
+> guesthouse's `hidden_place_ids` shows a "Hidden" badge + "Show", else "Hide". Wired to
+> `useToggleHiddenPlace` → BFF owner-gated `PUT`/`DELETE`
+> `/v1/admin/guesthouses/:id/hidden-places/:placeId` → catalog (6.A.1). Single-owner v1:
+> uses the first guesthouse. +1 PWA test, +2 BFF test; typecheck/lint clean.
+>
+> **UAT (2026-06-04):** Authentik brought up + owner-auth integration completed
+> (commit `e84b091`). A headless-Chromium forward-flow UAT (`temp/uat-6a3.mjs`) drove a
+> **real OIDC login** (akadmin → Authentik flow) → `/admin/places` → clicked **Hide** on
+> "Azores Sub-Dive" → asserted the "Hidden" badge + that catalog `hidden_place_ids`
+> persisted `c0000001-…028`, then **Show** → asserted revert to `[]`. The guest-side
+> exclusion (hidden id absent from discover) was verified last session + is covered by
+> BFF unit tests. "Add own place" stays light (existing place POST + scope).
 
 ---
 
