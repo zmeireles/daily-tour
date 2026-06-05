@@ -141,6 +141,7 @@ describe("GuesthouseForm", () => {
         address: "Furnas",
         geom_lat: 38.5,
         geom_lng: -25.1,
+        media: [],
       });
     });
   });
@@ -159,6 +160,7 @@ describe("GuesthouseForm", () => {
         address: "Furnas, São Miguel",
         geom_lat: 37.77,
         geom_lng: -25.32,
+        media: [],
       });
     });
     expect(createMutateAsync).not.toHaveBeenCalled();
@@ -185,5 +187,29 @@ describe("GuesthouseForm", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("create guesthouse 500");
+  });
+
+  it("renders the hero image from media[0] via the display route", () => {
+    const heroId = "11111111-1111-4111-8111-111111111111";
+    render(<GuesthouseForm id={MOCK_GH.id} initialData={{ ...MOCK_GH, media: [heroId] }} />);
+
+    const hero = screen.getByRole("img", { name: "Guesthouse hero" });
+    expect(hero.getAttribute("src")).toBe(`/v1/media/${heroId}`);
+  });
+
+  it("renders no hero image when media is empty", () => {
+    render(<GuesthouseForm id={MOCK_GH.id} initialData={MOCK_GH} />);
+    expect(screen.queryByRole("img", { name: "Guesthouse hero" })).toBeNull();
+  });
+
+  it("includes the seeded media in the edit submit body", async () => {
+    const heroId = "11111111-1111-4111-8111-111111111111";
+    render(<GuesthouseForm id={MOCK_GH.id} initialData={{ ...MOCK_GH, media: [heroId] }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(updateMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ media: [heroId] }));
+    });
   });
 });

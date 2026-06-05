@@ -56,6 +56,8 @@
       "latitude": "Latitude",
       "longitude": "Longitude",
       "map_placeholder": "Seletor de mapa adiado para a Fase 2 — use campos numéricos por agora.",
+      "hero": "Foto principal",
+      "hero_alt": "Imagem do alojamento",
       "save": "Guardar",
       "cancel": "Cancelar",
       "tabs": {
