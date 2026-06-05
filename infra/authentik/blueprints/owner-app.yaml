@@ -79,7 +79,11 @@ entries:
       access_token_validity: hours=1
       refresh_token_validity: days=14
       include_claims_in_id_token: true
-      sub_mode: hashed_user_id
+      # user_uuid (not hashed_user_id): the BFF maps the JWT `sub` directly to
+      # owner_id, and every owner-scoped table (catalog.owner_profile,
+      # media.asset, …) keys on a `uuid` column — a hashed sub is not a valid
+      # UUID and fails those inserts.
+      sub_mode: user_uuid
       issuer_mode: per_provider
       # Dev (Vite default port) + QA redirect URIs. Phase 5 deploy
       # injects the production URL via a per-environment override

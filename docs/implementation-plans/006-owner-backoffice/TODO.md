@@ -11,11 +11,11 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 | --------- | ----------------------------------- | ------ | ----- | ---------- |
 | 6.A       | Per-guesthouse scoping (foundation) | 4      | 4     | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
-| 6.C       | Owner photo uploader                | 3      | 0     | #142c      |
+| 6.C       | Owner photo uploader                | 3      | 1     | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 0     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
-| **Total** |                                     | **15** | **4** |            |
+| **Total** |                                     | **15** | **5** |            |
 
 ---
 
@@ -132,12 +132,26 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 > Reuses the media-svc signed-URL flow already built for Place CRUD (T-1.6.2).
 
-### ⬜ T-6.C.0 — Backoffice: owner avatar uploader
+### ✅ T-6.C.0 — Backoffice: owner avatar uploader
 
-- [ ] Avatar upload → media-svc signed PUT → `owner_profile.photo` (asset UUID).
-- **owns**: `apps/pwa/src/features/backoffice/profile/**`, `services/bff/src/routes/admin-media.ts`
+- [x] Avatar upload → `owner_profile.photo` (asset UUID), rendered same-origin.
+- **owns**: `apps/pwa/src/features/backoffice/profile/**`, `services/bff/src/routes/{admin-media,media-display}.ts`
 - **deps**: none (media-svc exists)
 - **acceptance**: owner uploads avatar; profile reflects it; **paired UAT**.
+
+> **Done 2026-06-05 (PR #196).** Building this surfaced that the upload+display
+> flow never worked in-browser despite the persistence plumbing existing. Shipped
+> the **media-display foundation** (shared by 6.B/6.C): public BFF `GET /v1/media/:id`
+> proxies asset bytes same-origin (media-svc only 302s to the internal
+> `minio:9000` presigned host). Fixed three integration bugs no mock caught:
+> (1) **upload split-horizon** — browser can't PUT to the internal MinIO host →
+> new BFF `POST /v1/admin/media/upload` proxies sign→PUT→complete server-side;
+> the shared `MediaUploader` now makes one same-origin call (fixes place uploads
+> too). (2) media-svc didn't allow **image/png**. (3) Authentik `sub_mode`
+> `hashed_user_id`→`user_uuid` (owner_id columns are uuid). Profile renders the
+> avatar `<img src="/v1/media/:id">`. +unit tests (BFF media-display/upload,
+> media-uploader, profile render) + gated `owner-avatar` e2e. **UAT PASSED**
+> (real browser: upload → render → save → reload → renders; + headless).
 
 ### ⬜ T-6.C.1 — Backoffice: guesthouse hero uploader
 

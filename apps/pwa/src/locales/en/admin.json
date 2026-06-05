@@ -18,6 +18,7 @@
       "phone": "Phone",
       "email": "Email",
       "photo": "Photo",
+      "photo_alt": "Owner avatar",
       "contact_options": "Contact options",
       "call_enabled": "Allow calls",
       "dm_in_app": "In-app messages",
