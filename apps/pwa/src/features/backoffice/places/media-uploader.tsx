@@ -13,30 +13,16 @@ interface Props {
   initialAssets?: UploadedAsset[];
 }
 
-async function signAndUpload(file: File, jwt: string): Promise<UploadedAsset> {
-  const signRes = await fetch("/v1/admin/media/sign", {
+async function uploadFile(file: File, jwt: string): Promise<UploadedAsset> {
+  // Single same-origin call: the BFF proxies sign → PUT-to-MinIO → complete.
+  // (The browser can't PUT to the internal MinIO presigned host directly.)
+  const res = await fetch("/v1/admin/media/upload", {
     method: "POST",
-    headers: { Authorization: `Bearer ${jwt}`, "content-type": "application/json" },
-    body: JSON.stringify({ mime_type: file.type, size_bytes: file.size }),
-  });
-  if (!signRes.ok) throw new Error(`sign failed ${signRes.status}`);
-  const { put_url, asset_id } = (await signRes.json()) as { put_url: string; asset_id: string };
-
-  const putRes = await fetch(put_url, {
-    method: "PUT",
-    headers: { "content-type": file.type },
+    headers: { Authorization: `Bearer ${jwt}`, "content-type": file.type },
     body: file,
   });
-  if (!putRes.ok) throw new Error(`upload failed ${putRes.status}`);
-
-  const completeRes = await fetch("/v1/admin/media/complete", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${jwt}`, "content-type": "application/json" },
-    body: JSON.stringify({ asset_id }),
-  });
-  if (!completeRes.ok && completeRes.status !== 204) {
-    throw new Error(`complete failed ${completeRes.status}`);
-  }
+  if (!res.ok) throw new Error(`upload failed ${res.status}`);
+  const { asset_id } = (await res.json()) as { asset_id: string };
 
   return { assetId: asset_id, previewUrl: URL.createObjectURL(file), name: file.name };
 }
@@ -60,7 +46,7 @@ export function MediaUploader({
       setUploading(true);
       setError(null);
       try {
-        const uploaded = await Promise.all(imageFiles.map((f) => signAndUpload(f, jwt)));
+        const uploaded = await Promise.all(imageFiles.map((f) => uploadFile(f, jwt)));
         const next = [...assets, ...uploaded];
         setAssets(next);
         onUploaded(next);

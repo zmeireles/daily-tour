@@ -25,6 +25,11 @@ export interface MediaSvc {
   // browser-reachable); the BFF follows that redirect server-side and buffers
   // the bytes so the public /v1/media/:id route can serve them same-origin.
   fetchAsset(assetId: string): Promise<MediaAsset>;
+  // Server-side upload: sign → PUT to MinIO → complete, all from the BFF.
+  // The presigned PUT URL targets the internal `minio:9000` host, so the
+  // browser can't PUT to it directly; the BFF proxies the bytes (same reason
+  // as fetchAsset). Returns the new asset id.
+  uploadAsset(ownerId: string, mimeType: string, body: Buffer): Promise<{ asset_id: string }>;
 }
 
 declare module "fastify" {
@@ -36,7 +41,7 @@ declare module "fastify" {
 function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => void): void {
   const { MEDIA_SVC_URL, MEDIA_SVC_INTERNAL_TOKEN } = loadConfig();
 
-  fastify.decorate("mediaSvc", {
+  const mediaSvc: MediaSvc = {
     async signUpload(
       ownerId: string,
       mimeType: string,
@@ -84,7 +89,28 @@ function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => voi
         body: await res.arrayBuffer(),
       };
     },
-  });
+
+    async uploadAsset(
+      ownerId: string,
+      mimeType: string,
+      body: Buffer,
+    ): Promise<{ asset_id: string }> {
+      const { put_url, asset_id } = await mediaSvc.signUpload(ownerId, mimeType, body.byteLength);
+      // The presigned PUT is content-type-bound; the header MUST match the
+      // mime media-svc signed with, or MinIO rejects the signature.
+      const put = await fetch(put_url, {
+        method: "PUT",
+        headers: { "content-type": mimeType },
+        body,
+      });
+      if (!put.ok) {
+        throw new Error(`minio PUT responded ${put.status}`);
+      }
+      await mediaSvc.completeUpload(asset_id);
+      return { asset_id };
+    },
+  };
+  fastify.decorate("mediaSvc", mediaSvc);
   done();
 }
 

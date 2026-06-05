@@ -38,6 +38,7 @@ async function buildTestApp(keypair: AuthentikTestKeypair): Promise<FastifyInsta
     fetchAsset: vi
       .fn()
       .mockResolvedValue({ ok: true, status: 200, contentType: "image/jpeg", body: null }),
+    uploadAsset: vi.fn().mockResolvedValue({ asset_id: "asset-uuid-2" }),
   };
   app.decorate("mediaSvc", mockMediaSvc);
 
@@ -125,5 +126,50 @@ describe("BFF admin-media routes", () => {
     expect(vi.mocked(app.mediaSvc.completeUpload)).toHaveBeenCalledWith(
       "00000000-0000-0000-0000-000000000001",
     );
+  });
+
+  it("POST /v1/admin/media/upload — no auth → 401", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/admin/media/upload",
+      headers: { "content-type": "image/jpeg" },
+      payload: Buffer.from("IMG"),
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("POST /v1/admin/media/upload — non-image content-type → 415", async () => {
+    const jwt = await signOwnerJwt({
+      privateKey: keypair.privateKey,
+      payload: { sub: "owner-1", aud: "staff" },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/admin/media/upload",
+      headers: { authorization: `Bearer ${jwt}`, "content-type": "application/json" },
+      payload: JSON.stringify({ not: "an image" }),
+    });
+    expect(res.statusCode).toBe(415);
+    expect(vi.mocked(app.mediaSvc.uploadAsset)).not.toHaveBeenCalled();
+  });
+
+  it("POST /v1/admin/media/upload — image bytes → proxies to mediaSvc.uploadAsset, returns 201 asset_id", async () => {
+    const jwt = await signOwnerJwt({
+      privateKey: keypair.privateKey,
+      payload: { sub: "owner-1", aud: "staff" },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/admin/media/upload",
+      headers: { authorization: `Bearer ${jwt}`, "content-type": "image/png" },
+      payload: Buffer.from("PNGBYTES"),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toEqual({ asset_id: "asset-uuid-2" });
+    const call = vi.mocked(app.mediaSvc.uploadAsset).mock.calls[0];
+    expect(call[0]).toBe("owner-1");
+    expect(call[1]).toBe("image/png");
+    expect(Buffer.isBuffer(call[2])).toBe(true);
+    expect(call[2].toString()).toBe("PNGBYTES");
   });
 });

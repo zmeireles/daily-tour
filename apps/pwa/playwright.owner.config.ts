@@ -14,10 +14,15 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "**/owner-auth.spec.ts",
-  timeout: 60_000,
+  testMatch: "**/owner-*.spec.ts",
+  // Generous timeout + one retry: these drive a live OIDC login against a dev
+  // Authentik whose flow executor can slow under rapid back-to-back logins.
+  timeout: 120_000,
   fullyParallel: false,
-  retries: 0,
+  // Shared backend state (Authentik, catalog, MinIO) as the same owner — run
+  // serially so the specs don't race each other.
+  workers: 1,
+  retries: 1,
   reporter: "list",
   use: {
     baseURL: "http://localhost:5173",

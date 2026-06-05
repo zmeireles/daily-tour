@@ -22,21 +22,15 @@ function imageFile() {
   return new File([new Blob(["x"])], "test.jpg", { type: "image/jpeg" });
 }
 
-/** Mock the 3-call signAndUpload chain: sign -> PUT presigned -> complete. */
+/** Mock the single same-origin upload call (BFF proxies sign/PUT/complete). */
 function makeUploadFetchMock() {
   return vi.fn((url: string) => {
-    if (url.includes("/v1/admin/media/sign")) {
+    if (url.includes("/v1/admin/media/upload")) {
       return Promise.resolve({
         ok: true,
-        status: 200,
-        json: () => Promise.resolve({ put_url: "https://signed.example/abc", asset_id: "new-1" }),
+        status: 201,
+        json: () => Promise.resolve({ asset_id: "new-1" }),
       });
-    }
-    if (url === "https://signed.example/abc") {
-      return Promise.resolve({ ok: true, status: 200 });
-    }
-    if (url.includes("/v1/admin/media/complete")) {
-      return Promise.resolve({ ok: true, status: 204 });
     }
     return Promise.reject(new Error(`unexpected fetch ${url}`));
   });
@@ -85,7 +79,7 @@ describe("MediaUploader", () => {
     expect(onUploaded).not.toHaveBeenCalled();
   });
 
-  it("runs the 3-call upload chain and calls onUploaded with initialAssets ∪ new uploads", async () => {
+  it("uploads via the same-origin BFF proxy and calls onUploaded with initialAssets ∪ new uploads", async () => {
     const fetchMock = makeUploadFetchMock();
     vi.stubGlobal("fetch", fetchMock);
     const onUploaded = vi.fn();
@@ -98,23 +92,19 @@ describe("MediaUploader", () => {
 
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
 
-    // sign POST carries the bearer token
+    // single POST to the BFF upload proxy: bearer token + the file as the body,
+    // content-type carrying the file's mime so media-svc signs it correctly.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/v1/admin/media/sign",
+      "/v1/admin/media/upload",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({ Authorization: "Bearer test-jwt" }),
+        body: file,
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-jwt",
+          "content-type": "image/jpeg",
+        }),
       }),
-    );
-    // PUT goes to the presigned URL with the file as body
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://signed.example/abc",
-      expect.objectContaining({ method: "PUT", body: file }),
-    );
-    // complete POSTs the returned asset_id
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/v1/admin/media/complete",
-      expect.objectContaining({ method: "POST", body: JSON.stringify({ asset_id: "new-1" }) }),
     );
     // onUploaded receives the union of existing + newly uploaded
     expect(onUploaded).toHaveBeenCalledWith([EXISTING, NEW_ASSET]);
@@ -138,11 +128,11 @@ describe("MediaUploader", () => {
     expect(onUploaded).not.toHaveBeenCalled();
   });
 
-  it("surfaces an error when the sign request fails", async () => {
+  it("surfaces an error when the upload request fails", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string) => {
-        if (url.includes("/v1/admin/media/sign")) {
+        if (url.includes("/v1/admin/media/upload")) {
           return Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) });
         }
         return Promise.reject(new Error(`unexpected fetch ${url}`));
@@ -156,7 +146,7 @@ describe("MediaUploader", () => {
     fireEvent.change(input, { target: { files: [imageFile()] } });
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("sign failed 500");
+    expect(alert).toHaveTextContent("upload failed 500");
     expect(onUploaded).not.toHaveBeenCalled();
   });
 
@@ -172,7 +162,7 @@ describe("MediaUploader", () => {
     expect(dropzone.className).not.toContain("bg-primary/5");
   });
 
-  it("handles a drop event with image files by starting the upload chain", async () => {
+  it("handles a drop event with image files by starting the upload", async () => {
     const fetchMock = makeUploadFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -182,7 +172,7 @@ describe("MediaUploader", () => {
     fireEvent.drop(dropzone, { dataTransfer: { files: [imageFile()] } });
 
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith("/v1/admin/media/sign", expect.anything()),
+      expect(fetchMock).toHaveBeenCalledWith("/v1/admin/media/upload", expect.anything()),
     );
   });
 

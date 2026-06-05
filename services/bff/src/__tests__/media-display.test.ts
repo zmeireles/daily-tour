@@ -39,6 +39,7 @@ async function buildTestApp(): Promise<{ app: FastifyInstance; mediaSvc: MediaSv
     signUpload: vi.fn(),
     completeUpload: vi.fn(),
     fetchAsset: vi.fn().mockResolvedValue(buildAsset()),
+    uploadAsset: vi.fn(),
   };
   app.decorate("mediaSvc", mediaSvc);
 
