@@ -5,7 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateGuesthouse, useUpdateGuesthouse, type GuesthouseRow } from "./use-guesthouses";
+import { MediaUploader, type UploadedAsset } from "@/features/backoffice/places/media-uploader";
 import { Button } from "@/components/ui/button";
+
+// Guesthouse media is an array of media-svc asset UUIDs; resolve each to the
+// same-origin display route so the editor shows + preserves existing media.
+function toUploadedAssets(media: string[] | undefined): UploadedAsset[] {
+  return (media ?? []).map((id) => ({ assetId: id, previewUrl: `/v1/media/${id}`, name: id }));
+}
 
 const FormSchema = z.object({
   name_en: z.string().min(1, "Required"),
@@ -34,6 +41,10 @@ export function GuesthouseForm({ initialData, id }: Props) {
   const createMutation = useCreateGuesthouse();
   const updateMutation = useUpdateGuesthouse(id ?? "");
   const isEdit = !!id;
+  const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>(() =>
+    toUploadedAssets(initialData?.media),
+  );
+  const hero = mediaAssets[0];
 
   const {
     register,
@@ -60,6 +71,7 @@ export function GuesthouseForm({ initialData, id }: Props) {
       address: values.address,
       geom_lat: values.geom_lat,
       geom_lng: values.geom_lng,
+      media: mediaAssets.map((a) => a.assetId),
     };
     if (isEdit) {
       await updateMutation.mutateAsync(body);
@@ -193,6 +205,23 @@ export function GuesthouseForm({ initialData, id }: Props) {
               )}
             </label>
           </div>
+        </fieldset>
+
+        {/* Hero photo (media[0]) */}
+        <fieldset className="flex flex-col gap-2">
+          <span className="text-sm font-medium">{t("guesthouses.form.hero", "Hero photo")}</span>
+          {hero && (
+            <img
+              src={hero.previewUrl}
+              alt={t("guesthouses.form.hero_alt", "Guesthouse hero")}
+              className="aspect-video w-full max-w-md rounded-md border object-cover"
+            />
+          )}
+          <MediaUploader
+            label={t("places.form.media.upload_hint", "Drag & drop a photo or click to select")}
+            initialAssets={mediaAssets}
+            onUploaded={setMediaAssets}
+          />
         </fieldset>
 
         <div className="flex gap-3 pt-2">

@@ -56,6 +56,8 @@
       "latitude": "Latitude",
       "longitude": "Longitude",
       "map_placeholder": "Map picker deferred to Phase 2 — use numeric inputs for now.",
+      "hero": "Hero photo",
+      "hero_alt": "Guesthouse hero",
       "save": "Save",
       "cancel": "Cancel",
       "tabs": {

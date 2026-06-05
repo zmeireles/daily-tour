@@ -11,11 +11,11 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 | --------- | ----------------------------------- | ------ | ----- | ---------- |
 | 6.A       | Per-guesthouse scoping (foundation) | 4      | 4     | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
-| 6.C       | Owner photo uploader                | 3      | 1     | #142c      |
+| 6.C       | Owner photo uploader                | 3      | 2     | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 0     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
-| **Total** |                                     | **15** | **5** |            |
+| **Total** |                                     | **15** | **6** |            |
 
 ---
 
@@ -153,12 +153,22 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 > media-uploader, profile render) + gated `owner-avatar` e2e. **UAT PASSED**
 > (real browser: upload → render → save → reload → renders; + headless).
 
-### ⬜ T-6.C.1 — Backoffice: guesthouse hero uploader
+### ✅ T-6.C.1 — Backoffice: guesthouse hero uploader
 
-- [ ] Hero upload → `guesthouse.media[0]`.
+- [x] Hero upload → `guesthouse.media[0]`.
 - **owns**: `apps/pwa/src/features/backoffice/guesthouses/**`
 - **deps**: T-6.C.0 (shared upload component)
 - **acceptance**: guesthouse hero set + renders.
+
+> **Done 2026-06-05.** PWA-only on the 6.C.0 media foundation: `GuesthouseForm`
+> gains a "Hero photo" fieldset — `MediaUploader` (same-origin BFF upload proxy)
+>
+> - a hero `<img src="/v1/media/:id">` preview of `media[0]`, resolved via the
+>   display route. `media` (uuid[]) now flows through the existing BFF/catalog
+>   guesthouse PATCH/POST (already accepted `media`; no backend change). +3 RTL
+>   tests (hero renders from media[0] / absent when empty / media in submit body).
+>   **Live browser-verified**: upload hero → renders → save → reopen → persisted
+>   hero renders (`/v1/media/:id`).
 
 ### ⬜ T-6.C.2 — Backoffice: per-place hero upload (business places)
 

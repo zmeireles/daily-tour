@@ -56,6 +56,8 @@
       "latitude": "Breitengrad",
       "longitude": "Längengrad",
       "map_placeholder": "Kartenauswahl auf Phase 2 verschoben — vorerst numerische Eingaben verwenden.",
+      "hero": "Titelbild",
+      "hero_alt": "Unterkunftsbild",
       "save": "Speichern",
       "cancel": "Abbrechen",
       "tabs": {
