@@ -7,12 +7,24 @@ export interface MediaSignResult {
   asset_id: string;
 }
 
+export interface MediaAsset {
+  ok: boolean;
+  status: number;
+  contentType: string | null;
+  body: ArrayBuffer | null;
+}
+
 export interface MediaSvc {
   // Request a pre-signed PUT URL for a direct client → MinIO upload.
   // ownerId: Authentik subject (stub: forwarded from BFF session until T-1.6.x).
   signUpload(ownerId: string, mimeType: string, sizeBytes: number): Promise<MediaSignResult>;
   // Called after the client's PUT to MinIO succeeds; triggers the transcode worker.
   completeUpload(assetId: string): Promise<void>;
+  // Fetch an asset's bytes for browser display. media-svc 302-redirects to a
+  // short-lived MinIO presigned URL on the internal `minio:9000` host (not
+  // browser-reachable); the BFF follows that redirect server-side and buffers
+  // the bytes so the public /v1/media/:id route can serve them same-origin.
+  fetchAsset(assetId: string): Promise<MediaAsset>;
 }
 
 declare module "fastify" {
@@ -57,6 +69,20 @@ function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => voi
       if (!res.ok) {
         throw new Error(`media-svc /complete responded ${res.status}`);
       }
+    },
+
+    async fetchAsset(assetId: string): Promise<MediaAsset> {
+      // fetch follows media-svc's 302 → MinIO presigned GET automatically.
+      const res = await fetch(`${MEDIA_SVC_URL}/v1/assets/${assetId}`);
+      if (!res.ok) {
+        return { ok: false, status: res.status, contentType: null, body: null };
+      }
+      return {
+        ok: true,
+        status: res.status,
+        contentType: res.headers.get("content-type"),
+        body: await res.arrayBuffer(),
+      };
     },
   });
   done();

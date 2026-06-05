@@ -61,6 +61,43 @@ describe("admin profile route", () => {
     expect(screen.getByDisplayValue("+351 912 000 001")).toBeDefined();
   });
 
+  it("renders the avatar image from the persisted photo asset id", async () => {
+    const photoId = "22222222-2222-4222-8222-222222222222";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ ...MOCK_PROFILE, photo: photoId }),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    const img = await screen.findByRole("img", { name: "Owner avatar" });
+    expect(img.getAttribute("src")).toBe(`/v1/media/${photoId}`);
+  });
+
+  it("renders no avatar image when the profile has no photo", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(MOCK_PROFILE),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    await waitFor(() => {
+      expect(screen.getByText("Owner Profile")).toBeDefined();
+    });
+    expect(screen.queryByRole("img", { name: "Owner avatar" })).toBeNull();
+  });
+
   it("renders form with empty defaults when profile is not found (404)", async () => {
     vi.stubGlobal(
       "fetch",

@@ -18,6 +18,7 @@
       "phone": "Telefon",
       "email": "E-Mail",
       "photo": "Foto",
+      "photo_alt": "Gastgeber-Avatar",
       "contact_options": "Kontaktoptionen",
       "call_enabled": "Anrufe erlauben",
       "dm_in_app": "In-App-Nachrichten",

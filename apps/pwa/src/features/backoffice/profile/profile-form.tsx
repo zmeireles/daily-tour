@@ -176,13 +176,17 @@ export function ProfileForm({ initialData }: Props) {
           </label>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">{t("profile.form.photo", "Photo")}</span>
+            {photo && (
+              <img
+                src={`/v1/media/${photo}`}
+                alt={t("profile.form.photo_alt", "Owner avatar")}
+                className="h-20 w-20 rounded-full object-cover border"
+              />
+            )}
             <MediaUploader
               label={t("places.form.media.upload_hint", "Drag & drop a photo or click to select")}
               onUploaded={handlePhotoUploaded}
             />
-            {photo && (
-              <p className="text-xs text-muted-foreground font-mono break-all">{photo}</p>
-            )}
           </div>
         </fieldset>
 

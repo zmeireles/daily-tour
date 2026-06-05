@@ -10,6 +10,7 @@ import ownerAuthPlugin from "./plugins/owner-auth.js";
 import adminBetaMetricsRoute from "./routes/admin-beta-metrics.js";
 import adminGuesthousesRoute from "./routes/admin-guesthouses.js";
 import adminMediaRoute from "./routes/admin-media.js";
+import mediaDisplayRoute from "./routes/media-display.js";
 import adminPlacesRoute from "./routes/admin-places.js";
 import adminProfileRoute from "./routes/admin-profile.js";
 import authRefreshRoute from "./routes/auth-refresh.js";
@@ -98,6 +99,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(discoverRoute);
   await app.register(placesRoute);
   await app.register(adminMediaRoute);
+  await app.register(mediaDisplayRoute);
   await app.register(adminPlacesRoute);
   await app.register(adminProfileRoute);
   await app.register(adminGuesthousesRoute);

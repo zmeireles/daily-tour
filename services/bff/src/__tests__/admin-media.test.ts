@@ -35,6 +35,9 @@ async function buildTestApp(keypair: AuthentikTestKeypair): Promise<FastifyInsta
       .fn()
       .mockResolvedValue({ put_url: "https://minio/put", asset_id: "asset-uuid-1" }),
     completeUpload: vi.fn().mockResolvedValue(undefined),
+    fetchAsset: vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, contentType: "image/jpeg", body: null }),
   };
   app.decorate("mediaSvc", mockMediaSvc);
 
