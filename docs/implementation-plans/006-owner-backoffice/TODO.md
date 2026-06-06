@@ -12,10 +12,10 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 | 6.A       | Per-guesthouse scoping (foundation) | 4      | 4     | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
 | 6.C       | Owner photo uploader                | 3      | 2     | #142c      |
-| 6.D       | Hosts-pick governance               | 1      | 0     | #142b      |
+| 6.D       | Hosts-pick governance               | 1      | 1     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
-| **Total** |                                     | **15** | **6** |            |
+| **Total** |                                     | **15** | **7** |            |
 
 ---
 
@@ -181,13 +181,19 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Slice 6.D — Hosts-pick governance `[#142b]`
 
-### ⬜ T-6.D.0 — Backoffice: soft hosts-pick cap (~6–8 / guesthouse)
+### ✅ T-6.D.0 — Backoffice: soft hosts-pick cap (~6–8 / guesthouse)
 
-- [ ] Warn when marking a pick past the cap within the guesthouse's visible set; do
+- [x] Warn when marking a pick past the cap within the guesthouse's visible set; do
       **not** block; no DB constraint.
 - **owns**: `apps/pwa/src/features/backoffice/places/**`
 - **deps**: T-6.A.0 (per-guesthouse unit)
 - **acceptance**: warning shows at the (cap+1)th pick; saving still succeeds.
+
+> **Done 2026-06-06.** `HostsPickToggle` warns (sonner `toast.warning`, i18n
+> `places.list.pick_cap_warning`) when marking a new pick while the guesthouse
+> already has `HOSTS_PICK_CAP = 8` **visible** picks (`is_hosts_pick` && not in
+> `hidden_place_ids`); the mutation still fires (soft, no block, no DB constraint).
+> +2 RTL tests (warns over cap + still saves / no warn under cap).
 
 ---
 

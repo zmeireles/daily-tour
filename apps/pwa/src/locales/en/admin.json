@@ -85,7 +85,8 @@
       "unmark_pick": "Unmark",
       "hosts_pick_aria": "Toggle host's pick for {{name}}",
       "pick_requires_published": "Only published places can be marked as a host's pick.",
-      "pick_update_error": "Could not update host's pick."
+      "pick_update_error": "Could not update host's pick.",
+      "pick_cap_warning": "You already have {{count}} host's picks — guests see best results with around {{cap}}. Saved anyway."
     },
     "form": {
       "loading": "Loading…",

@@ -6,7 +6,7 @@ import { PlaceList } from "@/features/backoffice/places/place-list";
 import type { PlaceRow } from "@/features/backoffice/places/use-places";
 
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn() },
+  toast: { error: vi.fn(), warning: vi.fn() },
   Toaster: () => null,
 }));
 
@@ -147,6 +147,36 @@ describe("PlaceList — host's pick column", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "Only published places can be marked as a host's pick.",
     );
+  });
+
+  it("warns (but still saves) when marking a pick past the soft cap (Plan-006 6.D)", () => {
+    // 8 visible picks already → marking a 9th is over the cap.
+    const picks = Array.from({ length: 8 }, (_, i) =>
+      makePlace({ id: `pick${i}`, name: { en: `Pick ${i}` }, is_hosts_pick: true }),
+    );
+    setPlaces([...picks, makePlace({ id: "ninth", name: { en: "Ninth" }, is_hosts_pick: false })]);
+
+    renderList();
+
+    fireEvent.click(screen.getByLabelText("Toggle host's pick for Ninth"));
+
+    expect(toast.warning).toHaveBeenCalledTimes(1);
+    // Saving still proceeds — the cap is a soft warning, not a block.
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
+  });
+
+  it("does not warn when marking a pick under the cap", () => {
+    const picks = Array.from({ length: 3 }, (_, i) =>
+      makePlace({ id: `pick${i}`, name: { en: `Pick ${i}` }, is_hosts_pick: true }),
+    );
+    setPlaces([...picks, makePlace({ id: "next", name: { en: "Next" }, is_hosts_pick: false })]);
+
+    renderList();
+
+    fireEvent.click(screen.getByLabelText("Toggle host's pick for Next"));
+
+    expect(toast.warning).not.toHaveBeenCalled();
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
   });
 
   it("guest-visibility toggle reflects the gh hidden set + flips it (Plan-006 6.A.3)", () => {

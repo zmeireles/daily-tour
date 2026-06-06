@@ -80,7 +80,8 @@
       "actions": "Aktionen",
       "edit": "Bearbeiten",
       "pick_requires_published": "Nur veröffentlichte Orte können als Gastgeberempfehlung markiert werden.",
-      "pick_update_error": "Gastgeberempfehlung konnte nicht aktualisiert werden."
+      "pick_update_error": "Gastgeberempfehlung konnte nicht aktualisiert werden.",
+      "pick_cap_warning": "Sie haben bereits {{count}} Gastgeberempfehlungen — Gäste sehen die besten Ergebnisse mit etwa {{cap}}. Trotzdem gespeichert."
     },
     "form": {
       "loading": "Wird geladen…",
