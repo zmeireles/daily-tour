@@ -89,16 +89,19 @@ const GetQuerySchema = z.object({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function encodeCursor(updatedAt: string, id: string): string {
-  return Buffer.from(`${updatedAt}:::${id}`, "utf8").toString("base64url");
+// Keyset cursor on createdAt (immutable) — NOT updatedAt. Ordering by updatedAt
+// would reshuffle the list on every PATCH (e.g. a host's-pick toggle bumps
+// updated_at and jumps the row to the top). createdAt is set once at insert.
+function encodeCursor(createdAt: string, id: string): string {
+  return Buffer.from(`${createdAt}:::${id}`, "utf8").toString("base64url");
 }
 
-function decodeCursor(cursor: string): { updatedAt: string; id: string } | null {
+function decodeCursor(cursor: string): { createdAt: string; id: string } | null {
   try {
     const raw = Buffer.from(cursor, "base64url").toString("utf8");
     const sepIdx = raw.indexOf(":::");
     if (sepIdx === -1) return null;
-    return { updatedAt: raw.slice(0, sepIdx), id: raw.slice(sepIdx + 3) };
+    return { createdAt: raw.slice(0, sepIdx), id: raw.slice(sepIdx + 3) };
   } catch {
     return null;
   }
@@ -188,8 +191,8 @@ export function placesRoutes(app: FastifyInstance): void {
       }
       conditions.push(
         or(
-          lt(placeTable.updatedAt, decoded.updatedAt),
-          and(eq(placeTable.updatedAt, decoded.updatedAt), lt(placeTable.id, decoded.id)),
+          lt(placeTable.createdAt, decoded.createdAt),
+          and(eq(placeTable.createdAt, decoded.createdAt), lt(placeTable.id, decoded.id)),
         ),
       );
     }
@@ -198,13 +201,13 @@ export function placesRoutes(app: FastifyInstance): void {
       .select()
       .from(placeTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(sql`${placeTable.updatedAt} DESC, ${placeTable.id} DESC`)
+      .orderBy(sql`${placeTable.createdAt} DESC, ${placeTable.id} DESC`)
       .limit(limit + 1);
 
     const hasNext = rows.length > limit;
     const data = rows.slice(0, limit).map(formatPlace);
     const lastRow = data[data.length - 1];
-    const nextCursor = hasNext && lastRow ? encodeCursor(lastRow.updated_at, lastRow.id) : null;
+    const nextCursor = hasNext && lastRow ? encodeCursor(lastRow.created_at, lastRow.id) : null;
 
     return { data, nextCursor };
   });
