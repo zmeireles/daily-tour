@@ -22,10 +22,16 @@ function placeDisplayName(place: PlaceRow): string {
   return place.name["en"] ?? Object.values(place.name)[0] ?? place.id;
 }
 
-function HostsPickToggle({ place }: { place: PlaceRow }) {
+// Plan-006 6.D — soft cap on host's picks per guesthouse. Warns (does NOT block,
+// no DB constraint) when marking a pick beyond the cap within the visible set.
+const HOSTS_PICK_CAP = 8;
+
+function HostsPickToggle({ place, pickCount }: { place: PlaceRow; pickCount: number }) {
   const { t } = useTranslation("admin");
   const mutation = useUpdatePlace(place.id);
   const name = placeDisplayName(place);
+
+  const markingNewPick = !place.is_hosts_pick;
 
   return (
     <div className="flex items-center gap-2">
@@ -41,7 +47,17 @@ function HostsPickToggle({ place }: { place: PlaceRow }) {
         variant="ghost"
         disabled={mutation.isPending}
         aria-label={t("places.list.hosts_pick_aria", "Toggle host's pick for {{name}}", { name })}
-        onClick={() =>
+        onClick={() => {
+          if (markingNewPick && pickCount >= HOSTS_PICK_CAP) {
+            toast.warning(
+              t("places.list.pick_cap_warning", {
+                defaultValue:
+                  "You already have {{count}} host's picks — guests see best results with around {{cap}}. Saved anyway.",
+                count: pickCount,
+                cap: HOSTS_PICK_CAP,
+              }),
+            );
+          }
           mutation.mutate(
             { is_hosts_pick: !place.is_hosts_pick },
             {
@@ -57,8 +73,8 @@ function HostsPickToggle({ place }: { place: PlaceRow }) {
                 );
               },
             },
-          )
-        }
+          );
+        }}
       >
         {place.is_hosts_pick
           ? t("places.list.unmark_pick", "Unmark")
@@ -136,6 +152,10 @@ export function PlaceList() {
   }
 
   const places = data?.data ?? [];
+  // 6.D — current host's picks visible to this guesthouse's guests (not hidden).
+  const visiblePickCount = places.filter(
+    (p) => p.is_hosts_pick && !(gh?.hidden_place_ids.includes(p.id) ?? false),
+  ).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -181,7 +201,7 @@ export function PlaceList() {
                     <Badge variant={statusVariant(place.status)}>{place.status}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <HostsPickToggle place={place} />
+                    <HostsPickToggle place={place} pickCount={visiblePickCount} />
                   </td>
                   <td className="px-4 py-3">
                     <VisibilityToggle place={place} gh={gh} />
