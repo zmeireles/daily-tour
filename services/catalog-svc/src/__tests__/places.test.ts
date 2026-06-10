@@ -68,6 +68,35 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(list.data.length).toBe(1);
   });
 
+  it("list order is stable across a PATCH (createdAt keyset, not updatedAt)", async () => {
+    // Regression for daily-tour #153: ordering by updated_at made any PATCH
+    // (e.g. a host's-pick toggle) bump the row to the top of /admin/places.
+    const ids: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const res = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+      ids.push(res.json<{ id: string }>().id);
+    }
+
+    const orderBefore = (await app.inject({ method: "GET", url: "/v1/places" }))
+      .json<{ data: { id: string }[] }>()
+      .data.map((p) => p.id);
+
+    // PATCH the last (oldest) row — under the old updated_at ordering this would
+    // have jumped it to the front.
+    const target = orderBefore[orderBefore.length - 1];
+    await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${target}`,
+      payload: { is_hosts_pick: true },
+    });
+
+    const orderAfter = (await app.inject({ method: "GET", url: "/v1/places" }))
+      .json<{ data: { id: string }[] }>()
+      .data.map((p) => p.id);
+
+    expect(orderAfter).toEqual(orderBefore);
+  });
+
   it("PATCH updates fields + returns updated entity", async () => {
     const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
     const { id } = create.json<{ id: string }>();
