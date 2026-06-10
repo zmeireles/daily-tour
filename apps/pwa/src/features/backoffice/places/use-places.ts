@@ -43,7 +43,7 @@ export function usePlaces() {
     queryKey: PLACES_KEY,
     enabled: !!jwt,
     queryFn: async () => {
-      const res = await fetch("/v1/admin/places?include_archived=true", {
+      const res = await fetch("/v1/admin/places?include_archived=true&limit=200", {
         headers: authHeader(jwt!),
       });
       if (!res.ok) throw new Error(`places list ${res.status}`);

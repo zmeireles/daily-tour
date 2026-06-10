@@ -81,7 +81,13 @@
       "edit": "Editar",
       "pick_requires_published": "Solo los lugares publicados pueden marcarse como elección del anfitrión.",
       "pick_update_error": "No se pudo actualizar la elección del anfitrión.",
-      "pick_cap_warning": "Ya tienes {{count}} elecciones del anfitrión — los huéspedes ven mejores resultados con alrededor de {{cap}}. Guardado de todos modos."
+      "pick_cap_warning": "Ya tienes {{count}} elecciones del anfitrión — los huéspedes ven mejores resultados con alrededor de {{cap}}. Guardado de todos modos.",
+      "sort_by": "Ordenar por {{column}}",
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {{page}} de {{total}}"
+      }
     },
     "form": {
       "loading": "Cargando…",

@@ -86,7 +86,13 @@
       "hosts_pick_aria": "Alternar escolha do anfitrião para {{name}}",
       "pick_requires_published": "Apenas locais publicados podem ser marcados como escolha do anfitrião.",
       "pick_update_error": "Não foi possível atualizar a escolha do anfitrião.",
-      "pick_cap_warning": "Já tem {{count}} escolhas do anfitrião — os hóspedes veem melhores resultados com cerca de {{cap}}. Guardado mesmo assim."
+      "pick_cap_warning": "Já tem {{count}} escolhas do anfitrião — os hóspedes veem melhores resultados com cerca de {{cap}}. Guardado mesmo assim.",
+      "sort_by": "Ordenar por {{column}}",
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Seguinte",
+        "page": "Página {{page}} de {{total}}"
+      }
     },
     "form": {
       "loading": "A carregar…",

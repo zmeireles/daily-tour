@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import { usePlaces, useArchivePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import {
   useGuesthouses,
@@ -10,6 +11,36 @@ import {
 } from "../guesthouses/use-guesthouses";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+const PAGE_SIZE = 10;
+
+type SortColumn = "name" | "status" | "hosts_pick";
+type SortDirection = "asc" | "desc";
+interface SortState {
+  column: SortColumn;
+  direction: SortDirection;
+}
+
+// Client-side MVP (DAILY-TOUR-154): the catalogue is ~28 rows, so sort + paginate
+// the full fetched set in the browser rather than building server-side keyset sort.
+function comparePlaces(a: PlaceRow, b: PlaceRow, column: SortColumn): number {
+  if (column === "hosts_pick") {
+    // picks first on asc (true sorts before false)
+    return Number(b.is_hosts_pick) - Number(a.is_hosts_pick);
+  }
+  const av = column === "name" ? placeDisplayName(a) : a.status;
+  const bv = column === "name" ? placeDisplayName(b) : b.status;
+  return av.localeCompare(bv);
+}
+
+function sortPlaces(places: PlaceRow[], sort: SortState): PlaceRow[] {
+  return [...places].sort((a, b) => {
+    const primary = comparePlaces(a, b, sort.column);
+    const ordered = sort.direction === "asc" ? primary : -primary;
+    // Stable secondary sort by id so equal keys don't jitter across renders.
+    return ordered !== 0 ? ordered : a.id.localeCompare(b.id);
+  });
+}
 
 function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
   if (status === "published") return "default";
@@ -133,6 +164,42 @@ function VisibilityToggle({ place, gh }: { place: PlaceRow; gh?: GuesthouseRow }
   );
 }
 
+function SortableHeader({
+  column,
+  label,
+  sort,
+  onSort,
+  className = "",
+}: {
+  column: SortColumn;
+  label: string;
+  sort: SortState;
+  onSort: (column: SortColumn) => void;
+  className?: string;
+}) {
+  const { t } = useTranslation("admin");
+  const active = sort.column === column;
+  const ariaSort = active ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
+  const Icon = active ? (sort.direction === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
+
+  return (
+    <th className={`px-4 py-2 text-left font-medium ${className}`} aria-sort={ariaSort}>
+      <button
+        type="button"
+        className="flex items-center gap-1 font-medium hover:text-foreground"
+        aria-label={t("places.list.sort_by", "Sort by {{column}}", { column: label })}
+        onClick={() => onSort(column)}
+      >
+        {label}
+        <Icon
+          className={active ? "size-3.5" : "size-3.5 text-muted-foreground"}
+          aria-hidden="true"
+        />
+      </button>
+    </th>
+  );
+}
+
 export function PlaceList() {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
@@ -141,6 +208,8 @@ export function PlaceList() {
   const gh = ghData?.data?.[0];
   const archiveMutation = useArchivePlace();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState>({ column: "name", direction: "asc" });
+  const [page, setPage] = useState(1);
 
   if (isLoading) {
     return <p className="text-muted-foreground text-sm">{t("places.list.loading", "Loading…")}</p>;
@@ -153,9 +222,26 @@ export function PlaceList() {
 
   const places = data?.data ?? [];
   // 6.D — current host's picks visible to this guesthouse's guests (not hidden).
+  // NOTE: counted across the FULL set, never the current page slice, so the soft
+  // cap stays correct regardless of sort/pagination.
   const visiblePickCount = places.filter(
     (p) => p.is_hosts_pick && !(gh?.hidden_place_ids.includes(p.id) ?? false),
   ).length;
+
+  // Sort across the whole set, then slice the current page.
+  const sorted = sortPlaces(places, sort);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSort = (column: SortColumn) => {
+    setPage(1); // sort change resets to page 1
+    setSort((prev) =>
+      prev.column === column
+        ? { column, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { column, direction: "asc" },
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -173,13 +259,24 @@ export function PlaceList() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">{t("places.list.name", "Name")}</th>
-                <th className="px-4 py-2 text-left font-medium">
-                  {t("places.list.status", "Status")}
-                </th>
-                <th className="px-4 py-2 text-left font-medium">
-                  {t("places.list.hosts_pick", "Host's Pick")}
-                </th>
+                <SortableHeader
+                  column="name"
+                  label={t("places.list.name", "Name")}
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  column="status"
+                  label={t("places.list.status", "Status")}
+                  sort={sort}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  column="hosts_pick"
+                  label={t("places.list.hosts_pick", "Host's Pick")}
+                  sort={sort}
+                  onSort={handleSort}
+                />
                 <th className="px-4 py-2 text-left font-medium">
                   {t("places.list.guests", "Guests")}
                 </th>
@@ -192,7 +289,7 @@ export function PlaceList() {
               </tr>
             </thead>
             <tbody>
-              {places.map((place) => (
+              {pageRows.map((place) => (
                 <tr key={place.id} className="border-t hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium">
                     {place.name["en"] ?? Object.values(place.name)[0] ?? place.id}
@@ -248,6 +345,33 @@ export function PlaceList() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {places.length > 0 && (
+        <div className="flex items-center justify-end gap-3 text-sm">
+          <span className="text-muted-foreground">
+            {t("places.list.pagination.page", "Page {{page}} of {{total}}", {
+              page: currentPage,
+              total: totalPages,
+            })}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            {t("places.list.pagination.previous", "Previous")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            {t("places.list.pagination.next", "Next")}
+          </Button>
         </div>
       )}
     </div>
