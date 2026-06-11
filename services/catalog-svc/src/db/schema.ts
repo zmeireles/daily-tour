@@ -170,6 +170,13 @@ export const placeMediaTable = catalogSchema.table(
     kind: text("kind").notNull(),
     url: text("url").notNull(),
     alt: jsonb("alt").$type<Record<string, string>>(),
+    // Licence credit for externally-sourced media (e.g. Wikimedia Commons
+    // CC-BY-SA). NULL for owner-provided or public-domain assets (#135).
+    attribution: jsonb("attribution").$type<{
+      author: string;
+      license: string;
+      source_url: string;
+    }>(),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .notNull()

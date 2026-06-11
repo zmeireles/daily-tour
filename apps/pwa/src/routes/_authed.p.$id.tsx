@@ -72,10 +72,10 @@ export default function PlaceDetailRoute() {
   const nameResult = localeWithFallback(place.name, locale);
   const descResult = localeWithFallback(place.description, locale);
 
-  const firstImageUrl =
-    [...place.media]
-      .filter((m) => m.kind === "image")
-      .sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? "";
+  const firstImage = [...place.media]
+    .filter((m) => m.kind === "image")
+    .sort((a, b) => a.sort_order - b.sort_order)[0];
+  const firstImageUrl = firstImage?.url ?? "";
 
   const phone = place.contacts.phone ?? GUESTHOUSE_CONTACT_PHONE;
   const waText = t("wa_prefill", {
@@ -85,7 +85,11 @@ export default function PlaceDetailRoute() {
 
   return (
     <main className="min-h-svh pb-8 mx-auto w-full max-w-2xl">
-      <Hero imageUrl={firstImageUrl} title={nameResult.text} />
+      <Hero
+        imageUrl={firstImageUrl}
+        title={nameResult.text}
+        attribution={firstImage?.attribution}
+      />
       {nameResult.fallback && (
         <div className="px-4 pt-2">
           <span

@@ -1,0 +1,1 @@
+ALTER TABLE "catalog"."place_media" ADD COLUMN "attribution" jsonb;
