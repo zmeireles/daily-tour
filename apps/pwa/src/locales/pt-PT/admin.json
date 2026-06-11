@@ -7,7 +7,12 @@
       "beta": "Métricas beta"
     },
     "loading": "A carregar admin…",
-    "redirecting": "A redirecionar para o login…"
+    "redirecting": "A redirecionar para o login…",
+    "locale": {
+      "label": "Idioma",
+      "en": "English",
+      "pt-PT": "Português"
+    }
   },
   "profile": {
     "title": "Perfil do Anfitrião",
