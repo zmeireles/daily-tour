@@ -179,6 +179,74 @@ describe("PlaceList — host's pick column", () => {
     expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
   });
 
+  it("sorts rows by name when the Name header is clicked, and reverses on a second click", () => {
+    setPlaces([
+      makePlace({ id: "c", name: { en: "Cherry" } }),
+      makePlace({ id: "a", name: { en: "Apple" } }),
+      makePlace({ id: "b", name: { en: "Banana" } }),
+    ]);
+
+    renderList();
+
+    const nameHeader = screen.getByLabelText("Sort by Name");
+
+    // Default sort is name asc.
+    const namesAsc = screen.getAllByRole("cell", { name: /Apple|Banana|Cherry/ });
+    expect(namesAsc.map((c) => c.textContent)).toEqual(["Apple", "Banana", "Cherry"]);
+
+    // Click toggles to desc.
+    fireEvent.click(nameHeader);
+    const namesDesc = screen.getAllByRole("cell", { name: /Apple|Banana|Cherry/ });
+    expect(namesDesc.map((c) => c.textContent)).toEqual(["Cherry", "Banana", "Apple"]);
+  });
+
+  it("paginates at 10 per page, advancing with Next (DAILY-TOUR-154)", () => {
+    // 12 places named so the asc-name order is deterministic (P00..P11).
+    const many = Array.from({ length: 12 }, (_, i) =>
+      makePlace({ id: `p${i}`, name: { en: `P${String(i).padStart(2, "0")}` } }),
+    );
+    setPlaces(many);
+
+    renderList();
+
+    expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
+    // Only 10 rows on page 1: P00..P09 present, P10/P11 absent.
+    expect(screen.getByRole("cell", { name: "P00" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "P09" })).toBeInTheDocument();
+    expect(screen.queryByRole("cell", { name: "P10" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "P10" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "P11" })).toBeInTheDocument();
+    expect(screen.queryByRole("cell", { name: "P00" })).not.toBeInTheDocument();
+  });
+
+  it("counts the pick cap across the full set, not just the visible page (6.D + 154)", () => {
+    // 8 visible picks named so they sort onto page 2 (after the 10 non-picks +
+    // the to-be-marked row on page 1). Marking a 9th pick must still warn,
+    // proving the cap counts the whole set, not the current page slice.
+    // 9 non-pick fillers (names "Bbb …") + the target ("Aaa target", sorts first)
+    // fill page 1; the 8 picks ("Zzz …") sort onto page 2.
+    const fillers = Array.from({ length: 9 }, (_, i) =>
+      makePlace({ id: `fill${i}`, name: { en: `Bbb ${i}` }, is_hosts_pick: false }),
+    );
+    const picks = Array.from({ length: 8 }, (_, i) =>
+      makePlace({ id: `pick${i}`, name: { en: `Zzz ${i}` }, is_hosts_pick: true }),
+    );
+    const target = makePlace({ id: "target", name: { en: "Aaa target" }, is_hosts_pick: false });
+    setPlaces([...fillers, ...picks, target]);
+
+    renderList();
+
+    // The 8 picks live on page 2 (name "Zzz …"); the target is on page 1 ("Aaa …").
+    fireEvent.click(screen.getByLabelText("Toggle host's pick for Aaa target"));
+
+    expect(toast.warning).toHaveBeenCalledTimes(1);
+    expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
+  });
+
   it("guest-visibility toggle reflects the gh hidden set + flips it (Plan-006 6.A.3)", () => {
     setGuesthouse(["pick"]); // gh hides "pick"; "non" stays visible
     setPlaces([
