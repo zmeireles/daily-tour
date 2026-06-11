@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-006 (Owner Backoffice v2, in progress) + post-arc maintenance
+
+Sessions 2026-06-04 → 2026-06-11. Plan dir: `docs/implementation-plans/006-owner-backoffice/`.
+
+**Slice 6.A — per-guesthouse scoping (DONE, browser-UAT'd)**
+
+- Schema: `guesthouse.hidden_place_ids uuid[]` + catalog hide/unhide endpoints (T-6.A.0/6.A.1, #191)
+- BFF discover filters guest results by guesthouse hide list (T-6.A.2, #192)
+- Backoffice guest-visibility toggle in `/admin/places` (T-6.A.3, #193)
+- Owner-app OIDC integration fixes: JWKS host alias, `groups` scope, public PKCE client blueprint (#195)
+
+**Slice 6.C — owner photo uploader (2/3 done)**
+
+- Media-display foundation (public `GET /v1/media/:id`) + owner avatar uploader (T-6.C.0, #196)
+- Guesthouse hero uploader (T-6.C.1, #197)
+
+**Slice 6.D — hosts-pick governance (DONE)**
+
+- Soft hosts-pick cap warning ~6–8/guesthouse (T-6.D.0, #198)
+
+**Backoffice QoL batch (daily-tour #154/#155/#156)**
+
+- Places list pagination (10/page) + clickable column sorting (#203)
+- Locale switcher EN/PT-PT in owner/admin shell (#202)
+- `cursor-pointer` on shared Button base (#201)
+
+### Fixed
+
+- Stable place list ordering by `createdAt` instead of `updatedAt` (#199)
+- Security: `shell-quote` override to >=1.8.4, GHSA-w7jw-789q-3m8p (#200)
+- chat-hub: add missing per-service `.gitignore`, untrack committed `__pycache__` artifacts (#204)
+
 ### Implementation arc (Plans 001-005)
 
 This project shipped its full original 100-task roadmap (Plan-001) plus 4 subsequent plans (002 deploy/polish, 003 real-user readiness, 004 scale/monetize, 005 operate) across roughly 117 merged PRs in a single autonomous orchestration session. The CHANGELOG below captures the macro arc; per-PR detail lives in `docs/implementation-plans/001-roadmap/EXECUTION.md`.
@@ -14,6 +46,7 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 ### Added — Plan-001 (Implementation, 99/100 tasks)
 
 **Phase 0 — Foundation** (15/16 done; T-0.4.4 VPS-blocked)
+
 - Monorepo via pnpm + Turborepo (T-0.1.1)
 - Shared TS config + ESLint 9 flat + Prettier 3 (T-0.1.2)
 - Pre-commit (lefthook + gitleaks) (T-0.1.3)
@@ -31,6 +64,7 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 - Compose overlay: bff + pwa-static nginx (T-0.4.3)
 
 **Phase 1 — Guest Landing & Catalog v1** (Slices 1.0-1.7 closed)
+
 - Reservation token + Zustand session (1.0)
 - Catalog data model + 28-place São Miguel seed (1.1)
 - Discover 6-action grid with locale-auto + theme-auto (1.2)
@@ -41,6 +75,7 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 - i18n bundles + PWA install + service worker (1.7)
 
 **Phase 2 — Discovery & Search**
+
 - search-svc FastAPI skeleton (T-2.0.0)
 - pgvector + embeddings worker (T-2.0.1)
 - Backfill 28 seeded places (T-2.0.2)
@@ -50,6 +85,7 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 - Vehicle-aware toggle + filter (T-2.2.2)
 
 **Phase 3 — Daily Tour Planner**
+
 - planner-svc FastAPI + Anthropic Claude (T-3.0.0)
 - Prompt assembler + RAG retrieval (T-3.0.1)
 - Provenance + travel-time validators (T-3.0.2)
@@ -66,6 +102,7 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 - Tour telemetry started/completed events (T-3.4.1)
 
 **Phase 4 — Chat & Reservation**
+
 - chat-hub service + driver Protocol + WebSocket (T-4.0.0)
 - In-app chat with WebSocket bridge (T-4.1.0 — retried as T-2.C.1)
 - Telegram driver (T-4.2.0)
@@ -73,6 +110,7 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 - AI reservation drafter via Anthropic (T-4.4.0)
 
 **Phase 5 — Hardening & Growth**
+
 - PWA offline catalog cache via idb (T-5.0.0)
 - Locale expansion to de/es/fr/pt-BR (T-5.1.0)
 - WCAG 2.2 AA audit + fixes (T-5.2.0)
@@ -134,4 +172,4 @@ This project shipped its full original 100-task roadmap (Plan-001) plus 4 subseq
 
 ---
 
-*Generated with Claude Code Sonnet 4.6 + Opus 4.7 via `/goal proceed with the identified tasks` autonomous-mode authorization.*
+_Generated with Claude Code Sonnet 4.6 + Opus 4.7 via `/goal proceed with the identified tasks` autonomous-mode authorization._

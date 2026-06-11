@@ -10,12 +10,14 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 | Slice     | Title                               | Tasks  | Done  | Riff       |
 | --------- | ----------------------------------- | ------ | ----- | ---------- |
 | 6.A       | Per-guesthouse scoping (foundation) | 4      | 4     | #142a      |
-| 6.B       | Place media pipeline + hero images  | 3      | 0     | #135       |
+| 6.B       | Place media pipeline + hero images  | 3      | 0¹    | #135       |
 | 6.C       | Owner photo uploader                | 3      | 2     | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 1     | #142b      |
 | 6.E       | Reservations management             | 2      | 0     | #142d      |
 | 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
 | **Total** |                                     | **15** | **7** |            |
+
+¹ 6.B: all 3 tasks code-done 2026-06-11, PRs #207/#208/#209 stacked in review (escalate).
 
 ---
 
@@ -102,26 +104,43 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Slice 6.B — Place media pipeline + real hero images `[#135]`
 
-### ⬜ T-6.B.0 — Schema: `place_media.attribution`
+### 🔄 T-6.B.0 — Schema: `place_media.attribution`
 
-- [ ] Add `attribution jsonb` (`{author, license, source_url}`) to `catalog.place_media`.
+- [x] Add `attribution jsonb` (`{author, license, source_url}`) to `catalog.place_media`.
+
+> **Code done 2026-06-11, PR #207 in review (escalate — migration).** Drizzle
+> `0005_place_media_attribution` + snapshot; applied to live dev DB; 26/26 tests.
+
 - **owns**: `catalog.place_media` migration, `services/catalog-svc/src/db/schema.ts`
 - **deps**: none
 - **acceptance**: nullable column; existing rows unaffected. **ESCALATE — migration.**
 
-### ⬜ T-6.B.1 — Ingest landmark manifest + replace placeholder heroes
+### 🔄 T-6.B.1 — Ingest landmark manifest + replace placeholder heroes
 
-- [ ] Download the verified Commons files (`temp/place-photo-sourcing.md`: 5 verified,
+- [x] Download the verified Commons files (`temp/place-photo-sourcing.md`: 5 verified,
       confirm 6 more, 3 Unsplash/owner fallback) → media-svc → set per-place hero;
       capture per-file attribution (PD = none, CC-BY-SA = author+license+url).
+
+> **Code done 2026-06-11, PR #209 in review (stacked on #207).** All 14 landmarks
+> resolved to real Commons files via the API (licences read live per File: page):
+> 10 PD + 4 attributed (Lagoa do Fogo BY-SA 3.0, Santa Bárbara BY 3.0, Salto do
+> Cabrito BY-SA 4.0, Portas da Cidade BY-SA 4.0). **Zero Unsplash fallbacks needed.**
+> Hotlinked 1280px Commons thumbs (all verified 200) instead of media-svc ingestion —
+> media-svc/MinIO stays the owner-upload lane (6.C). Live dev DB already updated.
+
 - **owns**: `services/catalog-svc/seeds/places-sao-miguel.sql` (or a data migration), media-svc assets
 - **deps**: T-6.B.0
 - **acceptance**: every landmark place has a non-placeholder hero; **licence read from
   each File: page at ingest** (varies — Sete Cidades PD vs Lagoa do Fogo CC-BY-SA).
 
-### ⬜ T-6.B.2 — Render attribution on place detail (CC-BY-SA only)
+### 🔄 T-6.B.2 — Render attribution on place detail (CC-BY-SA only)
 
-- [ ] Place detail shows a credit line when `attribution` present.
+- [x] Place detail shows a credit line when `attribution` present.
+
+> **Code done 2026-06-11, PR #208 in review (stacked on #207).** catalog hydrated +
+> media endpoints carry `attribution`; BFF forwards (spread); PWA `Hero` overlays
+> `© author · licence` linking the File: page. +2 pwa tests, hydrated test asserts.
+
 - **owns**: `apps/pwa/src/routes/place.*`, `services/bff/src/lib/*` (place view)
 - **deps**: T-6.B.0
 - **acceptance**: CC-BY-SA hero shows author + licence; PD/own photos show nothing.
