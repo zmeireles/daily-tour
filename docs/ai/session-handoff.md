@@ -16,7 +16,8 @@
 >
 > - 6.A ✅ (browser-UAT'd) · 6.C.0/6.C.1 ✅ · 6.D ✅ (DT-TESTS-24) · QoL batch #154/#155/#156 ✅ merged (UAT pending: DT-TESTS-25/26/27)
 > - **Remaining: 6.B** (place media pipeline — `place_media.attribution` schema 6.B.0 is an **escalate** migration, then landmark-manifest ingest 6.B.1, attribution render 6.B.2; manifest ready at `temp/place-photo-sourcing.md`) · **6.C.2** (per-place hero upload, needs 6.B.0) · **6.E** (reservations screen) · **6.F** (field gaps #150/#151).
-> - This session continues into **6.B** after close-out.
+> - **6.B SHIPPED this session (code-complete, in review):** PR stack **#207** (6.B.0 `attribution` migration, escalate) ← **#208** (6.B.2 credit-line render, catalog→bff→pwa) + **#209** (6.B.1 — all 14 landmark heroes resolved to real licence-verified Commons files: 10 PD + 4 attributed, zero Unsplash fallbacks; hotlinked 1280px thumbs, all verified 200). **Live dev DB already updated** — heroes render in the PWA now; credit line needs the stack merged + catalog/bff rebuild. Wave 5 in `006-owner-backoffice/EXECUTION.md` has the full detail (+ retro Wave 4 backfilling the 06-05→06-07 gap).
+> - **Next after this session:** human reviews **#206** (otel→ghcr, infra) + **#207→#208/#209** (6.B stack; #208/#209 auto-retarget to main when #207 merges) → rebuild catalog-svc+bff → run UATs DT-TESTS-25/26/27 (QoL batch, env is UP and ready now) + the 6.B UAT (DT-TESTS-28). Then Plan-006 leftovers: **6.C.2** (per-place hero upload, unblocked once 6.B.0 merges) · **6.E** (reservations) · **6.F** (field gaps).
 
 > **UPDATE 2026-06-04 (authentik session): Authentik brought up + owner-auth integration completed + Slice 6.A FULLY DONE (6.A.3 browser UAT passed).** Resume cold from this block.
 >
