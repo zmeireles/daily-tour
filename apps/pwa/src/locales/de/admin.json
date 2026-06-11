@@ -7,7 +7,12 @@
       "beta": "Beta-Metriken"
     },
     "loading": "Admin wird geladen…",
-    "redirecting": "Weiterleitung zur Anmeldung…"
+    "redirecting": "Weiterleitung zur Anmeldung…",
+    "locale": {
+      "label": "Sprache",
+      "en": "English",
+      "pt-PT": "Português"
+    }
   },
   "profile": {
     "title": "Gastgeberprofil",

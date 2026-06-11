@@ -7,7 +7,12 @@
       "beta": "Beta metrics"
     },
     "loading": "Loading admin…",
-    "redirecting": "Redirecting to login…"
+    "redirecting": "Redirecting to login…",
+    "locale": {
+      "label": "Language",
+      "en": "English",
+      "pt-PT": "Português"
+    }
   },
   "profile": {
     "title": "Owner Profile",
