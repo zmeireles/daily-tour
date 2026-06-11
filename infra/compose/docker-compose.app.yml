@@ -52,7 +52,7 @@ services:
   # failures are silent; the collector can restart independently.
   # ─────────────────────────────────────────────────────────────────────────
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.125.0
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.125.0
     container_name: dt_otel_collector
     restart: unless-stopped
     networks:

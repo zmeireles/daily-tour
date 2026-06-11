@@ -116,6 +116,7 @@ async function fetchPlaceMedia(db: Db, placeId: string) {
       kind: placeMediaTable.kind,
       url: placeMediaTable.url,
       alt: placeMediaTable.alt,
+      attribution: placeMediaTable.attribution,
       sortOrder: placeMediaTable.sortOrder,
     })
     .from(placeMediaTable)
@@ -126,6 +127,7 @@ async function fetchPlaceMedia(db: Db, placeId: string) {
     kind: m.kind,
     url: m.url,
     alt: m.alt ?? null,
+    attribution: m.attribution ?? null,
     sort_order: m.sortOrder,
   }));
 }
@@ -275,6 +277,7 @@ export function placesRoutes(app: FastifyInstance): void {
         mediaKind: placeMediaTable.kind,
         mediaUrl: placeMediaTable.url,
         mediaAlt: placeMediaTable.alt,
+        mediaAttribution: placeMediaTable.attribution,
         mediaSortOrder: placeMediaTable.sortOrder,
         actionSlug: actionTable.slug,
         actionI18n: actionTable.i18n,
@@ -306,6 +309,7 @@ export function placesRoutes(app: FastifyInstance): void {
       kind: string;
       url: string;
       alt: Record<string, string> | null;
+      attribution: { author: string; license: string; source_url: string } | null;
       sort_order: number;
     }[] = [];
     const actions: { slug: string; label_i18n: Record<string, string> }[] = [];
@@ -319,6 +323,7 @@ export function placesRoutes(app: FastifyInstance): void {
           kind: row.mediaKind!,
           url: row.mediaUrl!,
           alt: row.mediaAlt ?? null,
+          attribution: row.mediaAttribution ?? null,
           sort_order: row.mediaSortOrder!,
         });
       }

@@ -1,10 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
+export interface PlaceMediaAttribution {
+  author: string;
+  license: string;
+  source_url: string;
+}
+
 export interface PlaceMedia {
   id: string;
   kind: string;
   url: string;
   alt: Record<string, string> | null;
+  attribution: PlaceMediaAttribution | null;
   sort_order: number;
 }
 
