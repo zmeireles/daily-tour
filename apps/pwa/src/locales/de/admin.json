@@ -7,7 +7,12 @@
       "beta": "Beta-Metriken"
     },
     "loading": "Admin wird geladen…",
-    "redirecting": "Weiterleitung zur Anmeldung…"
+    "redirecting": "Weiterleitung zur Anmeldung…",
+    "locale": {
+      "label": "Sprache",
+      "en": "English",
+      "pt-PT": "Português"
+    }
   },
   "profile": {
     "title": "Gastgeberprofil",
@@ -81,7 +86,13 @@
       "edit": "Bearbeiten",
       "pick_requires_published": "Nur veröffentlichte Orte können als Gastgeberempfehlung markiert werden.",
       "pick_update_error": "Gastgeberempfehlung konnte nicht aktualisiert werden.",
-      "pick_cap_warning": "Sie haben bereits {{count}} Gastgeberempfehlungen — Gäste sehen die besten Ergebnisse mit etwa {{cap}}. Trotzdem gespeichert."
+      "pick_cap_warning": "Sie haben bereits {{count}} Gastgeberempfehlungen — Gäste sehen die besten Ergebnisse mit etwa {{cap}}. Trotzdem gespeichert.",
+      "sort_by": "Nach {{column}} sortieren",
+      "pagination": {
+        "previous": "Zurück",
+        "next": "Weiter",
+        "page": "Seite {{page}} von {{total}}"
+      }
     },
     "form": {
       "loading": "Wird geladen…",

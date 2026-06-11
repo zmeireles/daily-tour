@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
+import { LocaleSwitcher } from "./locale-switcher";
 
 const NAV_ITEMS = [
   { key: "guesthouses", to: "/admin/guesthouses" },
@@ -14,7 +15,7 @@ export function BackofficeShell({ children }: { children?: React.ReactNode }) {
   return (
     <div className="min-h-svh flex">
       <nav
-        className="w-56 shrink-0 border-r bg-sidebar"
+        className="flex w-56 shrink-0 flex-col border-r bg-sidebar"
         aria-label={t("shell.nav.guesthouses", "Navigation")}
       >
         <ul className="flex flex-col gap-1 p-3">
@@ -35,6 +36,9 @@ export function BackofficeShell({ children }: { children?: React.ReactNode }) {
             </li>
           ))}
         </ul>
+        <div className="mt-auto border-t p-3">
+          <LocaleSwitcher />
+        </div>
       </nav>
       <main className="flex-1 p-6">{children ?? <Outlet />}</main>
     </div>
