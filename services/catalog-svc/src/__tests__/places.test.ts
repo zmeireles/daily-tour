@@ -250,8 +250,9 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     );
 
     await ctx.pool.query(
-      `INSERT INTO catalog.place_media (id, place_id, kind, url, alt, sort_order)
-       VALUES ($1, $2, 'image', 'https://example.com/img.jpg', '{"en":"A place"}'::jsonb, 0)`,
+      `INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort_order)
+       VALUES ($1, $2, 'image', 'https://example.com/img.jpg', '{"en":"A place"}'::jsonb,
+               '{"author":"Jane Doe","license":"CC BY-SA 4.0","source_url":"https://example.com/file"}'::jsonb, 0)`,
       [mediaId, placeId],
     );
 
@@ -262,13 +263,23 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json<{
       id: string;
-      media: { id: string; kind: string; url: string }[];
+      media: {
+        id: string;
+        kind: string;
+        url: string;
+        attribution: { author: string; license: string; source_url: string } | null;
+      }[];
       actions: { slug: string; label_i18n: Record<string, string> }[];
       wishes: { slug: string; action_slug: string; label_i18n: Record<string, string> }[];
     }>();
     expect(body.id).toBe(placeId);
     expect(body.media).toHaveLength(1);
     expect(body.media[0]!.kind).toBe("image");
+    expect(body.media[0]!.attribution).toEqual({
+      author: "Jane Doe",
+      license: "CC BY-SA 4.0",
+      source_url: "https://example.com/file",
+    });
     expect(body.actions).toHaveLength(1);
     expect(body.actions[0]!.slug).toBe("eat");
     expect(body.wishes).toHaveLength(1);
