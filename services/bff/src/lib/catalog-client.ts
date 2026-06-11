@@ -61,6 +61,7 @@ export interface HydratedPlace {
     kind: string;
     url: string;
     alt: Record<string, string> | null;
+    attribution: { author: string; license: string; source_url: string } | null;
     sort_order: number;
   }>;
   actions: Array<{ slug: string; label_i18n: Record<string, string> }>;
