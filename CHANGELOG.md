@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-007 (qual VPS deploy) Phase Q.2 — repo plumbing (2026-06-12)
+
+Pure repo work (no VPS touched); 8/8 Q.2 tasks merged + the GHCR publish pipeline brought to 11/11 green. Plan dir: `docs/implementation-plans/007-qual-vps-deploy/` (EXECUTION.md = wave detail).
+
+- **GHCR image pipeline** — `publish-images.yml` builds + pushes all 11 images (8 services + postgres + osrm + pwa) to `ghcr.io/zmeireles/daily-tour/*:{sha,qual}` (Q.2.0, #214). PWA shipped as a self-contained nginx image (`apps/pwa/Dockerfile`, VITE\_\* baked) instead of a host-side bind-mount (Q.2.4, #220).
+- **Qual compose overlays** — `overlay.qual.yml`: Traefik on 0.0.0.0:80/443 + web→websecure redirect, **apex same-origin routing** (`/v1`+`/r` path-route to the BFF over the SPA), GHCR image overrides, `mem_limit`s, `NODE_ENV=production`, OSRM_URL fix; plus the production ACME resolver + email-via-command-flag fix (Q.2.1/Q.2.2, #216). `overlay.qual-authentik.yml`: auth. router websecure TLS (404 fix) + Authentik mem_limits (Q.2.5, #218).
+- **Secrets + config** — `scripts/qual/gen-env-qual.sh` generates `.env.qual` (64 keys) + a rotated `infra/postgres/init-qual/02-roles.sql`; checked-in `.env.qual.example` template (Q.2.3, #215). Authentik qual redirect URI added to the owner-app blueprint (#218).
+- **Deploy automation** — `deploy-qa.yml` (self-hosted `qual-vps` runner: pull→up→migrate→seed→smoke→`--qual` check→rollback-to-previous-tag) + `dev-up.sh`/`dev-smoke.sh` parameterised with `ENV_FILE`/`PROJECT`/`--to` for the `dt-qual` project (Q.2.6, #219). `dev-env-check.sh --qual` post-deploy gate (Q.2.7, #217).
+- **osrm image fixes** (latent, surfaced by the maiden publish run): base tag `v5.28.0`→`v5.25.0` (404, #221) + Debian-stretch-EOL apt → `archive.debian.org` (#222).
+
 ### Added — Plan-006 (Owner Backoffice v2, in progress) + post-arc maintenance
 
 Sessions 2026-06-04 → 2026-06-11. Plan dir: `docs/implementation-plans/006-owner-backoffice/`.
