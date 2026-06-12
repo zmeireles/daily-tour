@@ -1,0 +1,101 @@
+# Daily Tour — GHCR image publish (Plan-007, qual VPS deploy)
+#
+# Builds every deployable Docker image on GitHub-hosted runners and pushes it
+# to GHCR at ghcr.io/zmeireles/daily-tour/<svc> with two tags: the commit SHA
+# (immutable, for rollback) and `qual` (the moving pointer the 2-vCPU qual VPS
+# pulls). The VPS never builds — it only pulls these images.
+#
+# Scope: 8 service images (build context = repo root, since their Dockerfiles
+# COPY pnpm-workspace.yaml / packages/* / packages/python-common) plus the 2
+# infra images (postgres, osrm) whose context is their own subdir. The PWA is
+# intentionally absent — apps/pwa has no Dockerfile yet; Q.2.4 adds a per-env
+# nginx image.
+name: Publish images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/**"
+      - "packages/**"
+      - "infra/postgres/**"
+      - "infra/osrm/**"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-images-${{ github.ref }}
+  # Don't cancel: a half-pushed image set leaves GHCR in an inconsistent state
+  # (some svcs at the new SHA, some stale). Let publishing finish; the next run
+  # supersedes it. Mirrors load-test.yml's choice, not ci.yml's.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push:
+    name: Build & push ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── 8 service images — build context is the repo root ──────────────
+          - name: bff
+            context: .
+            dockerfile: services/bff/Dockerfile
+          - name: token-svc
+            context: .
+            dockerfile: services/token-svc/Dockerfile
+          - name: catalog-svc
+            context: .
+            dockerfile: services/catalog-svc/Dockerfile
+          - name: media-svc
+            context: .
+            dockerfile: services/media-svc/Dockerfile
+          - name: planner-svc
+            context: .
+            dockerfile: services/planner-svc/Dockerfile
+          - name: search-svc
+            context: .
+            dockerfile: services/search-svc/Dockerfile
+          - name: chat-hub
+            context: .
+            dockerfile: services/chat-hub/Dockerfile
+          - name: notif-svc
+            context: .
+            dockerfile: services/notif-svc/Dockerfile
+          # ── 2 infra images — context is the service's own subdir ───────────
+          - name: postgres
+            context: infra/postgres
+            dockerfile: infra/postgres/Dockerfile
+          - name: osrm
+            context: infra/osrm
+            dockerfile: infra/osrm/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ghcr.io/zmeireles/daily-tour/${{ matrix.name }}:${{ github.sha }}
+            ghcr.io/zmeireles/daily-tour/${{ matrix.name }}:qual
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
