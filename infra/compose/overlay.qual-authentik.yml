@@ -1,0 +1,75 @@
+# Daily Tour — qual Authentik overlay (Plan-007 Q.2.5)
+#
+# WHY a separate overlay (not folded into overlay.qual.yml):
+# overlay.qual.yml must stay standalone-validatable against the base app
+# stack alone. An Authentik label-only fragment can only render once
+# docker-compose.authentik.yml is loaded — merging it into overlay.qual.yml
+# would force every `config` of the qual stack to also pass the authentik
+# compose file, breaking the "validate qual standalone" invariant. Keeping
+# the authentik-specific qual tweaks here means each overlay renders against
+# exactly the files it needs, and nothing else.
+#
+# What this overlay does on top of docker-compose.authentik.yml:
+#   1. Moves the `authentik` Traefik router from the plain `web` entrypoint
+#      onto `websecure` + the `letsencrypt` cert resolver. Under the qual
+#      Traefik overlay a global HTTP->HTTPS redirect is added; without a
+#      websecure router the auth. host would 301 to https and then 404
+#      (no TLS router to terminate it). The `letsencrypt` resolver is
+#      defined in the qual Traefik PR and referenced here by name.
+#   2. Swaps the Swarm-only `deploy.resources` limits (ignored by
+#      `docker compose up`) for `mem_limit` + `cpus`, which compose honours
+#      on a single-host VPS. Budgets are tracked in overlay.qual.yml's note
+#      but applied here so the authentik containers carry their own caps.
+#
+# Compose alongside the qual stack (after overlay.qual.yml, separate PR):
+#   docker compose -p dt-qual \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.app.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     -f infra/compose/docker-compose.authentik.yml \
+#     -f infra/compose/overlay.qual.yml \
+#     -f infra/compose/overlay.qual-authentik.yml \
+#     up -d
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Authentik Postgres — single-host resource caps for qual.
+  # ─────────────────────────────────────────────────────────────────────────
+  authentik-postgres:
+    deploy: !reset null
+    mem_limit: 512m
+    cpus: 0.5
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Authentik server — qual TLS router + resource caps.
+  # Re-lists the FULL traefik label set (compose merges service labels by
+  # replacing the whole block) with entrypoints flipped to `websecure` and a
+  # `letsencrypt` cert resolver added. Host rule + service port are preserved
+  # verbatim so the auth. vhost keeps resolving.
+  # ─────────────────────────────────────────────────────────────────────────
+  authentik-server:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.rule=Host(`auth.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
+      - "traefik.http.routers.authentik.entrypoints=websecure"
+      - "traefik.http.routers.authentik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.authentik.service=authentik"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+    deploy: !reset null
+    mem_limit: 1g
+    cpus: 1.0
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Authentik worker — resource caps only (no HTTP surface, no Traefik).
+  # ─────────────────────────────────────────────────────────────────────────
+  authentik-worker:
+    deploy: !reset null
+    mem_limit: 768m
+    cpus: 0.75

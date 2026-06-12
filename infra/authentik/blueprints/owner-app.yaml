@@ -85,9 +85,11 @@ entries:
       # UUID and fails those inserts.
       sub_mode: user_uuid
       issuer_mode: per_provider
-      # Dev (Vite default port) + QA redirect URIs. Phase 5 deploy
-      # injects the production URL via a per-environment override
-      # blueprint or via the Authentik API.
+      # Dev (Vite default port) + QA + qual redirect URIs. Multiple URIs
+      # coexist: dev login uses localhost, qual uses the qual VPS URL
+      # (Plan-007 Q.2.5). One blueprint serves all envs. Phase 5 deploy
+      # injects the production URL via a per-environment override blueprint
+      # or via the Authentik API.
       redirect_uris:
         - matching_mode: strict
           url: http://localhost:5173/admin/callback
@@ -95,6 +97,8 @@ entries:
           url: http://owner.dt.localhost:27080/admin/callback
         - matching_mode: strict
           url: https://qa.dailytour.example/admin/callback
+        - matching_mode: strict
+          url: https://qual.stay.portugalodyssey.pt/admin/callback
       property_mappings:
         - !Find [
             authentik_providers_oauth2.scopemapping,
