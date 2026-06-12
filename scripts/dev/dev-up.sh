@@ -7,6 +7,13 @@
 #   bash scripts/dev/dev-up.sh --skip-pwa     # backend only
 #   bash scripts/dev/dev-up.sh --skip-optional # skip search/planner/chat/notif
 #   bash scripts/dev/dev-up.sh --from <stage>  # resume from stage N (1-8)
+#   bash scripts/dev/dev-up.sh --to <stage>    # stop after stage N (default 8)
+#
+# Env knobs (default to dev; the qual deploy overrides them — see deploy-qa.yml):
+#   ENV_FILE=.env.qual   # file to source + pass to every --env-file (default .env)
+#   PROJECT=dt-qual      # compose -p project name (default unset → compose file name:)
+#   e.g. qual migrate+seed: ENV_FILE=.env.qual PROJECT=dt-qual \
+#          bash scripts/dev/dev-up.sh --from 4 --to 5
 
 set -u
 set -o pipefail
@@ -23,12 +30,18 @@ stage() { echo ""; echo "${BLUE}━━━ Stage $1: $2 ━━━${RESET}"; }
 SKIP_PWA=0
 SKIP_OPTIONAL=0
 START_STAGE=1
+END_STAGE=8
+# Deploy knobs — default to today's dev behavior so an unset env is byte-for-byte
+# the old script. The qual deploy sets ENV_FILE=.env.qual + PROJECT=dt-qual.
+ENV_FILE="${ENV_FILE:-.env}"
+PROJECT="${PROJECT:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-pwa) SKIP_PWA=1; shift ;;
     --skip-optional) SKIP_OPTIONAL=1; shift ;;
     --from) START_STAGE=$2; shift 2 ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    --to) END_STAGE=$2; shift 2 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) fail "unknown arg: $1"; exit 1 ;;
   esac
 done
