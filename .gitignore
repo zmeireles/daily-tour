@@ -38,6 +38,10 @@ lefthook-local.yml
 # Traefik ACME storage — permissions must be 600; never commit
 infra/traefik/acme/acme.json
 
+# Generated qual Postgres init dir — holds rotated DB-role passwords; never commit.
+# Only scripts/qual/gen-env-qual.sh writes it (on the VPS at deploy time).
+infra/postgres/init-qual/
+
 # Local environment files renamed to dodge the .env bash-secret-guard hook.
 # Same intent as .env above: never committed.
 dev-environment
