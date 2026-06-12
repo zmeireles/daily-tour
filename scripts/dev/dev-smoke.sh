@@ -18,7 +18,12 @@ info()  { echo "${BLUE}ℹ${RESET}  $*"; }
 step()  { echo ""; echo "${BLUE}━━━ $* ━━━${RESET}"; }
 
 cd "$(dirname "$0")/../.." || exit 1
-COMPOSE_BASE="--env-file .env -f infra/compose/docker-compose.base.yml"
+# Deploy knobs — default to dev so an unset env is byte-for-byte the old script.
+# The qual deploy sets ENV_FILE=.env.qual + PROJECT=dt-qual so the exec calls
+# below address the dt-qual compose project instead of the default name.
+ENV_FILE="${ENV_FILE:-.env}"
+PROJECT="${PROJECT:-}"
+COMPOSE_BASE="--env-file $ENV_FILE ${PROJECT:+-p $PROJECT} -f infra/compose/docker-compose.base.yml"
 COMPOSE_APP="-f infra/compose/docker-compose.app.yml"
 COMPOSE_ALL="$COMPOSE_BASE $COMPOSE_APP"
 
