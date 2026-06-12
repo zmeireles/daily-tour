@@ -6,10 +6,10 @@
 # pulls). The VPS never builds — it only pulls these images.
 #
 # Scope: 8 service images (build context = repo root, since their Dockerfiles
-# COPY pnpm-workspace.yaml / packages/* / packages/python-common) plus the 2
-# infra images (postgres, osrm) whose context is their own subdir. The PWA is
-# intentionally absent — apps/pwa has no Dockerfile yet; Q.2.4 adds a per-env
-# nginx image.
+# COPY pnpm-workspace.yaml / packages/* / packages/python-common), the PWA
+# (multi-stage vite build → nginx, repo-root context, qual VITE_* baked in via
+# build args — Q.2.4), plus the 2 infra images (postgres, osrm) whose context
+# is their own subdir.
 name: Publish images
 
 on:
@@ -20,6 +20,8 @@ on:
       - "packages/**"
       - "infra/postgres/**"
       - "infra/osrm/**"
+      - "infra/nginx/**"
+      - "apps/pwa/**"
   workflow_dispatch:
 
 concurrency:
@@ -67,6 +69,16 @@ jobs:
           - name: notif-svc
             context: .
             dockerfile: services/notif-svc/Dockerfile
+          # ── PWA — repo-root context; qual VITE_* are inlined at build time ──
+          # (import.meta.env), so they're baked in here via build args. The PWA
+          # is served same-origin on the qual apex; /v1 + /r path-route to the
+          # BFF, so VITE_BFF_URL is the apex itself.
+          - name: pwa
+            context: .
+            dockerfile: apps/pwa/Dockerfile
+            build_args: |
+              VITE_AUTHENTIK_URL=https://auth.qual.stay.portugalodyssey.pt/application/o/owner-app/
+              VITE_BFF_URL=https://qual.stay.portugalodyssey.pt
           # ── 2 infra images — context is the service's own subdir ───────────
           - name: postgres
             context: infra/postgres
@@ -94,6 +106,8 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
+          # Empty for every entry except pwa (those omit build_args).
+          build-args: ${{ matrix.build_args }}
           tags: |
             ghcr.io/zmeireles/daily-tour/${{ matrix.name }}:${{ github.sha }}
             ghcr.io/zmeireles/daily-tour/${{ matrix.name }}:qual
