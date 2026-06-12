@@ -30,12 +30,16 @@
 #   6. Top-level mem_limit/cpus on each service (deploy.resources.limits is
 #      Swarm-only and IGNORED by plain `docker compose up`).
 #
-# ── DEPENDENCY (Q.2.2) ──────────────────────────────────────────────────────
-# The `letsencrypt` (production) ACME resolver referenced on every router below
-# is defined by sibling task Q.2.2, which edits infra/traefik/traefik.yml
-# (currently only `letsencrypt-staging` exists). This overlay references it by
-# name only and does NOT edit traefik.yml. First boot uses staging until Q.2.2
-# + the Q.3.2 runbook flip the resolver to production.
+# ── ACME resolvers (Q.2.2, folded into this PR) ─────────────────────────────
+# infra/traefik/traefik.yml defines the `letsencrypt` (production) and
+# `letsencrypt-staging` resolvers' structure (caServer/storage/httpChallenge)
+# but omits email (static YAML can't interpolate ${ENV}). The email is supplied
+# per-resolver via the Traefik command flags above. Routers here use
+# `letsencrypt`; the Q.3.2 runbook brings the stack up on staging first
+# (swap the router certresolver to letsencrypt-staging), confirms routing, then
+# flips to production. Dashboard htpasswd for qual is a Q.3.2 runbook step
+# (htpasswd -nbB admin "$TRAEFIK_DASHBOARD_PASSWORD" > infra/traefik/dashboard-users
+# on the VPS before `up`; the dev dashboard-users file is the dev placeholder).
 #
 # ── KNOWN GAP (auth. subdomain TLS) ─────────────────────────────────────────
 # The authentik-server router (docker-compose.authentik.yml) is still on
@@ -223,6 +227,12 @@ services:
     command:
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # ACME email per resolver (Q.2.2). traefik.yml defines each resolver's
+      # structure but omits email (static YAML can't interpolate ${ENV}); these
+      # flags supply it — Compose interpolates ${TRAEFIK_ACME_EMAIL} from
+      # .env.qual. Flags merge with the file-defined resolvers by name.
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt-staging.acme.email=${TRAEFIK_ACME_EMAIL}"
     deploy: !reset null
     mem_limit: 128m
     cpus: 0.5
