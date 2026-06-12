@@ -42,6 +42,11 @@ infra/traefik/acme/acme.json
 # Only scripts/qual/gen-env-qual.sh writes it (on the VPS at deploy time).
 infra/postgres/init-qual/
 
+# Qual deploy state on the VPS clone (written by deploy-qa.yml; survives the
+# git-checkout sync because untracked). Never committed.
+.last_deploy_tag
+.deploy-history.md
+
 # Local environment files renamed to dodge the .env bash-secret-guard hook.
 # Same intent as .env above: never committed.
 dev-environment

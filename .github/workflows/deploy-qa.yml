@@ -1,0 +1,114 @@
+# Daily Tour — qual deploy (self-hosted VPS runner). Plan-007 Q.2.6.
+#
+# Brings the qual stack up from pre-built GHCR images. The 2-vCPU box only
+# PULLS — images are built by publish-images.yml on GitHub-hosted runners.
+# Operates on the persistent clone at /opt/daily-tour, where the VPS-only
+# .env.qual + infra/postgres/init-qual/ live (gitignored → untouched by the
+# `git checkout` sync). The FIRST deploy is the Q.3.2 runbook (clone, gen-env,
+# ACME staging→prod, Authentik bootstrap); this workflow is steady-state redeploys.
+#
+# Deploy ledger: appended to the gitignored .deploy-history.md (survives the
+# sync); the tracked human DEPLOYS.md stays manual per its own convention.
+# Rollback target is the previous tag in .last_deploy_tag (also gitignored).
+name: Deploy qual
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "GHCR tag to deploy (blank → this commit SHA)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: false # never overlap deploys
+
+permissions:
+  contents: read
+  packages: read # pull from GHCR
+
+jobs:
+  deploy:
+    # Dispatch always runs; a push deploys only when the commit opts in via [deploy-qa].
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy-qa]') }}
+    runs-on: [self-hosted, qual-vps]
+    defaults:
+      run:
+        working-directory: /opt/daily-tour
+        shell: bash
+    env:
+      # The full qual stack: project + env-file + every overlay in deploy order.
+      # Used as `docker compose $COMPOSE …` (unquoted — word-split is intentional).
+      COMPOSE: >-
+        -p dt-qual --env-file .env.qual
+        -f infra/compose/docker-compose.base.yml
+        -f infra/compose/docker-compose.app.yml
+        -f infra/compose/docker-compose.traefik.yml
+        -f infra/compose/docker-compose.authentik.yml
+        -f infra/compose/overlay.osrm.yml
+        -f infra/compose/overlay.qual.yml
+        -f infra/compose/overlay.qual-authentik.yml
+
+    steps:
+      - name: Resolve image tag + rollback target
+        run: |
+          set -euo pipefail
+          NEW_TAG="${{ github.event.inputs.image_tag }}"
+          [ -z "$NEW_TAG" ] && NEW_TAG="${{ github.sha }}"
+          # Previous successfully-deployed tag — untracked, so it survives the sync.
+          PREV_TAG="$(cat .last_deploy_tag 2>/dev/null || echo qual)"
+          { echo "IMAGE_TAG=$NEW_TAG"; echo "PREV_TAG=$PREV_TAG"; } >> "$GITHUB_ENV"
+          echo "→ deploying '$NEW_TAG' (rollback target on failure: '$PREV_TAG')"
+
+      - name: Sync deploy clone to target commit
+        run: |
+          set -euo pipefail
+          git fetch origin --prune
+          # Tracked files → target sha. Untracked .env.qual / init-qual/ /
+          # .last_deploy_tag / .deploy-history.md are NOT touched by checkout.
+          git checkout -f "${{ github.sha }}"
+
+      - name: Pull images + bring stack up (healthcheck-gated)
+        run: |
+          set -euo pipefail
+          export IMAGE_TAG
+          docker compose $COMPOSE pull
+          docker compose $COMPOSE up -d --wait --wait-timeout 300
+
+      - name: Migrate + seed (.env.qual / dt-qual)
+        run: |
+          set -euo pipefail
+          ENV_FILE=.env.qual PROJECT=dt-qual bash scripts/dev/dev-up.sh --from 4 --to 5
+
+      - name: Smoke — internal guest journey
+        run: |
+          set -euo pipefail
+          ENV_FILE=.env.qual PROJECT=dt-qual bash scripts/dev/dev-smoke.sh
+
+      - name: Readiness gate (--qual)
+        run: |
+          set -euo pipefail
+          bash scripts/dev/dev-env-check.sh --qual
+
+      - name: Record successful deploy
+        run: |
+          set -euo pipefail
+          echo "$IMAGE_TAG" > .last_deploy_tag
+          printf '| %s | qual | %s | github-actions | deploy %s |\n' \
+            "$(date -u '+%Y-%m-%d %H:%M UTC')" "$(git rev-parse --short HEAD)" "${IMAGE_TAG:0:12}" \
+            >> .deploy-history.md
+          echo "✓ deployed $IMAGE_TAG"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          set -euo pipefail
+          echo "✗ deploy failed — rolling back to '$PREV_TAG'"
+          IMAGE_TAG="$PREV_TAG" docker compose $COMPOSE up -d --wait --wait-timeout 300 || true
+          printf '| %s | qual | %s | github-actions | FAILED — rolled back to %s |\n' \
+            "$(date -u '+%Y-%m-%d %H:%M UTC')" "$(git rev-parse --short HEAD)" "${PREV_TAG:0:12}" \
+            >> .deploy-history.md
+          exit 1

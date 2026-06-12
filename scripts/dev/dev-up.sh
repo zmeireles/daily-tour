@@ -62,7 +62,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 1 — PREFLIGHT
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 1 ]]; then
+if [[ $START_STAGE -le 1 && $END_STAGE -ge 1 ]]; then
   stage 1 "PREFLIGHT — node, pnpm, docker, .env"
 
   NODE_VER=$(node -v 2>/dev/null || echo "missing")
@@ -109,13 +109,13 @@ fi
 # $POSTGRES_PASSWORD, etc. for direct-CLI auth (compose itself uses --env-file).
 set -a
 # shellcheck disable=SC1091
-source .env
+source "$ENV_FILE"
 set +a
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 2 — INSTALL deps
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 2 ]]; then
+if [[ $START_STAGE -le 2 && $END_STAGE -ge 2 ]]; then
   stage 2 "INSTALL — pnpm + uv"
 
   # idempotency: skip if node_modules/.pnpm newer than lockfile
@@ -144,11 +144,11 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 3 — INFRA (postgres + redis + rabbitmq + minio)
 # ═══════════════════════════════════════════════════════════════════════════════
-COMPOSE_BASE="--env-file .env -f infra/compose/docker-compose.base.yml"
+COMPOSE_BASE="--env-file $ENV_FILE ${PROJECT:+-p $PROJECT} -f infra/compose/docker-compose.base.yml"
 COMPOSE_APP="-f infra/compose/docker-compose.app.yml"
 COMPOSE_ALL="$COMPOSE_BASE $COMPOSE_APP"
 
-if [[ $START_STAGE -le 3 ]]; then
+if [[ $START_STAGE -le 3 && $END_STAGE -ge 3 ]]; then
   stage 3 "INFRA — postgres + redis + rabbitmq + minio"
 
   info "bringing up infra deps via Compose…"
@@ -205,7 +205,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 4 — MIGRATIONS
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 4 ]]; then
+if [[ $START_STAGE -le 4 && $END_STAGE -ge 4 ]]; then
   stage 4 "MIGRATIONS — catalog + token + media schemas"
 
   # Build host-side per-service DATABASE_URLs from SERVICE_DB_PASSWORD_*
@@ -300,7 +300,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 5 — SEED catalog
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 5 ]]; then
+if [[ $START_STAGE -le 5 && $END_STAGE -ge 5 ]]; then
   stage 5 "SEED — actions + wishes taxonomy + 28 São Miguel places"
   # Taxonomy first (6 actions + 36 wishes); place_action_wish FKs depend on it.
   if pnpm --filter @daily-tour/catalog-svc run seed 2>&1 | tail -5; then
@@ -331,7 +331,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 6 — REQUIRED SERVICES (bff + token-svc + catalog-svc + media-svc)
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 6 ]]; then
+if [[ $START_STAGE -le 6 && $END_STAGE -ge 6 ]]; then
   stage 6 "SERVICES — bff + token-svc + catalog-svc + media-svc"
 
   info "building + starting required services…"
@@ -383,7 +383,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 7 — OPTIONAL SERVICES (search + planner + chat-hub + notif)
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 7 && $SKIP_OPTIONAL -eq 0 ]]; then
+if [[ $START_STAGE -le 7 && $END_STAGE -ge 7 && $SKIP_OPTIONAL -eq 0 ]]; then
   stage 7 "OPTIONAL — search-svc + planner-svc + chat-hub + notif-svc"
 
   # Check API keys
@@ -409,7 +409,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 8 — PWA (dev server)
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ $START_STAGE -le 8 && $SKIP_PWA -eq 0 ]]; then
+if [[ $START_STAGE -le 8 && $END_STAGE -ge 8 && $SKIP_PWA -eq 0 ]]; then
   stage 8 "PWA — vite dev server"
   warn "PWA dev server runs in foreground. To start it manually:"
   echo ""
