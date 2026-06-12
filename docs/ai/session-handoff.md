@@ -1,4 +1,25 @@
-# Session Handoff — 2026-05-28 → … → 06-04(authentik) → 06-11(crash recovery) → next session
+# Session Handoff — 2026-05-28 → … → 06-11(crash recovery) → 06-12(plan-007) → next session
+
+> **UPDATE 2026-06-12: Plan-007 (qual VPS deploy) created from 3-agent recon and accepted → READY. New HIGH CVE fixed (#211). 6.B stack + otel fix merged + verified live (#206–#210). Stack brought DOWN (host needed for another project).** Resume cold from this block.
+>
+> ### What happened
+>
+> - **6.B + recovery follow-through merged (human-instructed):** #206 (otel→ghcr compose fix), #207+#208+#209 (full 6.B stack — note #208 auto-merged into the stack branch, so #207's squash carries the render code), #210 (wave log). catalog-svc+bff rebuilt; **verified live**: hydrated Lagoa do Fogo returns Commons URL + attribution `{Samuel Fonseca 85, CC BY-SA 3.0}`; vite hot-reloaded the credit chip.
+> - **New HIGH CVE caught by the pre-push audit gate**: `@grpc/grpc-js` 1.14.3 (2 advisories, GHSA-5375-pq7m-f5r2), transitive via OTel in `packages/shared-otel`. Fixed with the #200-style pnpm override → **#211 merged**. `pnpm audit --prod` clean.
+> - **Dev stack is DOWN** (`make down` + authentik overlay down + vite stopped) — host ports freed for another project. **Volumes intact** (heroes, attribution rows, #152 guesthouse row survive). `make up` works cleanly now (#206).
+> - **UATs DT-TESTS-25/26/27/28 still pending the tester** (todo; review queue empty at close-out). Env bring-up steps are in each task's Setup section.
+> - **Plan-007 — Qual VPS deploy — created and READY**: `docs/implementation-plans/007-qual-vps-deploy/` (README + TODO). Built from 3 parallel recon agents (read-only VPS sweep, repo deploy-surface inventory, po-platform DNS/branding). **Decisions locked 2026-06-12**: subdomain **`stay`** (qual apex `qual.stay.portugalodyssey.pt`, PWA at apex, `api.`/`auth.`/`traefik.` under it); GHCR + GitHub-hosted builds with VPS runner deploy-only at concurrency 1; hardening accepted (ufw + sshd password-auth off); island-chronicles GitLab = repo-side inaction.
+>
+> ### Key recon facts (full detail in plan §0)
+>
+> - VPS srv911943 = 77.37.86.126, root SSH key works. Ubuntu 24.04, Docker 28.3, **2 vCPU / 8 GB / no swap / 85 GB free**.
+> - Stale project = **island-chronicles** under `/root/island-chronicles/` (1.6 GB incl. all bind-mounted data — tar = full backup). Its `traefik-shared` owns 80/443/8080. **No GitLab runner exists on the host.**
+> - portugalodyssey.pt DNS = **Cloudflare**; PO's own infra on a different VPS (31.97.159.7). TLS plan: LE **HTTP-01 per-host**, Cloudflare records DNS-only.
+> - Critical repo gap: **PWA is same-origin** (`/v1`, `/r`, chat WS, media imgs) → qual overlay must path-route those on the apex to the BFF with priority over the SPA router.
+>
+> ### First task next session
+>
+> **Execute Plan-007 Q.1** (VPS prep: backup → stop stale stack → swap → hardening → toolchain) then **Q.2** (repo plumbing PRs — can be parallelized with cs-agents; Q.2.0/Q.2.1/Q.2.3 are independent). Plan TODO has the checklist; README §1–§3 the acceptance criteria. Execution is well-specified mechanical work — suitable for an Opus (or Sonnet for Q.1/Q.3.1) session; Fable-tier not required.
 
 > **UPDATE 2026-06-11 (crash-recovery session): computer crashed mid-close-out on 06-10 ~23:55. Nothing was lost.** Resume cold from this block.
 >
