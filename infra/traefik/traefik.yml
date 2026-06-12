@@ -39,15 +39,30 @@ api:
 ping: {}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Certificate resolvers — LE staging only in dev/QA
-# Switch to letsencrypt (live) in Phase 5 with a real public domain.
+# Certificate resolvers (plan-007 Q.2.2)
+#
+# Two HTTP-01 resolvers: `letsencrypt-staging` (untrusted certs, no rate limit —
+# verify routing on first qual boot) and `letsencrypt` (production). The qual
+# overlay's routers use `letsencrypt`; the Q.3.2 runbook brings the stack up on
+# staging first, then flips to production once routing/redirects are confirmed.
+#
+# The ACME `email` is INTENTIONALLY absent here: Traefik does NOT interpolate
+# ${ENV} in this static file (the old `email: "${TRAEFIK_ACME_EMAIL}"` was sent
+# to LE verbatim — bug). It is supplied per-resolver via CLI flags on the
+# Traefik `command:` in overlay.qual.yml, where Compose DOES interpolate
+# ${TRAEFIK_ACME_EMAIL} from .env.qual. Flags merge with this file's structure.
 # ─────────────────────────────────────────────────────────────────────────────
 certificatesResolvers:
   letsencrypt-staging:
     acme:
-      email: "${TRAEFIK_ACME_EMAIL}"
       storage: /acme/acme.json
       caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+      httpChallenge:
+        entryPoint: web
+  letsencrypt:
+    acme:
+      storage: /acme/acme.json
+      caServer: https://acme-v02.api.letsencrypt.org/directory
       httpChallenge:
         entryPoint: web
 

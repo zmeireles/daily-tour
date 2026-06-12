@@ -1,0 +1,247 @@
+# Daily Tour — qual environment overlay (plan-007 Q.2.1)
+#
+# Applied LAST, on top of base + app + traefik (+ authentik + osrm) for the
+# qual deploy on the VPS. Turns the local-dev stack into a TLS-terminated,
+# GHCR-image, production-mode stack on the qual apex domain.
+#
+# Consumed via the Makefile OVERLAYS= variable. The real deploy stack is
+# (README §Q.2.6):
+#   docker compose -p dt-qual --env-file .env.qual \
+#     -f infra/compose/docker-compose.base.yml \
+#     -f infra/compose/docker-compose.app.yml \
+#     -f infra/compose/docker-compose.traefik.yml \
+#     -f infra/compose/docker-compose.authentik.yml \
+#     -f infra/compose/overlay.osrm.yml \
+#     -f infra/compose/overlay.qual.yml \
+#     up -d
+#
+# Qual apex domain: qual.stay.portugalodyssey.pt  (set as TRAEFIK_DOMAIN_BASE
+# in .env.qual). Subdomains api. / auth. / traefik. resolve under it.
+#
+# What this overlay does:
+#   1. Traefik: publish 0.0.0.0:80/:443 (replacing the loopback 27080/27443/
+#      27088 dev bindings) + global web→websecure redirect.
+#   2. Move public routers to entrypoints=websecure + tls.certresolver=letsencrypt.
+#   3. Same-origin routing on the apex: PWA SPA answers the bare apex host;
+#      /v1 (REST + chat WS) and /r (token exchange) path-route to the BFF with
+#      higher priority than the SPA router.
+#   4. NODE_ENV=production on the 4 Node services; fix planner-svc OSRM_URL.
+#   5. GHCR image overrides on the 10 built services (pull, don't build on VPS).
+#   6. Top-level mem_limit/cpus on each service (deploy.resources.limits is
+#      Swarm-only and IGNORED by plain `docker compose up`).
+#
+# ── ACME resolvers (Q.2.2, folded into this PR) ─────────────────────────────
+# infra/traefik/traefik.yml defines the `letsencrypt` (production) and
+# `letsencrypt-staging` resolvers' structure (caServer/storage/httpChallenge)
+# but omits email (static YAML can't interpolate ${ENV}). The email is supplied
+# per-resolver via the Traefik command flags above. Routers here use
+# `letsencrypt`; the Q.3.2 runbook brings the stack up on staging first
+# (swap the router certresolver to letsencrypt-staging), confirms routing, then
+# flips to production. Dashboard htpasswd for qual is a Q.3.2 runbook step
+# (htpasswd -nbB admin "$TRAEFIK_DASHBOARD_PASSWORD" > infra/traefik/dashboard-users
+# on the VPS before `up`; the dev dashboard-users file is the dev placeholder).
+#
+# ── KNOWN GAP (auth. subdomain TLS) ─────────────────────────────────────────
+# The authentik-server router (docker-compose.authentik.yml) is still on
+# entrypoints=web. Under the global web→websecure redirect added here, an
+# http://auth.qual.stay… request 301s to https with no websecure router → 404.
+# Upgrading the authentik router to websecure+letsencrypt is intentionally NOT
+# done in this overlay: doing so would make overlay.qual.yml hard-depend on the
+# authentik overlay (a service fragment with only labels/mem_limit and no image
+# fails `docker compose config` when authentik isn't loaded), breaking the
+# standalone Q.2.1 validation. No current plan-007 task owns this upgrade —
+# FOLLOW-UP needed (authentik overlay qual treatment, or a qual-authentik
+# overlay). Authentik mem_limits (server 1g / worker 768m / pg 512m) likewise
+# belong to that follow-up; they are accounted for in the budget below but not
+# applied by this file.
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+services:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Postgres — GHCR image (base has build: only, no image:; adding image: here
+  # is REQUIRED so `compose pull` fetches instead of building on the VPS).
+  # ───────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: ghcr.io/zmeireles/daily-tour/postgres:${IMAGE_TAG:-qual}
+    # Drop the Swarm-only deploy.resources block (ignored by `compose up`, and
+    # compose errors if mem_limit ≠ deploy.resources.limits.memory). mem_limit
+    # is the sole authority. Same pattern on every service below.
+    deploy: !reset null
+    mem_limit: 1g
+    cpus: 1.0
+
+  redis:
+    deploy: !reset null
+    mem_limit: 256m
+    cpus: 0.5
+
+  rabbitmq:
+    deploy: !reset null
+    mem_limit: 512m
+    cpus: 0.75
+
+  minio:
+    deploy: !reset null
+    mem_limit: 256m
+    cpus: 0.5
+
+  minio-init:
+    # One-shot bootstrap (restart: "no"); small cap is plenty.
+    mem_limit: 128m
+    cpus: 0.25
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # OTel collector — keeps its pinned upstream GHCR image; just cap resources.
+  # ───────────────────────────────────────────────────────────────────────────
+  otel-collector:
+    deploy: !reset null
+    mem_limit: 256m
+    cpus: 0.25
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # BFF — apex same-origin ingress. Three routers on the apex host:
+  #   • bff            (api.<apex>)              — direct API use, TLS-upgraded
+  #   • bff-apex-v1    (<apex> && PathPrefix /v1) — REST + chat WebSocket
+  #   • bff-apex-r     (<apex> && PathPrefix /r)  — reservation token exchange
+  # The two apex path routers get priority 100 so they win over the bare-Host
+  # PWA SPA router (priority 1). Traefik forwards WS upgrades automatically on a
+  # matching router and passHostHeader defaults true — no extra middleware, and
+  # nothing here strips the Upgrade header.
+  # ───────────────────────────────────────────────────────────────────────────
+  bff:
+    image: ghcr.io/zmeireles/daily-tour/bff:${IMAGE_TAG:-qual}
+    environment:
+      NODE_ENV: production
+    deploy: !reset null
+    mem_limit: 384m
+    cpus: 0.5
+    labels:
+      # api.<apex> router — upgrade dev `web` → TLS websecure.
+      - "traefik.http.routers.bff.entrypoints=websecure"
+      - "traefik.http.routers.bff.tls.certresolver=letsencrypt"
+      # Apex /v1 path router → bff (REST + chat WS at /v1/chat/ws).
+      - "traefik.http.routers.bff-apex-v1.rule=Host(`${TRAEFIK_DOMAIN_BASE}`) && PathPrefix(`/v1`)"
+      - "traefik.http.routers.bff-apex-v1.entrypoints=websecure"
+      - "traefik.http.routers.bff-apex-v1.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bff-apex-v1.service=bff"
+      - "traefik.http.routers.bff-apex-v1.priority=100"
+      # Apex /r path router → bff (reservation token exchange).
+      - "traefik.http.routers.bff-apex-r.rule=Host(`${TRAEFIK_DOMAIN_BASE}`) && PathPrefix(`/r`)"
+      - "traefik.http.routers.bff-apex-r.entrypoints=websecure"
+      - "traefik.http.routers.bff-apex-r.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bff-apex-r.service=bff"
+      - "traefik.http.routers.bff-apex-r.priority=100"
+
+  token-svc:
+    image: ghcr.io/zmeireles/daily-tour/token-svc:${IMAGE_TAG:-qual}
+    environment:
+      NODE_ENV: production
+    deploy: !reset null
+    mem_limit: 256m
+    cpus: 0.25
+
+  catalog-svc:
+    image: ghcr.io/zmeireles/daily-tour/catalog-svc:${IMAGE_TAG:-qual}
+    environment:
+      NODE_ENV: production
+    deploy: !reset null
+    mem_limit: 320m
+    cpus: 0.5
+
+  media-svc:
+    image: ghcr.io/zmeireles/daily-tour/media-svc:${IMAGE_TAG:-qual}
+    environment:
+      NODE_ENV: production
+    deploy: !reset null
+    mem_limit: 320m
+    cpus: 0.5
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # planner-svc — fix the broken default OSRM host (osrm-routed → dt_osrm, the
+  # container_name from overlay.osrm.yml).
+  # ───────────────────────────────────────────────────────────────────────────
+  planner-svc:
+    image: ghcr.io/zmeireles/daily-tour/planner-svc:${IMAGE_TAG:-qual}
+    environment:
+      OSRM_URL: http://dt_osrm:5000
+    deploy: !reset null
+    mem_limit: 512m
+    cpus: 1.0
+
+  search-svc:
+    image: ghcr.io/zmeireles/daily-tour/search-svc:${IMAGE_TAG:-qual}
+    deploy: !reset null
+    mem_limit: 512m
+    cpus: 0.75
+
+  chat-hub:
+    image: ghcr.io/zmeireles/daily-tour/chat-hub:${IMAGE_TAG:-qual}
+    deploy: !reset null
+    mem_limit: 384m
+    cpus: 0.5
+
+  notif-svc:
+    image: ghcr.io/zmeireles/daily-tour/notif-svc:${IMAGE_TAG:-qual}
+    deploy: !reset null
+    mem_limit: 384m
+    cpus: 0.25
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # pwa-static — answers the BARE APEX host (label tweak: PWA serves `/`, not
+  # the dev `app.` subdomain). Low priority so /v1 and /r path routers win.
+  # TODO(Q.2.4): swap the nginx:1.27-alpine bind-mount for a GHCR nginx image
+  # with apps/pwa/dist COPY'd in. Image intentionally unchanged here.
+  # ───────────────────────────────────────────────────────────────────────────
+  pwa-static:
+    deploy: !reset null
+    mem_limit: 128m
+    cpus: 0.25
+    labels:
+      - "traefik.http.routers.pwa.rule=Host(`${TRAEFIK_DOMAIN_BASE}`)"
+      - "traefik.http.routers.pwa.entrypoints=websecure"
+      - "traefik.http.routers.pwa.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pwa.priority=1"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Traefik — publish on the public interface + global HTTP→HTTPS redirect.
+  # `ports: !override` REPLACES the loopback 27080/27443/27088 dev bindings
+  # (plain list merge would append, leaving them published). The dashboard 8080
+  # is deliberately NOT republished — it stays reachable only via the
+  # traefik.<apex> router behind dashboard-auth.
+  # The redirect is set via CLI flags so the overlay is self-contained and does
+  # not need to edit the static traefik.yml. Traefik auto-loads
+  # /etc/traefik/traefik.yml (mounted by the base overlay) and merges these
+  # flags into the file-defined `web` entrypoint; the ACME HTTP-01 challenge is
+  # still served on `web` ahead of the redirect.
+  # ───────────────────────────────────────────────────────────────────────────
+  traefik:
+    ports: !override
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    command:
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # ACME email per resolver (Q.2.2). traefik.yml defines each resolver's
+      # structure but omits email (static YAML can't interpolate ${ENV}); these
+      # flags supply it — Compose interpolates ${TRAEFIK_ACME_EMAIL} from
+      # .env.qual. Flags merge with the file-defined resolvers by name.
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt-staging.acme.email=${TRAEFIK_ACME_EMAIL}"
+    deploy: !reset null
+    mem_limit: 128m
+    cpus: 0.5
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # osrm — GHCR image; routing engine for planner-svc drive-times.
+  # ───────────────────────────────────────────────────────────────────────────
+  osrm:
+    image: ghcr.io/zmeireles/daily-tour/osrm:${IMAGE_TAG:-qual}
+    deploy: !reset null
+    mem_limit: 512m
+    cpus: 1.0
