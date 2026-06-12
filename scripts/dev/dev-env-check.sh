@@ -165,10 +165,17 @@ fi
 section "BFF ENDPOINTS"
 
 BFF_PORT="${DT_HOST_PORT_BFF:-28080}"
-BFF_BASE="http://127.0.0.1:${BFF_PORT}"
+if [[ $QUAL -eq 1 ]]; then
+  # Probe the BFF via the api. subdomain router (forwards ALL paths to the BFF).
+  # The apex only path-routes /v1 and /r (same-origin), so /health — outside
+  # those prefixes — would hit the SPA there; api. exposes the full BFF surface.
+  BFF_BASE="https://api.qual.stay.portugalodyssey.pt"
+else
+  BFF_BASE="http://127.0.0.1:${BFF_PORT}"
+fi
 
-# /health → 200
-HEALTH=$(curl -s -o /dev/null -w '%{http_code}' "$BFF_BASE/health" 2>/dev/null || echo "000")
+# /health → 200  (CURL_OPTS adds -L + timeout under --qual; empty in dev)
+HEALTH=$(curl -s "${CURL_OPTS[@]}" -o /dev/null -w '%{http_code}' "$BFF_BASE/health" 2>/dev/null || echo "000")
 if [[ "$HEALTH" == "200" ]]; then
   row "GET /health" "$OK 200"
 else
@@ -177,7 +184,7 @@ else
 fi
 
 # /r/:token with an obviously-invalid token → 302 (graceful-degrade redirect)
-EXCHANGE=$(curl -s -o /dev/null -w '%{http_code}' "$BFF_BASE/r/__envcheck_invalid_token__" 2>/dev/null || echo "000")
+EXCHANGE=$(curl -s "${CURL_OPTS[@]}" -o /dev/null -w '%{http_code}' "$BFF_BASE/r/__envcheck_invalid_token__" 2>/dev/null || echo "000")
 if [[ "$EXCHANGE" == "302" || "$EXCHANGE" == "401" || "$EXCHANGE" == "404" ]]; then
   row "GET /r/:token" "$OK route registered" "responded $EXCHANGE for invalid token"
 else
@@ -186,7 +193,7 @@ else
 fi
 
 # /v1/auth/refresh without cookie → 401 no_refresh_cookie
-REFRESH_RESP=$(curl -s -w '\n%{http_code}' "$BFF_BASE/v1/auth/refresh" 2>/dev/null || echo $'\n000')
+REFRESH_RESP=$(curl -s "${CURL_OPTS[@]}" -w '\n%{http_code}' "$BFF_BASE/v1/auth/refresh" 2>/dev/null || echo $'\n000')
 REFRESH_CODE=$(echo "$REFRESH_RESP" | tail -1)
 REFRESH_BODY=$(echo "$REFRESH_RESP" | head -n -1)
 if [[ "$REFRESH_CODE" == "401" ]] && echo "$REFRESH_BODY" | grep -q "no_refresh_cookie"; then
@@ -202,32 +209,64 @@ fi
 # ─── PWA ───────────────────────────────────────────────────────────────────
 section "PWA"
 
-if ss -tlnp 2>/dev/null | grep -q ':5173 '; then
-  row "vite dev :5173" "$OK listening"
-else
-  row "vite dev :5173" "$NO not bound" "start with: pnpm --filter @daily-tour/pwa dev"
-  fail
-fi
-
-# Code-presence assertions for the most recent fixes — these catch
-# "stale local checkout" mistakes that no health probe would detect.
-PWA_FILES=(
-  "apps/pwa/src/components/session-bootstrap.tsx"
-  "apps/pwa/src/lib/auth/refresh.ts"
-)
-for f in "${PWA_FILES[@]}"; do
-  if [[ -f "$f" ]]; then
-    row "$f" "$OK present"
+if [[ $QUAL -eq 1 ]]; then
+  # Qual ships a built dist behind Traefik (no Vite dev server); local
+  # source-presence is meaningless on a deploy clone. Verify (a) the apex serves
+  # the SPA and (b) the same-origin /v1 path router actually reaches the BFF
+  # rather than falling through to the SPA — the riskiest part of the qual
+  # ingress (overlay.qual path-router priority).
+  PWA_CODE=$(curl -s "${CURL_OPTS[@]}" -o /dev/null -w '%{http_code}' "$QUAL_APEX/" 2>/dev/null || echo "000")
+  if [[ "$PWA_CODE" == "200" ]]; then
+    row "GET $QUAL_APEX/" "$OK 200" "SPA served at apex"
   else
-    row "$f" "$NO missing" "local code is stale; git fetch && git reset --hard origin/main"
+    row "GET $QUAL_APEX/" "$NO got $PWA_CODE (want 200)"
     fail
   fi
-done
+
+  APEX_V1=$(curl -s "${CURL_OPTS[@]}" -w '\n%{http_code}' "$QUAL_APEX/v1/auth/refresh" 2>/dev/null || echo $'\n000')
+  if [[ "$(echo "$APEX_V1" | tail -1)" == "401" ]] && echo "$APEX_V1" | head -n -1 | grep -q "no_refresh_cookie"; then
+    row "GET $QUAL_APEX/v1/auth/refresh" "$OK 401" "apex /v1 path-routes to BFF (same-origin OK)"
+  else
+    row "GET $QUAL_APEX/v1/auth/refresh" "$NO got $(echo "$APEX_V1" | tail -1) (want 401 no_refresh_cookie)" "apex /v1 not reaching BFF — check overlay.qual path-router priority"
+    fail
+  fi
+else
+  if ss -tlnp 2>/dev/null | grep -q ':5173 '; then
+    row "vite dev :5173" "$OK listening"
+  else
+    row "vite dev :5173" "$NO not bound" "start with: pnpm --filter @daily-tour/pwa dev"
+    fail
+  fi
+
+  # Code-presence assertions for the most recent fixes — these catch
+  # "stale local checkout" mistakes that no health probe would detect.
+  PWA_FILES=(
+    "apps/pwa/src/components/session-bootstrap.tsx"
+    "apps/pwa/src/lib/auth/refresh.ts"
+  )
+  for f in "${PWA_FILES[@]}"; do
+    if [[ -f "$f" ]]; then
+      row "$f" "$OK present"
+    else
+      row "$f" "$NO missing" "local code is stale; git fetch && git reset --hard origin/main"
+      fail
+    fi
+  done
+fi
 
 # ─── SMOKE ─────────────────────────────────────────────────────────────────
 if [[ $SKIP_SMOKE -eq 0 ]]; then
   section "SMOKE (internal network — fast)"
-  PLACES=$(docker compose --env-file .env -f infra/compose/docker-compose.base.yml exec -T postgres psql -U postgres -d dailytour -t -c "SELECT count(*) FROM catalog.place;" 2>/dev/null | tr -d ' \n')
+  # Qual runs under compose project dt-qual; reach postgres by its env-invariant
+  # container_name (dt_postgres) rather than `compose exec`, which resolves
+  # against the dev project name. Dev keeps the compose-exec path (COMPOSE_ENV_FILE
+  # is .env in dev, .env.qual on the VPS) — byte-identical to before.
+  if [[ $QUAL -eq 1 ]]; then
+    PG_EXEC=(docker exec -i dt_postgres)
+  else
+    PG_EXEC=(docker compose --env-file "$COMPOSE_ENV_FILE" -f infra/compose/docker-compose.base.yml exec -T postgres)
+  fi
+  PLACES=$("${PG_EXEC[@]}" psql -U postgres -d dailytour -t -c "SELECT count(*) FROM catalog.place;" 2>/dev/null | tr -d ' \n')
   if [[ "$PLACES" == "28" ]]; then
     row "catalog seeded" "$OK 28 places"
   else
@@ -243,7 +282,7 @@ if [[ $SKIP_SMOKE -eq 0 ]]; then
   # so one round-trip reports every gap at once.
   EXPECTED_TABLES="catalog.place,auth_tokens.reservation,auth_tokens.token_grant,auth_tokens.guest,media.asset,search.place_embedding,planner.tour_plan,chat.chat_thread,chat.message,chat.channel_binding,analytics.tour_event"
   TABLE_COUNT=$(($(echo "$EXPECTED_TABLES" | tr -cd ',' | wc -c) + 1))
-  MISSING_TABLES=$(docker compose --env-file .env -f infra/compose/docker-compose.base.yml exec -T postgres \
+  MISSING_TABLES=$("${PG_EXEC[@]}" \
     psql -U postgres -d dailytour -t -A -c \
     "SELECT string_agg(t, ', ' ORDER BY t) FROM unnest(string_to_array('$EXPECTED_TABLES', ',')) AS t WHERE to_regclass(t) IS NULL;" 2>/dev/null | tr -d '\r\n')
   if [[ -z "$MISSING_TABLES" ]]; then
@@ -259,7 +298,7 @@ if [[ $SKIP_SMOKE -eq 0 ]]; then
   # telemetry as a 500 (`permission denied for schema analytics`, PG 42501) —
   # source was correct, the 12-day-old live DB stale. Assert the critical bff
   # privileges directly so drift fails here, loudly, not mid-UAT.
-  BFF_GRANTS=$(docker compose --env-file .env -f infra/compose/docker-compose.base.yml exec -T postgres \
+  BFF_GRANTS=$("${PG_EXEC[@]}" \
     psql -U postgres -d dailytour -t -A -c \
     "SELECT has_schema_privilege('bff', 'analytics', 'USAGE')::text || ',' || has_table_privilege('bff', 'analytics.tour_event', 'INSERT')::text;" 2>/dev/null | tr -d '\r\n')
   if [[ "$BFF_GRANTS" == "true,true" ]]; then
