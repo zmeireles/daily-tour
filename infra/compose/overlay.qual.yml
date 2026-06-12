@@ -195,10 +195,12 @@ services:
   # ───────────────────────────────────────────────────────────────────────────
   # pwa-static — answers the BARE APEX host (label tweak: PWA serves `/`, not
   # the dev `app.` subdomain). Low priority so /v1 and /r path routers win.
-  # TODO(Q.2.4): swap the nginx:1.27-alpine bind-mount for a GHCR nginx image
-  # with apps/pwa/dist COPY'd in. Image intentionally unchanged here.
+  # GHCR nginx image (Q.2.4) with apps/pwa/dist + pwa.conf baked in; reset the
+  # dev RO bind-mounts (a plain merge would keep them and shadow the image).
   # ───────────────────────────────────────────────────────────────────────────
   pwa-static:
+    image: ghcr.io/zmeireles/daily-tour/pwa:${IMAGE_TAG:-qual}
+    volumes: !reset null
     deploy: !reset null
     mem_limit: 128m
     cpus: 0.25
