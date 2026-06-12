@@ -1,4 +1,22 @@
-# Session Handoff — 2026-05-28 → … → 06-11(crash recovery) → 06-12(plan-007) → next session
+# Session Handoff — 2026-05-28 → … → 06-12(plan-007 Q.2 SHIPPED) → next session
+
+> **UPDATE 2026-06-12 (later): Plan-007 Phase Q.2 (repo plumbing) — ✅ COMPLETE, 8/8 tasks merged + GHCR pipeline 11/11 green. VPS still untouched.** Resume cold from this block.
+>
+> ### What shipped (all merged to `main`)
+>
+> - **Q.2 = 8/8 done** via cs-agent fan-out (orchestrator-reviewed every diff): **#214** GHCR publish workflow · **#216** qual overlay (TLS + apex `/v1`+`/r` path-routing + GHCR images + mem_limits) **+ Q.2.2 folded in** (prod ACME resolver + email-via-command-flag fix) · **#215** `.env.qual` generator + example + rotated `init-qual/02-roles.sql` · **#220** PWA→GHCR nginx image (`apps/pwa/Dockerfile`) · **#218** Authentik qual redirect URI + `overlay.qual-authentik.yml` (auth. 404 TLS fix) · **#217** `dev-env-check.sh --qual` · **#219** `deploy-qa.yml` self-hosted deploy workflow + parameterised `dev-up.sh`/`dev-smoke.sh` (ENV_FILE/PROJECT/--to).
+> - **GHCR images all published** (`:qual` + `:sha`) for the 8 services + postgres + osrm + pwa. The maiden `publish-images` run exposed 2 latent osrm bugs — **#221** (`v5.28.0`→`v5.25.0`, 404), **#222** (stretch-EOL apt → archive.debian.org) — both fixed + locally build-validated; pipeline now **11/11 green**.
+> - **Orchestrator rescues** (logged in plan EXECUTION.md): #215 missing example/gitignore, #217 unwired `--qual` vars, **#219 agent badly underdelivered** (no workflow file → orchestrator wrote it, incl. parameterising `dev-smoke.sh` which had the same project/env hardcoding).
+>
+> ### State for resume
+>
+> - `main` clean + synced; no open PRs, no cs-agent worktrees, no leftover branches. dt-tests `review` queue empty (polled at start).
+> - **Merge note:** `main` ruleset requires up-to-date branches (`--admin` won't bypass) → each merge needs `gh pr update-branch`→CI→merge cascade.
+> - New files on main: `infra/compose/overlay.qual.yml`, `overlay.qual-authentik.yml`, `.github/workflows/publish-images.yml` + `deploy-qa.yml`, `scripts/qual/gen-env-qual.sh`, `.env.qual.example`, `apps/pwa/Dockerfile`. `dev-up.sh`/`dev-smoke.sh`/`dev-env-check.sh` gained qual modes.
+>
+> ### First task next session
+>
+> **Q.1 (live VPS prep) + Q.3 (runner/DNS/first deploy) — both gated on the human's explicit go** (Q.1 stops island-chronicles + hardens SSH on a live box). Plan TODO Q.1/Q.3 checklists + README §1/§3 acceptance are ready. The GHCR images + all overlays/scripts are in place, so once the human green-lights the VPS, execution is: Q.1 prep → Q.3.0 DNS + Q.3.1 runner → Q.3.2 first-deploy runbook (clone `/opt/daily-tour`, gen-env, ACME staging→prod, Authentik bootstrap) → Q.3.3 verify.
 
 > **UPDATE 2026-06-12: Plan-007 (qual VPS deploy) created from 3-agent recon and accepted → READY. New HIGH CVE fixed (#211). 6.B stack + otel fix merged + verified live (#206–#210). Stack brought DOWN (host needed for another project).** Resume cold from this block.
 >

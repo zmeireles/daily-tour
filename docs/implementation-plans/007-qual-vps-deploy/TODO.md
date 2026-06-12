@@ -1,6 +1,6 @@
 # Plan 007 — TODO
 
-Status: **READY** (accepted 2026-06-12). Task detail + acceptance live in [README.md](./README.md) §1–§3; this file tracks state only. Update on every wave; log waves in EXECUTION.md (create on first wave).
+Status: **EXECUTING** — Phase Q.2 (repo plumbing) ✅ DONE 2026-06-12; **Q.1 (VPS prep) + Q.3 (runner/DNS/deploy) remain**, both gated on the human's go for live-VPS work. Task detail + acceptance live in [README.md](./README.md) §1–§3; this file tracks state only. Wave log in [EXECUTION.md](./EXECUTION.md).
 
 ## Phase Q.1 — VPS preparation (srv911943 / 77.37.86.126)
 
@@ -12,16 +12,18 @@ Status: **READY** (accepted 2026-06-12). Task detail + acceptance live in [READM
 - [ ] Q.1.5 scope nightly `docker image prune` cron away from daily-tour images
 - [ ] Q.1.6 host toolchain: Node 22.22.3 + pnpm 9.14.2 + git
 
-## Phase Q.2 — Repo deploy plumbing (PRs)
+## Phase Q.2 — Repo deploy plumbing (PRs) — ✅ DONE (8/8, merged 2026-06-12)
 
-- [ ] Q.2.0 GHCR publish workflow (8 services + postgres + osrm → ghcr.io, tags `{sha,qual}`)
-- [ ] Q.2.1 `infra/compose/overlay.qual.yml` (0.0.0.0:80/443, websecure+resolver+redirect, apex PWA router, `/v1`+`/r` path-routers → bff, NODE_ENV=production, OSRM_URL, mem limits, ghcr image overrides)
-- [ ] Q.2.2 Traefik prod ACME resolver + fix email env-interpolation + qual dashboard htpasswd
-- [ ] Q.2.3 `.env.qual` generator (`scripts/qual/gen-env-qual.sh`) + `.env.qual.example` + rotated `02-roles.sql` flow
-- [ ] Q.2.4 PWA qual build (`VITE_AUTHENTIK_URL=https://auth.qual.stay.portugalodyssey.pt/...`; dist COPY'd into nginx image)
-- [ ] Q.2.5 Authentik qual blueprint override (redirect URI `https://qual.stay.portugalodyssey.pt/admin/callback`)
-- [ ] Q.2.6 `.github/workflows/deploy-qa.yml` (runs-on `[self-hosted, qual-vps]`; pull→up→migrate→seed→smoke→DEPLOYS.md; rollback to previous `:sha`)
-- [ ] Q.2.7 `dev-env-check.sh --qual` mode
+- [x] Q.2.0 GHCR publish workflow (8 services + postgres + osrm + **pwa** → ghcr.io, tags `{sha,qual}`) — **#214**
+- [x] Q.2.1 `infra/compose/overlay.qual.yml` (0.0.0.0:80/443, websecure+resolver+redirect, apex PWA router, `/v1`+`/r` path-routers → bff, NODE_ENV=production, OSRM_URL, mem limits, ghcr image overrides) — **#216**
+- [x] Q.2.2 Traefik prod ACME resolver + email-via-command-flag fix (folded into #216) — **#216**. Dashboard htpasswd deferred to the Q.3.2 runbook (per-deploy secret).
+- [x] Q.2.3 `.env.qual` generator (`scripts/qual/gen-env-qual.sh`) + `.env.qual.example` + rotated `02-roles.sql` flow — **#215**
+- [x] Q.2.4 PWA qual build → GHCR nginx image (`apps/pwa/Dockerfile`; VITE\_\* baked) — **#220**
+- [x] Q.2.5 Authentik qual redirect URI + `overlay.qual-authentik.yml` (auth. router websecure TLS, the 404 fix) — **#218**
+- [x] Q.2.6 `.github/workflows/deploy-qa.yml` (runs-on `[self-hosted, qual-vps]`; pull→up→migrate→seed→smoke→check→rollback) + parameterised `dev-up.sh`/`dev-smoke.sh` (ENV_FILE/PROJECT/--to) — **#219**
+- [x] Q.2.7 `dev-env-check.sh --qual` mode — **#217**
+
+**Post-merge:** the maiden `publish-images` run exposed a latent osrm bug — `osrm-backend:v5.28.0` 404 (#221 → v5.25.0), then stretch-EOL apt 404 (#222 → archive.debian.org). **Pipeline now 11/11 green; all GHCR images published with `:qual` + `:sha`.** EXECUTION.md has the wave detail.
 
 ## Phase Q.3 — Runner + DNS + first deploy
 
