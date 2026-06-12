@@ -1,4 +1,21 @@
-# Session Handoff — 2026-05-28 → … → 06-12(plan-007 Q.2 SHIPPED) → next session
+# Session Handoff — 2026-05-28 → … → 06-12(plan-007 Q.1+Q.2 DONE) → next session
+
+> **UPDATE 2026-06-12 (latest): Plan-007 Phase Q.1 (VPS prep) — ✅ COMPLETE. The VPS is deploy-ready. Only Q.3 (runner + DNS + first deploy) remains.** Resume cold from this block.
+>
+> ### What happened on the box (srv911943 / 77.37.86.126, root key SSH)
+>
+> Q.1 executed step-by-step with a verification gate after each (detail in plan EXECUTION.md Wave 2):
+>
+> - **island-chronicles backed up + cleanly stopped** — tar (216M, sha256-verified on-box + off-box at `/media/jmeireles/ssd3/vps-backups/`), then `compose stop` (7 containers exited, `unless-stopped` keeps them down across reboot). **80/443/8080 are now free** for the qual stack. Data volumes intact; restartable any time.
+> - **4 GB swap** (persisted) + `swappiness=10`. **ufw** active (allow 22/80/443). **sshd `PasswordAuthentication no`** (key-only; root + `ubuntu` keys both work — verified via a fresh connection under a deadman switch). **prune cron** → dangling-only (won't eat tagged daily-tour images). **Toolchain**: `node v22.22.3` + `pnpm 9.14.2` + git system-wide.
+>
+> ### First task next session — Q.3 (the actual deploy)
+>
+> - **Q.3.0 Cloudflare DNS** (likely needs the human or a CF API token): A `qual.stay` + `*.qual.stay` → 77.37.86.126, **DNS-only / grey-cloud** (so ACME HTTP-01 + WS pass through). **Blocks Q.3.2 ACME.**
+> - **Q.3.1 GitHub runner** — `ghrunner` user + register self-hosted runner labels `[self-hosted, qual-vps]`, concurrency 1, systemd. Doable without the human (needs a repo runner-registration token via `gh`).
+> - **Q.3.2 first-deploy runbook** — clone `/opt/daily-tour`, `gen-env-qual.sh` (set the `__SET_MANUALLY__` keys: ANTHROPIC_API_KEY, EMBEDDING_API_KEY, TRAEFIK_ACME_EMAIL, telegram/whatsapp), ACME **staging→prod**, Authentik bootstrap + akadmin→staff. All GHCR images are published + the deploy workflow/overlays are merged, so this is mostly orchestration.
+> - **Q.3.3 verify** — `dev-smoke.sh` + `dev-env-check.sh --qual` + owner login + hero/credit over TLS.
+> - **Note:** GHCR images may be **private** by default — the VPS `docker compose pull` will need a GHCR pull credential (PAT or the runner's token) unless the packages are made public. Decide during Q.3.1/Q.3.2.
 
 > **UPDATE 2026-06-12 (later): Plan-007 Phase Q.2 (repo plumbing) — ✅ COMPLETE, 8/8 tasks merged + GHCR pipeline 11/11 green. VPS still untouched.** Resume cold from this block.
 >
