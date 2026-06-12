@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
-# Daily Tour — dev env readiness check.
+# Daily Tour — dev / qual env readiness check.
 #
 # Runs BEFORE any UAT execution. Snapshots repo state, container health,
 # BFF endpoints, PWA dev server, and a minimal smoke. Produces a
 # paste-ready fingerprint for the UAT task's `## Setup` section.
+#
+# With --qual it validates the qual VPS stack instead of local dev: it
+# expects the Traefik/Authentik/OSRM/built-PWA containers on top of the dev
+# services, skips the Vite dev server + local-source checks, and probes the
+# public apex over TLS (https://qual.stay.portugalodyssey.pt — PWA at /, BFF
+# on the same-origin /v1 + /r paths) instead of localhost:28080.
 #
 # Exit codes:
 #   0 → env is ready; tester may run the UAT
@@ -13,6 +19,7 @@
 #   bash scripts/dev/dev-env-check.sh                  # short fingerprint
 #   bash scripts/dev/dev-env-check.sh --skip-smoke     # skip the smoke pass
 #   bash scripts/dev/dev-env-check.sh --markdown       # markdown-formatted
+#   bash scripts/dev/dev-env-check.sh --qual           # validate the qual VPS stack
 
 set -u
 set -o pipefail
@@ -22,14 +29,29 @@ cd "$(dirname "$0")/../.." || exit 1
 # ─── flags ─────────────────────────────────────────────────────────────────
 SKIP_SMOKE=0
 MARKDOWN=0
+QUAL=0
 for arg in "$@"; do
   case "$arg" in
     --skip-smoke) SKIP_SMOKE=1 ;;
     --markdown)   MARKDOWN=1 ;;
-    -h|--help)    sed -n '2,14p' "$0"; exit 0 ;;
+    --qual)       QUAL=1 ;;
+    -h|--help)    sed -n '2,22p' "$0"; exit 0 ;;
     *) echo "unknown arg: $arg" >&2; exit 2 ;;
   esac
 done
+
+# ─── qual target config ──────────────────────────────────────────────────────
+# Dev probes localhost over plain HTTP; --qual probes the public apex over TLS
+# and follows the http→https redirect. CURL_OPTS stays empty in dev so the dev
+# curl invocations are byte-for-byte identical. COMPOSE_ENV_FILE lets the smoke
+# pass read the deploy-generated .env.qual on the VPS while defaulting to .env.
+QUAL_APEX="https://qual.stay.portugalodyssey.pt"
+CURL_OPTS=()
+COMPOSE_ENV_FILE=".env"
+if [[ $QUAL -eq 1 ]]; then
+  CURL_OPTS=(-L --max-time 10)
+  if [[ -f .env.qual ]]; then COMPOSE_ENV_FILE=".env.qual"; fi
+fi
 
 # ─── colors ────────────────────────────────────────────────────────────────
 if [[ -t 1 && $MARKDOWN -eq 0 ]]; then
@@ -95,6 +117,8 @@ row "branch" "$BRANCH" "upstream: $UPSTREAM"
 
 if [[ "$TREE_STATUS" -eq 0 ]]; then
   row "working tree" "$OK clean"
+elif [[ $QUAL -eq 1 ]]; then
+  row "working tree" "$WARN dirty" "$TREE_STATUS entries — deploy-generated .env.qual / rotated init files expected (not a failure)"
 else
   row "working tree" "$WARN dirty" "$TREE_STATUS uncommitted entries (acceptable for dev iteration)"
 fi
@@ -114,6 +138,12 @@ fi
 section "CONTAINERS"
 
 EXPECTED=(dt_postgres dt_redis dt_rabbitmq dt_minio dt_token_svc dt_catalog_svc dt_media_svc dt_bff dt_search_svc dt_planner_svc dt_chat_hub dt_notif_svc)
+if [[ $QUAL -eq 1 ]]; then
+  # Qual runs every dev service PLUS the edge/auth/routing tier the dev compose
+  # omits: Traefik (TLS ingress), Authentik (server+worker+its own postgres),
+  # OSRM (routing), and the built-PWA nginx image.
+  EXPECTED+=(dt_traefik dt_authentik_server dt_authentik_worker dt_authentik_postgres dt_osrm dt_pwa_static)
+fi
 
 TOTAL=${#EXPECTED[@]}
 HEALTHY=0
