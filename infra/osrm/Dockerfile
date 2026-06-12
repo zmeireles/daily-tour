@@ -4,8 +4,16 @@
 # an optional overlay that local dev rarely brings up).
 FROM osrm/osrm-backend:v5.25.0
 
-# wget is not present in the base image and is needed for the first-run PBF download.
-RUN apt-get update && apt-get install -y --no-install-recommends wget \
+# wget is not present in the base image and is needed for the first-run PBF
+# download (scripts/init.sh). The base is Debian stretch (EOL): its apt repos
+# moved to archive.debian.org and the Release signature has expired, so a plain
+# `apt-get update` 404s. Point apt at the archive and bypass the expiry check.
+RUN printf '%s\n' \
+      'deb [trusted=yes] http://archive.debian.org/debian stretch main' \
+      'deb [trusted=yes] http://archive.debian.org/debian-security stretch/updates main' \
+      > /etc/apt/sources.list \
+    && apt-get -o Acquire::Check-Valid-Until=false update \
+    && apt-get install -y --no-install-recommends wget \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /data
