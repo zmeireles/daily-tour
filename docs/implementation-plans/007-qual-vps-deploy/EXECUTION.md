@@ -2,6 +2,20 @@
 
 Wave-by-wave record of Plan-007 (qual VPS deploy). Newest wave first.
 
+## Wave 2 — Phase Q.1 VPS preparation (2026-06-12) — ✅ COMPLETE
+
+Live ops on srv911943 (77.37.86.126) over SSH (root key auth), step-by-step with a verification gate after each. island-chronicles preserved.
+
+- **Q.1.0 backup** — `tar` of `/root/island-chronicles` → `/root/backups/island-chronicles-2026-06-12.tgz` (216M, from 1.6G) + `scp` off-box to `/media/jmeireles/ssd3/vps-backups/`. **sha256 identical** both places (`38a1af05…`); 5325 `volumes/` entries. (Hot copy taken before any change, per the risk register; the subsequent clean stop quiesced the on-disk data anyway.)
+- **Q.1.1 stop** — `docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml stop` (project `island-chronicles`, all 7 `unless-stopped`). Verified: 0 running, **80/443/8080 freed**, and a `find -newermt` check confirmed **only `volumes/` data files changed** (postgres checkpoint/WAL, redis RDB, logs — normal clean-shutdown writes) — no config/source touched. Stays down across reboot (`unless-stopped` + explicit stop).
+- **Q.1.2 swap** — 4 GB `/swapfile` + `vm.swappiness=10`; persisted in `/etc/fstab` + `/etc/sysctl.d/99-swappiness.conf`. `free -h` shows 4.0Gi swap.
+- **Q.1.4 hardening** — `ufw allow 22,80,443` then `ufw --force enable` (allow-before-enable); sshd `PasswordAuthentication no` via `/etc/ssh/sshd_config.d/00-disable-password-auth.conf` (sorts before `50-cloud-init.conf`, which set `yes` — effective value flipped to `no`, confirmed by `sshd -T` _before_ reload). **Lockout-safe protocol:** a detached 5-min deadman armed to auto-revert ufw+sshd unless `/root/.hardening-ok`; a genuinely fresh key-auth connection was verified working post-change; then the marker confirmed the deadman (it stood down without reverting). root + `ubuntu` both retain key access; `at` was absent so the deadman was a nohup loop.
+- **Q.1.5 prune cron** — `/etc/cron.d/docker-image-prune` changed from `prune -af --filter until=24h` to **dangling-only `prune -f`** so tagged images survive (incl. the qual deploy's previous-`:sha` rollback target). Disk is 85G-free, so the less-aggressive prune is fine.
+- **Q.1.6 toolchain** — Node **v22.22.3** (official binary → `/usr/local`) + **pnpm 9.14.2** (corepack) + git, all system-wide so the future `ghrunner` (Q.3.1) + host-side migrate can use them.
+- **Q.1.3** — no-op (GitLab repo-side inaction, decided at READY).
+
+**Next: Q.3** — runner (Q.3.1) + Cloudflare DNS (Q.3.0, needs human/CF token) + first-deploy runbook (Q.3.2, ACME depends on DNS) + verify (Q.3.3).
+
 ## Wave 1 — Phase Q.2 repo plumbing (2026-06-12) — ✅ COMPLETE (8/8)
 
 All eight Q.2 tasks shipped + merged in one session via cs-agent fan-out (orchestrator-reviewed; every diff validated independently before merge). VPS untouched — Q.2 is pure repo work.

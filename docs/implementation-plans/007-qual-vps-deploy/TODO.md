@@ -1,16 +1,16 @@
 # Plan 007 — TODO
 
-Status: **EXECUTING** — Phase Q.2 (repo plumbing) ✅ DONE 2026-06-12; **Q.1 (VPS prep) + Q.3 (runner/DNS/deploy) remain**, both gated on the human's go for live-VPS work. Task detail + acceptance live in [README.md](./README.md) §1–§3; this file tracks state only. Wave log in [EXECUTION.md](./EXECUTION.md).
+Status: **EXECUTING** — Q.1 (VPS prep) + Q.2 (repo plumbing) ✅ DONE 2026-06-12; **only Q.3 (runner + DNS + first deploy) remains.** Q.3.0 (Cloudflare DNS) likely needs the human / a CF token; Q.3.2 ACME depends on DNS being live. Task detail + acceptance live in [README.md](./README.md) §1–§3; this file tracks state only. Wave log in [EXECUTION.md](./EXECUTION.md).
 
-## Phase Q.1 — VPS preparation (srv911943 / 77.37.86.126)
+## Phase Q.1 — VPS preparation (srv911943 / 77.37.86.126) — ✅ DONE 2026-06-12
 
-- [ ] Q.1.0 backup island-chronicles (tar on box + off-box copy, verify listing)
-- [ ] Q.1.1 stop stale stack (`compose stop`, NOT down; verify 80/443 freed, zero file changes)
-- [ ] Q.1.2 4 GB swapfile + swappiness 10
-- [ ] Q.1.3 GitLab UI-side — DECIDED: repo-side inaction, nothing to do
-- [ ] Q.1.4 ufw 22/80/443 + sshd password-auth off (`ubuntu` key user is the fallback)
-- [ ] Q.1.5 scope nightly `docker image prune` cron away from daily-tour images
-- [ ] Q.1.6 host toolchain: Node 22.22.3 + pnpm 9.14.2 + git
+- [x] Q.1.0 backup island-chronicles → `/root/backups/island-chronicles-2026-06-12.tgz` (216M) + off-box `/media/jmeireles/ssd3/vps-backups/` — sha256 identical, 5325 `volumes/` entries
+- [x] Q.1.1 stop stale stack (`compose stop` prod+traefik) — 7 containers exited, **80/443/8080 freed**, zero config-file changes (only clean-shutdown data-volume flushes)
+- [x] Q.1.2 4 GB swapfile + `vm.swappiness=10` — persisted (fstab + `sysctl.d/99-swappiness.conf`)
+- [x] Q.1.3 GitLab UI-side — no-op (decided: repo-side inaction)
+- [x] Q.1.4 ufw active (deny-in, allow 22/80/443) + sshd `PasswordAuthentication no` (`00-disable-password-auth.conf`, sorts before `50-cloud-init`). Deadman-protected; fresh key session verified — root + `ubuntu` keys intact
+- [x] Q.1.5 prune cron → dangling-only (`docker image prune -f`) — protects tagged daily-tour images incl. rollback `:sha`
+- [x] Q.1.6 host toolchain: `node v22.22.3` + `pnpm 9.14.2` + `git` system-wide (`/usr/local/bin`)
 
 ## Phase Q.2 — Repo deploy plumbing (PRs) — ✅ DONE (8/8, merged 2026-06-12)
 
