@@ -54,6 +54,7 @@ const CreatePlaceBodySchema = z.object({
   address: z.string().min(1),
   contacts: ContactsSchema,
   hours: HoursSchema,
+  season: z.enum(["summer", "winter"]).nullable().optional(),
   status: PlaceStatusSchema.default("draft"),
   is_hosts_pick: z.boolean().default(false),
   source_kind: SourceKindSchema,
@@ -143,6 +144,7 @@ function formatPlace(row: Place) {
     address: row.address,
     contacts: row.contacts,
     hours: row.hours,
+    season: row.season,
     status: row.status,
     is_hosts_pick: row.isHostsPick,
     source_kind: row.sourceKind,
@@ -394,6 +396,7 @@ export function placesRoutes(app: FastifyInstance): void {
           address: body.address,
           contacts: body.contacts,
           hours: body.hours,
+          season: body.season ?? null,
           status: body.status,
           isHostsPick: body.is_hosts_pick,
           sourceKind: body.source_kind,
@@ -460,6 +463,7 @@ export function placesRoutes(app: FastifyInstance): void {
     if (updates.address !== undefined) patch.address = updates.address;
     if (updates.contacts !== undefined) patch.contacts = updates.contacts;
     if (updates.hours !== undefined) patch.hours = updates.hours;
+    if (updates.season !== undefined) patch.season = updates.season;
     if (updates.status !== undefined) patch.status = updates.status;
     if (updates.is_hosts_pick !== undefined) patch.isHostsPick = updates.is_hosts_pick;
     if (updates.source_ref !== undefined) patch.sourceRef = updates.source_ref;

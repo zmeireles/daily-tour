@@ -40,6 +40,9 @@ export const PlaceSchema = z
         }),
       )
       .default([]),
+    // Seasonal availability. null/absent = year-round (the common case);
+    // "summer"/"winter" mark places that only operate in one season.
+    season: z.enum(["summer", "winter"]).nullable().optional(),
     actions: z.array(z.string().uuid()).min(1),
     wishes: z.array(z.string().uuid()).default([]),
     media: z.array(z.string().uuid()),
