@@ -1,6 +1,6 @@
 # Plan 007 — TODO
 
-Status: **EXECUTING** — Q.1 (VPS prep) + Q.2 (repo plumbing) ✅ DONE 2026-06-12; **only Q.3 (runner + DNS + first deploy) remains.** Q.3.0 (Cloudflare DNS) likely needs the human / a CF token; Q.3.2 ACME depends on DNS being live. Task detail + acceptance live in [README.md](./README.md) §1–§3; this file tracks state only. Wave log in [EXECUTION.md](./EXECUTION.md).
+Status: **LIVE** — Q.1+Q.2+Q.3 done 2026-06-12/13; **`https://qual.stay.portugalodyssey.pt` is up with full guest-journey smoke green.** Remaining: **Q.3.4 close-out = the 8-item repo punch-list** (so the automated `deploy-qa.yml` reproduces the hand-patched first deploy) + the `ANTHROPIC`/`EMBEDDING` keys (human, on the VPS). Wave log in [EXECUTION.md](./EXECUTION.md).
 
 ## Phase Q.1 — VPS preparation (srv911943 / 77.37.86.126) — ✅ DONE 2026-06-12
 
@@ -25,10 +25,21 @@ Status: **EXECUTING** — Q.1 (VPS prep) + Q.2 (repo plumbing) ✅ DONE 2026-06-
 
 **Post-merge:** the maiden `publish-images` run exposed a latent osrm bug — `osrm-backend:v5.28.0` 404 (#221 → v5.25.0), then stretch-EOL apt 404 (#222 → archive.debian.org). **Pipeline now 11/11 green; all GHCR images published with `:qual` + `:sha`.** EXECUTION.md has the wave detail.
 
-## Phase Q.3 — Runner + DNS + first deploy
+## Phase Q.3 — Runner + DNS + first deploy — ✅ LIVE 2026-06-12/13 (full smoke green; see EXECUTION Wave 3)
 
-- [ ] Q.3.0 Cloudflare DNS (DNS-only): A `qual.stay` + `*.qual.stay` → 77.37.86.126
-- [ ] Q.3.1 GitHub Actions runner (`ghrunner` user, labels `[self-hosted, qual-vps]`, concurrency 1, systemd)
-- [ ] Q.3.2 first deploy runbook (clone `/opt/daily-tour`, gen-env, ACME staging→prod, Authentik bootstrap + staff)
-- [ ] Q.3.3 verification gate (dev-smoke + dev-env-check --qual + owner login + hero/credit over TLS)
-- [ ] Q.3.4 close-out (T-0.4.4 + Plan-002 2.A rows, DEPLOYS.md, handoff, CHANGELOG, dt-tests UAT batch)
+- [x] Q.3.0 Cloudflare DNS (human) — `qual.stay` + `*.qual.stay` → 77.37.86.126, DNS-only. Resolving.
+- [x] Q.3.1 GitHub Actions runner — `ghrunner` + runner v2.335.1 `[self-hosted, qual-vps]`, **hand-written systemd unit `actions-runner-qual`** (no `svc.sh` in the package). Online.
+- [x] Q.3.2 first deploy — `/opt/daily-tour` clone, gen-env (ACME zmeireles@gmail.com), ACME staging→prod, all containers healthy. **Required hand-patching — see the Wave-3 punch-list (8 repo fixes).**
+- [x] Q.3.3 verification — `dev-smoke.sh` **8/8 green**; trusted TLS on apex/api./auth. ⏳ owner-login UAT + hero/credit over TLS pending the `ANTHROPIC`/`EMBEDDING` keys (human to fill on the VPS).
+- [ ] Q.3.4 close-out — **repo punch-list PRs** (make `deploy-qa.yml` reproducible) + DEPLOYS.md + CHANGELOG + dt-tests UAT batch. **IN PROGRESS.**
+
+## ⚠ Repo punch-list (from the Q.3 first deploy — automated deploy won't reproduce until these land)
+
+1. `deploy-qa.yml`: add `docker network create dt_internal` + `pnpm install` before migrate.
+2. `overlay.qual.yml`: mount `infra/postgres/init-qual/` as the postgres initdb dir.
+3. `infra/postgres/init/02-roles.sql`: reorder — create ALL roles before the `ALTER DEFAULT PRIVILEGES FOR ROLE …` grants.
+4. `infra/rabbitmq/definitions.json`: stop hardcoding the `dailytour` password hash (breaks rotated envs).
+5. `docker-compose.app.yml` chat-hub: add `DATABASE_URL` (from `SERVICE_DB_PASSWORD_CHAT`).
+6. `docker-compose.app.yml` bff: add `ANALYTICS_DATABASE_URL` (from `SERVICE_DB_PASSWORD_BFF`).
+7. token-svc seed: relative/future reservation dates (past dates → 410).
+8. overlay redirect rework (http→https 404) + osrm PBF-download fix.

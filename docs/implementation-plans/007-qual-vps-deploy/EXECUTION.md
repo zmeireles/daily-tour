@@ -2,6 +2,36 @@
 
 Wave-by-wave record of Plan-007 (qual VPS deploy). Newest wave first.
 
+## Wave 3 — Phase Q.3 runner + DNS + first deploy (2026-06-12/13) — ✅ LIVE (full smoke green)
+
+**`https://qual.stay.portugalodyssey.pt` is live** with a trusted Let's Encrypt prod cert; the full 8-step guest-journey smoke passes end-to-end. Q.3.0–Q.3.3 done.
+
+- **Q.3.0 DNS** (human) — Cloudflare A `qual.stay` + `*.qual.stay` → 77.37.86.126, DNS-only. Verified resolving.
+- **Q.3.1 runner** — `ghrunner` user (docker group) + GitHub Actions runner v2.335.1 registered `[self-hosted, qual-vps]`; **systemd unit `actions-runner-qual` written by hand** (the package shipped no `svc.sh`). Online, listening for jobs. Reg token via scp'd file (chown ghrunner — root-600 had blocked it), shredded after.
+- **Q.3.2 first deploy** (manual runbook) — clone `/opt/daily-tour` (ghrunner), `gen-env-qual.sh --acme-email zmeireles@gmail.com`, ACME **staging→prod** (proved HTTP-01 survives the redirect, then flipped caServer + cleared acme.json), all ~20 containers up + healthy.
+- **Q.3.3 verify** — `dev-smoke.sh` **8/8 green** (token→JWT→discover→place→tour-plan→chat WS persist→telemetry). Public trusted TLS on apex/api./auth.
+
+### ⚠ The deploy required hand-patching — repo punch-list (automated `deploy-qa.yml` won't reproduce yet)
+
+A systemic gap: **hardcoded dev credentials + incomplete secret-rotation wiring.** Each issue + the live workaround (workarounds live in untracked files / DB+broker volumes → the live env is stable across `git checkout`):
+
+| #   | Bug                                                                                                                                                               | Live workaround on the VPS                                          | Repo fix                                                        |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1   | `deploy-qa.yml` never `docker network create dt_internal` + no `pnpm install` before migrate                                                                      | ran both manually                                                   | add both to the workflow                                        |
+| 2   | qual overlay never mounts the rotated `init-qual/` → postgres used placeholder `init/`                                                                            | `ALTER ROLE` all svc roles to `.env.qual`                           | mount `init-qual` as the postgres initdb dir                    |
+| 3   | `02-roles.sql` does `ALTER DEFAULT PRIVILEGES FOR ROLE token_svc`/`search_svc` **before** `CREATE ROLE` → `ON_ERROR_STOP` aborts init (2/10 roles)                | applied `init-qual/02-roles.sql` w/o ON_ERROR_STOP + explicit grant | reorder: create all roles, then grants                          |
+| 4   | `rabbitmq/definitions.json` hardcodes the `dailytour` user with a **dev password_hash** → rotated pass refused                                                    | `rabbitmqctl change_password dailytour`                             | env-drive the user (or gen-env emits a qual definitions)        |
+| 5   | chat-hub `config.py` `database_url` default = `change-me-please-chat`, **no `DATABASE_URL` in compose**                                                           | `overlay.qual-local.yml` sets `DATABASE_URL`                        | add `DATABASE_URL` (from `SERVICE_DB_PASSWORD_CHAT`) to app.yml |
+| 6   | bff `ANALYTICS_DATABASE_URL` default hardcoded, **not set in compose** → telemetry 28P01                                                                          | `overlay.qual-local.yml` sets it                                    | add to app.yml (from `SERVICE_DB_PASSWORD_BFF`)                 |
+| 7   | seed reservations use past dates (`2026-06-05`) → token-svc 410                                                                                                   | `UPDATE reservation SET checkin/checkout` to a current window       | relative/future dates in the seed                               |
+| 8   | overlay http→https redirect returns 404 (Traefik won't merge a CLI entrypoint-redirection into a file-defined entrypoint); osrm init loops re-downloading the PBF | redirect left (https works); osrm stopped (planner→haversine)       | rework redirect (middleware/co-located); fix osrm init URL      |
+
+### Live-env state (for resume / reconcile)
+
+- Stack under compose project **`dt-qual`** in `/opt/daily-tour`, env `.env.qual` (ghrunner-owned, 600). Extra untracked override `/opt/daily-tour/overlay.qual-local.yml` (chat-hub/bff DB URLs) — must be in the `-f` stack until fixes 5+6 land in app.yml.
+- `__SET_MANUALLY__` still pending in `.env.qual`: **`ANTHROPIC_API_KEY` (L90)** + **`EMBEDDING_API_KEY` (L80)** — human to fill on the VPS, then recreate planner-svc + search-svc. Telegram/WhatsApp blanked (in-app chat only).
+- island-chronicles remains stopped + backed up; ufw + key-only SSH active.
+
 ## Wave 2 — Phase Q.1 VPS preparation (2026-06-12) — ✅ COMPLETE
 
 Live ops on srv911943 (77.37.86.126) over SSH (root key auth), step-by-step with a verification gate after each. island-chronicles preserved.

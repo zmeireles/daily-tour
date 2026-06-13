@@ -1,4 +1,19 @@
-# Session Handoff — 2026-05-28 → … → 06-12(plan-007 Q.1+Q.2 DONE) → next session
+# Session Handoff — 2026-05-28 → … → 06-13(plan-007 qual env LIVE) → next session
+
+> **UPDATE 2026-06-13 (latest): Plan-007 — qual env is LIVE. `https://qual.stay.portugalodyssey.pt` up with a trusted cert + full 8-step guest-journey smoke GREEN. Remaining = the Q.3.4 repo punch-list + the human's API keys.** Resume cold from this block.
+>
+> ### What's live (srv911943 / 77.37.86.126)
+>
+> - Q.3 done: Cloudflare DNS (apex + `*.qual.stay`), GitHub runner `qual-vps` (systemd `actions-runner-qual`, hand-written unit — no `svc.sh` in the package), first deploy on `/opt/daily-tour` (compose project `dt-qual`, `.env.qual`), ACME staging→prod (trusted LE cert). **`dev-smoke.sh` 8/8 green** (token→JWT→discover→place→tour-plan→chat WS persist→telemetry).
+> - **island-chronicles** still stopped + backed up; ufw + key-only SSH active; 4 GB swap; system Node 22.22.3/pnpm 9.14.2.
+>
+> ### ⚠ The first deploy needed hand-patching — the automated `deploy-qa.yml` won't reproduce it yet
+>
+> Systemic gap = **hardcoded dev credentials + incomplete secret-rotation wiring.** Full 8-item punch-list + the exact live workarounds are in **plan TODO + EXECUTION Wave 3**. Headline fixes: `deploy-qa.yml` (network create + pnpm install) · overlay mount `init-qual/` · `02-roles.sql` reorder · `rabbitmq/definitions.json` hardcoded pass · chat-hub `DATABASE_URL` + bff `ANALYTICS_DATABASE_URL` missing in compose · seed past-dated reservations · http→https redirect 404 + osrm PBF loop. **Live env is STABLE** (workarounds live in untracked files / DB+broker volumes, survive `git checkout`); incl. an untracked `/opt/daily-tour/overlay.qual-local.yml` (chat-hub/bff DB URLs) that must stay in the deploy `-f` stack until fixes #5/#6 land.
+>
+> ### First task next session
+>
+> **Q.3.4 close-out = work the 8-item repo punch-list** (PRs, in the order above; they make `deploy-qa.yml` reproducible) → then DEPLOYS.md + CHANGELOG + dt-tests UAT batch. **Human action pending:** paste `ANTHROPIC_API_KEY` (`.env.qual` L90) + `EMBEDDING_API_KEY` (L80) on the VPS → then recreate planner-svc + search-svc for real LLM plans + search. Owner-login UAT + hero/credit-over-TLS still to verify.
 
 > **UPDATE 2026-06-12 (latest): Plan-007 Phase Q.1 (VPS prep) — ✅ COMPLETE. The VPS is deploy-ready. Only Q.3 (runner + DNS + first deploy) remains.** Resume cold from this block.
 >
