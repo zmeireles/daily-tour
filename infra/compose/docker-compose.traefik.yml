@@ -29,7 +29,10 @@ services:
       - "127.0.0.1:${DT_HOST_PORT_TRAEFIK_DASHBOARD:-27088}:8080"
     volumes:
       - ../traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ../traefik/dynamic:/etc/traefik/dynamic:ro
+      # NOT :ro — the qual overlay nest-mounts redirect-qual.yml into this dir,
+      # and Docker can't create a nested mountpoint inside a read-only mount.
+      # Traefik only reads from here, so rw is harmless. (acme/ is rw already.)
+      - ../traefik/dynamic:/etc/traefik/dynamic
       - ../traefik/dashboard-users:/etc/traefik/dashboard-users:ro
       - ../traefik/acme:/acme
       - /var/run/docker.sock:/var/run/docker.sock:ro
