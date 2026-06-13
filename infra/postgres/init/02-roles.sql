@@ -9,8 +9,13 @@
 --     1. Update the literal in this file (or run `ALTER ROLE` post-boot).
 --     2. Update the matching env var in `.env`.
 --     3. Restart the dependent service so it picks up the new password.
---   Phase 5 (prod hardening) will replace these placeholders with a secrets
---   manager + bootstrap migration. See `infra/README.md` for the procedure.
+--   The qual deploy automates this: gen-env-qual.sh writes a rotated copy under
+--   infra/postgres/init-qual/ and overlay.qual.yml mounts it instead of init/.
+--
+-- ORDERING: every role is CREATEd up front, BEFORE any ownership/grant, so an
+--   `ALTER DEFAULT PRIVILEGES FOR ROLE <x>` can never reference a not-yet-created
+--   role. (Postgres init runs with ON_ERROR_STOP — a forward reference aborts the
+--   whole script and leaves the cluster with a partial role set.)
 --
 -- Grant model (docs/exploration/03-architecture.md §4):
 --   * Each service role OWNS its schema (full DDL+DML).
@@ -23,9 +28,22 @@
 --     separate database created by the T-0.3.3 overlay.
 
 -- ---------------------------------------------------------------------------
--- Catalog service: owns `catalog` + `analytics` (telemetry table migrations)
+-- Roles — created first so every grant below references an existing role.
 -- ---------------------------------------------------------------------------
 CREATE ROLE catalog_svc WITH LOGIN PASSWORD 'change-me-please-catalog';
+CREATE ROLE chat_svc    WITH LOGIN PASSWORD 'change-me-please-chat';
+CREATE ROLE planner_svc WITH LOGIN PASSWORD 'change-me-please-planner';
+CREATE ROLE search_svc  WITH LOGIN PASSWORD 'change-me-please-search';
+CREATE ROLE ingest_svc  WITH LOGIN PASSWORD 'change-me-please-ingest';
+CREATE ROLE notif_svc   WITH LOGIN PASSWORD 'change-me-please-notif';
+CREATE ROLE media_svc   WITH LOGIN PASSWORD 'change-me-please-media';
+CREATE ROLE token_svc   WITH LOGIN PASSWORD 'change-me-please-token';
+CREATE ROLE bff         WITH LOGIN PASSWORD 'change-me-please-bff';
+CREATE ROLE n8n         WITH LOGIN PASSWORD 'change-me-please-n8n';
+
+-- ---------------------------------------------------------------------------
+-- Catalog service: owns `catalog` + `analytics` (telemetry table migrations)
+-- ---------------------------------------------------------------------------
 ALTER SCHEMA catalog OWNER TO catalog_svc;
 ALTER SCHEMA analytics OWNER TO catalog_svc;
 GRANT USAGE ON SCHEMA audit TO catalog_svc;
@@ -34,7 +52,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO catalog_svc;
 -- ---------------------------------------------------------------------------
 -- Chat-hub service: owns `chat`, reads `auth_tokens` (webhook token validation)
 -- ---------------------------------------------------------------------------
-CREATE ROLE chat_svc WITH LOGIN PASSWORD 'change-me-please-chat';
 ALTER SCHEMA chat OWNER TO chat_svc;
 GRANT USAGE ON SCHEMA auth_tokens TO chat_svc;
 -- FOR ROLE: default privileges only apply to tables created by the named role.
@@ -48,7 +65,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO chat_svc;
 -- ---------------------------------------------------------------------------
 -- Planner service: owns `planner`, reads `catalog` + `search` (RAG retrieval)
 -- ---------------------------------------------------------------------------
-CREATE ROLE planner_svc WITH LOGIN PASSWORD 'change-me-please-planner';
 ALTER SCHEMA planner OWNER TO planner_svc;
 GRANT USAGE ON SCHEMA catalog TO planner_svc;
 ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA catalog
@@ -62,7 +78,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO planner_svc;
 -- ---------------------------------------------------------------------------
 -- Search service: owns `search` (pgvector tables), reads `catalog`
 -- ---------------------------------------------------------------------------
-CREATE ROLE search_svc WITH LOGIN PASSWORD 'change-me-please-search';
 ALTER SCHEMA search OWNER TO search_svc;
 GRANT USAGE ON SCHEMA catalog TO search_svc;
 ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA catalog
@@ -73,7 +88,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO search_svc;
 -- ---------------------------------------------------------------------------
 -- Ingest service: owns `ingest`
 -- ---------------------------------------------------------------------------
-CREATE ROLE ingest_svc WITH LOGIN PASSWORD 'change-me-please-ingest';
 ALTER SCHEMA ingest OWNER TO ingest_svc;
 GRANT USAGE ON SCHEMA audit TO ingest_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO ingest_svc;
@@ -81,7 +95,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO ingest_svc;
 -- ---------------------------------------------------------------------------
 -- Notification service: owns `notif`
 -- ---------------------------------------------------------------------------
-CREATE ROLE notif_svc WITH LOGIN PASSWORD 'change-me-please-notif';
 ALTER SCHEMA notif OWNER TO notif_svc;
 GRANT USAGE ON SCHEMA audit TO notif_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO notif_svc;
@@ -89,7 +102,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO notif_svc;
 -- ---------------------------------------------------------------------------
 -- Media service: owns `media` (MinIO object metadata)
 -- ---------------------------------------------------------------------------
-CREATE ROLE media_svc WITH LOGIN PASSWORD 'change-me-please-media';
 ALTER SCHEMA media OWNER TO media_svc;
 GRANT USAGE ON SCHEMA audit TO media_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO media_svc;
@@ -97,7 +109,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO media_svc;
 -- ---------------------------------------------------------------------------
 -- Token service: owns `auth_tokens`
 -- ---------------------------------------------------------------------------
-CREATE ROLE token_svc WITH LOGIN PASSWORD 'change-me-please-token';
 ALTER SCHEMA auth_tokens OWNER TO token_svc;
 GRANT USAGE ON SCHEMA audit TO token_svc;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO token_svc;
@@ -106,7 +117,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO token_svc;
 -- BFF: aggregator, READ-ONLY across every schema.
 -- Exception: INSERT on analytics (telemetry events, T-3.4.1).
 -- ---------------------------------------------------------------------------
-CREATE ROLE bff WITH LOGIN PASSWORD 'change-me-please-bff';
 GRANT USAGE ON SCHEMA catalog, chat, planner, ingest, auth_tokens,
                        media, notif, audit, search, analytics TO bff;
 -- analytics INSERT: catalog_svc creates tables; bff writes telemetry rows.
@@ -146,6 +156,5 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO bff;
 -- n8n: only reads `audit` from this database. Its application state lives in a
 -- dedicated database/role provisioned by the T-0.3.3 overlay.
 -- ---------------------------------------------------------------------------
-CREATE ROLE n8n WITH LOGIN PASSWORD 'change-me-please-n8n';
 GRANT USAGE ON SCHEMA audit TO n8n;
 ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO n8n;
