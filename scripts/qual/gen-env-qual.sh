@@ -321,7 +321,13 @@ declare -A ROLE_PW=(
 for _svc in "${!ROLE_PW[@]}"; do
   sed -i "s|'change-me-please-${_svc}'|'${ROLE_PW[$_svc]}'|g" "$INIT_QUAL/02-roles.sql"
 done
-chmod 600 "$INIT_QUAL/02-roles.sql"
+# The postgres container (uid 999) bind-mounts init-qual/ and runs the init
+# scripts AS that user, so the dir must be traversable + the files readable by
+# it — the committed init/ is world-readable; gen-env's umask 077 would instead
+# give postgres "Permission denied" listing the dir on first boot. Host-local
+# exposure only (VPS, key-only SSH; these passwords already live in .env.qual).
+chmod 755 "$INIT_QUAL"
+chmod 644 "$INIT_QUAL"/*.sql
 
 # Verify ZERO placeholder literals survive — fail loudly otherwise.
 _remaining=$(grep -c 'change-me-please' "$INIT_QUAL/02-roles.sql" || true)

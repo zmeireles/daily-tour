@@ -251,12 +251,8 @@ services:
     deploy: !reset null
     mem_limit: 128m
     cpus: 0.5
-
-  # ───────────────────────────────────────────────────────────────────────────
-  # osrm — GHCR image; routing engine for planner-svc drive-times.
-  # ───────────────────────────────────────────────────────────────────────────
-  osrm:
-    image: ghcr.io/zmeireles/daily-tour/osrm:${IMAGE_TAG:-qual}
-    deploy: !reset null
-    mem_limit: 512m
-    cpus: 1.0
+  # osrm is DEFERRED for qual (not in the deploy stack): the Geofabrik path
+  # europe/portugal/acores-latest.osm.pbf 404s (Portugal ships as one ~450MB
+  # file — too heavy for the 2-vCPU box to osrm-extract). planner-svc falls back
+  # to haversine. Re-add overlay.osrm.yml + this block once a lightweight Azores
+  # PBF source (or adequate processing budget) is sorted.
