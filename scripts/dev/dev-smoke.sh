@@ -71,19 +71,21 @@ else
 fi
 
 # ─── Step 3: exchange token via BFF ────────────────────────────────────────────
-step "Step 3 — exchange token via BFF /r/:token"
-EXCHANGE_RESP=$(internal_wget "$BFF/r/$TOKEN" 2>&1) || true
+# The BFF redeem endpoint is /v1/r/:token (the SPA owns the browser route
+# /r/:token on a same-origin apex deploy; the exchange XHR targets /v1/r/).
+step "Step 3 — exchange token via BFF /v1/r/:token"
+EXCHANGE_RESP=$(internal_wget "$BFF/v1/r/$TOKEN" 2>&1) || true
 if echo "$EXCHANGE_RESP" | grep -q "jwt\|JWT\|token"; then
   JWT=$(echo "$EXCHANGE_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('jwt',''))" 2>/dev/null || echo "")
   if [[ -n "$JWT" ]]; then
     pass "JWT received: ${JWT:0:30}…"
   else
     warn "exchange response: $EXCHANGE_RESP"
-    fail "BFF /r/:token did not return JWT"
+    fail "BFF /v1/r/:token did not return JWT"
   fi
 else
   warn "exchange response: $EXCHANGE_RESP"
-  fail "BFF /r/:token returned non-JWT"
+  fail "BFF /v1/r/:token returned non-JWT"
 fi
 
 # ─── Step 4: GET /v1/discover with JWT ─────────────────────────────────────────

@@ -11,7 +11,7 @@ declare module "fastify" {
   interface FastifyContextConfig {
     // Three postures:
     //   'required' (default) → guest path (HS256, token-svc issued).
-    //   'public'             → no auth (probes, /r/:token).
+    //   'public'             → no auth (probes, /v1/r/:token redeem).
     //   'owner'              → Authentik RS256 (JWKS) + aud/group check.
     // See services/bff/src/plugins/AUTH_POSTURES.md.
     auth?: "required" | "public" | "owner";
@@ -43,8 +43,8 @@ async function authPlugin(fastify: FastifyInstance): Promise<void> {
   );
 
   // Secure-by-default: every route gets a preHandler unless it explicitly
-  // opts out via `config: { auth: 'public' }`. /health and /r/:token must
-  // opt out — /health is a probe, /r/:token IS the auth ceremony itself
+  // opts out via `config: { auth: 'public' }`. /health and /v1/r/:token must
+  // opt out — /health is a probe, /v1/r/:token IS the auth ceremony itself
   // (no JWT exists yet at that point). Owner-tagged routes dispatch to
   // fastify.authenticateOwner (registered by the owner-auth plugin); we
   // resolve the decorator at request time rather than at onRoute time so

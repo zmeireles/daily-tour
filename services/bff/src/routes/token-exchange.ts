@@ -16,8 +16,13 @@ interface ExchangeParams {
 const tokenExchangeRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const config = loadConfig();
 
+  // NOTE: the BFF redeem endpoint lives under /v1 so that on a same-origin
+  // deployment (PWA + BFF on one apex host) the apex `/v1` path-router sends
+  // this XHR to the BFF while the bare SPA router keeps owning the browser
+  // route `/r/:token` (the public guest link). Pre-/v1 this was `/r/:token`
+  // and collided with the SPA route on the apex (the link 200'd as raw JSON).
   fastify.get<{ Params: ExchangeParams }>(
-    "/r/:token",
+    "/v1/r/:token",
     {
       config: {
         // The URL IS the credential — no JWT exists yet at this point.
