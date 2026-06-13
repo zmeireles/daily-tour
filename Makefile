@@ -60,7 +60,7 @@ _require-env-file:
 	  exit 1; }
 
 # ─── Compose lifecycle ──────────────────────────────────────────────────────
-.PHONY: env up start recreate down nuke stop restart build rebuild pull ps status logs config sh
+.PHONY: env up start recreate down nuke stop restart build rebuild pull ps status logs config sh vps
 
 ## Print the resolved environment + compose invocation (no side effects).
 env:
@@ -127,6 +127,14 @@ config:
 ## Open a shell inside a service container. e.g. make sh SVC=bff
 sh:
 	$(COMPOSE) exec $(SVC) sh
+
+# ─── VPS (Plan-007 qual deploy host: srv911943) ─────────────────────────────
+VPS_USER ?= root
+VPS_HOST ?= 77.37.86.126
+
+## SSH into the qual VPS. CMD='…' runs a remote command instead of an interactive shell. e.g. make vps CMD='cd /opt/daily-tour && docker compose ps'
+vps:
+	@ssh -o ConnectTimeout=12 $(VPS_USER)@$(VPS_HOST) $(CMD)
 
 ## List available targets.
 help:
