@@ -1,0 +1,34 @@
+# Qual-only HTTP→HTTPS redirect (Traefik dynamic config).
+#
+# Mounted into /etc/traefik/dynamic/ by overlay.qual.yml — dev does NOT get this
+# file, so dev (no TLS certs) keeps serving plain HTTP. A catch-all router on the
+# `web` entrypoint sends everything to the redirectScheme middleware (301→https).
+#
+# Why not an entrypoint-level redirection (--entrypoints.web.http.redirections…)?
+# The entrypoints are defined in the static traefik.yml; a CLI/extra-source
+# redirection does NOT merge into a file-defined entrypoint, so it silently
+# no-ops (verified: http returned 404, never 301). A dynamic router + middleware
+# sidesteps that. The ACME HTTP-01 challenge is served by Traefik's own internal
+# handler ahead of user routers, so cert issuance still works on `web`.
+http:
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+  routers:
+    http-catchall:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+      service: redirect-noop
+      priority: 1
+  services:
+    # Never actually reached — the middleware returns 301 before proxying — but
+    # a router requires a service.
+    redirect-noop:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:80"
