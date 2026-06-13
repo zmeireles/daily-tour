@@ -3,7 +3,7 @@
 // Fixed UUIDs ensure idempotent re-runs — onConflictDoNothing() relies on PK collision.
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { actionTable, wishTable } from "../src/db/schema.js";
+import { actionTable, guesthouseTable, wishTable } from "../src/db/schema.js";
 
 const DEV_DB_URL =
   process.env.CATALOG_SVC_DATABASE_URL ??
@@ -326,6 +326,25 @@ const WISHES = [
   },
 ] as const;
 
+// ── Guesthouse fixture (#152) ──────────────────────────────────────────────
+// One guesthouse so the owner backoffice — which lists ALL guesthouses for any
+// staff user (single-owner v1; owner_id filter deferred) — has a row to render
+// the per-place visibility toggle, and so the seeded reservation's gh resolves
+// to a real guesthouse. UUIDs MUST match the token-svc reservation fixture
+// (services/token-svc/src/seed/run.ts): gh = bbb00001-…001, guest/owner =
+// aaa00001-…001. ownerId is a bare UUID (no FK, not list-filtered).
+const GUESTHOUSES = [
+  {
+    id: "bbb00001-0000-4000-b000-000000000001",
+    ownerId: "aaa00001-0000-4000-a000-000000000001",
+    name: { en: "Casa do Sol", "pt-PT": "Casa do Sol" },
+    slug: "casa-do-sol",
+    address: "Ponta Delgada, São Miguel, Azores",
+    geomLat: 37.7394,
+    geomLng: -25.6687,
+  },
+] as const;
+
 async function main(): Promise<void> {
   const pool = new Pool({ connectionString: DEV_DB_URL });
   const db = drizzle(pool);
@@ -340,6 +359,12 @@ async function main(): Promise<void> {
   await db
     .insert(wishTable)
     .values([...WISHES])
+    .onConflictDoNothing();
+
+  console.log(`[seed] inserting ${GUESTHOUSES.length} guesthouse fixture(s)`);
+  await db
+    .insert(guesthouseTable)
+    .values([...GUESTHOUSES])
     .onConflictDoNothing();
 
   await pool.end();
