@@ -37,6 +37,12 @@ async function main(): Promise<void> {
   // Fixed UUIDs so re-runs are idempotent — without them, defaultRandom()
   // gives every re-seed a fresh ID and `onConflictDoNothing` has no PK
   // collision to suppress, leading to duplicate reservation rows.
+  // Dates are RELATIVE to seed time: token-svc refuses to mint a token after a
+  // reservation's checkout, so hardcoded dates go stale (a past checkout → 410).
+  // Fixture 1 is a current stay (mintable now — the smoke/UAT entry point);
+  // fixture 2 is a near-future stay.
+  const dayOffset = (n: number): string =>
+    new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
   console.log("[seed] inserting 2 reservations");
   await db
     .insert(reservationTable)
@@ -45,8 +51,8 @@ async function main(): Promise<void> {
         id: "ccc00001-0000-4000-c000-000000000001",
         guesthouseId: GUESTHOUSE_TEST_UUID,
         guestId: "aaa00001-0000-4000-a000-000000000001",
-        checkin: "2026-06-01",
-        checkout: "2026-06-05",
+        checkin: dayOffset(-2),
+        checkout: dayOffset(5),
         partySize: 2,
         locale: "en",
         status: "confirmed",
@@ -55,8 +61,8 @@ async function main(): Promise<void> {
         id: "ccc00001-0000-4000-c000-000000000002",
         guesthouseId: GUESTHOUSE_TEST_UUID,
         guestId: "aaa00001-0000-4000-a000-000000000002",
-        checkin: "2026-07-10",
-        checkout: "2026-07-15",
+        checkin: dayOffset(30),
+        checkout: dayOffset(35),
         partySize: 4,
         locale: "pt-PT",
         status: "confirmed",

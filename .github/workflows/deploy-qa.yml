@@ -82,6 +82,16 @@ jobs:
           # No --wait yet: the app services crash-loop until migrations create
           # their tables. They go healthy after the migrate + reconcile below.
           docker compose $COMPOSE up -d
+          # rabbitmq first-boots with the static definitions.json password hash,
+          # and RabbitMQ skips RABBITMQ_DEFAULT_USER when load_definitions is set,
+          # so reset the broker password to the rotated .env.qual value (else the
+          # services ACCESS_REFUSED). Idempotent; no-op when already matching.
+          for i in $(seq 1 30); do
+            docker compose $COMPOSE exec -T rabbitmq rabbitmqctl await_startup >/dev/null 2>&1 && break
+            sleep 2
+          done
+          docker compose $COMPOSE exec -T rabbitmq rabbitmqctl change_password dailytour \
+            "$(grep -E '^RABBITMQ_PASSWORD=' .env.qual | cut -d= -f2-)"
 
       - name: Migrate + seed (.env.qual / dt-qual)
         run: |

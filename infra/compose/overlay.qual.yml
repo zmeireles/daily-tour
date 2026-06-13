@@ -233,13 +233,19 @@ services:
     ports: !override
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"
+    # Append-merges with the base traefik volumes: a qual-only dynamic config
+    # mounted into the watched /etc/traefik/dynamic dir, providing the HTTP→HTTPS
+    # redirect (catch-all router + redirectScheme middleware). dev doesn't get
+    # this mount, so dev keeps plain HTTP. See infra/traefik/redirect-qual.yml.
+    volumes:
+      - ../traefik/redirect-qual.yml:/etc/traefik/dynamic/redirect-qual.yml:ro
     command:
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       # ACME email per resolver (Q.2.2). traefik.yml defines each resolver's
       # structure but omits email (static YAML can't interpolate ${ENV}); these
       # flags supply it — Compose interpolates ${TRAEFIK_ACME_EMAIL} from
       # .env.qual. Flags merge with the file-defined resolvers by name.
+      # (The web→websecure redirect lives in redirect-qual.yml, not here: a CLI
+      # entrypoint-redirection does NOT merge into the file-defined web entrypoint.)
       - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt-staging.acme.email=${TRAEFIK_ACME_EMAIL}"
     deploy: !reset null
