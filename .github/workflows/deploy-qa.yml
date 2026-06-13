@@ -48,7 +48,6 @@ jobs:
         -f infra/compose/docker-compose.app.yml
         -f infra/compose/docker-compose.traefik.yml
         -f infra/compose/docker-compose.authentik.yml
-        -f infra/compose/overlay.osrm.yml
         -f infra/compose/overlay.qual.yml
         -f infra/compose/overlay.qual-authentik.yml
 
