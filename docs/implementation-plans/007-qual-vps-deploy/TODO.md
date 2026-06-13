@@ -1,6 +1,6 @@
 # Plan 007 — TODO
 
-Status: **LIVE** — Q.1+Q.2+Q.3 done 2026-06-12/13; **`https://qual.stay.portugalodyssey.pt` is up with full guest-journey smoke green.** Remaining: **Q.3.4 close-out = the 8-item repo punch-list** (so the automated `deploy-qa.yml` reproduces the hand-patched first deploy) + the `ANTHROPIC`/`EMBEDDING` keys (human, on the VPS). Wave log in [EXECUTION.md](./EXECUTION.md).
+Status: **LIVE + REPRODUCIBLE** — Q.1+Q.2+Q.3 done 2026-06-13. `https://qual.stay.portugalodyssey.pt` up (trusted TLS, http→https redirect, full guest-journey smoke green, real LLM tour plans). **The automated `deploy-qa.yml` was validated end-to-end via a clean re-deploy from wiped volumes — no hand-patching, all workarounds dropped.** Remaining: a few UATs + the admin close (Q.3.4 below). Wave log in [EXECUTION.md](./EXECUTION.md).
 
 ## Phase Q.1 — VPS preparation (srv911943 / 77.37.86.126) — ✅ DONE 2026-06-12
 
@@ -31,7 +31,7 @@ Status: **LIVE** — Q.1+Q.2+Q.3 done 2026-06-12/13; **`https://qual.stay.portug
 - [x] Q.3.1 GitHub Actions runner — `ghrunner` + runner v2.335.1 `[self-hosted, qual-vps]`, **hand-written systemd unit `actions-runner-qual`** (no `svc.sh` in the package). Online.
 - [x] Q.3.2 first deploy — `/opt/daily-tour` clone, gen-env (ACME zmeireles@gmail.com), ACME staging→prod, all containers healthy. **Required hand-patching — see the Wave-3 punch-list (8 repo fixes).**
 - [x] Q.3.3 verification — `dev-smoke.sh` **8/8 green**; trusted TLS on apex/api./auth.; **`ANTHROPIC`/`EMBEDDING` keys in `.env.qual` → planner produces real LLM plans** (smoke: "plan ready, full LLM+RAG"). ⏳ owner-login UAT + hero/credit over TLS still to verify.
-- [x] Q.3.4 close-out — **repo punch-list ✅ 8/8 merged** (#226 + #228). ⏳ remaining: a clean re-deploy to validate `deploy-qa.yml` end-to-end (drops the live workarounds) + DEPLOYS.md + dt-tests UAT batch.
+- [x] Q.3.4 close-out — repo punch-list ✅ 8/8 (#226 + #228) **+ clean re-deploy ✅** (`deploy-qa.yml` run from wiped postgres/rabbitmq volumes → pull→up→reconcile→migrate→seed→smoke→`--qual` gate all green; workarounds dropped). Re-deploy surfaced 4 deploy-only bugs, all fixed: traefik `dynamic` dir `:ro` blocked the redirect nest-mount (#230); gen-env `init-qual` perms unreadable by postgres uid 999 (#231); osrm Geofabrik PBF path 404s → **osrm deferred** (#231); `dev-env-check --qual` still expected `dt_osrm` (#232). DEPLOYS.md first entry added. ⏳ remaining: owner-login UAT + hero/credit-over-TLS UAT (dt-tests batch); close T-0.4.4 + Plan-002 2.A.
 
 ## Repo punch-list — ✅ 8/8 DONE (#226: 1/2/3/5/6 · #228: 4/7/8). Automated `deploy-qa.yml` now reproduces the hand-patched first deploy.
 
