@@ -30,16 +30,18 @@ Status: **LIVE** — Q.1+Q.2+Q.3 done 2026-06-12/13; **`https://qual.stay.portug
 - [x] Q.3.0 Cloudflare DNS (human) — `qual.stay` + `*.qual.stay` → 77.37.86.126, DNS-only. Resolving.
 - [x] Q.3.1 GitHub Actions runner — `ghrunner` + runner v2.335.1 `[self-hosted, qual-vps]`, **hand-written systemd unit `actions-runner-qual`** (no `svc.sh` in the package). Online.
 - [x] Q.3.2 first deploy — `/opt/daily-tour` clone, gen-env (ACME zmeireles@gmail.com), ACME staging→prod, all containers healthy. **Required hand-patching — see the Wave-3 punch-list (8 repo fixes).**
-- [x] Q.3.3 verification — `dev-smoke.sh` **8/8 green**; trusted TLS on apex/api./auth. ⏳ owner-login UAT + hero/credit over TLS pending the `ANTHROPIC`/`EMBEDDING` keys (human to fill on the VPS).
-- [ ] Q.3.4 close-out — **repo punch-list PRs** (make `deploy-qa.yml` reproducible) + DEPLOYS.md + CHANGELOG + dt-tests UAT batch. **IN PROGRESS.**
+- [x] Q.3.3 verification — `dev-smoke.sh` **8/8 green**; trusted TLS on apex/api./auth.; **`ANTHROPIC`/`EMBEDDING` keys in `.env.qual` → planner produces real LLM plans** (smoke: "plan ready, full LLM+RAG"). ⏳ owner-login UAT + hero/credit over TLS still to verify.
+- [x] Q.3.4 close-out — **repo punch-list ✅ 8/8 merged** (#226 + #228). ⏳ remaining: a clean re-deploy to validate `deploy-qa.yml` end-to-end (drops the live workarounds) + DEPLOYS.md + dt-tests UAT batch.
 
-## ⚠ Repo punch-list (from the Q.3 first deploy — automated deploy won't reproduce until these land)
+## Repo punch-list — ✅ 8/8 DONE (#226: 1/2/3/5/6 · #228: 4/7/8). Automated `deploy-qa.yml` now reproduces the hand-patched first deploy.
 
-1. `deploy-qa.yml`: add `docker network create dt_internal` + `pnpm install` before migrate.
-2. `overlay.qual.yml`: mount `infra/postgres/init-qual/` as the postgres initdb dir.
-3. `infra/postgres/init/02-roles.sql`: reorder — create ALL roles before the `ALTER DEFAULT PRIVILEGES FOR ROLE …` grants.
-4. `infra/rabbitmq/definitions.json`: stop hardcoding the `dailytour` password hash (breaks rotated envs).
-5. `docker-compose.app.yml` chat-hub: add `DATABASE_URL` (from `SERVICE_DB_PASSWORD_CHAT`).
-6. `docker-compose.app.yml` bff: add `ANALYTICS_DATABASE_URL` (from `SERVICE_DB_PASSWORD_BFF`).
-7. token-svc seed: relative/future reservation dates (past dates → 410).
-8. overlay redirect rework (http→https 404) + osrm PBF-download fix.
+1. ✅ `deploy-qa.yml`: `docker network create dt_internal` + `pnpm install` before migrate (#226).
+2. ✅ `overlay.qual.yml`: mount `infra/postgres/init-qual/` as the postgres initdb dir (#226).
+3. ✅ `02-roles.sql`: reorder — all roles created before `ALTER DEFAULT PRIVILEGES FOR ROLE …` (#226; verified 0 errors / 10 roles).
+4. ✅ rabbitmq: `deploy-qa.yml` reconciles the broker password post-`up` (RabbitMQ skips `RABBITMQ_DEFAULT_USER` with `load_definitions`, so `definitions.json` can't be env-driven; left unchanged for dev) (#228).
+5. ✅ chat-hub `DATABASE_URL` from `SERVICE_DB_PASSWORD_CHAT` (#226).
+6. ✅ bff `ANALYTICS_DATABASE_URL` from `SERVICE_DB_PASSWORD_BFF` (#226).
+7. ✅ token-svc seed: reservation dates relative to seed time (#228).
+8. ✅ redirect: qual-only `infra/traefik/redirect-qual.yml` (catch-all + redirectScheme), overlay-mounted — verified live 301→https; osrm: `ca-certificates` for the https PBF download (#228).
+
+**Live-env note:** the running VPS stack still uses the hand-applied workarounds (untracked `overlay.qual-local.yml`, ALTER'd roles, `change_password`, `redirect-test.yml`, refreshed fixture dates). The merged fixes apply to the **next clean deploy** — a fresh re-deploy (postgres volume reset so `init-qual` re-inits) would validate `deploy-qa.yml` end-to-end and drop all workarounds.

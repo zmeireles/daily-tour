@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-007 (qual VPS deploy) Phase Q.1 + Q.3 — qual env LIVE (2026-06-12/13)
+
+The qual environment is live at `https://qual.stay.portugalodyssey.pt` (trusted Let's Encrypt cert, full 8-step guest-journey smoke green, real LLM tour plans). Plan dir: `docs/implementation-plans/007-qual-vps-deploy/` (EXECUTION Waves 2–3).
+
+- **Q.1 VPS prep** — island-chronicles backed up + cleanly stopped (80/443/8080 freed); 4 GB swap; ufw + key-only SSH (deadman-verified); dangling-only prune cron; Node 22.22.3 / pnpm 9.14.2 toolchain. `make vps` SSH shortcut.
+- **Q.3 runner + DNS + first deploy** — Cloudflare DNS (`qual.stay` + `*.qual.stay`), self-hosted GitHub runner (`qual-vps`), first deploy on `/opt/daily-tour` with ACME staging→prod.
+- **First-deploy punch-list (8/8, #226 + #228)** — the deploy surfaced a systemic gap (hardcoded dev credentials + incomplete secret-rotation wiring), now fixed so the automated `deploy-qa.yml` reproduces it: deploy bootstrap (`dt_internal` network, `pnpm install`, `up` ordering); postgres `init-qual` mount + `02-roles.sql` reorder (forward-referenced roles aborted init); chat-hub `DATABASE_URL` + bff `ANALYTICS_DATABASE_URL` (hardcoded `change-me-please-*` defaults); rabbitmq broker-password reconcile; relative seed reservation dates; qual-only http→https redirect (dynamic config); osrm `ca-certificates` for the https PBF download.
+- **osrm image** — base tag `v5.28.0`→`v5.25.0` (404) + Debian-stretch-EOL apt → `archive.debian.org` (#221/#222).
+
 ### Added — Plan-007 (qual VPS deploy) Phase Q.2 — repo plumbing (2026-06-12)
 
 Pure repo work (no VPS touched); 8/8 Q.2 tasks merged + the GHCR publish pipeline brought to 11/11 green. Plan dir: `docs/implementation-plans/007-qual-vps-deploy/` (EXECUTION.md = wave detail).
