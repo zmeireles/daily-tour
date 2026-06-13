@@ -1,6 +1,6 @@
-# Session Handoff — 2026-05-28 → … → 06-13(plan-007 guest-journey FIXED + re-UAT'd) → next session
+# Session Handoff — 2026-05-28 → … → 06-13(PLAN-007 CLOSED — qual fully verified live) → next session
 
-> **UPDATE 2026-06-13 (LATEST): Plan-007 close-out UAT found a release-blocking guest-entry bug + an owner-provisioning gap; BOTH fixed, MERGED (#234, #235), REDEPLOYED to live qual, and the guest leg RE-UAT'd PASS end-to-end in a real browser — the qual guest journey now works via the host's shared link. Only owner-_edit_ verification remains (blocked on #152). Resume cold from this block.**
+> **UPDATE 2026-06-13 (LATEST): Plan-007 is FULLY CLOSED. The close-out UAT found a release-blocking guest-entry bug + an owner-provisioning gap + a missing guesthouse seed; all three fixed, merged (#234, #235, #238), redeployed, and re-UAT'd PASS in a real browser. Every Plan-007 criterion is verified live on `https://qual.stay.portugalodyssey.pt`. Riff #157 + #152 closed. Resume cold from this block — start a NEW plan/thread.**
 >
 > ### What shipped this session
 >
@@ -14,13 +14,16 @@
 > - **Owner login + backoffice — ✅ PASS.** akadmin → Authentik → `/admin` (no 403), 28 places render.
 > - **Hero + attribution over TLS — ✅ PASS.** Lagoa do Fogo "© Samuel Fonseca 85 · CC BY-SA 3.0"; Praia de Santa Bárbara "© JCNazza · CC BY 3.0".
 >
-> ### First task next session — close Plan-007's last thread
+> ### First task next session — pick a new thread (Plan-007 done)
 >
-> 1. **Owner-_edit_ re-UAT** — blocked by **#152** (empty `catalog.guesthouse` on qual → backoffice Hide/Show toggle never renders). Seed a guesthouse for the qual reservation's `gh` (bbb00001-…), then verify a reversible Hide→Show. Owner _login_ already PASSes.
-> 2. Then flip the **Plan-007 epic (#157)** to done. **Plan-002 Slice 2.A guest-journey exit criterion is now MET** (guest link → app → discover, verified live). T-0.4.4 + the 2.A task rows already done.
-> 3. **Optional / non-blocking:** **#158** registerSW.js 404/MIME (PWA SW auto-registration broken on qual) · re-enable **osrm** once a lightweight Azores PBF source is sorted (deferred → haversine).
+> Plan-007 is closed; the qual env is live + reproducible + fully UAT'd. Candidates, in rough priority:
 >
-> **State:** `main` synced; both fix branches merged + local copies deleted; no open PRs. dt-tests `review` queue empty. The live qual env runs committed config (the akadmin→staff hand-add is now reproduced by #235's deploy step). 18 containers healthy.
+> 1. **Plan-006 leftovers** (`docs/implementation-plans/006-owner-backoffice/TODO.md`) — the active feature plan: **6.E** reservations screen · **6.F** field gaps (#150 season col, #151 hours/contacts in admin.places) · **6.C.2** per-place hero upload.
+> 2. **Deeper owner flow on qual** — UAT owner **create-place + photo-upload + publish** (Plan-006 uploaders, only dev-UAT'd so far). Not a deploy blocker; the 2.A core journeys are verified.
+> 3. **Non-blocking qual polish:** **#158** registerSW.js 404/MIME (PWA SW auto-registration) · re-enable **osrm** once a lightweight Azores PBF source is sorted (deferred → haversine).
+> 4. **Plan-002 Thrust B** — real design pass (Stitch mockups, brand mark, photography, translation review).
+>
+> **State:** `main` synced (tip = #238); all session branches merged + deleted; **0 open PRs**. Riff #152 + #157 closed; #158 open (non-blocking). dt-tests `review` queue empty. The live qual env runs entirely on committed config + idempotent deploy reconciles (akadmin→staff via #235, guesthouse via #238). 18 containers healthy.
 
 > **UPDATE 2026-06-13 (earlier): Plan-007 — qual env LIVE + REPRODUCIBLE. `https://qual.stay.portugalodyssey.pt` (trusted cert, http→https redirect, 8/8 smoke green, real LLM tour plans). The 8-item punch-list ✅ + a CLEAN RE-DEPLOY from wiped volumes proved `deploy-qa.yml` reproduces the env end-to-end — all hand-applied workarounds dropped.** Resume cold from this block.
 >

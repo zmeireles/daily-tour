@@ -54,7 +54,7 @@ Capture lessons learned + technical debt from plan-001:
 - ✅ T-2.A.4 — smoke playbook = `dev-smoke.sh` (8/8 in `deploy-qa.yml`) + `dev-env-check.sh --qual`
 - ✅ T-2.A.5 — T-0.4.4 closed (`deploy-qa.yml` CI deploy gate)
 
-**Exit criteria — guest journey ✅ MET (2026-06-13).** The close-out UAT found the apex `/r/<token>` guest link 200'd as JSON (same-origin routing); fixed in **#234** (redeem → `/v1/r/:token`), merged + redeployed, and **re-UAT'd PASS** in a real browser (cold link → SPA boots → exchange → authed home → `/v1/discover` 200 under the guest JWT). Owner login + hero/credit also PASS. The owner **create/publish** half of the exit list still needs a verification pass once `catalog.guesthouse` is seeded on qual (#152).
+**Exit criteria — ✅ MET (2026-06-13), via Plan-007.** The close-out UAT (live qual, real browser) verified: **guest journey** (cold `/r/<token>` link → SPA → authed home → `/v1/discover` 200; fixed the same-origin routing in **#234**), **owner login** (akadmin → `/admin`), **owner edit** (Hide/Show toggle round-trip, PUT/DELETE 200; unblocked by the **#238** guesthouse seed / #152), and **hero/attribution over TLS**. The one part not re-exercised on qual is the owner **create-place + photo-upload + publish** deep-flow (the Plan-006 uploaders, dev-UAT'd) — worth a later qual pass, not a deploy blocker.
 
 ### Slice 2.B — Design Pass
 
