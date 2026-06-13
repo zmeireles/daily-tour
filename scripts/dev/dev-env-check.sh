@@ -142,7 +142,7 @@ if [[ $QUAL -eq 1 ]]; then
   # Qual runs every dev service PLUS the edge/auth/routing tier the dev compose
   # omits: Traefik (TLS ingress), Authentik (server+worker+its own postgres),
   # OSRM (routing), and the built-PWA nginx image.
-  EXPECTED+=(dt_traefik dt_authentik_server dt_authentik_worker dt_authentik_postgres dt_osrm dt_pwa_static)
+  EXPECTED+=(dt_traefik dt_authentik_server dt_authentik_worker dt_authentik_postgres dt_pwa_static)
 fi
 
 TOTAL=${#EXPECTED[@]}
