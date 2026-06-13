@@ -1,6 +1,6 @@
 # Plan 007 — TODO
 
-Status: **LIVE; guest journey FIXED + re-UAT'd PASS** — Q.1+Q.2+Q.3 done; close-out UAT 2026-06-13. `https://qual.stay.portugalodyssey.pt` up (trusted TLS, http→https redirect, full guest-journey smoke green, real LLM tour plans). The close-out UAT surfaced a release-blocking guest-entry bug (apex `/r/<token>` 200'd as JSON → **#234**) + an owner-provisioning gap (akadmin not in `staff` → **#235**); **both merged + redeployed; the guest cold-entry was re-UAT'd PASS end-to-end in a real browser.** Only **owner-_edit_** verification remains (blocked on #152 — empty `catalog.guesthouse` on qual). Wave log in [EXECUTION.md](./EXECUTION.md).
+Status: **✅ DONE — qual env live + reproducible + fully UAT'd (2026-06-13).** `https://qual.stay.portugalodyssey.pt` (trusted TLS, http→https redirect, real LLM tour plans). Every criterion verified live in a real browser: deploy reproducible · guest journey (cold link → app) · owner login · owner edit (Hide/Show) · hero/attribution over TLS. Close-out UAT surfaced + fixed 3 issues — guest-entry routing (**#234**), owner-staff provisioning (**#235**), missing guesthouse seed (**#238**/#152) — all merged, redeployed, re-UAT'd PASS. Riff #157 + #152 closed. Non-blocking follow-ups: **#158** (registerSW.js), osrm deferred. Wave log in [EXECUTION.md](./EXECUTION.md).
 
 ## Phase Q.1 — VPS preparation (srv911943 / 77.37.86.126) — ✅ DONE 2026-06-12
 
@@ -50,12 +50,12 @@ Status: **LIVE; guest journey FIXED + re-UAT'd PASS** — Q.1+Q.2+Q.3 done; clos
 
 Run against `https://qual.stay.portugalodyssey.pt` (evidence: `temp/uat-plan007/`). **3/3 core scenarios PASS**, 2 blocking-class findings now in fix PRs:
 
-| Scenario                           | Verdict   | Notes                                                                                                                                                                                                                                 |
-| ---------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Owner login + backoffice           | ✅ PASS   | akadmin → Authentik → `/admin` (no 403); 28 places render → staff claim authorises BFF. Precondition: akadmin added to `staff` by hand (→ #235 makes it reproducible).                                                                |
-| Hero photos + attribution over TLS | ✅ PASS   | Lagoa do Fogo "© Samuel Fonseca 85 · CC BY-SA 3.0"; Praia de Santa Bárbara "© JCNazza · CC BY 3.0" — heroes 200, chips correct.                                                                                                       |
-| Guest-entry `/r/<token>` cold nav  | ✅ FIXED  | Was: 200'd as raw JSON, SPA never booted (apex `/r/*` → BFF above the SPA). **Fixed (#234) + re-UAT'd PASS**: cold nav → `200 text/html`, SPA boots, XHR `/v1/r/` `200 {jwt}`, lands authed home, `/v1/discover` 200 under guest JWT. |
-| Owner _edit_ (Hide/Show toggle)    | ⏸ BLOCKED | `catalog.guesthouse` empty on qual (#152) → toggle never renders. Owner _login_ PASSes; the write path needs a seeded guesthouse.                                                                                                     |
+| Scenario                           | Verdict  | Notes                                                                                                                                                                                                                                 |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Owner login + backoffice           | ✅ PASS  | akadmin → Authentik → `/admin` (no 403); 28 places render → staff claim authorises BFF. Precondition: akadmin added to `staff` by hand (→ #235 makes it reproducible).                                                                |
+| Hero photos + attribution over TLS | ✅ PASS  | Lagoa do Fogo "© Samuel Fonseca 85 · CC BY-SA 3.0"; Praia de Santa Bárbara "© JCNazza · CC BY 3.0" — heroes 200, chips correct.                                                                                                       |
+| Guest-entry `/r/<token>` cold nav  | ✅ FIXED | Was: 200'd as raw JSON, SPA never booted (apex `/r/*` → BFF above the SPA). **Fixed (#234) + re-UAT'd PASS**: cold nav → `200 text/html`, SPA boots, XHR `/v1/r/` `200 {jwt}`, lands authed home, `/v1/discover` 200 under guest JWT. |
+| Owner _edit_ (Hide/Show toggle)    | ✅ FIXED | Was blocked by empty `catalog.guesthouse` (#152). **Fixed (#238 seeds "Casa do Sol") + re-UAT'd PASS**: toggle renders on every row; Hide → PUT 200 (`hidden_place_ids {…021}`), Show → DELETE 200 (`{}`). Owner can edit a place.    |
 
 **Fixes (merged + redeployed 2026-06-13):**
 
@@ -64,4 +64,4 @@ Run against `https://qual.stay.portugalodyssey.pt` (evidence: `temp/uat-plan007/
 
 **Other findings:** **#158** registerSW.js 404/MIME (PWA SW auto-registration broken on qual; non-blocking) · **#152** empty `catalog.guesthouse` now on the owner-edit critical path.
 
-**Remaining to fully close Plan-007:** seed a guesthouse (#152) → re-UAT owner edit → flip #157 to done. (Guest journey + owner login + hero/credit + deploy reproducibility all ✅.)
+**Plan-007 CLOSED 2026-06-13.** All criteria verified live (deploy reproducibility · guest journey · owner login · owner edit · hero/credit). #234/#235/#238 merged + redeployed + re-UAT'd PASS; Riff #157 + #152 done. Non-blocking follow-ups tracked separately: #158 (registerSW.js), osrm re-enable (deferred → haversine), and a deeper owner create+photo+publish qual UAT (Plan-006).
