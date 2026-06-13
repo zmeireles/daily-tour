@@ -7,6 +7,7 @@ import { healthRoutes } from "./routes/health.js";
 import { issueRoutes } from "./routes/issue.js";
 import { exchangeRoutes } from "./routes/exchange.js";
 import { revokeRoutes } from "./routes/revoke.js";
+import { listRoutes } from "./routes/list.js";
 
 // Opaque tokens MUST NEVER land in logs (D15: token-in-URL hygiene). Pino's
 // default req serializer logs the full URL — we replace the opaque path
@@ -42,6 +43,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(issueRoutes);
   await app.register(exchangeRoutes);
   await app.register(revokeRoutes);
+  await app.register(listRoutes);
 
   return app;
 }
