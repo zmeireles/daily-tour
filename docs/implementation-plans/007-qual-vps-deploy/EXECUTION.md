@@ -26,11 +26,21 @@ A systemic gap: **hardcoded dev credentials + incomplete secret-rotation wiring.
 | 7   | seed reservations use past dates (`2026-06-05`) → token-svc 410                                                                                                   | `UPDATE reservation SET checkin/checkout` to a current window       | relative/future dates in the seed                               |
 | 8   | overlay http→https redirect returns 404 (Traefik won't merge a CLI entrypoint-redirection into a file-defined entrypoint); osrm init loops re-downloading the PBF | redirect left (https works); osrm stopped (planner→haversine)       | rework redirect (middleware/co-located); fix osrm init URL      |
 
-### Live-env state (for resume / reconcile)
+### Clean re-deploy — `deploy-qa.yml` validated end-to-end (2026-06-13, all workarounds dropped)
 
-- Stack under compose project **`dt-qual`** in `/opt/daily-tour`, env `.env.qual` (ghrunner-owned, 600). Extra untracked override `/opt/daily-tour/overlay.qual-local.yml` (chat-hub/bff DB URLs) — must be in the `-f` stack until fixes 5+6 land in app.yml.
-- `__SET_MANUALLY__` still pending in `.env.qual`: **`ANTHROPIC_API_KEY` (L90)** + **`EMBEDDING_API_KEY` (L80)** — human to fill on the VPS, then recreate planner-svc + search-svc. Telegram/WhatsApp blanked (in-app chat only).
-- island-chronicles remains stopped + backed up; ufw + key-only SSH active.
+After the punch-list merged + the human added the `ANTHROPIC`/`EMBEDDING` keys, the running stack was reset (sync clone to main, drop the workaround files, refresh `init-qual` from the fixed `02-roles` with the existing `.env.qual` passwords, **wipe the postgres + rabbitmq volumes**) and the real **`deploy-qa.yml` workflow was triggered** (workflow_dispatch, `image_tag=qual`). It surfaced 4 deploy-only bugs the manual deploy had masked, each fixed + re-run:
+
+1. **#230** — base mounted `infra/traefik/dynamic` `:ro`, so the overlay's `redirect-qual.yml` nest-mount failed (`read-only file system`). Dropped `:ro` (Traefik only reads it).
+2. **#231** — `gen-env-qual.sh` wrote `init-qual/` under `umask 077`; postgres (uid 999) got `Permission denied` listing the initdb dir → unhealthy. chmod `755`/`644`.
+3. **#231** — osrm's Geofabrik path `europe/portugal/acores-latest.osm.pbf` 404s (HTML → `osrm-extract` aborts → crash-loop). Portugal ships as one ~450MB file, too heavy for 2 vCPU → **osrm deferred** (removed from the deploy stack; planner falls back to haversine).
+4. **#232** — `dev-env-check.sh --qual` still listed `dt_osrm` in the expected set.
+
+**Final run = SUCCESS**: pull → up → rabbitmq reconcile → migrate → seed → **smoke 8/8** → **`--qual` readiness gate** → record. `https://qual.stay…` serves over trusted TLS with `http→301→https`; `DEPLOYS.md` has the first entry. **The live env now runs entirely on committed config + `.env.qual`** — the hand-applied workarounds (overlay.qual-local.yml, ALTER'd roles, `change_password`, redirect-test.yml, fixture-date UPDATE) are gone.
+
+### Live-env state (for resume)
+
+- Stack: compose project **`dt-qual`** in `/opt/daily-tour`, env `.env.qual` (ghrunner-owned, 600, with the real `ANTHROPIC`/`EMBEDDING` keys; telegram/whatsapp blanked). 17 healthy containers (osrm deferred). Deploy via `gh workflow run deploy-qa.yml -f image_tag=qual` or a `[deploy-qa]` main push.
+- island-chronicles remains stopped + backed up; ufw + key-only SSH active. `make vps` SSHes in.
 
 ## Wave 2 — Phase Q.1 VPS preparation (2026-06-12) — ✅ COMPLETE
 
