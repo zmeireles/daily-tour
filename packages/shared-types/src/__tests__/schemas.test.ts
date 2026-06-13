@@ -178,6 +178,19 @@ describe("PlaceSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("accepts a seasonal place (summer/winter) and treats absent season as year-round", () => {
+    expect(PlaceSchema.parse({ ...validPlace, season: "summer" }).season).toBe("summer");
+    expect(PlaceSchema.parse({ ...validPlace, season: "winter" }).season).toBe("winter");
+    expect(PlaceSchema.parse({ ...validPlace, season: null }).season).toBeNull();
+    // Absent season parses (year-round) — validPlace omits the key.
+    expect(PlaceSchema.parse(validPlace).season).toBeUndefined();
+  });
+
+  it("rejects an unknown season value", () => {
+    const result = PlaceSchema.safeParse({ ...validPlace, season: "autumn" });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("PlaceCandidateSchema", () => {

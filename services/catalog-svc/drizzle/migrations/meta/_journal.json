@@ -43,6 +43,13 @@
       "when": 1781171823101,
       "tag": "0005_place_media_attribution",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786000000000,
+      "tag": "0006_place_season",
+      "breakpoints": true
     }
   ]
 }

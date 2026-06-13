@@ -114,6 +114,9 @@ export const placeTable = catalogSchema.table(
       .notNull()
       .default(sql`'[]'::jsonb`)
       .$type<Array<{ dow: number; open: string; close: string }>>(),
+    // Seasonal availability. NULL = year-round (the common case);
+    // 'summer'/'winter' mark places that only operate in one season.
+    season: text("season"),
     status: text("status").notNull(),
     isHostsPick: boolean("is_hosts_pick").notNull().default(false),
     sourceKind: text("source_kind").notNull(),
@@ -134,6 +137,7 @@ export const placeTable = catalogSchema.table(
       "place_source_kind_check",
       sql`${t.sourceKind} IN ('manual','google_places','osm','crawl')`,
     ),
+    check("place_season_check", sql`${t.season} IS NULL OR ${t.season} IN ('summer','winter')`),
     index("place_status_idx").on(t.status),
     // Composite geo index for haversine-based proximity filtering (T-1.2.0)
     index("place_geom_idx").on(t.geomLat, t.geomLng),
