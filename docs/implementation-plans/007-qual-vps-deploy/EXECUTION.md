@@ -2,6 +2,23 @@
 
 Wave-by-wave record of Plan-007 (qual VPS deploy). Newest wave first.
 
+## Wave 4 — Close-out UAT + 2 fix PRs (2026-06-13)
+
+Ran the deferred close-out UATs headless (playwright-core + system Chrome) against live TLS. **3/3 core scenarios PASS** — and the UAT did its job: it surfaced a release-blocking guest-entry bug + an owner-provisioning reproducibility gap that the internal smoke (which bypasses Traefik) had masked.
+
+**Verified PASS:** owner login → `/admin` (no 403, 28 places) · hero photos + attribution chips over TLS (Lagoa do Fogo, Praia de Santa Bárbara). Evidence in `temp/uat-plan007/`.
+
+**Found + fixed:**
+
+| Finding                                                                                                                                                                                                           | Severity                                | Fix                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Apex `/r/<token>` cold-navigation 200s as raw JSON `{jwt}` — SPA never boots, guest link dead-ends. Traefik path-routed `/r/*` → BFF (priority 100) above the SPA; same-origin apex. Internal smoke never hit it. | 🔴 release-blocking (2.A guest journey) | **#234** — move BFF redeem to `/v1/r/:token` (apex `/v1` router wins); SPA keeps the browser route `/r/:token`; drop apex `/r` router. Public link shape unchanged; D15 redaction regex already matches `/v1/r/`. bff 92/92, pwa auth 15/15, CI 11/11. |
+| akadmin not in `staff` on a clean deploy → owner login 403. Blueprint creates the group, bootstrap creates the user, nothing joins them.                                                                          | 🟠 reproducibility (owner path)         | **#235** — idempotent `deploy-qa.yml` post-`up` reconcile adds akadmin → staff. Qual-only, additive, fail-soft. Shared dev/prod blueprint untouched.                                                                                                   |
+| `registerSW.js` 404/MIME — PWA SW auto-registration broken on qual (real `/sw.js` is fine).                                                                                                                       | 🟡 non-blocking                         | filed **#158**.                                                                                                                                                                                                                                        |
+| `catalog.guesthouse` empty on qual (#152) → backoffice visibility toggle never renders → owner _edit_ sub-step couldn't be exercised.                                                                             | 🟠 blocks owner-edit criterion          | commented **#152** (now on critical path).                                                                                                                                                                                                             |
+
+**Both fix PRs are ESCALATE** (auth/routing/overlay + `.github/workflows/*`) — left for human review. One redeploy validates both. Next: merge → `publish-images` rebuild → `deploy-qa.yml` redeploy → re-UAT guest leg + owner edit → close 2.A guest-journey + #157.
+
 ## Wave 3 — Phase Q.3 runner + DNS + first deploy (2026-06-12/13) — ✅ LIVE (full smoke green)
 
 **`https://qual.stay.portugalodyssey.pt` is live** with a trusted Let's Encrypt prod cert; the full 8-step guest-journey smoke passes end-to-end. Q.3.0–Q.3.3 done.

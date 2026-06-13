@@ -18,9 +18,9 @@
 | ✅ 3 — Daily Tour Planner         | 5      | 14     | 14     | 0           | 0     | 0       |
 | ✅ 4 — Chat & Reservation Draft   | 5      | 10     | 10     | 0           | 0     | 0       |
 | ✅ 5 — Hardening & Growth         | 7      | 13     | 13     | 0           | 0     | 0       |
-| **Total**                         | **32** | **84** | **83** | **0**       | **0** | **1**   |
+| **Total**                         | **32** | **84** | **84** | **0**       | **0** | **0**   |
 
-**🎉 Plan-001 implementation-complete: 83/84 tasks done** — only T-0.4.4 🔒 VPS-blocked (QA VPS not yet acquired).
+**🎉 Plan-001 implementation-complete: 84/84 tasks done** — T-0.4.4 (CI deploy gate) closed 2026-06-13 via Plan-007 (`deploy-qa.yml` self-hosted runner; qual env live + reproducible).
 
 ---
 
@@ -220,11 +220,12 @@
   - `pnpm build && docker compose up app` serves PWA via nginx behind Traefik on `app.localhost`, BFF on `api.localhost`.
   - Hot-reload dev flow documented: `pnpm dev` for PWA + BFF natively, Compose runs the rest.
 
-#### 🔒 T-0.4.4 — End-to-end smoke + CI deploy gate to QA VPS [opus] — **BLOCKED: QA VPS not yet acquired**
+#### ✅ T-0.4.4 — End-to-end smoke + CI deploy gate to QA VPS [opus] — **DONE 2026-06-13 via Plan-007**
+
+> **Closed via Plan-007 (qual VPS deploy).** Realised as `.github/workflows/deploy-qa.yml` (self-hosted `qual-vps` runner, GHCR images — amended from the SSH-push design for the 2-vCPU box), running pull→up→migrate→seed→**smoke** (`dev-smoke.sh` 8/8)→`--qual` readiness gate→**rollback on failure**→`DEPLOYS.md` record. `workflow_dispatch` + `[deploy-qa]`-on-main triggers both wired. Acceptance met; the deploy is reproducible (validated by a clean re-deploy from wiped volumes). Note: a guest-entry same-origin routing edge surfaced in the close-out UAT (apex `/r/<token>` → JSON) is tracked + fixed separately in Plan-007 (#234), not a deploy-gate failure.
 
 - **owns**: `.github/workflows/deploy-qa.yml`, `scripts/deploy.sh`
 - **deps**: T-0.4.3, T-0.1.4
-- **blocked-on**: infra acquisition (Ubuntu 24 QA VPS per `IDEA.md` "Architecture > Generic"). Track in [`docs/ai/backlog.md`](../../ai/backlog.md). Resume this task once host + SSH key + DNS are ready.
 - **acceptance**:
   - On push to `main` with `[deploy-qa]` in commit msg OR `workflow_dispatch`, CI builds + pushes images to GHCR + SSH-deploys to QA VPS.
   - Healthchecks must pass; rollback on failure.
