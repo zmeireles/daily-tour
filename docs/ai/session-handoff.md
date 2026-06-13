@@ -1,19 +1,19 @@
 # Session Handoff — 2026-05-28 → … → 06-13(plan-007 qual env LIVE) → next session
 
-> **UPDATE 2026-06-13 (latest): Plan-007 — qual env is LIVE. `https://qual.stay.portugalodyssey.pt` up with a trusted cert + full 8-step guest-journey smoke GREEN. Remaining = the Q.3.4 repo punch-list + the human's API keys.** Resume cold from this block.
+> **UPDATE 2026-06-13 (latest): Plan-007 — qual env LIVE + fully functional. `https://qual.stay.portugalodyssey.pt` (trusted cert, 8/8 smoke green, real LLM tour plans). The 8-item repo punch-list is ✅ DONE (#226 + #228) — automated `deploy-qa.yml` now reproduces the hand-patched first deploy.** Resume cold from this block.
 >
 > ### What's live (srv911943 / 77.37.86.126)
 >
-> - Q.3 done: Cloudflare DNS (apex + `*.qual.stay`), GitHub runner `qual-vps` (systemd `actions-runner-qual`, hand-written unit — no `svc.sh` in the package), first deploy on `/opt/daily-tour` (compose project `dt-qual`, `.env.qual`), ACME staging→prod (trusted LE cert). **`dev-smoke.sh` 8/8 green** (token→JWT→discover→place→tour-plan→chat WS persist→telemetry).
-> - **island-chronicles** still stopped + backed up; ufw + key-only SSH active; 4 GB swap; system Node 22.22.3/pnpm 9.14.2.
+> - Q.3 done: Cloudflare DNS (apex + `*.qual.stay`), GitHub runner `qual-vps` (systemd `actions-runner-qual`, hand-written unit — no `svc.sh` in the package), first deploy on `/opt/daily-tour` (compose project `dt-qual`, `.env.qual`), ACME staging→prod (trusted LE cert). **`dev-smoke.sh` 8/8 green**; **`ANTHROPIC`/`EMBEDDING` keys in `.env.qual` → real LLM tour plans** (planner: full LLM+RAG pipeline).
+> - **island-chronicles** still stopped + backed up; ufw + key-only SSH active; 4 GB swap; system Node 22.22.3/pnpm 9.14.2. `make vps` SSHes into the box.
 >
-> ### ⚠ The first deploy needed hand-patching — the automated `deploy-qa.yml` won't reproduce it yet
+> ### Punch-list ✅ 8/8 merged — but the LIVE env still runs on hand-applied workarounds
 >
-> Systemic gap = **hardcoded dev credentials + incomplete secret-rotation wiring.** Full 8-item punch-list + the exact live workarounds are in **plan TODO + EXECUTION Wave 3**. Headline fixes: `deploy-qa.yml` (network create + pnpm install) · overlay mount `init-qual/` · `02-roles.sql` reorder · `rabbitmq/definitions.json` hardcoded pass · chat-hub `DATABASE_URL` + bff `ANALYTICS_DATABASE_URL` missing in compose · seed past-dated reservations · http→https redirect 404 + osrm PBF loop. **Live env is STABLE** (workarounds live in untracked files / DB+broker volumes, survive `git checkout`); incl. an untracked `/opt/daily-tour/overlay.qual-local.yml` (chat-hub/bff DB URLs) that must stay in the deploy `-f` stack until fixes #5/#6 land.
+> The first deploy needed hand-patching (systemic: hardcoded dev creds + rotation-wiring gaps). All 8 fixes are now merged (#226: deploy bootstrap + init-qual mount + 02-roles reorder + chat-hub/bff DB URLs · #228: rabbitmq reconcile + seed dates + redirect + osrm certs). **The fixes apply to the NEXT clean deploy** — the running VPS stack still carries the workarounds (untracked `/opt/daily-tour/overlay.qual-local.yml`, ALTER'd DB roles, `rabbitmqctl change_password`, `infra/traefik/dynamic/redirect-test.yml`, refreshed fixture dates). Detail in plan EXECUTION Wave 3 + TODO.
 >
 > ### First task next session
 >
-> **Q.3.4 close-out = work the 8-item repo punch-list** (PRs, in the order above; they make `deploy-qa.yml` reproducible) → then DEPLOYS.md + CHANGELOG + dt-tests UAT batch. **Human action pending:** paste `ANTHROPIC_API_KEY` (`.env.qual` L90) + `EMBEDDING_API_KEY` (L80) on the VPS → then recreate planner-svc + search-svc for real LLM plans + search. Owner-login UAT + hero/credit-over-TLS still to verify.
+> **Clean re-deploy to validate `deploy-qa.yml` end-to-end** (postgres volume reset so `init-qual` re-inits with the rotated roles; drops every workaround). Then: owner-login UAT (Authentik `/admin`) + hero/credit-chip over TLS, DEPLOYS.md first entry, dt-tests UAT batch for the qual URL. Plan-007 then fully closed (T-0.4.4 + Plan-002 2.A).
 
 > **UPDATE 2026-06-12 (latest): Plan-007 Phase Q.1 (VPS prep) — ✅ COMPLETE. The VPS is deploy-ready. Only Q.3 (runner + DNS + first deploy) remains.** Resume cold from this block.
 >
