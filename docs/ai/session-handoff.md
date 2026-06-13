@@ -1,6 +1,29 @@
-# Session Handoff — 2026-05-28 → … → 06-13(plan-007 qual env LIVE) → next session
+# Session Handoff — 2026-05-28 → … → 06-13(plan-007 qual LIVE → UAT'd, 2 fix PRs open) → next session
 
-> **UPDATE 2026-06-13 (latest): Plan-007 — qual env LIVE + REPRODUCIBLE. `https://qual.stay.portugalodyssey.pt` (trusted cert, http→https redirect, 8/8 smoke green, real LLM tour plans). The 8-item punch-list ✅ + a CLEAN RE-DEPLOY from wiped volumes proved `deploy-qa.yml` reproduces the env end-to-end — all hand-applied workarounds dropped.** Resume cold from this block.
+> **UPDATE 2026-06-13 (LATEST): Plan-007 close-out UAT run headless against live TLS — 3/3 core scenarios PASS, but the UAT surfaced a release-blocking guest-entry bug + an owner-provisioning reproducibility gap. Both fixed in PRs (#234, #235), CI green, awaiting human merge + a redeploy. Resume cold from this block.**
+>
+> ### What the UAT proved (live `https://qual.stay.portugalodyssey.pt`, headless Chromium, evidence in `temp/uat-plan007/`)
+>
+> - **Owner login + backoffice — PASS.** akadmin → Authentik → `/admin` (no 403), 28 real places render → the `staff` groups-claim authorises the BFF. _Precondition I had to set by hand:_ akadmin wasn't in `staff` (see #235).
+> - **Hero photos + attribution credit over TLS — PASS.** Lagoa do Fogo "© Samuel Fonseca 85 · CC BY-SA 3.0", Praia de Santa Bárbara "© JCNazza · CC BY 3.0" — heroes 200 from upload.wikimedia.org, credit chips correct.
+> - **Guest-entry `/r/<token>` — 🔴 BROKEN (confirmed in-browser).** Cold navigation 200s as raw JSON `{jwt}`; the SPA never boots. The host's shared link dead-ends. The 8/8 internal smoke never caught it (it bypasses Traefik).
+>
+> ### Two fixes opened this session (both ESCALATE — do NOT auto-merge; human review)
+>
+> - **PR #234** `fix(bff,pwa,infra)` — move the BFF redeem to **`/v1/r/:token`** (apex `/v1` router already wins; the SPA keeps the browser route `/r/:token`); drop the apex `/r` path-router. Public link shape unchanged; D15 redaction regex already matches `/v1/r/`. **CI 11/11 green.** Files: token-exchange.ts, pwa exchange.ts, overlay.qual.yml, dev-smoke.sh, auth.test.ts (+ comment accuracy in auth/app/auth-refresh). bff 92/92, pwa auth 15/15.
+> - **PR #235** `fix(infra/deploy)` — idempotent post-`up` reconcile in `deploy-qa.yml` that adds **akadmin → staff** (blueprint makes the group, bootstrap makes the user, nothing joined them). Qual-only + additive; fail-soft. CI running at handoff.
+>
+> ### First task next session — finish closing Plan-007
+>
+> 1. **Merge #234 + #235** (escalate; serialized — branch-protection needs up-to-date branches → `gh pr update-branch` → CI → merge each). Then **redeploy**: wait for `publish-images` to rebuild `bff:qual`+`pwa:qual`, then `gh workflow run deploy-qa.yml -f image_tag=qual`.
+> 2. **Re-UAT the guest leg**: cold-navigate a browser to `https://qual.stay.portugalodyssey.pt/r/<freshtoken>` → expect the **app to boot + log in** (not JSON). Mint a token: `make vps` then `docker exec dt_bff wget -qO- --post-data='{}' --header='Content-Type: application/json' http://token-svc:8088/v1/reservations/ccc00001-0000-4000-c000-000000000001/token`.
+> 3. **Owner-edit re-UAT** is blocked by **#152** (empty `catalog.guesthouse` on qual → backoffice visibility toggle never renders). Seed a guesthouse for the qual reservation's `gh` (bbb00001-…) first, then verify Hide/Show. Owner _login_ already PASSes.
+> 4. **Two more findings filed:** **#158** (registerSW.js 404/MIME — PWA SW auto-registration broken on qual, non-blocking) · **#152** (now on the critical path for the owner-edit criterion).
+> 5. Then flip **Plan-002 Slice 2.A guest-journey exit criterion** + the Plan-007 epic (#157) to done. T-0.4.4 (CI deploy gate) + the 2.A task rows are already marked done (the deploy gate mechanism works; only the guest-journey _edge_ awaited #234).
+>
+> **State:** `main` clean; 2 fix branches pushed (`fix/p007-redeem-v1` #234, `fix/p007-owner-staff-repro` #235) — delete the locals after merge. dt-tests `review` queue empty (polled at start). akadmin→staff was added by hand on the live box (PR #235 makes it reproducible). All 18 qual containers healthy.
+
+> **UPDATE 2026-06-13 (earlier): Plan-007 — qual env LIVE + REPRODUCIBLE. `https://qual.stay.portugalodyssey.pt` (trusted cert, http→https redirect, 8/8 smoke green, real LLM tour plans). The 8-item punch-list ✅ + a CLEAN RE-DEPLOY from wiped volumes proved `deploy-qa.yml` reproduces the env end-to-end — all hand-applied workarounds dropped.** Resume cold from this block.
 >
 > ### What's live (srv911943 / 77.37.86.126)
 >
