@@ -71,7 +71,7 @@ export async function createApp(): Promise<FastifyInstance> {
     timeWindow: "1 minute",
   });
 
-  // dt_refresh HttpOnly cookie is set by /r/:token; T-1.0.3+ owns the read
+  // dt_refresh HttpOnly cookie is set by /v1/r/:token; T-1.0.3+ owns the read
   // side. No signed-cookie secret yet — the cookie value is the opaque
   // token, which already carries entropy.
   await app.register(fastifyCookie);

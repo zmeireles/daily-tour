@@ -17,7 +17,10 @@ export class TokenInvalidError extends Error {
 }
 
 export async function exchangeOpaqueToken(opaque: string): Promise<{ jwt: string; exp: number }> {
-  const url = `${BFF_BASE}/r/${encodeURIComponent(opaque)}`;
+  // Redeem under /v1 (the BFF route): on a same-origin apex deployment the
+  // browser route `/r/:token` is owned by the SPA, while this XHR must reach
+  // the BFF via the apex `/v1` path-router. The opaque token is unchanged.
+  const url = `${BFF_BASE}/v1/r/${encodeURIComponent(opaque)}`;
   const res = await fetch(url, {
     method: "GET",
     credentials: "include",
