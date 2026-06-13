@@ -71,17 +71,29 @@ jobs:
           # .last_deploy_tag / .deploy-history.md are NOT touched by checkout.
           git checkout -f "${{ github.sha }}"
 
-      - name: Pull images + bring stack up (healthcheck-gated)
+      - name: Pull images + start stack
         run: |
           set -euo pipefail
           export IMAGE_TAG
+          # base declares dt_internal as creatable but every overlay marks it
+          # external, so an all-at-once `up` can't create it — pre-create it.
+          docker network create dt_internal 2>/dev/null || true
           docker compose $COMPOSE pull
-          docker compose $COMPOSE up -d --wait --wait-timeout 300
+          # No --wait yet: the app services crash-loop until migrations create
+          # their tables. They go healthy after the migrate + reconcile below.
+          docker compose $COMPOSE up -d
 
       - name: Migrate + seed (.env.qual / dt-qual)
         run: |
           set -euo pipefail
+          export IMAGE_TAG
+          # A fresh deploy clone has no node_modules; dev-up stage 4 runs the
+          # drizzle migrate via pnpm. Idempotent on subsequent deploys.
+          pnpm install --frozen-lockfile
           ENV_FILE=.env.qual PROJECT=dt-qual bash scripts/dev/dev-up.sh --from 4 --to 5
+          # Tables exist now → reconcile + gate on health (the --wait the initial
+          # `up` couldn't do pre-migrate).
+          docker compose $COMPOSE up -d --wait --wait-timeout 300
 
       - name: Smoke — internal guest journey
         run: |

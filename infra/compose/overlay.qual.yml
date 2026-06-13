@@ -69,6 +69,13 @@ services:
   # ───────────────────────────────────────────────────────────────────────────
   postgres:
     image: ghcr.io/zmeireles/daily-tour/postgres:${IMAGE_TAG:-qual}
+    # First-boot init uses the ROTATED roles: gen-env-qual.sh writes
+    # infra/postgres/init-qual/ (00+01 verbatim, 02-roles with the .env.qual
+    # SERVICE_DB_PASSWORD_* baked in). !override REPLACES the base volumes so
+    # postgres mounts init-qual/ instead of the change-me-please init/.
+    volumes: !override
+      - dt_postgres_data:/var/lib/postgresql/data
+      - ../postgres/init-qual:/docker-entrypoint-initdb.d:ro
     # Drop the Swarm-only deploy.resources block (ignored by `compose up`, and
     # compose errors if mem_limit ≠ deploy.resources.limits.memory). mem_limit
     # is the sole authority. Same pattern on every service below.
