@@ -43,14 +43,18 @@ Capture lessons learned + technical debt from plan-001:
 
 ## Tasks (draft)
 
-### Slice 2.A — Deploy
+### Slice 2.A — Deploy — ✅ DONE via Plan-007 (2026-06-13), modulo the guest-journey edge
 
-- T-2.A.0 — Provision Ubuntu 24 QA VPS (manual, blocks the rest)
-- T-2.A.1 — DNS + ACME staging for `*.qa.dailytour.example`
-- T-2.A.2 — First Authentik realm import + admin user
-- T-2.A.3 — Deploy all 7 services + PWA static to QA VPS
-- T-2.A.4 — Smoke test playbook (10 critical guest journeys)
-- T-2.A.5 — Close T-0.4.4 (CI deploy gate to QA VPS)
+**Implemented by [Plan-007 — Qual VPS Deploy](../007-qual-vps-deploy/README.md)** (amended for a self-hosted-runner + GHCR topology on VPS srv911943; qual apex `qual.stay.portugalodyssey.pt`).
+
+- ✅ T-2.A.0 — VPS provisioned + prepped (Q.1: backup/stop stale stack, swap, ufw + key-only SSH, toolchain)
+- ✅ T-2.A.1 — DNS (Cloudflare `qual.stay` + `*.qual.stay`) + ACME prod (LE HTTP-01 per-host); trusted cert + http→https redirect live
+- ✅ T-2.A.2 — Authentik realm via `owner-app.yaml` blueprint + akadmin (owner login UAT'd PASS; akadmin→staff made reproducible by #235)
+- ✅ T-2.A.3 — all 8 services + PWA (GHCR images) healthy on the qual apex (18 containers)
+- ✅ T-2.A.4 — smoke playbook = `dev-smoke.sh` (8/8 in `deploy-qa.yml`) + `dev-env-check.sh --qual`
+- ✅ T-2.A.5 — T-0.4.4 closed (`deploy-qa.yml` CI deploy gate)
+
+**Exit-criteria caveat:** the full guest journey (scan token URL → app) is **blocked on PR #234** — the close-out UAT found the apex `/r/<token>` guest link 200s as JSON (same-origin routing). Once #234 merges + redeploys + the guest leg re-UATs green, 2.A's guest-journey exit criterion is met. Owner journey + hero/credit verified PASS.
 
 ### Slice 2.B — Design Pass
 
