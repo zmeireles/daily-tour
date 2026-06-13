@@ -106,6 +106,10 @@ services:
       # T-1.4.0 media-svc: BFF forwards X-Internal-Token for owner-upload signing.
       MEDIA_SVC_URL: http://dt_media_svc:8087
       MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
+      # Analytics writes (T-3.4.1) — the bff role's INSERT into analytics.tour_event.
+      # Built from SERVICE_DB_PASSWORD_BFF so rotated envs (qual) authenticate; the
+      # dev placeholder keeps dev byte-for-byte (config.ts has the same default).
+      ANALYTICS_DATABASE_URL: postgres://bff:${SERVICE_DB_PASSWORD_BFF:-change-me-please-bff}@dt_postgres:5432/dailytour
     healthcheck:
       # node:22-alpine ships BusyBox wget at /usr/bin/wget; -q --spider works.
       # Use 127.0.0.1 explicitly — container /etc/hosts resolves "localhost" to
@@ -409,6 +413,10 @@ services:
       HOST: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
       OTEL_SERVICE_NAME: chat-hub
+      # Persistence DB (T-4.0.1) — chat_svc owns the `chat` schema. Built from
+      # SERVICE_DB_PASSWORD_CHAT so rotated envs (qual) authenticate; the dev
+      # placeholder keeps dev byte-for-byte (config.py has the same default).
+      DATABASE_URL: postgresql://chat_svc:${SERVICE_DB_PASSWORD_CHAT:-change-me-please-chat}@dt_postgres:5432/dailytour
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
