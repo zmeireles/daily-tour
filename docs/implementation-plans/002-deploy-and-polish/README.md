@@ -54,7 +54,7 @@ Capture lessons learned + technical debt from plan-001:
 - ✅ T-2.A.4 — smoke playbook = `dev-smoke.sh` (8/8 in `deploy-qa.yml`) + `dev-env-check.sh --qual`
 - ✅ T-2.A.5 — T-0.4.4 closed (`deploy-qa.yml` CI deploy gate)
 
-**Exit-criteria caveat:** the full guest journey (scan token URL → app) is **blocked on PR #234** — the close-out UAT found the apex `/r/<token>` guest link 200s as JSON (same-origin routing). Once #234 merges + redeploys + the guest leg re-UATs green, 2.A's guest-journey exit criterion is met. Owner journey + hero/credit verified PASS.
+**Exit criteria — guest journey ✅ MET (2026-06-13).** The close-out UAT found the apex `/r/<token>` guest link 200'd as JSON (same-origin routing); fixed in **#234** (redeem → `/v1/r/:token`), merged + redeployed, and **re-UAT'd PASS** in a real browser (cold link → SPA boots → exchange → authed home → `/v1/discover` 200 under the guest JWT). Owner login + hero/credit also PASS. The owner **create/publish** half of the exit list still needs a verification pass once `catalog.guesthouse` is seeded on qual (#152).
 
 ### Slice 2.B — Design Pass
 
