@@ -7,17 +7,29 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Progress
 
-| Slice     | Title                               | Tasks  | Done  | Riff       |
-| --------- | ----------------------------------- | ------ | ----- | ---------- |
-| 6.A       | Per-guesthouse scoping (foundation) | 4      | 4     | #142a      |
-| 6.B       | Place media pipeline + hero images  | 3      | 0¹    | #135       |
-| 6.C       | Owner photo uploader                | 3      | 2     | #142c      |
-| 6.D       | Hosts-pick governance               | 1      | 1     | #142b      |
-| 6.E       | Reservations management             | 2      | 0     | #142d      |
-| 6.F       | Owner field-editing gaps            | 2      | 0     | #150, #151 |
-| **Total** |                                     | **15** | **7** |            |
+| Slice     | Title                               | Tasks  | Done   | Riff       |
+| --------- | ----------------------------------- | ------ | ------ | ---------- |
+| 6.A       | Per-guesthouse scoping (foundation) | 4      | 4      | #142a      |
+| 6.B       | Place media pipeline + hero images  | 3      | 3      | #135       |
+| 6.C       | Owner photo uploader                | 3      | 2½²    | #142c      |
+| 6.D       | Hosts-pick governance               | 1      | 1      | #142b      |
+| 6.E       | Reservations management             | 2      | ½³     | #142d      |
+| 6.F       | Owner field-editing gaps            | 2      | ½⁴     | #150, #151 |
+| **Total** |                                     | **15** | **11** |            |
 
-¹ 6.B: all 3 tasks code-done 2026-06-11, PRs #207/#208/#209 stacked in review (escalate).
+¹ 6.B: all 3 tasks merged (#207/#208/#209) + verified live (06-11).
+² 6.C.2: the place form already uploads media + the guest detail renders it as hero (`_authed.p.$id.tsx`) — needs a final UAT confirm (UI wave).
+³ 6.E.0 backend in **PR #240** (token-svc list + revoke + BFF proxy, reviewed+gated, escalate). 6.E.1 reservations **screen** = UI wave.
+⁴ 6.F.1 `place.season` schema+API in **PR #241** (escalate). 6.F.0 contacts/hours controls + the 6.F.1 season **control** = UI wave.
+
+### ⏭ Remaining = the PWA "UI wave" (gated on #240 + #241 merging)
+
+The two cs-agents that built 6.E.0 + 6.F.1 **delivered the backend halves but skipped the PWA UI** (auto-committed past the prettier hook, too — orchestrator re-formatted + split into the clean PRs above). Once #240 + #241 merge to main, the UI wave builds on them:
+
+- **6.E.1** — `apps/pwa/src/routes/admin.reservations.tsx` + `features/backoffice/reservations/**` + `use-reservations.ts`; list rows (guest/dates/party/status/token_state) + per-row Issue-link (POST → `${origin}/r/<token>`) + Revoke (DELETE); replace the placeholder nav; en/pt-PT `reservations.*`; RTL. Consumes BFF `/v1/admin/reservations` (#240).
+- **6.F.0 + 6.F.1 control** — extend `features/backoffice/places/place-form.tsx`: Contacts fieldset (phone/email/website; defer `social[]`), weekly-Hours editor (dow 0–6 open/close), Season select (All year / Summer / Winter → `null`/`summer`/`winter`). Body already forwards verbatim → catalog (incl. `season` after #241); ensure `use-places.ts` `PlaceRow` carries contacts/hours/season for edit pre-fill. RTL.
+- **6.C.2** — confirm the owner-uploaded hero renders in guest discover + detail (likely already true); UAT.
+- **UATs** (need `make up` + Authentik): owner edits contacts/hours/season + a reservations issue/revoke round-trip.
 
 ---
 

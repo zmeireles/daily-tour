@@ -1,6 +1,21 @@
-# Session Handoff — 2026-05-28 → … → 06-13(PLAN-007 CLOSED — qual fully verified live) → next session
+# Session Handoff — 2026-05-28 → … → 06-13(PLAN-007 CLOSED + Plan-006 sweep: backend PRs up) → next session
 
-> **UPDATE 2026-06-13 (LATEST): Plan-007 is FULLY CLOSED. The close-out UAT found a release-blocking guest-entry bug + an owner-provisioning gap + a missing guesthouse seed; all three fixed, merged (#234, #235, #238), redeployed, and re-UAT'd PASS in a real browser. Every Plan-007 criterion is verified live on `https://qual.stay.portugalodyssey.pt`. Riff #157 + #152 closed. Resume cold from this block — start a NEW plan/thread.**
+> **UPDATE 2026-06-13 (LATEST): Plan-006 sweep started — 6.E + 6.F backend landed as 2 escalate PRs; the PWA "UI wave" remains, gated on those merging. Resume from here.**
+>
+> Fanned out 2 cs-agents (reservations lane + place-form lane). Both **delivered their backend half but skipped the PWA UI** (the known under-delivery risk; they also auto-committed past the prettier hook). I reviewed both diffs, re-formatted, fixed a real gap, and split into clean PRs:
+>
+> - **PR #240** `feat(bff,token-svc)` — **6.E.0** reservations backend: token-svc `GET /v1/reservations` (derived token_state) + reservation-scoped `DELETE …/token` revoke + BFF owner-gated `/v1/admin/reservations` (list/issue/revoke proxy) + test. CI/gates green. **Escalate** (auth + token lifecycle).
+> - **PR #241** `feat(catalog-svc,shared-types)` — **6.F.1 (data+API)** `place.season` column + CHECK + migration `0006` + shared-types enum. The agent left out the **catalog route wiring** so the column wouldn't round-trip — I added `season` to `CreatePlaceBodySchema` + POST `.values` + PATCH patch + `formatPlace` (covers list/detail/create/update). shared-types 52/52, catalog-svc 26/26. **Escalate** (migration).
+>
+> ### First task next session — merge the backend, then the UI wave
+>
+> 1. **Review + merge #240 + #241** (escalate — your call; both reviewed + gated). Serialize (branch-protection cascade).
+> 2. **UI wave** (gated on #240/#241 on main — build against the merged backend): **6.E.1** reservations screen (`admin.reservations.tsx` + `features/backoffice/reservations/**`, consumes #240) · **6.F.0** contacts/hours controls + **6.F.1** season select in `place-form.tsx` (body forwards verbatim → catalog; uses #241's season) · **6.C.2** confirm owner-uploaded hero renders guest-side (likely already true). Precise spec in `006-owner-backoffice/TODO.md` (the "UI wave" block). **Re-delegate with UI-only prompts that LEAD with the exact .tsx files** (the prior agents buried the UI under backend and skipped it), or do inline.
+> 3. **UATs** (need `make up` + Authentik): owner edits contacts/hours/season; reservations issue/revoke round-trip.
+>
+> - **State:** `main` synced; 2 feat branches pushed (#240, #241); agent worktrees killed + orphan branches deleted. Plan-006 now 11/15 (6.A–6.D done; 6.E/6.F backend in PR). dt-tests `review` empty.
+
+> **UPDATE 2026-06-13 (earlier): Plan-007 is FULLY CLOSED. The close-out UAT found a release-blocking guest-entry bug + an owner-provisioning gap + a missing guesthouse seed; all three fixed, merged (#234, #235, #238), redeployed, and re-UAT'd PASS in a real browser. Every Plan-007 criterion is verified live on `https://qual.stay.portugalodyssey.pt`. Riff #157 + #152 closed. Resume cold from this block — start a NEW plan/thread.**
 >
 > ### What shipped this session
 >
