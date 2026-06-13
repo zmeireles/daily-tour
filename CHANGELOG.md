@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed — Plan-007 close-out UAT (guest-entry + owner provisioning) (2026-06-13)
+
+The deferred close-out UATs were run headless against live TLS — owner login + hero/attribution-over-TLS PASS — and surfaced two issues the internal smoke had masked (it bypasses Traefik). Both fixed, merged, and redeployed; the guest cold-entry was re-UAT'd PASS end-to-end.
+
+- **Guest-entry broken on the same-origin apex (#234)** — Traefik path-routed `/r/*` → BFF above the SPA, so a guest's shared link `https://<apex>/r/<token>` 200'd as raw JSON `{jwt}` and the SPA never booted. Moved the BFF redeem endpoint to **`/v1/r/:token`** (rides the existing apex `/v1` router); the SPA keeps the browser route `/r/:token`; dropped the apex `/r` path-router. Public link shape unchanged; the D15 redaction regex already covers `/v1/r/`. Re-UAT'd PASS: cold nav → SPA boots → `exchangeOpaqueToken` XHR `/v1/r/` `200 {jwt}` → authed home → `/v1/discover` 200 under the guest Bearer JWT. **Closes the Plan-002 Slice 2.A guest-journey exit criterion.**
+- **Owner login 403 on a clean deploy (#235)** — the `owner-app` blueprint creates the `staff` group and Authentik bootstrap creates `akadmin`, but nothing joined them, so a fresh deploy left owner auth unprovisioned. Added an idempotent post-`up` reconcile step to `deploy-qa.yml` (qual-only, additive, fail-soft) that adds `akadmin → staff`.
+- Findings filed: **#158** (registerSW.js 404/MIME — PWA service-worker auto-registration broken on qual, non-blocking) · **#152** (empty `catalog.guesthouse` on qual blocks the owner-edit verification — now on its critical path).
+- **T-0.4.4 (CI deploy gate) closed** via Plan-007 (`deploy-qa.yml`); Plan-001 now 84/84.
+
 ### Added — Plan-007 (qual VPS deploy) Phase Q.1 + Q.3 — qual env LIVE (2026-06-12/13)
 
 The qual environment is live at `https://qual.stay.portugalodyssey.pt` (trusted Let's Encrypt cert, full 8-step guest-journey smoke green, real LLM tour plans). Plan dir: `docs/implementation-plans/007-qual-vps-deploy/` (EXECUTION Waves 2–3).
