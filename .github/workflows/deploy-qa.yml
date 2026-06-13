@@ -104,6 +104,30 @@ jobs:
           # `up` couldn't do pre-migrate).
           docker compose $COMPOSE up -d --wait --wait-timeout 300
 
+      - name: Provision owner access (akadmin → staff)
+        run: |
+          set -euo pipefail
+          # The owner backoffice authorises via the `staff` group claim. The
+          # owner-app blueprint creates the `staff` group on worker boot and
+          # Authentik bootstrap creates akadmin, but neither makes akadmin a
+          # member — so a fresh deploy would 403 owner login. Reconcile it here:
+          # idempotent (users.add), qual-only, waits for the blueprint to apply.
+          # Fail-soft: a guest-good deploy must not roll back over owner provisioning.
+          ok=
+          for _ in $(seq 1 12); do
+            if docker compose $COMPOSE exec -T authentik-server ak shell -c \
+              'import sys; from authentik.core.models import Group; sys.exit(0 if Group.objects.filter(name="staff").exists() else 1)' >/dev/null 2>&1; then
+              ok=1; break
+            fi
+            sleep 5
+          done
+          if [ -n "$ok" ]; then
+            docker compose $COMPOSE exec -T authentik-server ak shell -c \
+              'from authentik.core.models import User, Group; u = User.objects.filter(username="akadmin").first(); g = Group.objects.get(name="staff"); (g.users.add(u) if u else None); print("akadmin in staff:", bool(u) and g.users.filter(pk=u.pk).exists())'
+          else
+            echo "::warning::staff group absent after wait — owner login may 403 until akadmin is added to staff (blueprint may not have applied)"
+          fi
+
       - name: Smoke — internal guest journey
         run: |
           set -euo pipefail
