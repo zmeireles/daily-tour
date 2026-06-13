@@ -23,8 +23,10 @@
 #      27088 dev bindings) + global web→websecure redirect.
 #   2. Move public routers to entrypoints=websecure + tls.certresolver=letsencrypt.
 #   3. Same-origin routing on the apex: PWA SPA answers the bare apex host;
-#      /v1 (REST + chat WS) and /r (token exchange) path-route to the BFF with
-#      higher priority than the SPA router.
+#      /v1 (REST + chat WS + the /v1/r/:token redeem) path-routes to the BFF
+#      with higher priority than the SPA router. The browser route /r/:token
+#      stays with the SPA (no bare /r router — it would 200 the guest link as
+#      JSON).
 #   4. NODE_ENV=production on the 4 Node services; fix planner-svc OSRM_URL.
 #   5. GHCR image overrides on the 10 built services (pull, don't build on VPS).
 #   6. Top-level mem_limit/cpus on each service (deploy.resources.limits is
@@ -112,14 +114,15 @@ services:
     cpus: 0.25
 
   # ───────────────────────────────────────────────────────────────────────────
-  # BFF — apex same-origin ingress. Three routers on the apex host:
+  # BFF — apex same-origin ingress. Two routers on the apex host:
   #   • bff            (api.<apex>)              — direct API use, TLS-upgraded
-  #   • bff-apex-v1    (<apex> && PathPrefix /v1) — REST + chat WebSocket
-  #   • bff-apex-r     (<apex> && PathPrefix /r)  — reservation token exchange
-  # The two apex path routers get priority 100 so they win over the bare-Host
-  # PWA SPA router (priority 1). Traefik forwards WS upgrades automatically on a
-  # matching router and passHostHeader defaults true — no extra middleware, and
-  # nothing here strips the Upgrade header.
+  #   • bff-apex-v1    (<apex> && PathPrefix /v1) — REST + chat WS + token redeem
+  # The apex /v1 path router gets priority 100 so it wins over the bare-Host PWA
+  # SPA router (priority 1). Reservation token redeem is /v1/r/:token (under /v1)
+  # so the SPA keeps the browser route /r/:token — a bare /r path-router here
+  # would shadow the SPA and 200 the guest link as raw JSON. Traefik forwards WS
+  # upgrades automatically on a matching router and passHostHeader defaults true
+  # — no extra middleware, and nothing here strips the Upgrade header.
   # ───────────────────────────────────────────────────────────────────────────
   bff:
     image: ghcr.io/zmeireles/daily-tour/bff:${IMAGE_TAG:-qual}
@@ -132,18 +135,13 @@ services:
       # api.<apex> router — upgrade dev `web` → TLS websecure.
       - "traefik.http.routers.bff.entrypoints=websecure"
       - "traefik.http.routers.bff.tls.certresolver=letsencrypt"
-      # Apex /v1 path router → bff (REST + chat WS at /v1/chat/ws).
+      # Apex /v1 path router → bff (REST + chat WS at /v1/chat/ws + the
+      # /v1/r/:token reservation redeem). Priority 100 beats the SPA (1).
       - "traefik.http.routers.bff-apex-v1.rule=Host(`${TRAEFIK_DOMAIN_BASE}`) && PathPrefix(`/v1`)"
       - "traefik.http.routers.bff-apex-v1.entrypoints=websecure"
       - "traefik.http.routers.bff-apex-v1.tls.certresolver=letsencrypt"
       - "traefik.http.routers.bff-apex-v1.service=bff"
       - "traefik.http.routers.bff-apex-v1.priority=100"
-      # Apex /r path router → bff (reservation token exchange).
-      - "traefik.http.routers.bff-apex-r.rule=Host(`${TRAEFIK_DOMAIN_BASE}`) && PathPrefix(`/r`)"
-      - "traefik.http.routers.bff-apex-r.entrypoints=websecure"
-      - "traefik.http.routers.bff-apex-r.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.bff-apex-r.service=bff"
-      - "traefik.http.routers.bff-apex-r.priority=100"
 
   token-svc:
     image: ghcr.io/zmeireles/daily-tour/token-svc:${IMAGE_TAG:-qual}
@@ -201,7 +199,7 @@ services:
 
   # ───────────────────────────────────────────────────────────────────────────
   # pwa-static — answers the BARE APEX host (label tweak: PWA serves `/`, not
-  # the dev `app.` subdomain). Low priority so /v1 and /r path routers win.
+  # the dev `app.` subdomain). Low priority so the /v1 path router wins.
   # GHCR nginx image (Q.2.4) with apps/pwa/dist + pwa.conf baked in; reset the
   # dev RO bind-mounts (a plain merge would keep them and shadow the image).
   # ───────────────────────────────────────────────────────────────────────────

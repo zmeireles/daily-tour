@@ -5,7 +5,7 @@ import { cacheJtiActive } from "../lib/redis.js";
 import { TokenExchangeError, exchangeOpaqueToken } from "../lib/token-svc-client.js";
 
 // Mints a fresh JWT from the HttpOnly `dt_refresh` cookie set during
-// /r/:token. The cookie value IS the opaque token — re-exchanging is
+// /v1/r/:token. The cookie value IS the opaque token — re-exchanging is
 // idempotent against token-svc (tokens stay valid until reservation
 // checkout + 24h per D6), so this is safe to call on every PWA boot.
 //
@@ -22,7 +22,7 @@ const authRefreshRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
         // The cookie IS the credential. No bearer JWT exists yet on a cold
         // boot — the whole point of this endpoint is to mint one.
         auth: "public",
-        // Per-session call (once per PWA boot). Same cap as /r/:token; the
+        // Per-session call (once per PWA boot). Same cap as /v1/r/:token; the
         // unauthenticated path-rate limit on the global plugin already
         // backs us up.
         rateLimit: { max: 30, timeWindow: "1 minute" },

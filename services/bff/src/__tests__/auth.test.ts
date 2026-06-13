@@ -71,12 +71,12 @@ describe("BFF auth flow", () => {
     await stopTestRedis(ctx);
   });
 
-  it("happy path — /r/:token exchanges + returns JWT + sets dt_refresh cookie", async () => {
+  it("happy path — /v1/r/:token exchanges + returns JWT + sets dt_refresh cookie", async () => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
     exchangeMock.mockResolvedValueOnce({ jwt, exp: futureExp });
 
-    const res = await app.inject({ method: "GET", url: "/r/opaque-token-abc" });
+    const res = await app.inject({ method: "GET", url: "/v1/r/opaque-token-abc" });
 
     expect(res.statusCode).toBe(200);
     const body = res.json<{ jwt: string; exp: number }>();
@@ -124,11 +124,11 @@ describe("BFF auth flow", () => {
     expect(res.json()).toEqual({ error: "revoked" });
   });
 
-  it("unknown opaque on /r/:token — 302 redirect to /?reason=expired", async () => {
+  it("unknown opaque on /v1/r/:token — 302 redirect to /?reason=expired", async () => {
     const { TokenExchangeError } = await import("../lib/token-svc-client.js");
     exchangeMock.mockRejectedValueOnce(new TokenExchangeError(401, "invalid_token"));
 
-    const res = await app.inject({ method: "GET", url: "/r/unknown-opaque" });
+    const res = await app.inject({ method: "GET", url: "/v1/r/unknown-opaque" });
 
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe("/?reason=expired");
