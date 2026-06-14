@@ -1,6 +1,29 @@
-# Session Handoff — 2026-05-28 → … → 06-13(PLAN-007 CLOSED + Plan-006 sweep: backend PRs up) → next session
+# Session Handoff — 2026-05-28 → … → 06-14(PLAN-007 CLOSED + Plan-006 CODE-COMPLETE, UATs pending) → next session
 
-> **UPDATE 2026-06-13 (LATEST): Plan-006 sweep started — 6.E + 6.F backend landed as 2 escalate PRs; the PWA "UI wave" remains, gated on those merging. Resume from here.**
+> **UPDATE 2026-06-14 (LATEST): Plan-006 sweep CODE-COMPLETE — all 15 tasks merged across 5 PRs (#240–#244). Only the live forward-flow UATs remain before flipping 6.E/6.F fully DONE. Resume from here.**
+>
+> Two-round cs-agent fan-out. **Round 1 (backend) delivered but skipped the PWA UI** (the under-delivery risk) → I salvaged the backend into clean PRs. **Round 2 used UI-only prompts** (lead with file creation; "backend is DONE on main") → **delivered the UI cleanly**. Merged:
+>
+> - **#240** 6.E.0 — token-svc list + reservation-scoped revoke + BFF owner-gated `/v1/admin/reservations`.
+> - **#243** 6.E.1 — reservations screen (Issue→`/r/<token>` link + Revoke + nav link).
+> - **#241** 6.F.1 (data+API) — `place.season` column/migration/shared-types + catalog route round-trip (I added the route wiring the agent omitted).
+> - **#244** 6.F.0 + 6.F.1 control + 6.C.2 — contacts/hours/season controls in `place-form.tsx`; verified owner media → guest `<Hero>`.
+> - Integration fixes: prettier-formatted both rounds (agents bypassed the hook); fixed one strict-index TS error; clean rebase resolved the 2 PRs' `admin.json` i18n overlap.
+>
+> **Plan-006 = 15/15 code-complete + unit-tested (RTL).** Slices 6.A–6.D fully done; 6.E/6.F code-complete pending UAT.
+>
+> ### First task next session — Plan-006 forward-flow UATs (the only remaining gate)
+>
+> Needs `make up` + Authentik (owner login). Then flip 6.E/6.F → DONE + close the plan:
+>
+> 1. **Reservations** — owner → `/admin/reservations` → Issue a token (copyable `/r/<token>`) → Revoke; token_state round-trips.
+> 2. **Place form** — owner edits a place's contacts + weekly hours + season → save → reopen → persisted.
+> 3. **6.C.2** — owner uploads a place hero → renders guest discover/detail.
+>    Authentik bring-up + headless-OIDC UAT harness pattern: see the 6.A.3 UAT (`temp/uat-6a3.mjs`) + the 06-04 handoff block. Forward-flow dt-tests tasks can be minted for the tester.
+>
+> - **State:** `main` synced (tip #244); all sweep branches merged + deleted; agent worktrees killed; **0 open PRs**. dt-tests `review` empty.
+
+> **UPDATE 2026-06-13 (earlier): Plan-006 sweep started — 6.E + 6.F backend landed as 2 escalate PRs; the PWA "UI wave" remains, gated on those merging.**
 >
 > Fanned out 2 cs-agents (reservations lane + place-form lane). Both **delivered their backend half but skipped the PWA UI** (the known under-delivery risk; they also auto-committed past the prettier hook). I reviewed both diffs, re-formatted, fixed a real gap, and split into clean PRs:
 >

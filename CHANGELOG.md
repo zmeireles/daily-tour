@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-006 sweep: reservations + owner field-editing (6.E/6.F/6.C.2) (2026-06-13/14)
+
+Closed out the remaining Plan-006 slices via a two-round cs-agent fan-out (orchestrator-reviewed every diff). Plan-006 now **15/15 code-complete** (UATs pending). 5 PRs:
+
+- **Reservations management (6.E)** — token-svc `GET /v1/reservations` (with derived token_state) + reservation-scoped revoke (#240); BFF owner-gated `/v1/admin/reservations` list/issue/revoke proxy (#240); backoffice **reservations screen** at `/admin/reservations` — list + per-row Issue (copyable `/r/<token>` guest link) + Revoke, replacing the placeholder nav (#243).
+- **Owner field-editing gaps (6.F)** — `place.season` column + CHECK + migration `0006` + shared-types + catalog route round-trip (#241); place-edit form **contacts** (phone/email/website), **weekly-hours** editor, and **season** select (#244, #150/#151).
+- **Per-place hero (6.C.2)** — verified owner-uploaded `place.media` renders as the guest `<Hero>` (#244).
+
+Process note: round 1 agents delivered the backend but skipped the PWA UI; round 2 used UI-only prompts (lead with file creation) and delivered. Orchestrator fixed agent prettier-bypass + a strict-index TS error during integration.
+
 ### Fixed — Plan-007 close-out UAT → **Plan-007 CLOSED** (2026-06-13)
 
 The deferred close-out UATs were run headless against live TLS and surfaced three issues the internal smoke had masked (it bypasses Traefik). All fixed, merged, redeployed, and re-UAT'd PASS in a real browser — **every Plan-007 criterion is now verified live** (deploy reproducibility · guest journey · owner login · owner edit · hero/attribution over TLS). Riff #157 + #152 closed.
