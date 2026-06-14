@@ -11,25 +11,35 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 | --------- | ----------------------------------- | ------ | ------ | ---------- |
 | 6.A       | Per-guesthouse scoping (foundation) | 4      | 4      | #142a      |
 | 6.B       | Place media pipeline + hero images  | 3      | 3      | #135       |
-| 6.C       | Owner photo uploader                | 3      | 2½²    | #142c      |
+| 6.C       | Owner photo uploader                | 3      | 3      | #142c      |
 | 6.D       | Hosts-pick governance               | 1      | 1      | #142b      |
-| 6.E       | Reservations management             | 2      | ½³     | #142d      |
-| 6.F       | Owner field-editing gaps            | 2      | ½⁴     | #150, #151 |
-| **Total** |                                     | **15** | **11** |            |
+| 6.E       | Reservations management             | 2      | 2      | #142d      |
+| 6.F       | Owner field-editing gaps            | 2      | 2      | #150, #151 |
+| **Total** |                                     | **15** | **15** |            |
 
-¹ 6.B: all 3 tasks merged (#207/#208/#209) + verified live (06-11).
-² 6.C.2: the place form already uploads media + the guest detail renders it as hero (`_authed.p.$id.tsx`) — needs a final UAT confirm (UI wave).
-³ 6.E.0 backend in **PR #240** (token-svc list + revoke + BFF proxy, reviewed+gated, escalate). 6.E.1 reservations **screen** = UI wave.
-⁴ 6.F.1 `place.season` schema+API in **PR #241** (escalate). 6.F.0 contacts/hours controls + the 6.F.1 season **control** = UI wave.
+**🎉 Plan-006 CODE-COMPLETE (15/15), all merged 2026-06-13/14.** Remaining gate = forward-flow UATs on the UI-touching slices (6.E.1, 6.F) before flipping the plan fully DONE.
 
-### ⏭ Remaining = the PWA "UI wave" (gated on #240 + #241 merging)
+### Sweep landed 2026-06-13/14 — 5 PRs (#240–#244)
 
-The two cs-agents that built 6.E.0 + 6.F.1 **delivered the backend halves but skipped the PWA UI** (auto-committed past the prettier hook, too — orchestrator re-formatted + split into the clean PRs above). Once #240 + #241 merge to main, the UI wave builds on them:
+Fanned out to cs-agents in two rounds. Round 1 (backend) **delivered but skipped the PWA UI** (the under-delivery risk) → orchestrator salvaged + split into backend PRs. Round 2 used **UI-only prompts** (lead with file creation; "backend is DONE on main") → **delivered the UI cleanly**.
 
-- **6.E.1** — `apps/pwa/src/routes/admin.reservations.tsx` + `features/backoffice/reservations/**` + `use-reservations.ts`; list rows (guest/dates/party/status/token_state) + per-row Issue-link (POST → `${origin}/r/<token>`) + Revoke (DELETE); replace the placeholder nav; en/pt-PT `reservations.*`; RTL. Consumes BFF `/v1/admin/reservations` (#240).
-- **6.F.0 + 6.F.1 control** — extend `features/backoffice/places/place-form.tsx`: Contacts fieldset (phone/email/website; defer `social[]`), weekly-Hours editor (dow 0–6 open/close), Season select (All year / Summer / Winter → `null`/`summer`/`winter`). Body already forwards verbatim → catalog (incl. `season` after #241); ensure `use-places.ts` `PlaceRow` carries contacts/hours/season for edit pre-fill. RTL.
-- **6.C.2** — confirm the owner-uploaded hero renders in guest discover + detail (likely already true); UAT.
-- **UATs** (need `make up` + Authentik): owner edits contacts/hours/season + a reservations issue/revoke round-trip.
+| Slice | PR(s)       | What                                                                                                                               |
+| ----- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 6.E.0 | #240        | token-svc list + reservation-scoped revoke + BFF owner-gated `/v1/admin/reservations` proxy                                        |
+| 6.E.1 | #243        | reservations screen (`admin.reservations` + `features/backoffice/reservations/**`); Issue (→ `/r/<token>` link) + Revoke; nav link |
+| 6.F.1 | #241 + #244 | `place.season` column + CHECK + migration + shared-types + route round-trip (#241) + the All-year/Summer/Winter select (#244)      |
+| 6.F.0 | #244        | contacts (phone/email/website) + weekly-hours editor in `place-form.tsx`                                                           |
+| 6.C.2 | #244        | verified: owner-uploaded `place.media` renders as the guest `<Hero>`                                                               |
+
+Orchestrator fixes during integration: prettier-formatted both rounds' files (agents auto-committed past the hook); one strict-index TS error in the hours editor; a clean rebase resolved the 2 PRs' `admin.json` i18n overlap.
+
+### ⏳ Only remaining = forward-flow UATs (need `make up` + Authentik)
+
+Code-complete + unit-tested (RTL); the live verification before flipping 6.E/6.F fully DONE:
+
+- **Reservations** — owner logs in → `/admin/reservations` → Issue a token (copyable `/r/<token>`) → Revoke; confirm token_state round-trips.
+- **Place form** — owner edits a place's contacts + weekly hours + season → saves → reopens → values persisted (round-trip through catalog).
+- **6.C.2** — owner uploads a place hero → renders in guest discover/detail.
 
 ---
 
