@@ -2,6 +2,7 @@
   "shell": {
     "nav": {
       "guesthouses": "Alojamentos",
+      "reservations": "Reservas",
       "places": "Locais",
       "profile": "Perfil",
       "beta": "Métricas beta"
@@ -125,6 +126,30 @@
       "confirm": "Arquivar este local?",
       "yes": "Arquivar",
       "no": "Cancelar"
+    }
+  },
+  "reservations": {
+    "title": "Reservas",
+    "issue": "Emitir ligação",
+    "revoke": "Revogar",
+    "copy_link": "Copiar",
+    "guest_link": "Ligação do hóspede",
+    "list": {
+      "loading": "A carregar…",
+      "error": "Erro ao carregar reservas.",
+      "empty": "Nenhuma reserva encontrada.",
+      "guest": "Hóspede",
+      "checkin": "Check-in",
+      "checkout": "Check-out",
+      "party_size": "Pessoas",
+      "status": "Estado",
+      "token_state": "Token",
+      "actions": "Ações"
+    },
+    "token_state": {
+      "none": "Nenhum",
+      "active": "Ativo",
+      "revoked": "Revogado"
     }
   }
 }

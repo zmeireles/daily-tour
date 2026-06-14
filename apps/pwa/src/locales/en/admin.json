@@ -2,6 +2,7 @@
   "shell": {
     "nav": {
       "guesthouses": "Guesthouses",
+      "reservations": "Reservations",
       "places": "Places",
       "profile": "Profile",
       "beta": "Beta metrics"
@@ -125,6 +126,30 @@
       "confirm": "Archive this place?",
       "yes": "Archive",
       "no": "Cancel"
+    }
+  },
+  "reservations": {
+    "title": "Reservations",
+    "issue": "Issue link",
+    "revoke": "Revoke",
+    "copy_link": "Copy",
+    "guest_link": "Guest link",
+    "list": {
+      "loading": "Loading…",
+      "error": "Failed to load reservations.",
+      "empty": "No reservations yet.",
+      "guest": "Guest",
+      "checkin": "Check-in",
+      "checkout": "Check-out",
+      "party_size": "Party",
+      "status": "Status",
+      "token_state": "Token",
+      "actions": "Actions"
+    },
+    "token_state": {
+      "none": "None",
+      "active": "Active",
+      "revoked": "Revoked"
     }
   }
 }
