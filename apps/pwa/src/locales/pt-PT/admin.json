@@ -119,6 +119,33 @@
       "media": {
         "title": "Media",
         "upload_hint": "Arraste imagens ou clique para selecionar"
+      },
+      "contacts": {
+        "title": "Contactos",
+        "phone": "Telefone",
+        "email": "Email",
+        "website": "Website"
+      },
+      "hours": {
+        "title": "Horário",
+        "hint": "Deixe um dia em branco se estiver fechado. Preencha ambas as horas para guardar.",
+        "open_for": "Hora de abertura de {{day}}",
+        "close_for": "Hora de fecho de {{day}}",
+        "days": {
+          "mon": "Seg",
+          "tue": "Ter",
+          "wed": "Qua",
+          "thu": "Qui",
+          "fri": "Sex",
+          "sat": "Sáb",
+          "sun": "Dom"
+        }
+      },
+      "season": {
+        "title": "Época",
+        "all_year": "Todo o ano",
+        "summer": "Apenas verão",
+        "winter": "Apenas inverno"
       }
     },
     "archive": {

@@ -11,6 +11,24 @@ export interface PlaceMediaItem {
   sort_order: number;
 }
 
+export interface PlaceSocialLink {
+  kind: string;
+  handle: string;
+}
+
+export interface PlaceContacts {
+  phone?: string;
+  email?: string;
+  website?: string;
+  social?: PlaceSocialLink[];
+}
+
+export interface PlaceHoursEntry {
+  dow: number;
+  open: string;
+  close: string;
+}
+
 export interface PlaceRow {
   id: string;
   name: Record<string, string>;
@@ -26,6 +44,11 @@ export interface PlaceRow {
   updated_at: string;
   // Present on the single-place GET (edit-load); absent on the list endpoint.
   media?: PlaceMediaItem[];
+  // Owner-editable place metadata, returned by the single-place GET so the
+  // edit form can pre-fill. null/absent season = year-round.
+  contacts?: PlaceContacts;
+  hours?: PlaceHoursEntry[];
+  season?: "summer" | "winter" | null;
 }
 
 interface PlacesResponse {

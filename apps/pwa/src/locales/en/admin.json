@@ -119,6 +119,33 @@
       "media": {
         "title": "Media",
         "upload_hint": "Drag & drop images or click to select"
+      },
+      "contacts": {
+        "title": "Contacts",
+        "phone": "Phone",
+        "email": "Email",
+        "website": "Website"
+      },
+      "hours": {
+        "title": "Opening hours",
+        "hint": "Leave a day blank if closed. Fill both times to save it.",
+        "open_for": "{{day}} opening time",
+        "close_for": "{{day}} closing time",
+        "days": {
+          "mon": "Mon",
+          "tue": "Tue",
+          "wed": "Wed",
+          "thu": "Thu",
+          "fri": "Fri",
+          "sat": "Sat",
+          "sun": "Sun"
+        }
+      },
+      "season": {
+        "title": "Season",
+        "all_year": "All year",
+        "summer": "Summer only",
+        "winter": "Winter only"
       }
     },
     "archive": {
