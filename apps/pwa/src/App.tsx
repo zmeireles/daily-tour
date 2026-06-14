@@ -53,6 +53,10 @@ const router = createBrowserRouter([
       { path: "beta", element: lazyRoute(() => import("@/routes/admin.beta")) },
       { path: "guesthouses", element: lazyRoute(() => import("@/routes/admin.guesthouses")) },
       {
+        path: "reservations",
+        element: lazyRoute(() => import("@/routes/admin.reservations")),
+      },
+      {
         path: "guesthouses/new",
         element: lazyRoute(() => import("@/routes/admin.guesthouses.new")),
       },
