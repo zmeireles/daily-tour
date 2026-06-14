@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
+import { useCreatePlace, useUpdatePlace, type PlaceRow, type PlaceHoursEntry } from "./use-places";
 import { MediaUploader, type UploadedAsset } from "./media-uploader";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +18,14 @@ const FormSchema = z.object({
   geom_lng: z.coerce.number().min(-180).max(180),
   status: z.enum(["draft", "owner_approved", "published", "archived"]),
   is_hosts_pick: z.boolean().default(false),
+  contact_phone: z.string().default(""),
+  contact_email: z.string().default(""),
+  contact_website: z.string().default(""),
+  // One row per DAY_ROWS entry (display order), kept as free-text HH:MM. Only
+  // rows with both open+close set are emitted to the schema's hours[] on submit.
+  hours: z.array(z.object({ open: z.string().default(""), close: z.string().default("") })),
+  // "" maps to null (year-round) on submit; "summer"/"winter" pass through.
+  season: z.enum(["", "summer", "winter"]).default(""),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -29,6 +37,28 @@ interface Props {
 
 const TABS = ["en", "pt-PT"] as const;
 type Tab = (typeof TABS)[number];
+
+// Weekly hours editor: one row per day in Mon→Sun display order, each mapped to
+// the schema's dow integer (JS convention: 0=Sunday … 6=Saturday). The row
+// index is the array index in FormValues.hours; dow is what gets persisted.
+const DAY_ROWS = [
+  { dow: 1, key: "mon" },
+  { dow: 2, key: "tue" },
+  { dow: 3, key: "wed" },
+  { dow: 4, key: "thu" },
+  { dow: 5, key: "fri" },
+  { dow: 6, key: "sat" },
+  { dow: 0, key: "sun" },
+] as const;
+
+// Project persisted hours[] onto the 7 display rows, matching on dow so order
+// of the source array doesn't matter. Missing days become empty rows.
+function hoursToRows(hours?: PlaceHoursEntry[]): FormValues["hours"] {
+  return DAY_ROWS.map((day) => {
+    const match = (hours ?? []).find((h) => h.dow === day.dow);
+    return { open: match?.open ?? "", close: match?.close ?? "" };
+  });
+}
 
 // Map a place's persisted media into the uploader's asset shape so the editor
 // shows + preserves existing media (assetId carries it back into the save body).
@@ -69,11 +99,44 @@ export function PlaceForm({ initialData, id }: Props) {
           geom_lng: initialData.geom_lng,
           status: initialData.status as FormValues["status"],
           is_hosts_pick: initialData.is_hosts_pick,
+          contact_phone: initialData.contacts?.phone ?? "",
+          contact_email: initialData.contacts?.email ?? "",
+          contact_website: initialData.contacts?.website ?? "",
+          hours: hoursToRows(initialData.hours),
+          season: initialData.season ?? "",
         }
-      : { status: "draft", is_hosts_pick: false, geom_lat: 37.75, geom_lng: -25.67 },
+      : {
+          status: "draft",
+          is_hosts_pick: false,
+          geom_lat: 37.75,
+          geom_lng: -25.67,
+          contact_phone: "",
+          contact_email: "",
+          contact_website: "",
+          hours: hoursToRows(),
+          season: "",
+        },
   });
 
   const onSubmit = handleSubmit(async (values) => {
+    // Contacts: omit empty optional fields (the schema's phone/email/website
+    // reject "" — they validate as phone/email/url). Preserve any pre-existing
+    // social[] verbatim since this form doesn't edit it yet.
+    const contacts: PlaceRow["contacts"] = {
+      social: initialData?.contacts?.social ?? [],
+    };
+    if (values.contact_phone.trim()) contacts.phone = values.contact_phone.trim();
+    if (values.contact_email.trim()) contacts.email = values.contact_email.trim();
+    if (values.contact_website.trim()) contacts.website = values.contact_website.trim();
+
+    // Hours: emit only days where both open and close are filled, mapping the
+    // display-row index back to its dow integer.
+    const hours = DAY_ROWS.map((day, i) => ({
+      dow: day.dow,
+      open: (values.hours[i]?.open ?? "").trim(),
+      close: (values.hours[i]?.close ?? "").trim(),
+    })).filter((h) => h.open !== "" && h.close !== "");
+
     const body = {
       name: { en: values.name_en, "pt-PT": values.name_pt },
       description: { en: values.description_en, "pt-PT": values.description_pt },
@@ -82,6 +145,9 @@ export function PlaceForm({ initialData, id }: Props) {
       geom_lng: values.geom_lng,
       status: values.status,
       is_hosts_pick: values.is_hosts_pick,
+      contacts,
+      hours,
+      season: values.season === "" ? null : values.season,
       guesthouse_scope: { all: true },
       source_kind: "manual",
       media: mediaAssets.map((a) => a.assetId),
@@ -239,6 +305,94 @@ export function PlaceForm({ initialData, id }: Props) {
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" {...register("is_hosts_pick")} className="rounded" />
             <span>{t("places.form.is_hosts_pick", "Host's Pick")}</span>
+          </label>
+        </fieldset>
+
+        {/* Contacts */}
+        <fieldset className="flex flex-col gap-3">
+          <legend className="text-sm font-medium">
+            {t("places.form.contacts.title", "Contacts")}
+          </legend>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("places.form.contacts.phone", "Phone")}</span>
+            <input
+              type="tel"
+              {...register("contact_phone")}
+              placeholder="+351912345678"
+              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("places.form.contacts.email", "Email")}</span>
+            <input
+              type="email"
+              {...register("contact_email")}
+              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              {t("places.form.contacts.website", "Website")}
+            </span>
+            <input
+              type="url"
+              {...register("contact_website")}
+              placeholder="https://"
+              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </label>
+        </fieldset>
+
+        {/* Opening hours */}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium">{t("places.form.hours.title", "Hours")}</legend>
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "places.form.hours.hint",
+              "Leave a day blank if closed. Fill both times to save it.",
+            )}
+          </p>
+          <div className="flex flex-col gap-2">
+            {DAY_ROWS.map((day, i) => (
+              <div key={day.key} className="grid grid-cols-[5rem_1fr_1fr] items-center gap-2">
+                <span className="text-sm font-medium">
+                  {t(`places.form.hours.days.${day.key}`, day.key)}
+                </span>
+                <input
+                  type="time"
+                  aria-label={t(`places.form.hours.open_for`, {
+                    day: t(`places.form.hours.days.${day.key}`, day.key),
+                    defaultValue: "Opening time",
+                  })}
+                  {...register(`hours.${i}.open` as const)}
+                  className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  type="time"
+                  aria-label={t(`places.form.hours.close_for`, {
+                    day: t(`places.form.hours.days.${day.key}`, day.key),
+                    defaultValue: "Closing time",
+                  })}
+                  {...register(`hours.${i}.close` as const)}
+                  className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* Season */}
+        <fieldset className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("places.form.season.title", "Season")}</span>
+            <select
+              {...register("season")}
+              className="rounded-md border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">{t("places.form.season.all_year", "All year")}</option>
+              <option value="summer">{t("places.form.season.summer", "Summer only")}</option>
+              <option value="winter">{t("places.form.season.winter", "Winter only")}</option>
+            </select>
           </label>
         </fieldset>
 

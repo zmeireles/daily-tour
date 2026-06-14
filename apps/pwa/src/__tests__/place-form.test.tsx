@@ -257,4 +257,112 @@ describe("PlaceForm", () => {
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("Boom: save rejected");
   });
+
+  describe("contacts, hours, and season controls", () => {
+    function fillRequired() {
+      fireEvent.change(screen.getByLabelText(/name \(en\)/i), { target: { value: "Cafe" } });
+      fireEvent.change(screen.getByLabelText(/description \(en\)/i), { target: { value: "Nice" } });
+      fireEvent.change(screen.getByLabelText(/^address$/i), { target: { value: "Rua X" } });
+    }
+
+    it("renders the new fieldsets in create mode", () => {
+      render(<PlaceForm />);
+
+      expect(screen.getByLabelText("Phone")).toHaveValue("");
+      expect(screen.getByLabelText("Email")).toHaveValue("");
+      expect(screen.getByLabelText("Website")).toHaveValue("");
+      // 7 day rows × open+close = 14 time inputs.
+      expect(screen.getByLabelText("Mon opening time")).toBeInTheDocument();
+      expect(screen.getByLabelText("Sun closing time")).toBeInTheDocument();
+      // Season defaults to "All year" (empty value → null on submit).
+      expect(screen.getByLabelText("Season")).toHaveValue("");
+    });
+
+    it("submits empty contacts, empty hours, and null season by default", async () => {
+      render(<PlaceForm />);
+      fillRequired();
+
+      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+      await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
+      expect(createMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ contacts: { social: [] }, hours: [], season: null }),
+      );
+    });
+
+    it("carries filled contacts, hours, and season into the create body", async () => {
+      render(<PlaceForm />);
+      fillRequired();
+
+      fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+351912345678" } });
+      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "hi@cafe.pt" } });
+      fireEvent.change(screen.getByLabelText("Website"), { target: { value: "https://cafe.pt" } });
+
+      // Monday gets full hours; Sunday only opens → dropped (needs both).
+      fireEvent.change(screen.getByLabelText("Mon opening time"), { target: { value: "09:00" } });
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "17:00" } });
+      fireEvent.change(screen.getByLabelText("Sun opening time"), { target: { value: "10:00" } });
+
+      fireEvent.change(screen.getByLabelText("Season"), { target: { value: "summer" } });
+
+      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+      await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
+      expect(createMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contacts: {
+            social: [],
+            phone: "+351912345678",
+            email: "hi@cafe.pt",
+            website: "https://cafe.pt",
+          },
+          hours: [{ dow: 1, open: "09:00", close: "17:00" }],
+          season: "summer",
+        }),
+      );
+    });
+
+    it("pre-fills from initialData and preserves social[] unchanged on save", async () => {
+      const place = makePlace({
+        id: "p1",
+        name: { en: "Has Meta", "pt-PT": "" },
+        description: { en: "desc", "pt-PT": "" },
+        address: "Addr",
+        contacts: {
+          phone: "+351911111111",
+          email: "old@x.pt",
+          website: "https://x.pt",
+          social: [{ kind: "instagram", handle: "@x" }],
+        },
+        hours: [{ dow: 6, open: "08:00", close: "12:00" }],
+        season: "winter",
+      });
+
+      render(<PlaceForm id="p1" initialData={place} />);
+
+      expect(screen.getByLabelText("Phone")).toHaveValue("+351911111111");
+      expect(screen.getByLabelText("Email")).toHaveValue("old@x.pt");
+      expect(screen.getByLabelText("Website")).toHaveValue("https://x.pt");
+      // dow 6 = Saturday in the display map.
+      expect(screen.getByLabelText("Sat opening time")).toHaveValue("08:00");
+      expect(screen.getByLabelText("Sat closing time")).toHaveValue("12:00");
+      expect(screen.getByLabelText("Season")).toHaveValue("winter");
+
+      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+      await waitFor(() => expect(updateMutate).toHaveBeenCalledTimes(1));
+      expect(updateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contacts: {
+            social: [{ kind: "instagram", handle: "@x" }],
+            phone: "+351911111111",
+            email: "old@x.pt",
+            website: "https://x.pt",
+          },
+          hours: [{ dow: 6, open: "08:00", close: "12:00" }],
+          season: "winter",
+        }),
+      );
+    });
+  });
 });
