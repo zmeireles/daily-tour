@@ -1,8 +1,8 @@
 # Plan-006 — Owner Backoffice v2 — TODO
 
-Status: **In Progress** — Slice 6.A DONE (6.A.0–6.A.3, code + forward-flow UAT, 2026-06-04;
-Authentik up + owner-auth integration completed, commit `e84b091`). Decisions locked
-(Riff #142, 2026-06-02).
+Status: **✅ DONE (2026-06-15)** — all 6 slices shipped + forward-flow UAT PASS (3/3). Decisions
+locked (Riff #142, 2026-06-02); sweep close 6.E/6.F/6.C.2 merged (#240–#244) + UAT'd on the local
+dev stack (reservations issue/revoke, place-form contacts/hours/season round-trip, guest hero).
 Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 
 ## Progress
@@ -17,7 +17,7 @@ Task IDs `T-6.<slice>.<task>`. Riff cross-refs in brackets.
 | 6.F       | Owner field-editing gaps            | 2      | 2      | #150, #151 |
 | **Total** |                                     | **15** | **15** |            |
 
-**🎉 Plan-006 CODE-COMPLETE (15/15), all merged 2026-06-13/14.** Remaining gate = forward-flow UATs on the UI-touching slices (6.E.1, 6.F) before flipping the plan fully DONE.
+**🎉 Plan-006 COMPLETE (15/15) — merged + UAT'd (2026-06-13/15).** Forward-flow UAT PASS 3/3 on the local dev stack: reservations issue/revoke round-trip, place-form contacts/hours/season save→reopen (DB-confirmed), guest-side hero render. Evidence: `temp/uat-plan006/` (6 PNGs) + `temp/uat-plan006.mjs`.
 
 ### Sweep landed 2026-06-13/14 — 5 PRs (#240–#244)
 
@@ -33,13 +33,14 @@ Fanned out to cs-agents in two rounds. Round 1 (backend) **delivered but skipped
 
 Orchestrator fixes during integration: prettier-formatted both rounds' files (agents auto-committed past the hook); one strict-index TS error in the hours editor; a clean rebase resolved the 2 PRs' `admin.json` i18n overlap.
 
-### ⏳ Only remaining = forward-flow UATs (need `make up` + Authentik)
+### ✅ Forward-flow UATs — PASS 3/3 (2026-06-15, local dev stack, headless real browser)
 
-Code-complete + unit-tested (RTL); the live verification before flipping 6.E/6.F fully DONE:
+Real akadmin OIDC login; harness `temp/uat-plan006.mjs`, screenshots `temp/uat-plan006/`:
 
-- **Reservations** — owner logs in → `/admin/reservations` → Issue a token (copyable `/r/<token>`) → Revoke; confirm token_state round-trips.
-- **Place form** — owner edits a place's contacts + weekly hours + season → saves → reopens → values persisted (round-trip through catalog).
-- **6.C.2** — owner uploads a place hero → renders in guest discover/detail.
+- **Reservations (6.E.1)** — ✅ `/admin/reservations` lists the 2 seeded reservations; Issue → copyable `/r/<token>` link + `token_state none→active`; Revoke → `active→revoked`. (`POST/DELETE …/token` 200.)
+- **Place form (6.F.0/6.F.1)** — ✅ contacts/hours/season controls render; save→reopen persisted, DB-confirmed: `season=summer`, `contacts={phone,email,website,social:[]}`, `hours=[{dow:1,09:00-17:00}]` (`PATCH …/places/…021` 200).
+- **6.C.2** — ✅ guest enters via `/r/<token>` → place-detail hero renders (`naturalWidth=640`, Commons hero).
+- Benign findings only: oidc-client probe 401/silent-renew 400 (dev, no `prompt=none`); React StrictMode flushSync warnings on the guest `/r/`→`/` nav (low-pri console cleanup).
 
 ---
 

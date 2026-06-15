@@ -1,6 +1,6 @@
-# Session Handoff — 2026-05-28 → … → 06-14(PLAN-007 CLOSED + Plan-006 CODE-COMPLETE, UATs pending) → next session
+# Session Handoff — 2026-05-28 → … → 06-15(PLAN-007 CLOSED + Plan-006 DONE — UAT PASS) → next session
 
-> **UPDATE 2026-06-14 (LATEST): Plan-006 sweep CODE-COMPLETE — all 15 tasks merged across 5 PRs (#240–#244). Only the live forward-flow UATs remain before flipping 6.E/6.F fully DONE. Resume from here.**
+> **UPDATE 2026-06-15 (LATEST): Plan-006 is DONE — all 15 tasks merged (5 PRs #240–#244) AND forward-flow UAT PASS 3/3 on the local dev stack. The whole owner-backoffice plan (6.A–6.F) is shipped + verified. Resume from here — pick a NEW thread.**
 >
 > Two-round cs-agent fan-out. **Round 1 (backend) delivered but skipped the PWA UI** (the under-delivery risk) → I salvaged the backend into clean PRs. **Round 2 used UI-only prompts** (lead with file creation; "backend is DONE on main") → **delivered the UI cleanly**. Merged:
 >
@@ -10,18 +10,21 @@
 > - **#244** 6.F.0 + 6.F.1 control + 6.C.2 — contacts/hours/season controls in `place-form.tsx`; verified owner media → guest `<Hero>`.
 > - Integration fixes: prettier-formatted both rounds (agents bypassed the hook); fixed one strict-index TS error; clean rebase resolved the 2 PRs' `admin.json` i18n overlap.
 >
-> **Plan-006 = 15/15 code-complete + unit-tested (RTL).** Slices 6.A–6.D fully done; 6.E/6.F code-complete pending UAT.
+> **Plan-006 = 15/15 DONE.** All slices shipped + the 6.E/6.F UI forward-flow UAT'd PASS (reservations issue/revoke; place-form contacts/hours/season save→reopen, DB-confirmed; guest hero render). Evidence: `temp/uat-plan006/` + `temp/uat-plan006.mjs`.
 >
-> ### First task next session — Plan-006 forward-flow UATs (the only remaining gate)
+> ### First task next session — pick a NEW thread (Plan-006 + Plan-007 both done)
 >
-> Needs `make up` + Authentik (owner login). Then flip 6.E/6.F → DONE + close the plan:
+> The major plans are closed. Candidates:
 >
-> 1. **Reservations** — owner → `/admin/reservations` → Issue a token (copyable `/r/<token>`) → Revoke; token_state round-trips.
-> 2. **Place form** — owner edits a place's contacts + weekly hours + season → save → reopen → persisted.
-> 3. **6.C.2** — owner uploads a place hero → renders guest discover/detail.
->    Authentik bring-up + headless-OIDC UAT harness pattern: see the 6.A.3 UAT (`temp/uat-6a3.mjs`) + the 06-04 handoff block. Forward-flow dt-tests tasks can be minted for the tester.
+> 1. **Plan-002 Thrust B — real design pass** (Stitch mockups, brand mark, real photography for the 28 places, translation review). The big un-started product lane.
+> 2. **Non-blocking polish:** #158 (registerSW.js 404/MIME — PWA SW auto-registration on qual) · re-enable **osrm** (deferred → haversine) · a low-pri React StrictMode `flushSync` warning on the guest `/r/`→`/` nav (UAT-noted).
+> 3. **Deploy the Plan-006 features to qual** — they're on main + dev-UAT'd; a `deploy-qa.yml` redeploy + a qual smoke would put reservations/field-editing live on `qual.stay.portugalodyssey.pt`.
 >
-> - **State:** `main` synced (tip #244); all sweep branches merged + deleted; agent worktrees killed; **0 open PRs**. dt-tests `review` empty.
+> ### Dev-stack note (THIS session brought it up for the UAT)
+>
+> The local dev stack is UP (12 dt\_ + 3 authentik containers + Vite on :5173) — **brought up on standard ports after the human took cc-dev down**. At session end I tear it back down (`make down` + authentik overlay down + kill Vite) so cc-dev can return. UAT test-data residue: reservation `ccc…002` has one active token; place `…021` holds UAT contacts/hours/season — both reset by a volume wipe; harmless otherwise.
+>
+> - **State:** `main` synced (tip #245→ this docs PR); all sweep branches merged + deleted; agent worktrees killed; **0 open code PRs**. dt-tests `review` empty.
 
 > **UPDATE 2026-06-13 (earlier): Plan-006 sweep started — 6.E + 6.F backend landed as 2 escalate PRs; the PWA "UI wave" remains, gated on those merging.**
 >
