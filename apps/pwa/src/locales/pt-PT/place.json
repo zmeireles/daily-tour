@@ -8,5 +8,5 @@
     "call": "Ligar",
     "message": "Mensagem"
   },
-  "wa_prefill": "Olá! Estou em {{placeName}}, podes recomendar o próximo lugar?"
+  "wa_prefill": "Olá! Estou em {{placeName}}, pode recomendar o próximo lugar?"
 }

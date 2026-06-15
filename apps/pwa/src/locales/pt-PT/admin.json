@@ -8,7 +8,7 @@
       "beta": "Métricas beta"
     },
     "loading": "A carregar admin…",
-    "redirecting": "A redirecionar para o login…",
+    "redirecting": "A redireccionar para o login…",
     "locale": {
       "label": "Idioma",
       "en": "English",
@@ -50,7 +50,7 @@
       "name": "Nome",
       "slug": "Slug",
       "address": "Morada",
-      "actions": "Ações",
+      "actions": "Acções",
       "edit": "Editar"
     },
     "form": {
@@ -61,7 +61,7 @@
       "address": "Morada",
       "latitude": "Latitude",
       "longitude": "Longitude",
-      "map_placeholder": "Seletor de mapa adiado para a Fase 2 — use campos numéricos por agora.",
+      "map_placeholder": "Selector de mapa adiado para a Fase 2 — use campos numéricos por agora.",
       "hero": "Foto principal",
       "hero_alt": "Imagem do alojamento",
       "save": "Guardar",
@@ -83,7 +83,7 @@
       "name": "Nome",
       "status": "Estado",
       "address": "Morada",
-      "actions": "Ações",
+      "actions": "Acções",
       "edit": "Editar",
       "hosts_pick": "Escolha do Anfitrião",
       "pick_badge": "Escolha",
@@ -91,8 +91,8 @@
       "unmark_pick": "Remover escolha",
       "hosts_pick_aria": "Alternar escolha do anfitrião para {{name}}",
       "pick_requires_published": "Apenas locais publicados podem ser marcados como escolha do anfitrião.",
-      "pick_update_error": "Não foi possível atualizar a escolha do anfitrião.",
-      "pick_cap_warning": "Já tem {{count}} escolhas do anfitrião — os hóspedes veem melhores resultados com cerca de {{cap}}. Guardado mesmo assim.",
+      "pick_update_error": "Não foi possível actualizar a escolha do anfitrião.",
+      "pick_cap_warning": "Já tem {{count}} escolhas do anfitrião — os hóspedes vêem melhores resultados com cerca de {{cap}}. Guardado mesmo assim.",
       "sort_by": "Ordenar por {{column}}",
       "pagination": {
         "previous": "Anterior",
@@ -118,7 +118,7 @@
       },
       "media": {
         "title": "Media",
-        "upload_hint": "Arraste imagens ou clique para selecionar"
+        "upload_hint": "Arraste imagens ou clique para seleccionar"
       },
       "contacts": {
         "title": "Contactos",
@@ -171,11 +171,11 @@
       "party_size": "Pessoas",
       "status": "Estado",
       "token_state": "Token",
-      "actions": "Ações"
+      "actions": "Acções"
     },
     "token_state": {
       "none": "Nenhum",
-      "active": "Ativo",
+      "active": "Activo",
       "revoked": "Revogado"
     }
   }
