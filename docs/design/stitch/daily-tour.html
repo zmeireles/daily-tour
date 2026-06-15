@@ -1,0 +1,439 @@
+<!doctype html>
+
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Daily Tour São Miguel - Itinerary</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Newsreader:opsz,wght@6..72,400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#303635",
+              secondary: "#c9c6bf",
+              "on-tertiary": "#122a71",
+              "inverse-on-surface": "#2b3230",
+              "surface-dim": "#0f1514",
+              primary: "#a0d2b1",
+              "on-tertiary-fixed-variant": "#2d4288",
+              "on-secondary-container": "#b7b5ae",
+              "secondary-fixed-dim": "#c9c6bf",
+              "on-primary": "#053821",
+              "tertiary-fixed-dim": "#b6c4ff",
+              "on-secondary-fixed-variant": "#474741",
+              "primary-fixed-dim": "#a0d2b1",
+              "on-tertiary-container": "#bac7ff",
+              "on-background": "#dee4e2",
+              "inverse-surface": "#dee4e2",
+              "surface-container-highest": "#303635",
+              "on-error": "#690005",
+              "inverse-primary": "#3a684d",
+              "secondary-container": "#474741",
+              "surface-container": "#1b2120",
+              tertiary: "#b6c4ff",
+              background: "#0f1514",
+              "error-container": "#93000a",
+              "surface-container-low": "#171d1c",
+              "on-secondary-fixed": "#1c1c17",
+              outline: "#8b938b",
+              "on-primary-fixed-variant": "#214f36",
+              "primary-container": "#2f5d43",
+              error: "#ffb4ab",
+              "tertiary-fixed": "#dce1ff",
+              surface: "#0f1514",
+              "surface-tint": "#a0d2b1",
+              "surface-container-lowest": "#090f0e",
+              "surface-container-high": "#252b2a",
+              "outline-variant": "#414943",
+              "on-secondary": "#31312b",
+              "primary-fixed": "#bbeecc",
+              "on-primary-fixed": "#002111",
+              "tertiary-container": "#3b5097",
+              "on-surface-variant": "#c1c9c0",
+              "on-surface": "#dee4e2",
+              "on-error-container": "#ffdad6",
+              "surface-bright": "#343a39",
+              "secondary-fixed": "#e5e2da",
+              "on-tertiary-fixed": "#001550",
+              "on-primary-container": "#a2d4b3",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            spacing: {
+              "grid-gap": "1rem",
+              "margin-mobile": "1rem",
+              gutter: "1.5rem",
+              "margin-desktop": "2.5rem",
+              unit: "4px",
+              "pb-safe": "env(safe-area-inset-bottom, 20px)",
+            },
+            fontFamily: {
+              "headline-lg-mobile": ["Newsreader"],
+              "headline-lg": ["Newsreader"],
+              "body-md": ["Inter"],
+              "body-lg": ["Inter"],
+              "label-md": ["Inter"],
+              "label-sm": ["Inter"],
+              "headline-md": ["Newsreader"],
+              "display-lg": ["Newsreader"],
+            },
+            fontSize: {
+              "headline-lg-mobile": ["28px", { lineHeight: "1.2", fontWeight: "500" }],
+              "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "500" }],
+              "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+              "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
+              "label-md": [
+                "14px",
+                { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" },
+              ],
+              "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "500" }],
+              "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "500" }],
+              "display-lg": [
+                "48px",
+                { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "600" },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      /* Custom scrollbar for webkit */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f1514;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #414943;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #8b938b;
+      }
+    </style>
+  </head>
+  <body class="bg-[#090f0e] text-on-background antialiased min-h-screen flex flex-col pb-[100px]">
+    <!-- TopAppBar (From JSON) -->
+    <header
+      class="bg-background dark:bg-background text-primary dark:text-primary docked full-width top-0 bg-background dark:bg-background flat no shadows text-primary dark:text-primary hover:opacity-80 scale-down duration-200 flex justify-between items-center px-margin-mobile py-4 w-full sticky z-40"
+    >
+      <button class="text-primary dark:text-primary hover:opacity-80 transition-opacity">
+        <span class="material-symbols-outlined" data-icon="menu">menu</span>
+      </button>
+      <h1
+        class="font-headline-md text-headline-md-mobile text-primary dark:text-primary tracking-tight"
+      >
+        Daily Tour São Miguel
+      </h1>
+      <button
+        class="text-label-md font-label-md text-primary dark:text-primary hover:opacity-80 transition-opacity uppercase tracking-wider"
+      >
+        EN/PT
+      </button>
+    </header>
+    <!-- Main Content Canvas -->
+    <main
+      class="flex-grow px-margin-mobile md:px-margin-desktop md:max-w-4xl md:mx-auto w-full pt-6 pb-24 relative"
+    >
+      <!-- Header Section -->
+      <section class="mb-10 animate-[fadeIn_0.5s_ease-out]">
+        <p class="text-[#E6B566] uppercase tracking-widest text-xs font-semibold mb-3">
+          YOUR DAILY TOUR
+        </p>
+        <h2
+          class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2"
+        >
+          A day around Furnas
+        </h2>
+        <p class="font-body-md text-body-md text-on-surface-variant">Five stops · about 6 hours</p>
+      </section>
+      <!-- Itinerary Timeline -->
+      <div class="relative pl-8 md:pl-12">
+        <!-- Vertical Basalt Line -->
+        <div class="absolute left-3 md:left-4 top-2 bottom-4 w-[1px] bg-outline-variant"></div>
+        <!-- Stop 1 -->
+        <article class="relative mb-12 group">
+          <!-- Node Dot -->
+          <div
+            class="absolute -left-8 md:-left-12 top-2 w-3 h-3 rounded-full bg-[#2F5D43] ring-4 ring-[#090f0e] z-10 transition-transform group-hover:scale-110"
+          ></div>
+          <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div
+              class="w-full md:w-1/3 aspect-square rounded-lg overflow-hidden relative shadow-lg"
+            >
+              <img
+                alt="Terra Nostra Park"
+                class="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7EE6mBsM_LU86Q3iJo_dzOY4xEDEW0P1u5k5o8pygNMW_TtO9ao6hPaiLUDyLIqi8B9FJaNvQd4WDk7dXWtt1lLCholC5qBKaoQbHMSIbBssQYNnZD1_X897Md2PEQ4WXStWsZUVj2GoiHWZihfcaJKNcz8_GQJBkD6i95iV1BbJhx0YGxHOWwFZUbzRBTQxgi0Tt8aZCpOX_-xa79XHtErniwrtT2wB5xKuh2CbfFF_3JwShBrTV9t2K8uTJE5IZTPsLnPDX93M_"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            </div>
+            <div class="w-full md:w-2/3 pt-1">
+              <div class="flex items-baseline gap-3 mb-2">
+                <h3 class="font-headline-md text-headline-md text-[#F7F4EC]">Terra Nostra Park</h3>
+                <span class="font-label-sm text-label-sm text-primary">09:30</span>
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                Explore the world-renowned botanical gardens and geothermal pool.
+              </p>
+            </div>
+          </div>
+          <!-- Connector to Stop 2 -->
+          <div class="absolute -bottom-7 -left-12 md:-left-16 flex items-center gap-3">
+            <div class="w-6 h-[1px] bg-outline-variant hidden md:block"></div>
+            <div
+              class="flex items-center gap-1.5 bg-[#1b2120] border border-outline-variant rounded-full px-3 py-1 ml-9 md:ml-0 shadow-sm z-10"
+            >
+              <span
+                class="material-symbols-outlined text-[14px] text-[#E6B566]"
+                data-icon="directions_walk"
+                >directions_walk</span
+              >
+              <span class="font-label-sm text-label-sm text-[#E6B566]">10 min walk</span>
+            </div>
+          </div>
+        </article>
+        <!-- Stop 2 -->
+        <article class="relative mb-12 group">
+          <div
+            class="absolute -left-8 md:-left-12 top-2 w-3 h-3 rounded-full bg-[#2F5D43] ring-4 ring-[#090f0e] z-10 transition-transform group-hover:scale-110"
+          ></div>
+          <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div
+              class="w-full md:w-1/3 aspect-square rounded-lg overflow-hidden relative shadow-lg"
+            >
+              <img
+                alt="Furnas Caldeiras"
+                class="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHksmz4PgHRiIUUg6o6IbA_Dqi43fIY_9C0OZZRNo9LQwvf2zu_IuPOiI3nFAEUD6wlvrE8LN_F_cA3FLoBJoCkJf_0dA9IqiFhhc1SKdG3shsGUM6LwmO0DBzsEOa8rguTiqKTQZR5L8UM1PDEkCgo46BJZH0ctsexRMVb4E6sA3bRnp6wL4aO8uP-5ZYknY1LfwC0tDDVPMXDcp8ca90ewuFzXidpJN5cozrx_s8E_84sKJQ4UnYkF5z9X2g8sAQANieHkHnItIv"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            </div>
+            <div class="w-full md:w-2/3 pt-1">
+              <div class="flex items-baseline gap-3 mb-2">
+                <h3 class="font-headline-md text-headline-md text-[#F7F4EC]">Furnas Caldeiras</h3>
+                <span class="font-label-sm text-label-sm text-primary">11:00</span>
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                Witness the power of active volcanic steam and boiling mud.
+              </p>
+            </div>
+          </div>
+          <!-- Connector to Stop 3 -->
+          <div class="absolute -bottom-7 -left-12 md:-left-16 flex items-center gap-3">
+            <div class="w-6 h-[1px] bg-outline-variant hidden md:block"></div>
+            <div
+              class="flex items-center gap-1.5 bg-[#1b2120] border border-outline-variant rounded-full px-3 py-1 ml-9 md:ml-0 shadow-sm z-10"
+            >
+              <span
+                class="material-symbols-outlined text-[14px] text-[#E6B566]"
+                data-icon="directions_car"
+                >directions_car</span
+              >
+              <span class="font-label-sm text-label-sm text-[#E6B566]">5 min drive</span>
+            </div>
+          </div>
+        </article>
+        <!-- Stop 3 -->
+        <article class="relative mb-12 group">
+          <div
+            class="absolute -left-8 md:-left-12 top-2 w-3 h-3 rounded-full bg-[#2F5D43] ring-4 ring-[#090f0e] z-10 transition-transform group-hover:scale-110"
+          ></div>
+          <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div
+              class="w-full md:w-1/3 aspect-square rounded-lg overflow-hidden relative shadow-lg"
+            >
+              <img
+                alt="Lagoa das Furnas"
+                class="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjPPXQDstovfJ9Ox8CGBcluYWGD_KYLfwfn21aerxGx00_U7uusvtdfU23nTcjbgLXVn0-art93tQQo7jTVIXGJSthMgbXNiRJepnx6W_EcYiHswXENzlAV-o0N6go4aBt3Avovl7QUrMPgSIkHSbOKHi8Xtv3SMd4m5B4uh9GN-tdtUOft55r8YGbAEj5kQxfpraR-xBB2yseX8xMbwlzifDEExRpHP2hfICxmXlC07TcWCGxHEKiHV-y64ZWDgoX8SBi6E3um7Du"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            </div>
+            <div class="w-full md:w-2/3 pt-1">
+              <div class="flex items-baseline gap-3 mb-2">
+                <h3 class="font-headline-md text-headline-md text-[#F7F4EC]">Lagoa das Furnas</h3>
+                <span class="font-label-sm text-label-sm text-primary">12:30</span>
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                A serene crater lake famous for the traditional Cozido das Furnas.
+              </p>
+            </div>
+          </div>
+          <!-- Connector to Stop 4 -->
+          <div class="absolute -bottom-7 -left-12 md:-left-16 flex items-center gap-3">
+            <div class="w-6 h-[1px] bg-outline-variant hidden md:block"></div>
+            <div
+              class="flex items-center gap-1.5 bg-[#1b2120] border border-outline-variant rounded-full px-3 py-1 ml-9 md:ml-0 shadow-sm z-10"
+            >
+              <span
+                class="material-symbols-outlined text-[14px] text-[#E6B566]"
+                data-icon="directions_car"
+                >directions_car</span
+              >
+              <span class="font-label-sm text-label-sm text-[#E6B566]">15 min drive</span>
+            </div>
+          </div>
+        </article>
+        <!-- Stop 4 -->
+        <article class="relative mb-12 group">
+          <div
+            class="absolute -left-8 md:-left-12 top-2 w-3 h-3 rounded-full bg-[#2F5D43] ring-4 ring-[#090f0e] z-10 transition-transform group-hover:scale-110"
+          ></div>
+          <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div
+              class="w-full md:w-1/3 aspect-square rounded-lg overflow-hidden relative shadow-lg"
+            >
+              <img
+                alt="Gorreana Tea Estate"
+                class="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEwkb9zMJke-r34U3g822Q2ZCz9TOqpGC-itMXhbATXhENOmwLAZltGcfLwjM0f875ZhTamg1SF6S2nkH57gya9E_QAP4cLjgOsN_epkFooVqNeUnSQ_vZbeOIsZEk0YmGcZdH3rmhSmYLj9gOAPFjJQfzw_2TWQ49BKQAdBq8XIaNo3z3ZCEUiHCBgFq7w5luLUpZnulyDFwU3EOXAVrhDPejmPvn764Tl3IxcAsCejwfbCxt5Xj-_eZah17IlkjdbjtR_0CoibVH"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            </div>
+            <div class="w-full md:w-2/3 pt-1">
+              <div class="flex items-baseline gap-3 mb-2">
+                <h3 class="font-headline-md text-headline-md text-[#F7F4EC]">
+                  Gorreana Tea Estate
+                </h3>
+                <span class="font-label-sm text-label-sm text-primary">14:30</span>
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                Visit Europe's oldest tea plantation overlooking the northern coast.
+              </p>
+            </div>
+          </div>
+          <!-- Connector to Stop 5 -->
+          <div class="absolute -bottom-7 -left-12 md:-left-16 flex items-center gap-3">
+            <div class="w-6 h-[1px] bg-outline-variant hidden md:block"></div>
+            <div
+              class="flex items-center gap-1.5 bg-[#1b2120] border border-outline-variant rounded-full px-3 py-1 ml-9 md:ml-0 shadow-sm z-10"
+            >
+              <span
+                class="material-symbols-outlined text-[14px] text-[#E6B566]"
+                data-icon="directions_car"
+                >directions_car</span
+              >
+              <span class="font-label-sm text-label-sm text-[#E6B566]">12 min drive</span>
+            </div>
+          </div>
+        </article>
+        <!-- Stop 5 -->
+        <article class="relative mb-16 group">
+          <div
+            class="absolute -left-8 md:-left-12 top-2 w-3 h-3 rounded-full bg-[#2F5D43] ring-4 ring-[#090f0e] z-10 transition-transform group-hover:scale-110"
+          ></div>
+          <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div
+              class="w-full md:w-1/3 aspect-square rounded-lg overflow-hidden relative shadow-lg"
+            >
+              <img
+                alt="Miradouro do Pico do Ferro"
+                class="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeHRty__ZQqzM87SvfjTEbZ9rQZe_44rzSrxG95H641rQaAj-Ndn9DRcoU3dH-FysWwhdrReL1SfO0JR5NORNOjOSXULJ0YcH-HVZTtwzOkGUieNbDFYpk2nzM2tjKPR46XNu7PI-TPVC8kbRS55JCpCtQyvZWnkUi2yTRB5I4ZOLZVx0ZrnxREXHW_yaqWPMSa4tELN4aoSCPLQcsBhcsrP6qf2JeEyTUz6rafyQF-Ga5ndSnPss6Z4Rnj6EazDtjYjLFk6mhl2Qz"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            </div>
+            <div class="w-full md:w-2/3 pt-1">
+              <div class="flex items-baseline gap-3 mb-2">
+                <h3 class="font-headline-md text-headline-md text-[#F7F4EC]">
+                  Miradouro do Pico do Ferro
+                </h3>
+                <span class="font-label-sm text-label-sm text-primary">16:00</span>
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                Take in the panoramic view of the entire Furnas caldera.
+              </p>
+            </div>
+          </div>
+        </article>
+      </div>
+      <!-- Call to Action -->
+      <div class="flex justify-center mt-8 mb-8 relative z-10">
+        <button
+          class="bg-[#2F5D43] text-on-primary-container font-label-md text-label-md px-8 py-3 rounded-md hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-2"
+        >
+          <span class="material-symbols-outlined text-[18px]" data-icon="share">share</span>
+          Share this tour
+        </button>
+      </div>
+    </main>
+    <!-- BottomNavBar (From JSON) -->
+    <!-- Destination Intent: Yes, this represents a top-level entity view, nav remains to allow pivot to other core areas, though specific rules apply. Active state mapping: "Explore" is most logical as it's a tour. -->
+    <nav
+      class="md:hidden bg-surface-container dark:bg-surface-container text-primary dark:text-primary font-label-sm text-label-sm font-headline-md text-headline-md text-primary docked full-width bottom-0 rounded-t-xl bg-surface-container-high border-t border-outline-variant shadow-lg hover:text-primary scale-95 duration-150 fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe border-none shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
+    >
+      <button
+        class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 group transition-all"
+      >
+        <span
+          class="material-symbols-outlined mb-1 transition-transform group-hover:scale-110"
+          data-icon="explore"
+          data-weight="fill"
+          style="font-variation-settings: &quot;FILL&quot; 1"
+          >explore</span
+        >
+        <span>Explore</span>
+      </button>
+      <button
+        class="flex flex-col items-center justify-center text-on-surface-variant group transition-all hover:text-primary"
+      >
+        <span
+          class="material-symbols-outlined mb-1 transition-transform group-hover:scale-110"
+          data-icon="bookmark"
+          >bookmark</span
+        >
+        <span>Saved</span>
+      </button>
+      <button
+        class="flex flex-col items-center justify-center text-on-surface-variant group transition-all hover:text-primary"
+      >
+        <span
+          class="material-symbols-outlined mb-1 transition-transform group-hover:scale-110"
+          data-icon="home_pin"
+          >home_pin</span
+        >
+        <span>Host</span>
+      </button>
+      <button
+        class="flex flex-col items-center justify-center text-on-surface-variant group transition-all hover:text-primary"
+      >
+        <span
+          class="material-symbols-outlined mb-1 transition-transform group-hover:scale-110"
+          data-icon="person"
+          >person</span
+        >
+        <span>Profile</span>
+      </button>
+    </nav>
+  </body>
+</html>

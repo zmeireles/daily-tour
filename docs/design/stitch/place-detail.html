@@ -1,0 +1,359 @@
+<!doctype html>
+
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Lagoa do Fogo - Place Detail</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Newsreader:opsz,wght@6..72,400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#303635",
+              "secondary-container": "#474741",
+              primary: "#a0d2b1",
+              "primary-fixed": "#bbeecc",
+              tertiary: "#b6c4ff",
+              "outline-variant": "#414943",
+              "on-primary-container": "#a2d4b3",
+              "inverse-primary": "#3a684d",
+              "on-secondary-fixed-variant": "#474741",
+              "secondary-fixed": "#e5e2da",
+              "surface-bright": "#343a39",
+              "secondary-fixed-dim": "#c9c6bf",
+              "tertiary-fixed-dim": "#b6c4ff",
+              "surface-dim": "#0f1514",
+              secondary: "#c9c6bf",
+              "surface-tint": "#a0d2b1",
+              error: "#ffb4ab",
+              "on-tertiary": "#122a71",
+              "on-surface-variant": "#c1c9c0",
+              "inverse-surface": "#dee4e2",
+              outline: "#8b938b",
+              "on-tertiary-fixed": "#001550",
+              "on-primary": "#053821",
+              "on-error": "#690005",
+              "on-tertiary-container": "#bac7ff",
+              "surface-container-lowest": "#090f0e",
+              "on-secondary-container": "#b7b5ae",
+              "on-secondary": "#31312b",
+              "surface-container-high": "#252b2a",
+              "surface-container-highest": "#303635",
+              "primary-fixed-dim": "#a0d2b1",
+              "on-background": "#dee4e2",
+              "tertiary-fixed": "#dce1ff",
+              background: "#0f1514",
+              surface: "#0f1514",
+              "on-primary-fixed-variant": "#214f36",
+              "inverse-on-surface": "#2b3230",
+              "tertiary-container": "#3b5097",
+              "error-container": "#93000a",
+              "on-surface": "#dee4e2",
+              "on-secondary-fixed": "#1c1c17",
+              "on-primary-fixed": "#002111",
+              "surface-container": "#1b2120",
+              "on-error-container": "#ffdad6",
+              "primary-container": "#2f5d43",
+              "on-tertiary-fixed-variant": "#2d4288",
+              "surface-container-low": "#171d1c",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            spacing: {
+              "margin-mobile": "1rem",
+              "grid-gap": "1rem",
+              unit: "4px",
+              "margin-desktop": "2.5rem",
+              gutter: "1.5rem",
+            },
+            fontFamily: {
+              "headline-md": ["Newsreader"],
+              "headline-lg-mobile": ["Newsreader"],
+              "body-lg": ["Inter"],
+              "headline-lg": ["Newsreader"],
+              "display-lg": ["Newsreader"],
+              "body-md": ["Inter"],
+              "label-sm": ["Inter"],
+              "label-md": ["Inter"],
+            },
+            fontSize: {
+              "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "500" }],
+              "headline-lg-mobile": ["28px", { lineHeight: "1.2", fontWeight: "500" }],
+              "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
+              "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "500" }],
+              "display-lg": [
+                "48px",
+                { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "600" },
+              ],
+              "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+              "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "500" }],
+              "label-md": [
+                "14px",
+                { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Custom utilities for specific hex colors requested that aren't in config exactly */
+      .text-tea-green {
+        color: #2f5d43;
+      }
+      .bg-tea-green {
+        background-color: #2f5d43;
+      }
+      .bg-hydrangea-blue {
+        background-color: #5b6fb8;
+      }
+      .text-sun-amber {
+        color: #e6b566;
+      }
+
+      /* Hide scrollbar for clean horizontal scrolling */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-[#0E1413] text-on-surface min-h-screen pb-24 antialiased selection:bg-primary selection:text-on-primary"
+  >
+    <!-- Top App Bar (Destination specific suppression applies, but maintaining navigation cluster for web) -->
+    <header
+      class="fixed top-0 w-full z-50 bg-gradient-to-b from-[#090f0e]/80 to-transparent flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 hidden md:flex transition-all duration-300"
+    >
+      <button
+        class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-highest/50 backdrop-blur-md text-on-surface hover:bg-surface-variant transition-colors group"
+      >
+        <span class="material-symbols-outlined text-xl group-hover:scale-110 transition-transform"
+          >arrow_back</span
+        >
+      </button>
+      <span class="font-headline-md text-headline-md text-primary tracking-tight"
+        >Lagoa do Fogo</span
+      >
+      <button
+        class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-highest/50 backdrop-blur-md text-on-surface hover:bg-surface-variant transition-colors group"
+      >
+        <span class="material-symbols-outlined text-xl group-hover:scale-110 transition-transform"
+          >bookmark</span
+        >
+      </button>
+    </header>
+    <main class="max-w-7xl mx-auto md:px-margin-desktop md:pt-24 lg:grid lg:grid-cols-12 lg:gap-8">
+      <!-- Left Column: Hero Image (Full bleed on mobile, constrained on desktop) -->
+      <div
+        class="lg:col-span-7 xl:col-span-8 relative h-[45vh] lg:h-[70vh] lg:rounded-2xl overflow-hidden shadow-2xl"
+      >
+        <!-- Mobile specific top actions overlaying image -->
+        <div
+          class="absolute top-0 left-0 w-full p-margin-mobile flex justify-between items-center z-20 md:hidden bg-gradient-to-b from-[#090f0e]/60 to-transparent pt-6"
+        >
+          <button
+            class="w-10 h-10 rounded-full bg-surface-container-highest/40 backdrop-blur-md flex items-center justify-center text-on-surface active:scale-90 transition-transform"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <button
+            class="w-10 h-10 rounded-full bg-surface-container-highest/40 backdrop-blur-md flex items-center justify-center text-on-surface active:scale-90 transition-transform"
+          >
+            <span class="material-symbols-outlined">bookmark</span>
+          </button>
+        </div>
+        <img
+          alt="Placeholder for Lagoa do Fogo"
+          class="w-full h-full object-cover"
+          src="https://lh3.googleusercontent.com/aida/AP1WRLvcqYyNo4ElWJ-B5ojeq-Aca7BDH0pcF4TQSr5m4JaAg7YRTbG8qOVbXk5WZw6GQ1o_OU2pdcrwvXp4C3mUeFp8KaluVcAnYzIEZCh4lCjhs4qflVqwXjQ4WblXEVqvNUCNt1c0gZ6lbe05w-KNm9GgS26sUt_lT-orxL2z4XtuFlb-CZIbQze0XPhoBgLwH2p57TpGNShwp52TZm_ajki99kA0elWh2PsRoZNLHvp9T4bH79NRm-OAd5UU"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-[#0E1413] via-[#0E1413]/20 to-transparent"
+        ></div>
+        <div class="absolute bottom-4 left-margin-mobile md:left-6 z-10">
+          <span
+            class="font-label-sm text-label-sm text-on-surface-variant/80 bg-surface-container-lowest/50 backdrop-blur-sm px-2 py-1 rounded-md"
+          >
+            © Samuel Fonseca · CC BY-SA 3.0
+          </span>
+        </div>
+      </div>
+      <!-- Right Column: Content Canvas -->
+      <div
+        class="px-margin-mobile py-8 lg:col-span-5 xl:col-span-4 lg:py-0 lg:flex lg:flex-col lg:justify-center"
+      >
+        <!-- Header Group -->
+        <div class="mb-6 space-y-3">
+          <span class="font-label-md text-label-md text-tea-green uppercase tracking-widest block"
+            >NATURAL LANDMARK · 14 KM</span
+          >
+          <h1
+            class="font-headline-lg-mobile text-headline-lg-mobile md:font-display-lg md:text-display-lg text-on-surface"
+          >
+            Lagoa do Fogo
+          </h1>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <span
+              class="font-label-sm text-label-sm bg-hydrangea-blue/20 text-[#a3b8ff] px-3 py-1.5 rounded-full border border-hydrangea-blue/30 backdrop-blur-sm"
+              >Hiking</span
+            >
+            <span
+              class="font-label-sm text-label-sm bg-hydrangea-blue/20 text-[#a3b8ff] px-3 py-1.5 rounded-full border border-hydrangea-blue/30 backdrop-blur-sm"
+              >Viewpoint</span
+            >
+          </div>
+        </div>
+        <!-- Body Description -->
+        <div class="mb-8">
+          <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed max-w-[65ch]">
+            Situated in the center of the island of São Miguel, this crater lake is set within the
+            Água de Pau Massif stratovolcano. It is the highest lake on the island, characterized by
+            its pristine, untouched shores and dramatic, steep green walls. The area surrounding the
+            lake is a protected nature reserve, ensuring the preservation of its unique endemic
+            flora and fauna.
+          </p>
+        </div>
+        <!-- Divider -->
+        <hr class="border-[#1b2120] mb-8" />
+        <!-- Action Tiles (Bento inspired) -->
+        <div class="grid grid-cols-3 gap-3 mb-10">
+          <button
+            class="bg-surface-container hover:bg-surface-variant transition-colors rounded-xl p-4 flex flex-col items-center justify-center gap-2 group border border-outline-variant/30"
+          >
+            <span
+              class="material-symbols-outlined text-tea-green group-hover:scale-110 transition-transform"
+              >directions</span
+            >
+            <span class="font-label-sm text-label-sm text-on-surface">Directions</span>
+          </button>
+          <button
+            class="bg-surface-container hover:bg-surface-variant transition-colors rounded-xl p-4 flex flex-col items-center justify-center gap-2 group border border-outline-variant/30"
+          >
+            <span
+              class="material-symbols-outlined text-tea-green group-hover:scale-110 transition-transform"
+              >call</span
+            >
+            <span class="font-label-sm text-label-sm text-on-surface">Call</span>
+          </button>
+          <button
+            class="bg-surface-container hover:bg-surface-variant transition-colors rounded-xl p-4 flex flex-col items-center justify-center gap-2 group border border-outline-variant/30"
+          >
+            <span
+              class="material-symbols-outlined text-tea-green group-hover:scale-110 transition-transform"
+              >language</span
+            >
+            <span class="font-label-sm text-label-sm text-on-surface">Website</span>
+          </button>
+        </div>
+        <!-- Details Section -->
+        <div class="bg-surface-container-low rounded-2xl p-6 border border-outline-variant/20 mb-8">
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-4">Details</h3>
+          <ul class="space-y-0">
+            <li class="flex items-start gap-4 py-4 border-b border-[#1b2120]">
+              <span class="material-symbols-outlined text-on-surface-variant mt-0.5">schedule</span>
+              <div class="flex-1">
+                <span class="font-body-md text-body-md text-on-surface block mb-1"
+                  >Opening hours</span
+                >
+                <span class="font-body-md text-body-md text-on-surface-variant">Open 24 hours</span>
+              </div>
+            </li>
+            <li class="flex items-center gap-4 py-4 border-b border-[#1b2120] last:border-0 pb-0">
+              <span class="material-symbols-outlined text-on-surface-variant">wb_sunny</span>
+              <div class="flex-1 flex items-center justify-between">
+                <span class="font-body-md text-body-md text-on-surface">Best season</span>
+                <div class="flex items-center gap-2 bg-surface-container px-3 py-1 rounded-full">
+                  <div class="w-2 h-2 rounded-full bg-[#E6B566]"></div>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant">Summer</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <!-- Bottom spacing for nav bar -->
+        <div class="h-8 md:hidden"></div>
+      </div>
+    </main>
+    <!-- BottomNavBar (Semantic Shell: Only rendered on Mobile for destination context) -->
+    <nav
+      class="fixed bottom-0 w-full z-50 border-t border-outline-variant/20 bg-surface-container-low dark:bg-surface-container-low flex justify-around items-center h-16 px-margin-mobile md:hidden"
+    >
+      <!-- Explore (Active) -->
+      <a
+        class="flex flex-col items-center justify-center text-primary dark:text-on-primary-container bg-primary-container/20 rounded-xl px-4 py-1 Active: scale-95 transition-transform duration-200"
+        href="#"
+      >
+        <span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1"
+          >explore</span
+        >
+        <span class="font-label-sm text-label-sm mt-1">Explore</span>
+      </a>
+      <!-- Saved -->
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">bookmark</span>
+        <span class="font-label-sm text-label-sm mt-1">Saved</span>
+      </a>
+      <!-- Host -->
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">home_work</span>
+        <span class="font-label-sm text-label-sm mt-1">Host</span>
+      </a>
+      <!-- Profile -->
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">person</span>
+        <span class="font-label-sm text-label-sm mt-1">Profile</span>
+      </a>
+    </nav>
+    <script>
+      // Optional lightweight JS for scroll effects on header
+      document.addEventListener("DOMContentLoaded", () => {
+        const header = document.querySelector("header");
+        if (header) {
+          window.addEventListener("scroll", () => {
+            if (window.scrollY > 50) {
+              header.classList.add("bg-surface", "border-b", "border-outline-variant/20");
+              header.classList.remove("bg-gradient-to-b", "from-[#090f0e]/80", "to-transparent");
+            } else {
+              header.classList.remove("bg-surface", "border-b", "border-outline-variant/20");
+              header.classList.add("bg-gradient-to-b", "from-[#090f0e]/80", "to-transparent");
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,367 @@
+<!doctype html>
+
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
+    <title>Daily Tour São Miguel</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400..800;1,400..800&amp;family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .glass-pill {
+        background: rgba(15, 21, 20, 0.6);
+        backdrop-filter: blur(8px);
+      }
+    </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#dee4e2",
+              outline: "#8b938b",
+              "on-tertiary-container": "#bac7ff",
+              "on-secondary-fixed": "#1c1c17",
+              "on-tertiary": "#122a71",
+              "surface-container-highest": "#303635",
+              "on-tertiary-fixed-variant": "#2d4288",
+              "secondary-fixed-dim": "#c9c6bf",
+              "surface-container": "#1b2120",
+              "outline-variant": "#414943",
+              "on-error-container": "#ffdad6",
+              "tertiary-container": "#3b5097",
+              "on-secondary-container": "#b7b5ae",
+              "on-primary-fixed": "#002111",
+              error: "#ffb4ab",
+              secondary: "#c9c6bf",
+              background: "#0f1514",
+              "primary-fixed-dim": "#a0d2b1",
+              "inverse-surface": "#dee4e2",
+              "surface-container-low": "#171d1c",
+              "primary-container": "#2f5d43",
+              "on-surface-variant": "#c1c9c0",
+              "secondary-fixed": "#e5e2da",
+              "on-primary": "#053821",
+              "inverse-on-surface": "#2b3230",
+              "surface-tint": "#a0d2b1",
+              "on-background": "#dee4e2",
+              "on-error": "#690005",
+              "surface-container-high": "#252b2a",
+              "surface-container-lowest": "#090f0e",
+              "surface-variant": "#303635",
+              "on-tertiary-fixed": "#001550",
+              primary: "#a0d2b1",
+              "surface-bright": "#343a39",
+              "inverse-primary": "#3a684d",
+              "tertiary-fixed-dim": "#b6c4ff",
+              surface: "#0f1514",
+              tertiary: "#b6c4ff",
+              "on-secondary-fixed-variant": "#474741",
+              "surface-dim": "#0f1514",
+              "secondary-container": "#474741",
+              "tertiary-fixed": "#dce1ff",
+              "primary-fixed": "#bbeecc",
+              "on-secondary": "#31312b",
+              "error-container": "#93000a",
+              "on-primary-container": "#a2d4b3",
+              "on-primary-fixed-variant": "#214f36",
+              "cream-50": "#F7F4EC",
+              "tea-leaf": "#2F5D43",
+              hydrangea: "#5B6FB8",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            spacing: {
+              "margin-mobile": "1rem",
+              gutter: "1.5rem",
+              "grid-gap": "1rem",
+              "margin-desktop": "2.5rem",
+              unit: "4px",
+            },
+            fontFamily: {
+              "headline-lg": ["Newsreader", "serif"],
+              "headline-lg-mobile": ["Newsreader", "serif"],
+              "body-lg": ["Inter", "sans-serif"],
+              "body-md": ["Inter", "sans-serif"],
+              "label-md": ["Inter", "sans-serif"],
+              "label-sm": ["Inter", "sans-serif"],
+              "headline-md": ["Newsreader", "serif"],
+              "display-lg": ["Newsreader", "serif"],
+            },
+            fontSize: {
+              "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "500" }],
+              "headline-lg-mobile": ["28px", { lineHeight: "1.2", fontWeight: "500" }],
+              "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
+              "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+              "label-md": [
+                "14px",
+                { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" },
+              ],
+              "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "500" }],
+              "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "500" }],
+              "display-lg": [
+                "48px",
+                { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "600" },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body class="bg-background text-on-background font-body-md antialiased min-h-screen pb-24">
+    <!-- Top AppBar (JSON Mapping) -->
+    <header
+      class="flex justify-between items-center px-margin-mobile py-4 w-full sticky top-0 bg-background/95 backdrop-blur z-50"
+    >
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary" data-icon="menu">menu</span>
+        <h1 class="font-headline-md text-headline-md-mobile text-primary font-bold">
+          Daily Tour São Miguel
+        </h1>
+      </div>
+      <button
+        class="text-on-surface-variant hover:opacity-80 transition-opacity font-label-md px-3 py-1 rounded-full border border-outline-variant"
+      >
+        EN/PT
+      </button>
+    </header>
+    <main class="px-margin-mobile mt-6 space-y-8">
+      <!-- Welcome Section -->
+      <section>
+        <h2 class="font-headline-lg-mobile text-headline-lg-mobile italic mb-1">Welcome back,</h2>
+        <div class="h-0.5 w-12 bg-hydrangea mb-6"></div>
+      </section>
+      <!-- Bento Grid Navigation (3x2) -->
+      <nav class="grid grid-cols-2 gap-grid-gap">
+        <!-- Eat -->
+        <div
+          class="bg-cream-50 p-5 rounded-xl flex flex-col justify-between h-32 active:scale-95 duration-150 group"
+        >
+          <span class="material-symbols-outlined text-tea-leaf text-3xl" data-icon="restaurant"
+            >restaurant</span
+          >
+          <span class="text-tea-leaf font-label-md uppercase tracking-wider">Eat</span>
+        </div>
+        <!-- Drink -->
+        <div
+          class="bg-cream-50 p-5 rounded-xl flex flex-col justify-between h-32 active:scale-95 duration-150 group"
+        >
+          <span class="material-symbols-outlined text-tea-leaf text-3xl" data-icon="wine_bar"
+            >wine_bar</span
+          >
+          <span class="text-tea-leaf font-label-md uppercase tracking-wider">Drink</span>
+        </div>
+        <!-- See -->
+        <div
+          class="bg-cream-50 p-5 rounded-xl flex flex-col justify-between h-32 active:scale-95 duration-150 group"
+        >
+          <span class="material-symbols-outlined text-tea-leaf text-3xl" data-icon="visibility"
+            >visibility</span
+          >
+          <span class="text-tea-leaf font-label-md uppercase tracking-wider">See</span>
+        </div>
+        <!-- Do -->
+        <div
+          class="bg-cream-50 p-5 rounded-xl flex flex-col justify-between h-32 active:scale-95 duration-150 group"
+        >
+          <span class="material-symbols-outlined text-tea-leaf text-3xl" data-icon="footprint"
+            >footprint</span
+          >
+          <span class="text-tea-leaf font-label-md uppercase tracking-wider">Do</span>
+        </div>
+        <!-- Buy -->
+        <div
+          class="bg-cream-50 p-5 rounded-xl flex flex-col justify-between h-32 active:scale-95 duration-150 group"
+        >
+          <span class="material-symbols-outlined text-tea-leaf text-3xl" data-icon="shopping_bag"
+            >shopping_bag</span
+          >
+          <span class="text-tea-leaf font-label-md uppercase tracking-wider">Buy</span>
+        </div>
+        <!-- Move -->
+        <div
+          class="bg-cream-50 p-5 rounded-xl flex flex-col justify-between h-32 active:scale-95 duration-150 group"
+        >
+          <span class="material-symbols-outlined text-tea-leaf text-3xl" data-icon="directions_car"
+            >directions_car</span
+          >
+          <span class="text-tea-leaf font-label-md uppercase tracking-wider">Move</span>
+        </div>
+      </nav>
+      <!-- Host's Picks Section -->
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-headline-md text-headline-md-mobile italic">Host's picks</h3>
+          <span class="text-primary font-label-sm">View all</span>
+        </div>
+        <div
+          class="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-margin-mobile px-margin-mobile"
+        >
+          <!-- Card 1 -->
+          <div class="flex-none w-[280px] snap-start relative group">
+            <div class="aspect-[16/9] rounded-xl overflow-hidden bg-surface-container-high">
+              <img
+                alt="Sete Cidades"
+                class="w-full h-full object-cover group-hover:scale-105 duration-500"
+                data-alt="An expansive aerial view of the twin lakes at Sete Cidades in São Miguel, Azores, featuring one emerald green lake and one deep blue lake. The surrounding volcanic crater walls are lush with dense, vibrant green vegetation. The lighting is soft and cinematic, capturing the misty, mystical atmosphere of the archipelago with high contrast between the water and the dark basalt rock."
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaYGijUcvHCOfzVGOIKfPm1tQu_CEvnrbQTxUZQHqJWAf7jW9ka3YEX_AZrYzu-r_O9HK1axaTUNiW1XSYMtWGd5ErNBkxoANyaTxDVhD-8XFmmYjcOKZnkZo5ljKihLr6Upy7gm-GTjt58OppqAVhwHtw4auv5-uGAdm1o-pBdQwwFax-mYjKn2W_Ms9rvmY0fJ9iTQhot925WZ-rCAEfLI4zdwr9EQjPx2gXkzYi8xEYfMWml8RovjLk5-2vxik64ckkXwzPcGWC"
+              />
+              <div
+                class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+              ></div>
+              <div
+                class="absolute top-3 left-3 glass-pill px-2 py-1 rounded-full flex items-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-hydrangea"></span>
+                <span class="text-[10px] text-white font-medium">5.2 km</span>
+              </div>
+              <div class="absolute bottom-3 left-3 right-3">
+                <p class="font-headline-md text-white">Vista do Rei Panorama</p>
+              </div>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div class="flex-none w-[280px] snap-start relative group">
+            <div class="aspect-[16/9] rounded-xl overflow-hidden bg-surface-container-high">
+              <img
+                alt="Furnas Spa"
+                class="w-full h-full object-cover group-hover:scale-105 duration-500"
+                data-alt="A tranquil thermal bath pool at Furnas, São Miguel, Azores, surrounded by ancient, towering ferns and moss-covered stone walls. Steam gently rises from the iron-rich orange water into the cool mountain air. The scene is illuminated by dappled sunlight filtering through the dense botanical canopy, creating an editorial, high-end travel aesthetic focused on natural luxury and basalt textures."
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQRFlO1MkB9qeVwNGzlURHuamjHBH7g5jSX0tib2U-yQ3DCOQo-3upc8D0DL2U0LivCGLLQkRbEEnIGQnLlpbGFcIaOOFrwCAQyS4MTkJN9xW-LttC3vkVzHToVjwXHo3QgZFl76pAQ33xEadHm6VGXMITJMxEs07uTVpDqnlTE9dpn2-6BABkwgxXi7QWzkIR6pgvOgoijpIlZ8fSw-4VZJVDtO0isuoJkJy1k2fKi0_QvSG5BsFkzIC0ecbWHaL2YAINnVgcMIhY"
+              />
+              <div
+                class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+              ></div>
+              <div
+                class="absolute top-3 left-3 glass-pill px-2 py-1 rounded-full flex items-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-hydrangea"></span>
+                <span class="text-[10px] text-white font-medium">12.8 km</span>
+              </div>
+              <div class="absolute bottom-3 left-3 right-3">
+                <p class="font-headline-md text-white">Terra Nostra Thermal Bath</p>
+              </div>
+            </div>
+          </div>
+          <!-- Card 3 -->
+          <div class="flex-none w-[280px] snap-start relative group">
+            <div class="aspect-[16/9] rounded-xl overflow-hidden bg-surface-container-high">
+              <img
+                alt="Ferraria Coast"
+                class="w-full h-full object-cover group-hover:scale-105 duration-500"
+                data-alt="Dramatic view of the Ponta da Ferraria lighthouse on São Miguel island, perched on a rugged cliff side of jagged black basalt volcanic rocks. The dark, turbulent Atlantic ocean waves crash against the shore. The lighting is moody and overcast, emphasizing the raw, powerful nature of the volcanic coastline and the sophisticated editorial feel of the Azorean landscape."
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMF_An2TflIgu1MgyWzaeKS52vNuhlTUFGbqGJXz3D9IoNdRpealdDicimy08eVT-7Srs2AEY5GO_frJLWqEJviFhzvBFTNvF97qmpUkbmUrto1Tyav_oM02aCmzYfIdUrmQd49Zju0PEI5H7viJOiNmJNzusITIk-FWMdXp7DDDpbvX7SwKo7xx_CW-4faE-QYXGfpoLP25tqHuX9E-zGde8Ui2_yvL_gs5ysquZCypcBuYVCBYrEU3LoJeZYRLkGB4Q2xA9kgGMy"
+              />
+              <div
+                class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+              ></div>
+              <div
+                class="absolute top-3 left-3 glass-pill px-2 py-1 rounded-full flex items-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-hydrangea"></span>
+                <span class="text-[10px] text-white font-medium">8.4 km</span>
+              </div>
+              <div class="absolute bottom-3 left-3 right-3">
+                <p class="font-headline-md text-white">Ponta da Ferraria Cliffs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Bottom Actions -->
+      <section class="space-y-4">
+        <div
+          class="bg-surface-container-low p-4 rounded-xl flex items-center justify-between opacity-50 cursor-not-allowed"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="material-symbols-outlined text-on-surface-variant"
+              data-icon="calendar_today"
+              >calendar_today</span
+            >
+            <span class="font-label-md">Plan my day</span>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="lock"
+            >lock</span
+          >
+        </div>
+        <div
+          class="bg-surface-container-low p-4 rounded-xl flex items-center justify-between opacity-50 cursor-not-allowed"
+        >
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-on-surface-variant" data-icon="chat"
+              >chat</span
+            >
+            <span class="font-label-md">Message João</span>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="lock"
+            >lock</span
+          >
+        </div>
+      </section>
+    </main>
+    <!-- Bottom Navigation Shell (JSON Mapping) -->
+    <nav
+      class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface-container dark:bg-surface-container shadow-lg rounded-t-xl"
+    >
+      <!-- Explore (Active) -->
+      <div
+        class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 scale-95 duration-150"
+      >
+        <span
+          class="material-symbols-outlined"
+          data-icon="explore"
+          style="font-variation-settings: &quot;FILL&quot; 1"
+          >explore</span
+        >
+        <span class="font-label-sm text-label-sm">Explore</span>
+      </div>
+      <!-- Saved -->
+      <div
+        class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary duration-150"
+      >
+        <span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+        <span class="font-label-sm text-label-sm">Saved</span>
+      </div>
+      <!-- Host -->
+      <div
+        class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary duration-150"
+      >
+        <span class="material-symbols-outlined" data-icon="home_pin">home_pin</span>
+        <span class="font-label-sm text-label-sm">Host</span>
+      </div>
+      <!-- Profile -->
+      <div
+        class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary duration-150"
+      >
+        <span class="material-symbols-outlined" data-icon="person">person</span>
+        <span class="font-label-sm text-label-sm">Profile</span>
+      </div>
+    </nav>
+  </body>
+</html>

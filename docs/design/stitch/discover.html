@@ -1,0 +1,427 @@
+<!doctype html>
+
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Discover São Miguel</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      /* Custom scrollbar for horizontal ribbon */
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-background": "#dee4e2",
+              "on-secondary-fixed-variant": "#474741",
+              "on-secondary-fixed": "#1c1c17",
+              "error-container": "#93000a",
+              outline: "#8b938b",
+              surface: "#0f1514",
+              "inverse-surface": "#dee4e2",
+              "surface-variant": "#303635",
+              "on-primary-fixed": "#002111",
+              "surface-tint": "#a0d2b1",
+              "on-primary": "#053821",
+              "on-tertiary-fixed-variant": "#2d4288",
+              "surface-container-lowest": "#090f0e",
+              "on-tertiary": "#122a71",
+              "surface-container": "#1b2120",
+              "secondary-fixed": "#e5e2da",
+              "on-secondary-container": "#b7b5ae",
+              "on-error": "#690005",
+              "surface-container-high": "#252b2a",
+              "tertiary-fixed-dim": "#b6c4ff",
+              "inverse-on-surface": "#2b3230",
+              "on-secondary": "#31312b",
+              "surface-bright": "#343a39",
+              background: "#0f1514",
+              "on-tertiary-container": "#bac7ff",
+              "primary-fixed-dim": "#a0d2b1",
+              "surface-container-highest": "#303635",
+              "on-tertiary-fixed": "#001550",
+              "secondary-fixed-dim": "#c9c6bf",
+              primary: "#a0d2b1",
+              "surface-container-low": "#171d1c",
+              error: "#ffb4ab",
+              "on-error-container": "#ffdad6",
+              secondary: "#c9c6bf",
+              "on-surface-variant": "#c1c9c0",
+              "on-primary-fixed-variant": "#214f36",
+              "inverse-primary": "#3a684d",
+              "primary-fixed": "#bbeecc",
+              "on-surface": "#dee4e2",
+              "tertiary-fixed": "#dce1ff",
+              "tertiary-container": "#3b5097",
+              "primary-container": "#2f5d43",
+              "outline-variant": "#414943",
+              "surface-dim": "#0f1514",
+              "secondary-container": "#474741",
+              "on-primary-container": "#a2d4b3",
+              tertiary: "#b6c4ff",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            spacing: {
+              gutter: "1.5rem",
+              "margin-mobile": "1rem",
+              "grid-gap": "1rem",
+              "margin-desktop": "2.5rem",
+              unit: "4px",
+            },
+            fontFamily: {
+              "label-md": ["Inter"],
+              "body-lg": ["Inter"],
+              "headline-lg": ["Newsreader"],
+              "headline-md": ["Newsreader"],
+              "display-lg": ["Newsreader"],
+              "label-sm": ["Inter"],
+              "headline-lg-mobile": ["Newsreader"],
+              "body-md": ["Inter"],
+            },
+            fontSize: {
+              "label-md": [
+                "14px",
+                { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" },
+              ],
+              "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
+              "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "500" }],
+              "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "500" }],
+              "display-lg": [
+                "48px",
+                { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "600" },
+              ],
+              "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "500" }],
+              "headline-lg-mobile": ["28px", { lineHeight: "1.2", fontWeight: "500" }],
+              "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-surface h-screen w-full overflow-hidden flex flex-col font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container"
+  >
+    <!-- Main Content Canvas -->
+    <main class="relative h-full w-full flex-grow pb-[72px] flex flex-col md:flex-row">
+      <!-- Desktop Nav Cluster (Hidden on Mobile) -->
+      <nav
+        class="hidden md:flex flex-col w-64 bg-surface-container h-full p-gutter border-r border-outline-variant/30 flex-shrink-0 z-40"
+      >
+        <h1 class="font-headline-lg text-headline-lg text-on-surface italic mb-8 px-4">
+          Daily Tour São Miguel
+        </h1>
+        <div class="flex flex-col space-y-2">
+          <a
+            class="flex items-center space-x-4 px-4 py-3 rounded-lg bg-primary-container/20 text-primary transition-colors"
+            href="#"
+          >
+            <span
+              class="material-symbols-outlined"
+              style="font-variation-settings: &quot;FILL&quot; 1"
+              >explore</span
+            >
+            <span class="font-label-md text-label-md">Explore</span>
+          </a>
+          <a
+            class="flex items-center space-x-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors opacity-80"
+            href="#"
+          >
+            <span class="material-symbols-outlined">bookmark</span>
+            <span class="font-label-md text-label-md">Saved</span>
+          </a>
+          <a
+            class="flex items-center space-x-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors opacity-80"
+            href="#"
+          >
+            <span class="material-symbols-outlined">edit_note</span>
+            <span class="font-label-md text-label-md">Host</span>
+          </a>
+          <a
+            class="flex items-center space-x-4 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors opacity-80"
+            href="#"
+          >
+            <span class="material-symbols-outlined">person</span>
+            <span class="font-label-md text-label-md">Profile</span>
+          </a>
+        </div>
+      </nav>
+      <!-- Map & Content Area -->
+      <div class="flex-grow flex flex-col relative w-full h-full">
+        <!-- Map Container (Top 55% on mobile, full height on desktop) -->
+        <div
+          class="relative w-full h-[55%] md:h-full bg-surface-container-lowest overflow-hidden z-0"
+        >
+          <!-- Conceptual Map Background (Muted Basalt) -->
+          <div
+            class="absolute inset-0 bg-[#090f0e] opacity-90"
+            style="
+              background-image: radial-gradient(
+                circle at 50% 50%,
+                rgba(47, 93, 67, 0.1) 0%,
+                rgba(15, 21, 20, 1) 100%
+              );
+            "
+          ></div>
+          <!-- Map Image Layer -->
+          <img
+            alt="Map of Sao Miguel"
+            class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30 grayscale contrast-125 pointer-events-none"
+            data-location="São Miguel, Azores"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqeO5WW-CKV1xo9uEYf5JQER6ddlToX4HPh6nG3RvRl2ZP6OaOKkS2GjT4VMbZj9AGU2gdBzivtyNgtS7ox7asXTuFKg_0qBPouPKNqfR8khr2KSIsk_fEH4HC02PLkMEX1bQ_5uOpK0zVFmyjjj0_BBUR4O4e6Ou1ANhLKXZWZgA26NMEGIWDlj0fzj8cGdmdchcWhZMJKB1kTY2jbTpfKfXacRIfdpfphhJcGFpJ-7vnUS-Y3R0CFOA7UUeZ74tTYGaksWI2Cl6q"
+          />
+          <!-- Search Overlay -->
+          <div class="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
+            <div
+              class="bg-surface/90 backdrop-blur-md border border-outline-variant/30 rounded-full flex items-center px-4 py-3 shadow-lg shadow-black/20"
+            >
+              <span class="material-symbols-outlined text-on-surface-variant mr-3">search</span>
+              <input
+                class="bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant font-body-md w-full p-0"
+                placeholder="Search places on São Miguel"
+                type="text"
+              />
+            </div>
+          </div>
+          <!-- Map Markers -->
+          <div
+            class="absolute top-[40%] left-[30%] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
+          >
+            <div
+              class="w-3 h-3 bg-primary rounded-full shadow-[0_0_10px_rgba(160,210,177,0.5)] group-hover:scale-150 transition-transform"
+            ></div>
+          </div>
+          <div
+            class="absolute top-[60%] left-[70%] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
+          >
+            <div
+              class="w-3 h-3 bg-primary rounded-full shadow-[0_0_10px_rgba(160,210,177,0.5)] group-hover:scale-150 transition-transform"
+            ></div>
+          </div>
+          <!-- Selected Marker -->
+          <div
+            class="absolute top-[45%] left-[45%] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10 flex flex-col items-center"
+          >
+            <div
+              class="bg-primary text-on-primary px-3 py-1 rounded-full font-label-sm text-label-sm shadow-lg mb-1 whitespace-nowrap"
+            >
+              Sete Cidades
+            </div>
+            <div
+              class="w-5 h-5 bg-primary rounded-full border-2 border-surface flex items-center justify-center shadow-lg"
+            >
+              <div class="w-2 h-2 bg-on-primary rounded-full"></div>
+            </div>
+          </div>
+          <!-- Locate Me FAB -->
+          <button
+            class="absolute bottom-6 right-6 md:bottom-10 md:right-10 w-12 h-12 bg-surface border border-outline-variant/50 rounded-full flex items-center justify-center text-primary shadow-lg hover:bg-surface-container-highest transition-colors z-20"
+          >
+            <span class="material-symbols-outlined">my_location</span>
+          </button>
+        </div>
+        <!-- Bottom Sheet (Bottom 45% on mobile, Floating Panel on desktop) -->
+        <div
+          class="absolute bottom-0 left-0 w-full h-[45%] md:h-auto md:max-h-[60%] md:bottom-10 md:left-auto md:right-10 md:w-[400px] bg-[#F7F4EC] rounded-t-xl md:rounded-xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-30 flex flex-col transform transition-transform duration-300"
+        >
+          <!-- Drag Handle -->
+          <div class="w-full flex justify-center py-3 md:hidden">
+            <div class="w-12 h-1 bg-[#dcd8ce] rounded-full"></div>
+          </div>
+          <!-- Sheet Header -->
+          <div class="px-gutter pb-4 pt-2 md:pt-6">
+            <h2 class="font-headline-md text-headline-md text-[#0f1514]">Nearby</h2>
+          </div>
+          <!-- Horizontal Ribbon Content -->
+          <div
+            class="flex-grow overflow-x-auto hide-scrollbar pl-gutter pb-6 flex gap-4 snap-x snap-mandatory"
+          >
+            <!-- Editorial Card 1 -->
+            <div
+              class="flex-shrink-0 w-64 bg-white rounded-lg overflow-hidden shadow-sm border border-[#e5e2da] snap-start group cursor-pointer hover:-translate-y-1 transition-transform duration-200"
+            >
+              <div class="h-32 w-full relative overflow-hidden bg-surface-container">
+                <img
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  data-alt="A cinematic, wide-angle landscape shot of the iconic Sete Cidades volcanic crater lakes in São Miguel, Azores. The image showcases the contrasting vibrant blue and emerald green waters separated by a narrow bridge. The surrounding steep caldera walls are lush with dark green tea-like foliage and rugged basalt rock formations. Shot in natural daylight with soft, atmospheric clouds rolling over the peaks, establishing a moody, high-end editorial field-journal aesthetic."
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbnFrMP95SoWbz7s_17VCuNvjxdLbw4aK176LNb3vmsa-s7GWmLTDHNc2Voznfn8BibuPWcdrey0hivcTyvuVNoLHJGTaVXcvld7XCzsHunMD1eRreSvIBBmo9j2sNJ2ZiXiCSkFbkbjZG11E4khyMsj8n7eTpf6sjFHT_h4GBtYiauXpgZez9ok86obXt8mkoYy5kbuvdAiUeuGKq-RxKfpoRT-jhKpJmGgGGzDfAWuLYQHtkgs6rjLiJwLKsoEjsgb-un8nQ9SMH"
+                />
+              </div>
+              <div class="p-4 flex flex-col justify-between">
+                <div>
+                  <span
+                    class="font-label-sm text-label-sm text-[#474741] uppercase tracking-wider mb-1 block"
+                    >Volcanic Crater</span
+                  >
+                  <h3
+                    class="font-headline-md text-[20px] leading-tight text-primary-container mb-2"
+                  >
+                    Sete Cidades
+                  </h3>
+                </div>
+                <div
+                  class="inline-flex items-center bg-[#b6c4ff]/20 text-[#122a71] px-2 py-1 rounded-sm w-max mt-2"
+                >
+                  <span class="material-symbols-outlined text-[14px] mr-1">directions_walk</span>
+                  <span class="font-label-sm text-[11px] font-semibold tracking-wide uppercase"
+                    >3.2 km</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- Editorial Card 2 -->
+            <div
+              class="flex-shrink-0 w-64 bg-white rounded-lg overflow-hidden shadow-sm border border-[#e5e2da] snap-start group cursor-pointer hover:-translate-y-1 transition-transform duration-200"
+            >
+              <div class="h-32 w-full relative overflow-hidden bg-surface-container">
+                <img
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  data-alt="A close-up, highly textured editorial photograph of terraced tea plantations at Gorreana Tea Estate in São Miguel. Rows of vibrant, organically shaped tea bushes create undulating geometric patterns across the rolling hills. The lighting is soft and diffused, characteristic of the Azorean climate, casting subtle shadows that emphasize the lush greenery against the dark, basalt-rich soil. The mood is tranquil and agricultural, fitting a premium field journal."
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCF2ikTZh548pve4ZML5nevXigZCF77pAo3VT9kh0MP6mrl4e3q_NyY03aexeTEUn9CT3vinmjINiYGjJX4vqwjYkX-18DdttAuQI7qynbbY8SaxJypupAJNHev1Y41VP4aUbLVwLrFjKHjsjjDSZXw59xCil1eMfq3Zb09gHRvrkBRf55h0XMvERz2Rn9kHqLDLmGTQ1LWhS7smv0fuKfAFQKWeGIX9jWMbxpy_wUnY2QY_aowqxO7CCI9H9EsTAiqXd8sQqkEP8or"
+                />
+              </div>
+              <div class="p-4 flex flex-col justify-between">
+                <div>
+                  <span
+                    class="font-label-sm text-label-sm text-[#474741] uppercase tracking-wider mb-1 block"
+                    >Plantation</span
+                  >
+                  <h3
+                    class="font-headline-md text-[20px] leading-tight text-primary-container mb-2"
+                  >
+                    Gorreana Tea Estate
+                  </h3>
+                </div>
+                <div
+                  class="inline-flex items-center bg-[#b6c4ff]/20 text-[#122a71] px-2 py-1 rounded-sm w-max mt-2"
+                >
+                  <span class="material-symbols-outlined text-[14px] mr-1">directions_car</span>
+                  <span class="font-label-sm text-[11px] font-semibold tracking-wide uppercase"
+                    >12.5 km</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- Editorial Card 3 (Peeking) -->
+            <div
+              class="flex-shrink-0 w-64 bg-white rounded-lg overflow-hidden shadow-sm border border-[#e5e2da] snap-start group cursor-pointer hover:-translate-y-1 transition-transform duration-200 mr-gutter"
+            >
+              <div class="h-32 w-full relative overflow-hidden bg-surface-container">
+                <img
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  data-alt="An atmospheric, moody shot of the geothermal hot springs in Furnas, São Miguel. Thick white steam billows dramatically from bubbling, mineral-rich mud pools surrounded by dark, rugged basalt stones and deep green vegetation. The scene is illuminated by low-angle, misty light, capturing the raw, primal energy of the island's volcanic activity in a sophisticated, high-contrast editorial style."
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3K0pC90JbrxJceXOb1r09s02p6l6UXJftcxqsHMeOMIgTXmykk1qR_rPAga3NjXs0LoMx3CFkUtNHuOOjzC9wyrh6ZM23vKwbm_cd9nS1AEioBtwChMVom1QbcDyVz0XHufUeFRs3M7tTi8iZq2ATHRU6rK81_jV7xVE8nToDqLtIDk3t_1qr8glrVHjmpirQQYvWSydUtZN8CCOiSXJaCvxGKFhTIfO4E7_hi97AvFytxyr7U-xjcbIXsVqg_t2dnsJRKsQV4iEQ"
+                />
+              </div>
+              <div class="p-4 flex flex-col justify-between">
+                <div>
+                  <span
+                    class="font-label-sm text-label-sm text-[#474741] uppercase tracking-wider mb-1 block"
+                    >Geothermal Area</span
+                  >
+                  <h3
+                    class="font-headline-md text-[20px] leading-tight text-primary-container mb-2"
+                  >
+                    Furnas
+                  </h3>
+                </div>
+                <div
+                  class="inline-flex items-center bg-[#b6c4ff]/20 text-[#122a71] px-2 py-1 rounded-sm w-max mt-2"
+                >
+                  <span class="material-symbols-outlined text-[14px] mr-1">directions_car</span>
+                  <span class="font-label-sm text-[11px] font-semibold tracking-wide uppercase"
+                    >24.1 km</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- BottomNavBar (Mobile Only) -->
+    <nav
+      class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-surface-container rounded-t-xl pb-safe"
+    >
+      <!-- Active: Explore -->
+      <a
+        class="flex flex-col items-center justify-center text-primary font-bold active:scale-95 transition-all duration-200"
+        href="#"
+      >
+        <span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1"
+          >explore</span
+        >
+        <span class="font-label-sm text-label-sm mt-1">Explore</span>
+      </a>
+      <!-- Inactive: Saved -->
+      <a
+        class="flex flex-col items-center justify-center text-on-secondary-container opacity-70 hover:text-primary transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">bookmark</span>
+        <span class="font-label-sm text-label-sm mt-1">Saved</span>
+      </a>
+      <!-- Inactive: Host -->
+      <a
+        class="flex flex-col items-center justify-center text-on-secondary-container opacity-70 hover:text-primary transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">edit_note</span>
+        <span class="font-label-sm text-label-sm mt-1">Host</span>
+      </a>
+      <!-- Inactive: Profile -->
+      <a
+        class="flex flex-col items-center justify-center text-on-secondary-container opacity-70 hover:text-primary transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined">person</span>
+        <span class="font-label-sm text-label-sm mt-1">Profile</span>
+      </a>
+    </nav>
+    <!-- Safe area padding for mobile browsers -->
+    <style>
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 12px);
+      }
+    </style>
+  </body>
+</html>
