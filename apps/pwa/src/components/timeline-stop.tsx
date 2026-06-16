@@ -1,4 +1,4 @@
-import { Car } from "lucide-react";
+import { Car, MapPin, Utensils, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface TourStop {
@@ -10,18 +10,16 @@ export interface TourStop {
   duration_min?: number;
   // Drive time from the previous stop (minutes). Absent on the first stop.
   travel_to_minutes?: number;
+  // First image media URL for this stop's place, or null/absent when none.
+  // Drives the editorial thumbnail; missing → branded tea-green fallback.
+  hero_image_url?: string | null;
 }
 
-const DOT_CLASS: Record<TourStop["kind"], string> = {
-  meal: "bg-[var(--sun-400)]",
-  activity: "bg-[var(--tea-500)]",
-  transit: "bg-[var(--basalt-300)]",
-};
-
-const CONNECTOR_CLASS: Record<TourStop["kind"], string> = {
-  meal: "border-l-2 border-[var(--tea-300)]",
-  activity: "border-l-2 border-[var(--tea-300)]",
-  transit: "border-l-2 border-dashed border-[var(--basalt-300)]",
+// Icon shown in the photo-less fallback panel, by stop kind.
+const KIND_ICON: Record<TourStop["kind"], LucideIcon> = {
+  meal: Utensils,
+  activity: MapPin,
+  transit: MapPin,
 };
 
 interface TimelineStopProps {
@@ -30,45 +28,74 @@ interface TimelineStopProps {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
-export function TimelineStop({ stop, isLast, dragHandleProps }: TimelineStopProps) {
+// Square rounded thumbnail: real photo when available, else a branded
+// tea-green panel with a kind icon (mirrors place-card's HeroPlaceholder
+// approach so photo-less stops still look intentional).
+function StopThumbnail({ stop }: { stop: TourStop }) {
+  if (stop.hero_image_url) {
+    return (
+      <img
+        src={stop.hero_image_url}
+        alt={stop.name}
+        loading="lazy"
+        className="size-16 shrink-0 rounded-xl object-cover"
+        data-testid="timeline-stop-thumb"
+      />
+    );
+  }
+  const Icon = KIND_ICON[stop.kind];
   return (
-    <div className="flex relative">
-      {/* time gutter — 64px, tabular-nums, doubles as drag handle */}
-      <div
-        className="w-16 shrink-0 pt-2 pr-3 text-right tabular-nums text-sm text-muted-foreground"
-        {...dragHandleProps}
-      >
-        {stop.time}
-      </div>
+    <div
+      className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-primary/15"
+      role="img"
+      aria-label={`${stop.name} — image coming soon`}
+      data-testid="timeline-stop-thumb-fallback"
+    >
+      <Icon className="size-6 text-primary" aria-hidden="true" />
+    </div>
+  );
+}
 
-      {/* dot + connector */}
-      <div className="relative flex flex-col items-center">
+export function TimelineStop({ stop, isLast, dragHandleProps }: TimelineStopProps) {
+  const hasTravel = stop.travel_to_minutes != null && stop.travel_to_minutes > 0;
+
+  return (
+    <div className="flex flex-col">
+      {/* Inbound-travel connector — sun-amber pill, only when present. */}
+      {hasTravel && (
+        <p
+          className="mb-2 ml-2 inline-flex w-fit items-center gap-1 rounded-full bg-surface-container px-3 py-1 text-xs tabular-nums text-on-surface-variant"
+          data-testid="timeline-stop-connector"
+        >
+          <Car className="size-3 shrink-0 text-[var(--sun-400)]" aria-hidden="true" />
+          {stop.travel_to_minutes} min
+        </p>
+      )}
+
+      <article className={cn("relative flex items-start gap-4", isLast ? "pb-2" : "pb-8")}>
+        {/* Node dot — tea-green with a canvas-colour ring. */}
         <span
           data-kind={stop.kind}
-          className={cn("mt-2.5 h-3 w-3 shrink-0 rounded-full", DOT_CLASS[stop.kind])}
+          className="absolute -left-[1.625rem] top-6 z-10 size-3 rounded-full bg-primary ring-4 ring-surface"
           aria-hidden="true"
         />
-        {!isLast && <div className={cn("w-0 flex-1 min-h-8", CONNECTOR_CLASS[stop.kind])} />}
-      </div>
 
-      {/* content card */}
-      <div className="flex-1 pb-4 pl-3">
-        {stop.travel_to_minutes != null && stop.travel_to_minutes > 0 && (
-          <p className="mb-1 flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-            <Car className="h-3 w-3 shrink-0" aria-hidden="true" />
-            {stop.travel_to_minutes} min
-          </p>
-        )}
-        <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-          <p className="text-sm font-medium leading-snug">{stop.name}</p>
+        <StopThumbnail stop={stop} />
+
+        {/* Content column — name, tea-green time, one-line description. The
+            content doubles as the drag handle (preserves reorder UX). */}
+        <div className="min-w-0 flex-1" {...dragHandleProps}>
+          <div className="flex items-baseline gap-3">
+            <h3 className="font-display text-lg leading-tight text-on-surface">{stop.name}</h3>
+            <span className="shrink-0 text-sm tabular-nums text-primary">{stop.time}</span>
+          </div>
           {stop.description && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{stop.description}</p>
-          )}
-          {stop.duration_min != null && (
-            <p className="mt-1 text-xs text-muted-foreground">{stop.duration_min} min</p>
+            <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">
+              {stop.description}
+            </p>
           )}
         </div>
-      </div>
+      </article>
     </div>
   );
 }

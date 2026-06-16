@@ -21,8 +21,12 @@ const { withStops } = await import("../lib/tour-plan-view.js");
 const PLACE_A = "c0000001-0000-4000-a000-000000000017";
 const PLACE_B = "c0000002-0000-4000-a000-000000000018";
 
-function hydrated(id: string, names: Record<string, string>) {
-  return { id, name: names };
+function hydrated(
+  id: string,
+  names: Record<string, string>,
+  media: Array<{ kind: string; url: string }> = [],
+) {
+  return { id, name: names, media };
 }
 
 function step(overrides: Record<string, unknown> = {}) {
@@ -63,9 +67,38 @@ describe("tour-plan-view withStops", () => {
       kind: "activity",
       name: "Sete Cidades",
       description: "A great start to the day.",
+      hero_image_url: null,
       duration_min: 90,
       travel_to_minutes: 10,
     });
+  });
+
+  it("surfaces the first image media url as hero_image_url", async () => {
+    fetchMock.mockResolvedValueOnce(
+      hydrated(PLACE_A, { en: "Terra Nostra" }, [
+        { kind: "video", url: "https://example.com/clip.mp4" },
+        { kind: "image", url: "https://example.com/hero.jpg" },
+        { kind: "image", url: "https://example.com/second.jpg" },
+      ]),
+    );
+
+    const plan = { id: "p1", status: "ready", plan_payload: { steps: [step()] } };
+    const out = await withStops(plan);
+    const stops = (out.plan_payload as { stops: { hero_image_url: string | null }[] }).stops;
+
+    expect(stops[0]!.hero_image_url).toBe("https://example.com/hero.jpg");
+  });
+
+  it("sets hero_image_url to null when the place carries no image media", async () => {
+    fetchMock.mockResolvedValueOnce(
+      hydrated(PLACE_A, { en: "Place" }, [{ kind: "video", url: "https://example.com/clip.mp4" }]),
+    );
+
+    const plan = { id: "p1", status: "ready", plan_payload: { steps: [step()] } };
+    const out = await withStops(plan);
+    const stops = (out.plan_payload as { stops: { hero_image_url: string | null }[] }).stops;
+
+    expect(stops[0]!.hero_image_url).toBeNull();
   });
 
   it("carries travel_to_minutes when positive; omits it when absent or zero", async () => {
@@ -134,14 +167,16 @@ describe("tour-plan-view withStops", () => {
     expect(stops[0]!.name).toBe("Lagoa do Fogo");
   });
 
-  it("falls back to raw place_id when the place is missing from catalog", async () => {
+  it("falls back to raw place_id and null hero when the place is missing from catalog", async () => {
     fetchMock.mockRejectedValueOnce(new Error("404"));
 
     const plan = { id: "p1", status: "ready", plan_payload: { steps: [step()] } };
     const out = await withStops(plan);
-    const stops = (out.plan_payload as { stops: { name: string }[] }).stops;
+    const stops = (out.plan_payload as { stops: { name: string; hero_image_url: string | null }[] })
+      .stops;
 
     expect(stops[0]!.name).toBe(PLACE_A);
+    expect(stops[0]!.hero_image_url).toBeNull();
   });
 
   it("omits duration_min when start/end do not parse cleanly", async () => {

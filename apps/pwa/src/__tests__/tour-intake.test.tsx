@@ -129,10 +129,12 @@ describe("Tour intake form", () => {
       );
     });
 
-    // After redirect → plan status page shows ready state
+    // After redirect → plan status page shows the editorial ready screen
     await waitFor(
       () => {
-        expect(screen.getByRole("heading", { name: /your plan is ready/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole("heading", { name: /your day on são miguel/i }),
+        ).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
