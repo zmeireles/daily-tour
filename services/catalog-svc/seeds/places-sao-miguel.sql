@@ -736,3 +736,257 @@ INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort
   ('d0000001-0000-4000-a000-000000000017','c0000001-0000-4000-a000-000000000017','image','https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Portas_da_Cidade%2C_Ponta_Delgada%2C_isla_de_San_Miguel%2C_Azores%2C_Portugal%2C_2020-07-29%2C_DD_123-125_HDR.jpg/1280px-Portas_da_Cidade%2C_Ponta_Delgada%2C_isla_de_San_Miguel%2C_Azores%2C_Portugal%2C_2020-07-29%2C_DD_123-125_HDR.jpg','{"en":"Photo of Ponta Delgada Historic Centre","pt-PT":"Foto do Centro Histórico de Ponta Delgada"}','{"author":"Diego Delso","license":"CC BY-SA 4.0","source_url":"https://commons.wikimedia.org/w/index.php?curid=93840604"}'::jsonb,1),
   ('d0000001-0000-4000-a000-000000000023','c0000001-0000-4000-a000-000000000023','image','https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Caloura_vista_do_Miradouro_do_Pis%C3%A3o%2C_Lagoa%2C_ilha_de_S%C3%A3o_Miguel%2C_A%C3%A7ores.JPG/1280px-Caloura_vista_do_Miradouro_do_Pis%C3%A3o%2C_Lagoa%2C_ilha_de_S%C3%A3o_Miguel%2C_A%C3%A7ores.JPG','{"en":"Photo of Bar Caloura","pt-PT":"Foto do Bar Caloura"}',NULL,1)
 ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Near Miguel's guesthouses (Ponta Delgada / São Roque / Fajã de Baixo).
+-- Real POIs from research 2026-06-16. No place_media → PWA Hero shows the
+-- branded "photo coming soon" fallback until owner/real photos are added.
+-- ─────────────────────────────────────────────────────────────────────────
+-- #29 Tasquinha Vieira — Eat (traditional)
+-- coords: Tasquinha Vieira, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000029',
+  '{"all": true}'::jsonb,
+  '{"en": "Tasquinha Vieira", "pt-PT": "Tasquinha Vieira"}'::jsonb,
+  '{"en": "An intimate spot in the historic centre with a frequently-changing menu of creative Azorean small plates. Booking advised.", "pt-PT": "Um espaço intimista no centro histórico com uma ementa em constante mudança de pequenos pratos açorianos criativos. Reserva aconselhada."}'::jsonb,
+  37.74110, -25.66689,
+  'Rua António Joaquim Nunes da Silva 21, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #30 Mariserra — Eat (sea-view, traditional)
+-- coords: Mariserra, São Roque, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000030',
+  '{"all": true}'::jsonb,
+  '{"en": "Mariserra", "pt-PT": "Mariserra"}'::jsonb,
+  '{"en": "Seafront seafood on the São Roque promenade — grilled fish, seafood rice and a sea-view terrace. A local favourite for a relaxed lunch.", "pt-PT": "Marisqueira à beira-mar na marginal de São Roque — peixe grelhado, arroz de marisco e esplanada com vista para o mar. Um clássico local para um almoço descontraído."}'::jsonb,
+  37.74509, -25.64484,
+  'Rua da Praia dos Santos 61, São Roque, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #31 Portas do Mar — Eat (sea-view) + Drink (cafe)
+-- coords: Portas do Mar, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000031',
+  '{"all": true}'::jsonb,
+  '{"en": "Portas do Mar", "pt-PT": "Portas do Mar"}'::jsonb,
+  '{"en": "A modern marina-front complex of restaurants and cafés overlooking the bay, beside the cruise terminal. Easy strolling and harbour views.", "pt-PT": "Um moderno complexo à beira da marina, com restaurantes e cafés debruçados sobre a baía, junto ao terminal de cruzeiros. Ideal para passear e apreciar a vista do porto."}'::jsonb,
+  37.74002, -25.66182,
+  'Avenida Infante Dom Henrique, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #32 Intz48 Coffee Roasters — Drink (cafe)
+-- coords: Intz48, Ponta Delgada, São Miguel, Açores (fallback query), source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000032',
+  '{"all": true}'::jsonb,
+  '{"en": "Intz48 Coffee Roasters", "pt-PT": "Intz48 Coffee Roasters"}'::jsonb,
+  '{"en": "Ponta Delgada''s standout specialty-coffee roaster — freshly roasted beans, well-made espresso and a good brunch. Beans to take home too.", "pt-PT": "O torrefactor de café de especialidade de referência em Ponta Delgada — grãos torrados na hora, expresso bem tirado e um bom brunch. Também há grãos para levar para casa."}'::jsonb,
+  37.74102, -25.66852,
+  'Rua Hintze Ribeiro 48, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #33 Sunset Beach Bar — Drink (cocktail-bar, sea-view)
+-- coords: approx — no Nominatim match for the bar; uses Praia de São Roque sand
+--   coords (the bar sits on that beach), source: Nominatim/OSM (Praia de São Roque)
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000033',
+  '{"all": true}'::jsonb,
+  '{"en": "Sunset Beach Bar", "pt-PT": "Sunset Beach Bar"}'::jsonb,
+  '{"en": "A low-key beach bar right on the sand at São Roque, serving cocktails with sundown views over the Atlantic. Best as the light fades.", "pt-PT": "Um descontraído bar de praia mesmo na areia de São Roque, a servir cocktails com vista para o pôr do sol sobre o Atlântico. Melhor ao cair da luz."}'::jsonb,
+  37.75095, -25.62523,
+  'Praia de São Roque, São Roque, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #34 Praia de São Roque — Do (water-sports, with-kids)
+-- coords: Praia de São Roque, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000034',
+  '{"all": true}'::jsonb,
+  '{"en": "Praia de São Roque", "pt-PT": "Praia de São Roque"}'::jsonb,
+  '{"en": "A black volcanic-sand beach in a sheltered, family-friendly bay just east of the centre. Easy to reach for a quick swim.", "pt-PT": "Uma praia de areia vulcânica negra numa baía abrigada e familiar, mesmo a leste do centro. Fácil de alcançar para um mergulho rápido."}'::jsonb,
+  37.75095, -25.62523,
+  'Praia de São Roque, São Roque, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #35 Praia do Pópulo — Do (water-sports, with-kids)
+-- coords: Praia do Populo, Açores (fallback query), source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000035',
+  '{"all": true}'::jsonb,
+  '{"en": "Praia do Pópulo", "pt-PT": "Praia do Pópulo"}'::jsonb,
+  '{"en": "One of the island''s most popular sandy beaches, with relatively calm water and easy facilities. A reliable family day out near PDL.", "pt-PT": "Uma das praias de areia mais populares da ilha, com água relativamente calma e bons apoios. Um seguro dia de família perto de PDL."}'::jsonb,
+  37.75063, -25.61853,
+  'Praia do Pópulo, Livramento, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #36 Museu Carlos Machado — See (historic, rainy-day-ok)
+-- coords: Museu Carlos Machado, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000036',
+  '{"all": true}'::jsonb,
+  '{"en": "Museu Carlos Machado", "pt-PT": "Museu Carlos Machado"}'::jsonb,
+  '{"en": "The Azores'' oldest museum, set in a former convent: natural-history, ethnographic and sacred-art collections. A great rainy-day visit.", "pt-PT": "O mais antigo museu dos Açores, instalado num antigo convento: colecções de história natural, etnografia e arte sacra. Uma óptima visita para dias de chuva."}'::jsonb,
+  37.74320, -25.66771,
+  'Rua de Santa Bárbara, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #37 Forte de São Brás — See (historic, rainy-day-ok)
+-- coords: Forte de São Brás, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000037',
+  '{"all": true}'::jsonb,
+  '{"en": "Forte de São Brás", "pt-PT": "Forte de São Brás"}'::jsonb,
+  '{"en": "An imposing 16th-century seafront fortress that houses the Military Museum of the Azores. Walk the ramparts for harbour views.", "pt-PT": "Uma imponente fortaleza quinhentista à beira-mar que alberga o Museu Militar dos Açores. Percorra as muralhas para vistas sobre o porto."}'::jsonb,
+  37.73622, -25.67228,
+  'Rua Doutor Teófilo de Braga, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #38 Gruta do Carvão — See (volcanic-thermal, rainy-day-ok)
+-- coords: Gruta do Carvão, Ponta Delgada, source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000038',
+  '{"all": true}'::jsonb,
+  '{"en": "Gruta do Carvão", "pt-PT": "Gruta do Carvão"}'::jsonb,
+  '{"en": "São Miguel''s longest lava tube (~1.9 km), partly visitable on a guided tour through striking volcanic formations. Book ahead.", "pt-PT": "O mais extenso tubo de lava de São Miguel (~1,9 km), em parte visitável numa visita guiada por impressionantes formações vulcânicas. Reserve com antecedência."}'::jsonb,
+  37.74816, -25.68707,
+  '2ª Circular, Santa Clara, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #39 Miradouro da Mãe de Deus — See (viewpoint)
+-- coords: Ermida da Mãe de Deus, Ponta Delgada (the hilltop chapel that defines
+--   the viewpoint), source: Nominatim/OSM
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000039',
+  '{"all": true}'::jsonb,
+  '{"en": "Miradouro da Mãe de Deus", "pt-PT": "Miradouro da Mãe de Deus"}'::jsonb,
+  '{"en": "A hilltop chapel viewpoint over Ponta Delgada, its harbour and the open Atlantic. Especially lovely at sunset.", "pt-PT": "Um miradouro junto a uma ermida no alto, sobre Ponta Delgada, o seu porto e o Atlântico. Particularmente bonito ao pôr do sol."}'::jsonb,
+  37.74389, -25.66061,
+  'Ladeira da Mãe de Deus, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', false, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ─── PLACE_ACTION_WISH (#29–#39) ─────────────────────────────────────────────
+-- Action IDs: eat=a0000001-...-001 drink=...-002 see=...-003 do=...-004
+-- Wish IDs (b<action>000001-0000-4000-b000-0000000000<N>):
+--   Eat:  sea-view=1 traditional=2 vegetarian=3 romantic=4 family=5 quick-local=6
+--   Drink: cafe=1 wine-local-liqueur=2 cocktail-bar=3 live-music=4 sea-view=5 late=6
+--   See:  viewpoint=1 lake-crater=2 volcanic-thermal=3 historic=4 garden=5 rainy-day-ok=6
+--   Do:   hike=1 thermal-soak=2 whale-dolphin=3 water-sports=4 scenic-drive=5 with-kids=6
+
+-- #29 Tasquinha Vieira — Eat (traditional)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000029','a0000001-0000-4000-a000-000000000001','b1000001-0000-4000-b000-000000000002') -- Eat · traditional
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #30 Mariserra — Eat (sea-view, traditional)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000030','a0000001-0000-4000-a000-000000000001','b1000001-0000-4000-b000-000000000001'), -- Eat · sea-view
+  ('c0000001-0000-4000-a000-000000000030','a0000001-0000-4000-a000-000000000001','b1000001-0000-4000-b000-000000000002') -- Eat · traditional
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #31 Portas do Mar — Eat (sea-view) + Drink (cafe)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000031','a0000001-0000-4000-a000-000000000001','b1000001-0000-4000-b000-000000000001'), -- Eat · sea-view
+  ('c0000001-0000-4000-a000-000000000031','a0000001-0000-4000-a000-000000000002','b2000001-0000-4000-b000-000000000001') -- Drink · cafe
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #32 Intz48 Coffee Roasters — Drink (cafe)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000032','a0000001-0000-4000-a000-000000000002','b2000001-0000-4000-b000-000000000001') -- Drink · cafe
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #33 Sunset Beach Bar — Drink (cocktail-bar, sea-view)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000033','a0000001-0000-4000-a000-000000000002','b2000001-0000-4000-b000-000000000003'), -- Drink · cocktail-bar
+  ('c0000001-0000-4000-a000-000000000033','a0000001-0000-4000-a000-000000000002','b2000001-0000-4000-b000-000000000005') -- Drink · sea-view
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #34 Praia de São Roque — Do (water-sports, with-kids)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000034','a0000001-0000-4000-a000-000000000004','b4000001-0000-4000-b000-000000000004'), -- Do · water-sports
+  ('c0000001-0000-4000-a000-000000000034','a0000001-0000-4000-a000-000000000004','b4000001-0000-4000-b000-000000000006') -- Do · with-kids
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #35 Praia do Pópulo — Do (water-sports, with-kids)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000035','a0000001-0000-4000-a000-000000000004','b4000001-0000-4000-b000-000000000004'), -- Do · water-sports
+  ('c0000001-0000-4000-a000-000000000035','a0000001-0000-4000-a000-000000000004','b4000001-0000-4000-b000-000000000006') -- Do · with-kids
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #36 Museu Carlos Machado — See (historic, rainy-day-ok)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000036','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000004'), -- See · historic
+  ('c0000001-0000-4000-a000-000000000036','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000006') -- See · rainy-day-ok
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #37 Forte de São Brás — See (historic, rainy-day-ok)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000037','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000004'), -- See · historic
+  ('c0000001-0000-4000-a000-000000000037','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000006') -- See · rainy-day-ok
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #38 Gruta do Carvão — See (volcanic-thermal, rainy-day-ok)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000038','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000003'), -- See · volcanic-thermal
+  ('c0000001-0000-4000-a000-000000000038','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000006') -- See · rainy-day-ok
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #39 Miradouro da Mãe de Deus — See (viewpoint)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000039','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000001') -- See · viewpoint
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
