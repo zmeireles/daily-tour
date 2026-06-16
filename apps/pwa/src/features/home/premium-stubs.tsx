@@ -22,7 +22,7 @@ export function PremiumStubs() {
       <Link to="/chat" className={CARD_CLASS}>
         <span className="flex items-center gap-3">
           <Avatar aria-hidden="true">
-            <AvatarFallback>J</AvatarFallback>
+            <AvatarFallback>M</AvatarFallback>
           </Avatar>
           <span className="font-medium text-on-surface">{t("premium.message_host")}</span>
         </span>

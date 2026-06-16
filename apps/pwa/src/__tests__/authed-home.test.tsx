@@ -92,16 +92,16 @@ describe("Authed home (IndexRoute dispatcher)", () => {
     expect(document.querySelector("[data-premium='true']")).not.toBeNull();
   });
 
-  it("renders an editorial 'Message João' card linking to /chat on the authed home", () => {
+  it("renders an editorial 'Message Miguel' card linking to /chat on the authed home", () => {
     act(() => {
       useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
     });
 
     renderRoute();
 
-    // The João avatar is aria-hidden, so the link's accessible name is the
+    // The Miguel avatar is aria-hidden, so the link's accessible name is the
     // text label alone (not doubled by the fallback initial).
-    const chatCta = screen.getByRole("link", { name: /message joão/i });
+    const chatCta = screen.getByRole("link", { name: /message miguel/i });
     expect(chatCta).toBeInTheDocument();
     expect(chatCta.getAttribute("href")).toBe("/chat");
   });
