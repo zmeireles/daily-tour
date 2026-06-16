@@ -11,7 +11,8 @@
     "chat": "Mit Gastgeber chatten"
   },
   "premium": {
-    "plan_my_day": "Meinen Tag planen"
+    "plan_my_day": "Meinen Tag planen",
+    "message_host": "João schreiben"
   },
   "locale": {
     "en": "English",

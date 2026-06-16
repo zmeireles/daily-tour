@@ -11,7 +11,8 @@
     "chat": "Discuter avec votre hôte"
   },
   "premium": {
-    "plan_my_day": "Planifier ma journée"
+    "plan_my_day": "Planifier ma journée",
+    "message_host": "Écrire à João"
   },
   "locale": {
     "en": "English",

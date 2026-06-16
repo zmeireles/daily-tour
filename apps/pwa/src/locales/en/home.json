@@ -11,7 +11,8 @@
     "chat": "Chat with your host"
   },
   "premium": {
-    "plan_my_day": "Plan my day"
+    "plan_my_day": "Plan my day",
+    "message_host": "Message João"
   },
   "locale": {
     "en": "English",

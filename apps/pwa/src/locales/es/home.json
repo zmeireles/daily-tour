@@ -11,7 +11,8 @@
     "chat": "Chatear con tu anfitrión"
   },
   "premium": {
-    "plan_my_day": "Planear mi día"
+    "plan_my_day": "Planear mi día",
+    "message_host": "Hablar con João"
   },
   "locale": {
     "en": "English",
