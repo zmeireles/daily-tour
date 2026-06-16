@@ -29,20 +29,20 @@ afterAll(async () => {
 });
 
 describe("places-sao-miguel.sql seed", () => {
-  it("loads 40 places + ≥40 action+wish tags + 20 media rows on first apply", async () => {
+  it("loads 43 places + ≥43 action+wish tags + 32 media rows on first apply", async () => {
     await ctx.pool.query(
       "TRUNCATE catalog.place_media, catalog.place_action_wish, catalog.place CASCADE;",
     );
     await ctx.pool.query(placesSql);
 
     const counts = await readCounts(ctx);
-    expect(counts.places).toBe(40);
-    // 15 places carry a hero: 14 landmark Commons photos + The Place's 6 owner
-    // photos (= 20 media rows). Businesses + the 11 POIs are media-less (the PWA
-    // Hero shows a branded fallback).
-    expect(counts.media).toBe(20);
+    expect(counts.places).toBe(43);
+    // 18 places carry a hero: 14 landmark Commons photos + Miguel's 4 guesthouses
+    // (The Place ×6 + The Escape/View/View Point ×4 each) = 32 media rows.
+    // Businesses + the 11 POIs are media-less (the PWA Hero shows a branded fallback).
+    expect(counts.media).toBe(32);
     // Each place has ≥1 action+wish tag; multi-action places have more.
-    expect(counts.tags).toBeGreaterThanOrEqual(40);
+    expect(counts.tags).toBeGreaterThanOrEqual(43);
   });
 
   it("is idempotent — second apply leaves row counts unchanged", async () => {

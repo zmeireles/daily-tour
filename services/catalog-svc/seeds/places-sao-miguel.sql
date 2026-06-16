@@ -1003,7 +1003,7 @@ VALUES (
   '{"all": true}'::jsonb,
   '{"en": "The Place", "pt-PT": "The Place"}'::jsonb,
   '{"en": "Your host Miguel''s striking modern guesthouse in Fajã de Baixo — wood and glass, a private garden and sea views, in a calm, central setting a few minutes from Ponta Delgada.", "pt-PT": "A casa de hóspedes moderna e singular do anfitrião Miguel, em Fajã de Baixo — madeira e vidro, jardim privado e vista de mar, num ambiente tranquilo e central, a poucos minutos de Ponta Delgada."}'::jsonb,
-  37.75120, -25.64540,
+  37.74979, -25.64545,
   'Alameda de Belém 121, Fajã de Baixo, Ponta Delgada, São Miguel, Açores',
   '{}'::jsonb,
   '[]'::jsonb,
@@ -1023,4 +1023,53 @@ INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort
   ('d0000001-0000-4000-a000-000000004004','c0000001-0000-4000-a000-000000000040','image','/media/the-place/04.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,4),
   ('d0000001-0000-4000-a000-000000004005','c0000001-0000-4000-a000-000000000040','image','/media/the-place/05.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,5),
   ('d0000001-0000-4000-a000-000000004006','c0000001-0000-4000-a000-000000000040','image','/media/the-place/06.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,6)
+ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- #41-43 Miguel's three Calheta-area guesthouses (Gaveto building / marina,
+-- Ponta Delgada). Host's picks, with his own listing photos (owner-provided →
+-- no attribution), self-hosted at /media/<slug>/. Coords + capacity from the
+-- live listings. Real originals from the owner can replace these additively.
+-- ─────────────────────────────────────────────────────────────────────────
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES
+  ('c0000001-0000-4000-a000-000000000041','{"all": true}'::jsonb,
+   '{"en": "The Escape", "pt-PT": "The Escape"}'::jsonb,
+   '{"en": "One of host Miguel''s apartments in the Gaveto building — a compact, modern stay for two, a five-minute walk from Ponta Delgada''s marina and old town.", "pt-PT": "Um dos apartamentos do anfitrião Miguel no edifício Gaveto — uma estadia moderna e compacta para dois, a cinco minutos a pé da marina e do centro histórico de Ponta Delgada."}'::jsonb,
+   37.74210, -25.65990, 'Gaveto building, centro, Ponta Delgada, São Miguel, Açores',
+   '{}'::jsonb, '[]'::jsonb, 'published', true, 'manual'),
+  ('c0000001-0000-4000-a000-000000000042','{"all": true}'::jsonb,
+   '{"en": "The View", "pt-PT": "The View"}'::jsonb,
+   '{"en": "A bright two-bedroom apartment for four with views over Ponta Delgada and the Lagoa do Fogo, plus a shared pool, tennis court and children''s playground.", "pt-PT": "Um apartamento luminoso de dois quartos para quatro, com vista sobre Ponta Delgada e a Lagoa do Fogo, e ainda piscina partilhada, court de ténis e parque infantil."}'::jsonb,
+   37.75574, -25.66849, 'Ponta Delgada, São Miguel, Açores',
+   '{}'::jsonb, '[]'::jsonb, 'published', true, 'manual'),
+  ('c0000001-0000-4000-a000-000000000043','{"all": true}'::jsonb,
+   '{"en": "The View Point", "pt-PT": "The View Point"}'::jsonb,
+   '{"en": "Another of host Miguel''s apartments in the Gaveto building — a calm, modern base for two in the heart of Ponta Delgada, steps from the marina.", "pt-PT": "Outro dos apartamentos do anfitrião Miguel no edifício Gaveto — uma base tranquila e moderna para dois no coração de Ponta Delgada, a poucos passos da marina."}'::jsonb,
+   37.74200, -25.65990, 'Gaveto building, centro, Ponta Delgada, São Miguel, Açores',
+   '{}'::jsonb, '[]'::jsonb, 'published', true, 'manual')
+ON CONFLICT (id) DO NOTHING;
+
+-- #41-43 See tags
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000041','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000004'), -- See · historic
+  ('c0000001-0000-4000-a000-000000000042','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000001'), -- See · viewpoint
+  ('c0000001-0000-4000-a000-000000000043','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000001') -- See · viewpoint
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #41-43 owner photos (hero + gallery)
+INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort_order) VALUES
+  ('d0000001-0000-4000-a000-000000004101','c0000001-0000-4000-a000-000000000041','image','/media/the-escape/01.jpg','{"en":"The Escape","pt-PT":"The Escape"}',NULL,1),
+  ('d0000001-0000-4000-a000-000000004102','c0000001-0000-4000-a000-000000000041','image','/media/the-escape/02.jpg','{"en":"The Escape","pt-PT":"The Escape"}',NULL,2),
+  ('d0000001-0000-4000-a000-000000004103','c0000001-0000-4000-a000-000000000041','image','/media/the-escape/03.jpg','{"en":"The Escape","pt-PT":"The Escape"}',NULL,3),
+  ('d0000001-0000-4000-a000-000000004104','c0000001-0000-4000-a000-000000000041','image','/media/the-escape/04.jpg','{"en":"The Escape","pt-PT":"The Escape"}',NULL,4),
+  ('d0000001-0000-4000-a000-000000004201','c0000001-0000-4000-a000-000000000042','image','/media/the-view/01.jpg','{"en":"The View","pt-PT":"The View"}',NULL,1),
+  ('d0000001-0000-4000-a000-000000004202','c0000001-0000-4000-a000-000000000042','image','/media/the-view/02.jpg','{"en":"The View","pt-PT":"The View"}',NULL,2),
+  ('d0000001-0000-4000-a000-000000004203','c0000001-0000-4000-a000-000000000042','image','/media/the-view/03.jpg','{"en":"The View","pt-PT":"The View"}',NULL,3),
+  ('d0000001-0000-4000-a000-000000004204','c0000001-0000-4000-a000-000000000042','image','/media/the-view/04.jpg','{"en":"The View","pt-PT":"The View"}',NULL,4),
+  ('d0000001-0000-4000-a000-000000004301','c0000001-0000-4000-a000-000000000043','image','/media/the-view-point/01.jpg','{"en":"The View Point","pt-PT":"The View Point"}',NULL,1),
+  ('d0000001-0000-4000-a000-000000004302','c0000001-0000-4000-a000-000000000043','image','/media/the-view-point/02.jpg','{"en":"The View Point","pt-PT":"The View Point"}',NULL,2),
+  ('d0000001-0000-4000-a000-000000004303','c0000001-0000-4000-a000-000000000043','image','/media/the-view-point/03.jpg','{"en":"The View Point","pt-PT":"The View Point"}',NULL,3),
+  ('d0000001-0000-4000-a000-000000004304','c0000001-0000-4000-a000-000000000043','image','/media/the-view-point/04.jpg','{"en":"The View Point","pt-PT":"The View Point"}',NULL,4)
 ON CONFLICT (id) DO NOTHING;
