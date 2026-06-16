@@ -31,4 +31,17 @@ describe("Hero attribution credit", () => {
     render(<Hero imageUrl="https://example.com/img.jpg" title="Sete Cidades" attribution={null} />);
     expect(screen.queryByRole("link")).toBeNull();
   });
+
+  it("renders the branded placeholder (no img, no credit) when imageUrl is empty", () => {
+    render(<Hero imageUrl="" title="Tony's Restaurant" attribution={null} />);
+    // branded fallback panel, not a broken <img>
+    expect(screen.getByTestId("place-hero-placeholder")).toHaveAttribute(
+      "aria-label",
+      "Tony's Restaurant — photo coming soon",
+    );
+    expect(screen.queryByTestId("place-hero-placeholder")?.querySelector("img")).toBeNull();
+    // title still renders; no attribution chip
+    expect(screen.getByRole("heading", { name: "Tony's Restaurant" })).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
 });

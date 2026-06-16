@@ -1,4 +1,6 @@
-// Idempotency test for the 28-place São Miguel seed.
+// Idempotency test for the São Miguel places seed (28 day-1 places + 11
+// near-guesthouse POIs = 39; the 14 landmark places carry a hero, businesses
+// + POIs are media-less and use the PWA Hero fallback).
 // Boots a fresh Testcontainer pg, applies the schema, seeds actions + wishes
 // (canonical UUIDs from actions-wishes.sql, required for the FK refs in the
 // place_action_wish rows), then applies places-sao-miguel.sql twice and
@@ -27,17 +29,19 @@ afterAll(async () => {
 });
 
 describe("places-sao-miguel.sql seed", () => {
-  it("loads 28 places + ≥28 action+wish tags + 28 media rows on first apply", async () => {
+  it("loads 39 places + ≥39 action+wish tags + 14 media rows on first apply", async () => {
     await ctx.pool.query(
       "TRUNCATE catalog.place_media, catalog.place_action_wish, catalog.place CASCADE;",
     );
     await ctx.pool.query(placesSql);
 
     const counts = await readCounts(ctx);
-    expect(counts.places).toBe(28);
-    expect(counts.media).toBe(28);
+    expect(counts.places).toBe(39);
+    // Only the 14 landmark places carry a hero photo; the 14 businesses and the
+    // 11 near-guesthouse POIs are media-less (PWA Hero shows a branded fallback).
+    expect(counts.media).toBe(14);
     // Each place has ≥1 action+wish tag; multi-action places have more.
-    expect(counts.tags).toBeGreaterThanOrEqual(28);
+    expect(counts.tags).toBeGreaterThanOrEqual(39);
   });
 
   it("is idempotent — second apply leaves row counts unchanged", async () => {

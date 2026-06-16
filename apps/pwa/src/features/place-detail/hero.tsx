@@ -1,4 +1,5 @@
 import * as React from "react";
+import { MapPin } from "lucide-react";
 import type { PlaceMediaAttribution } from "./use-place-detail";
 
 interface HeroProps {
@@ -8,9 +9,24 @@ interface HeroProps {
 }
 
 export function Hero({ imageUrl, title, attribution }: HeroProps) {
+  const hasImage = Boolean(imageUrl);
   return (
     <div className="relative aspect-video w-full overflow-hidden bg-muted">
-      <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+      {hasImage ? (
+        <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+      ) : (
+        // Branded "photo coming soon" fallback — places without a real hero
+        // (e.g. owner-pending businesses) get an intentional on-brand panel
+        // instead of a placeholder stock photo or a broken image.
+        <div
+          className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-primary/15"
+          role="img"
+          aria-label={`${title} — photo coming soon`}
+          data-testid="place-hero-placeholder"
+        >
+          <MapPin size={48} className="text-primary/40" aria-hidden="true" />
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
       <h1
         className="absolute bottom-4 left-4 right-4 text-2xl font-bold text-white leading-tight"
@@ -18,7 +34,7 @@ export function Hero({ imageUrl, title, attribution }: HeroProps) {
       >
         {title}
       </h1>
-      {attribution && (
+      {hasImage && attribution && (
         <a
           href={attribution.source_url}
           target="_blank"
