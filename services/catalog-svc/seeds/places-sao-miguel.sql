@@ -990,3 +990,37 @@ ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
 INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
   ('c0000001-0000-4000-a000-000000000039','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000001') -- See · viewpoint
 ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- #40 The Place — host Miguel's own guesthouse (Fajã de Baixo). Host's pick,
+-- with his own photos (owner-provided → no attribution). Self-hosted PWA
+-- static assets at /media/the-place/.
+-- ─────────────────────────────────────────────────────────────────────────
+INSERT INTO catalog.place
+  (id, guesthouse_scope, name, description, geom_lat, geom_lng, address, contacts, hours, status, is_hosts_pick, source_kind)
+VALUES (
+  'c0000001-0000-4000-a000-000000000040',
+  '{"all": true}'::jsonb,
+  '{"en": "The Place", "pt-PT": "The Place"}'::jsonb,
+  '{"en": "Your host Miguel''s striking modern guesthouse in Fajã de Baixo — wood and glass, a private garden and sea views, in a calm, central setting a few minutes from Ponta Delgada.", "pt-PT": "A casa de hóspedes moderna e singular do anfitrião Miguel, em Fajã de Baixo — madeira e vidro, jardim privado e vista de mar, num ambiente tranquilo e central, a poucos minutos de Ponta Delgada."}'::jsonb,
+  37.75120, -25.64540,
+  'Alameda de Belém 121, Fajã de Baixo, Ponta Delgada, São Miguel, Açores',
+  '{}'::jsonb,
+  '[]'::jsonb,
+  'published', true, 'manual'
+) ON CONFLICT (id) DO NOTHING;
+
+-- #40 The Place — See (garden)
+INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES
+  ('c0000001-0000-4000-a000-000000000040','a0000001-0000-4000-a000-000000000003','b3000001-0000-4000-b000-000000000005') -- See · garden
+ON CONFLICT (place_id, action_id, wish_id) DO NOTHING;
+
+-- #40 The Place — Miguel's own photos (hero + gallery), owner-provided (no attribution)
+INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort_order) VALUES
+  ('d0000001-0000-4000-a000-000000004001','c0000001-0000-4000-a000-000000000040','image','/media/the-place/01.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,1),
+  ('d0000001-0000-4000-a000-000000004002','c0000001-0000-4000-a000-000000000040','image','/media/the-place/02.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,2),
+  ('d0000001-0000-4000-a000-000000004003','c0000001-0000-4000-a000-000000000040','image','/media/the-place/03.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,3),
+  ('d0000001-0000-4000-a000-000000004004','c0000001-0000-4000-a000-000000000040','image','/media/the-place/04.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,4),
+  ('d0000001-0000-4000-a000-000000004005','c0000001-0000-4000-a000-000000000040','image','/media/the-place/05.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,5),
+  ('d0000001-0000-4000-a000-000000004006','c0000001-0000-4000-a000-000000000040','image','/media/the-place/06.jpg','{"en":"The Place — Fajã de Baixo","pt-PT":"The Place — Fajã de Baixo"}',NULL,6)
+ON CONFLICT (id) DO NOTHING;
