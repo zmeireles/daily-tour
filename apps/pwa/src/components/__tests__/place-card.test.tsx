@@ -29,13 +29,33 @@ const baseProps = {
 };
 
 describe("PlaceCard", () => {
-  it("renders name, distance pill, and first 2 action chips", () => {
+  it("renders name, distance chip, and first 2 action chips", () => {
     render(<PlaceCard {...baseProps} />);
 
     expect(screen.getByText("Lagoa das Sete Cidades")).toBeInTheDocument();
     expect(screen.getByLabelText(/5\.2 km away/i)).toBeInTheDocument();
     expect(screen.getByText("hike")).toBeInTheDocument();
     expect(screen.getByText("swim")).toBeInTheDocument();
+  });
+
+  it("renders distance via the hydrangea DistanceChip, not a styled Badge", () => {
+    render(<PlaceCard {...baseProps} />);
+    const chip = screen.getByLabelText(/5\.2 km away/i);
+    expect(chip.className).toMatch(/bg-tertiary-container/);
+  });
+
+  it("renders the name with font-display and no inline fontFamily override", () => {
+    render(<PlaceCard {...baseProps} />);
+    const heading = screen.getByRole("heading", { name: "Lagoa das Sete Cidades" });
+    expect(heading.className).toMatch(/font-display/);
+    expect(heading.getAttribute("style")).toBeNull();
+  });
+
+  it("uses a cream-paper surface (bg-surface-container-low, no shadow)", () => {
+    const { container } = render(<PlaceCard {...baseProps} />);
+    const card = container.querySelector(".bg-surface-container-low");
+    expect(card).not.toBeNull();
+    expect(card?.className).toMatch(/shadow-none/);
   });
 
   it("calls onPress when the card is clicked", () => {
@@ -88,5 +108,44 @@ describe("PlaceCard", () => {
     const svg = placeholder?.querySelector("svg");
     expect(svg?.getAttribute("class") ?? "").toMatch(/utensils/i);
     expect(svg?.getAttribute("class") ?? "").not.toMatch(/mountain/i);
+  });
+
+  describe('variant="overlay"', () => {
+    it("renders the name in a bottom gradient block, white text", () => {
+      const { container } = render(<PlaceCard {...baseProps} variant="overlay" />);
+      const heading = screen.getByRole("heading", { name: "Lagoa das Sete Cidades" });
+      expect(heading.className).toMatch(/font-display/);
+      expect(heading.className).toMatch(/text-white/);
+      const gradient = container.querySelector(".bg-gradient-to-t.from-black\\/80");
+      expect(gradient).not.toBeNull();
+      expect(gradient?.contains(heading)).toBe(true);
+    });
+
+    it("renders a glass DistanceChip top-right", () => {
+      render(<PlaceCard {...baseProps} variant="overlay" />);
+      const chip = screen.getByLabelText(/5\.2 km away/i);
+      expect(chip.className).toMatch(/backdrop-blur-md/);
+      expect(chip.className).toMatch(/bg-tertiary-container\/80/);
+    });
+
+    it("renders no action chips in overlay mode", () => {
+      render(<PlaceCard {...baseProps} variant="overlay" />);
+      expect(screen.queryByLabelText("Action chips")).toBeNull();
+      expect(screen.queryByText("hike")).toBeNull();
+    });
+
+    it("renders the hero placeholder fallback when heroImageUrl is null", () => {
+      render(<PlaceCard {...baseProps} variant="overlay" heroImageUrl={null} />);
+      expect(screen.getByTestId("place-card-hero-placeholder")).toBeInTheDocument();
+    });
+
+    it("calls onPress when clicked and is keyboard-activatable", () => {
+      const onPress = vi.fn();
+      render(<PlaceCard {...baseProps} variant="overlay" onPress={onPress} />);
+      const card = screen.getByRole("button");
+      fireEvent.click(card);
+      fireEvent.keyDown(card, { key: "Enter" });
+      expect(onPress).toHaveBeenCalledTimes(2);
+    });
   });
 });

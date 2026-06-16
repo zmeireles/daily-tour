@@ -72,6 +72,28 @@ Capture lessons learned + technical debt from plan-001:
 - ✅ T-2.C.4 — Estimate recalibration based on actual plan-001 wall-clock data _(resolved 2026-05-30: `docs/implementation-plans/001-roadmap/calibration.md` documents 28 logged-wave data points + Phase 2-5 PR-timestamp sample. Headline finding: late Plan-001 actuals were 0.20× of predictions with a 10-minute floor, far more aggressive than the playbook's current 0.5× correction. Doc recommends shifting the complexity table bands to 10-20 / 20-40 / 40-90 min — pending playbook update.)_
 - ✅ T-2.C.5 — Lessons learned doc + agent playbook update _(resolved 2026-05-29: created `docs/ai/lessons/` with L019 (cross-route audit), L020 (nvm + Node 25 PATH drift), L021 (tasks-prod SSH tunnel diagnosis). Appended L017 (squash-merge title setting) + L018 (`cs-agent push` PR title gap) to the cross-project playbook at `~/.claude/docs/agent-playbook.md`.)_
 
+### Slice 2.D — Editorial Implementation (the build pass) — In Progress (2026-06-16)
+
+Slice 2.B (above) produced the _designs_ (Stitch mockups, brand mark, i18n review). Slice 2.D **builds them in React** — restyling the 5 existing, working screens to the "São Miguel Editorial" system in `docs/design/DESIGN.md`.
+
+**Scope decisions locked 2026-06-16 (human):**
+
+- **Theme:** auto light **and** dark, both editorial — keep the sunrise/sunset auto-switch (`use-theme-auto.ts`); dark values are mockup-calibrated, light values extrapolated to a "paper-on-stone" scheme.
+- **Discover:** full map + draggable bottom-sheet peek-ribbon rebuild (information-architecture change, not a reskin) — its own PR.
+- **Bottom nav:** full 4-tab bar (Explore / Saved / Host / Profile) with Saved/Host/Profile as disabled "coming soon" stubs for guests.
+
+**Approach:** additive + strangler-fig. Wave 0 lands editorial tokens **alongside** the existing shadcn vars (no regression to the passing guest-UAT flow); each screen opts in as it's restyled. Fonts (Fraunces) were already wired in Slice 2.B — no font-swap.
+
+- **T-2.D.0 — Foundations.** Token reconciliation (`tokens.css` + `globals.css`: MD-role editorial surface ladder — `surface-container*`, `on-surface*`, `outline-variant`, `tertiary*` — both themes, mockup class names 1:1) + shared primitives (`Overline`, `DistanceChip`, `BrandAppBar`, `BottomTabBar`; shadcn `Sheet` + `Avatar`).
+- **T-2.D.1 — `PlaceCard` editorial restyle** (highest leverage — feeds Home ribbon, Hosts-picks, Discover, Chat embed).
+- **T-2.D.2 — Place Detail** (overline + Fraunces name on canvas, hydrangea category chips, Details card, glass back/bookmark).
+- **T-2.D.3 — Home** (BrandAppBar, 6-card bento action grid, photo ribbon w/ distance chips, premium stub cards, BottomTabBar).
+- **T-2.D.4 — Daily Tour** (sun-amber overline + named-day headline, per-stop thumbnails, ring node dots, sun-amber connector pills). _Open: do `plan_payload.stops` carry image URLs? — verify before build._
+- **T-2.D.5 — Chat** (avatar + "João · Casa do Sol · Online" header, day separator + timestamps, cream them-bubbles, rich embedded place-card message, pill input + mic + circular send). _Note: `chat.html` mockup is mis-saved (contains the Map variant) — `chat.png` is the source of truth._
+- **T-2.D.6 — Discover map + bottom-sheet rebuild** (largest; relocates the current sort/group/km/vehicle controls).
+
+**Risks (from the current-vs-target delta):** `PlaceCard` blast radius (5 surfaces + the most tests); guest-UAT flow protection (each screen PR updates its `__tests__` + pre-creates a forward-flow dt-tests UAT); the bottom tab bar must not link to non-existent guest routes (stubs only); Daily Tour stop-photo data availability; keep lucide (not Material Symbols); skeleton loaders over spinners per DESIGN.md.
+
 ## Dependencies + Sequence
 
 - Slice 2.A is the long pole (VPS acquisition + DNS may take days)

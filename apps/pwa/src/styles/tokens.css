@@ -60,6 +60,39 @@
   --cream-100-dark: #eae4d2;
   --coral-400: #e07a65;
 
+  /* ─── Editorial surface ladder — "São Miguel Editorial" (T-2.D.0) ─────── */
+  /* Dark scheme: calibrated literals from the approved Stitch mockups       */
+  /* (MD3 tea-green seed). Light scheme: paper-on-stone, extrapolated from    */
+  /* the cream/basalt anchors (mockups are dark-only). globals.css selects    */
+  /* per-theme, matching the two-layer contract.                             */
+  --ed-canvas-dark: #0f1514;
+  --ed-surf-lowest-dark: #090f0e;
+  --ed-surf-low-dark: #171d1c;
+  --ed-surf-dark: #1b2120;
+  --ed-surf-high-dark: #252b2a;
+  --ed-surf-highest-dark: #303635;
+  --ed-on-surface-dark: #dee4e2;
+  --ed-on-surface-variant-dark: #c1c9c0;
+  --ed-outline-dark: #8b938b;
+  --ed-outline-variant-dark: #414943;
+  --ed-tertiary-dark: #b6c4ff;
+  --ed-tertiary-container-dark: #3b5097;
+  --ed-on-tertiary-container-dark: #bac7ff;
+
+  --ed-canvas-light: #f1ecdf;
+  --ed-surf-lowest-light: #ffffff;
+  --ed-surf-low-light: #f7f4ec;
+  --ed-surf-light: #efead8;
+  --ed-surf-high-light: #e6dfca;
+  --ed-surf-highest-light: #ddd4ba;
+  --ed-on-surface-light: #0e1413;
+  --ed-on-surface-variant-light: #4b5650;
+  --ed-outline-light: #97a29b;
+  --ed-outline-variant-light: #d9d2bf;
+  --ed-tertiary-light: #5b6fb8;
+  --ed-tertiary-container-light: #e3e7f7;
+  --ed-on-tertiary-container-light: #2a3573;
+
   /* ─── Typography ──────────────────────────────────────────────────────── */
   --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
