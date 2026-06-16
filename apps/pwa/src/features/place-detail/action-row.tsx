@@ -10,8 +10,11 @@ interface ActionRowProps {
   messageLabel: string;
 }
 
-const actionClass =
-  "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-secondary px-3 py-2 text-secondary-foreground text-xs font-medium hover:bg-secondary/80 active:scale-95 transition-transform";
+// Editorial bordered tile — stacked icon + label, equal width via the parent grid.
+const tileClass =
+  "flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-outline-variant bg-surface-container px-3 py-4 text-on-surface transition-colors hover:bg-surface-container-high active:scale-95";
+
+const iconClass = "text-tertiary";
 
 export function ActionRow({
   navigateHref,
@@ -22,18 +25,18 @@ export function ActionRow({
   messageLabel,
 }: ActionRowProps) {
   return (
-    <div className="flex gap-3 px-4 py-3">
-      <a href={navigateHref} target="_blank" rel="noopener noreferrer" className={actionClass}>
-        <Navigation size={20} aria-hidden="true" />
-        <span>{navigateLabel}</span>
+    <div className="grid grid-cols-3 gap-3">
+      <a href={navigateHref} target="_blank" rel="noopener noreferrer" className={tileClass}>
+        <Navigation size={22} className={iconClass} aria-hidden="true" />
+        <span className="text-sm font-medium">{navigateLabel}</span>
       </a>
-      <a href={callHref} className={actionClass}>
-        <Phone size={20} aria-hidden="true" />
-        <span>{callLabel}</span>
+      <a href={callHref} className={tileClass}>
+        <Phone size={22} className={iconClass} aria-hidden="true" />
+        <span className="text-sm font-medium">{callLabel}</span>
       </a>
-      <a href={waHref} target="_blank" rel="noopener noreferrer" className={actionClass}>
-        <MessageCircle size={20} aria-hidden="true" />
-        <span>{messageLabel}</span>
+      <a href={waHref} target="_blank" rel="noopener noreferrer" className={tileClass}>
+        <MessageCircle size={22} className={iconClass} aria-hidden="true" />
+        <span className="text-sm font-medium">{messageLabel}</span>
       </a>
     </div>
   );

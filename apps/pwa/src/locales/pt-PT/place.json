@@ -3,10 +3,17 @@
   "loading": "A carregar lugar…",
   "error": "Não foi possível carregar. Tente novamente.",
   "not_found": "Lugar não encontrado.",
+  "save_coming_soon": "Guardar — em breve",
   "actions": {
     "navigate": "Navegar",
     "call": "Ligar",
-    "message": "Mensagem"
+    "message": "Mensagem",
+    "back": "Voltar"
+  },
+  "details": {
+    "title": "Detalhes",
+    "opening_hours": "Horário",
+    "best_season": "Melhor época"
   },
   "wa_prefill": "Olá! Estou em {{placeName}}, pode recomendar o próximo lugar?"
 }

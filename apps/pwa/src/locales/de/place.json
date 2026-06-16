@@ -3,10 +3,17 @@
   "loading": "Ort wird geladen…",
   "error": "Dieser Ort konnte nicht geladen werden. Bitte erneut versuchen.",
   "not_found": "Ort nicht gefunden.",
+  "save_coming_soon": "Speichern — bald verfügbar",
   "actions": {
     "navigate": "Navigieren",
     "call": "Anrufen",
-    "message": "Nachricht"
+    "message": "Nachricht",
+    "back": "Zurück"
+  },
+  "details": {
+    "title": "Details",
+    "opening_hours": "Öffnungszeiten",
+    "best_season": "Beste Reisezeit"
   },
   "wa_prefill": "Hallo! Ich bin bei {{placeName}}, können Sie den nächsten Halt empfehlen?"
 }

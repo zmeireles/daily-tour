@@ -3,10 +3,17 @@
   "loading": "Loading place…",
   "error": "Couldn't load this place. Try again.",
   "not_found": "Place not found.",
+  "save_coming_soon": "Save — coming soon",
   "actions": {
     "navigate": "Navigate",
     "call": "Call",
-    "message": "Message"
+    "message": "Message",
+    "back": "Back"
+  },
+  "details": {
+    "title": "Details",
+    "opening_hours": "Opening hours",
+    "best_season": "Best season"
   },
   "wa_prefill": "Hi! I'm at {{placeName}}, can you recommend the next stop?"
 }

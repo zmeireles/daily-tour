@@ -24,6 +24,7 @@ const MOCK_PLACE = {
   address: "São Miguel, Azores",
   contacts: { phone: "+351912000001" },
   hours: [],
+  season: null,
   status: "published",
   is_hosts_pick: true,
   media: [
@@ -171,5 +172,45 @@ describe("PlaceDetailRoute", () => {
       expect(router.state.location.pathname).toBe("/");
       expect(router.state.location.search).toBe("?reason=expired");
     });
+  });
+
+  it("omits the Details card when season and hours are both empty", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(MOCK_PLACE),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    await waitFor(() => {
+      expect(screen.getByText("Sete Cidades")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("place-details-card")).not.toBeInTheDocument();
+  });
+
+  it("renders the Details card with a Best season row when season is set", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ...MOCK_PLACE, season: "summer" }),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("place-details-card")).toBeInTheDocument();
+    });
+
+    // Capitalized season label rendered inside the card.
+    expect(screen.getByText("Summer")).toBeInTheDocument();
+    expect(screen.getByText("Best season")).toBeInTheDocument();
   });
 });
