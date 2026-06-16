@@ -9,13 +9,13 @@ interface DescriptionProps {
 
 export function Description({ text, fallback, translationPendingLabel }: DescriptionProps) {
   return (
-    <div className="px-4 py-3 space-y-2">
+    <div className="space-y-2">
       {fallback && (
         <Badge variant="outline" className="text-xs">
           {translationPendingLabel}
         </Badge>
       )}
-      <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
+      <p className="max-w-[65ch] text-base leading-relaxed text-on-surface-variant">{text}</p>
     </div>
   );
 }

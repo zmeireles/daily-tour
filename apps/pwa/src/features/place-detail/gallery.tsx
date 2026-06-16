@@ -21,12 +21,12 @@ export function Gallery({ media, altFallback }: GalleryProps) {
   if (images.length <= 1) return null;
 
   return (
-    <div className="px-4 py-3">
+    <div>
       <Carousel opts={{ align: "start", loop: false }}>
         <CarouselContent>
           {images.map((img) => (
             <CarouselItem key={img.id} className="basis-4/5">
-              <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+              <div className="aspect-video overflow-hidden rounded-2xl bg-muted">
                 <img
                   src={img.url}
                   alt={img.alt?.en ?? altFallback}

@@ -40,6 +40,7 @@ export interface HydratedPlacePayload {
     social?: Array<{ kind: string; handle: string }>;
   };
   hours: Array<{ dow: number; open: string; close: string }>;
+  season: string | null;
   status: string;
   is_hosts_pick: boolean;
   media: PlaceMedia[];
