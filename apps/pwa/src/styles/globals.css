@@ -78,6 +78,22 @@
   --ring: var(--tea-500);
 
   --radius: 0.625rem;
+
+  /* Editorial surfaces (São Miguel Editorial) — light. Opt-in alongside the
+     shadcn vars above; restyled screens use these, others keep --background. */
+  --surface: var(--ed-canvas-light);
+  --surface-container-lowest: var(--ed-surf-lowest-light);
+  --surface-container-low: var(--ed-surf-low-light);
+  --surface-container: var(--ed-surf-light);
+  --surface-container-high: var(--ed-surf-high-light);
+  --surface-container-highest: var(--ed-surf-highest-light);
+  --on-surface: var(--ed-on-surface-light);
+  --on-surface-variant: var(--ed-on-surface-variant-light);
+  --outline: var(--ed-outline-light);
+  --outline-variant: var(--ed-outline-variant-light);
+  --tertiary: var(--ed-tertiary-light);
+  --tertiary-container: var(--ed-tertiary-container-light);
+  --on-tertiary-container: var(--ed-on-tertiary-container-light);
 }
 
 /* ─── Dark theme — sunrise/sunset auto-switch lands in T-1.2.1 ──────────── */
@@ -110,6 +126,21 @@
   --border: var(--surface-700);
   --input: var(--surface-700);
   --ring: var(--tea-400);
+
+  /* Editorial surfaces (São Miguel Editorial) — dark (mockup-calibrated). */
+  --surface: var(--ed-canvas-dark);
+  --surface-container-lowest: var(--ed-surf-lowest-dark);
+  --surface-container-low: var(--ed-surf-low-dark);
+  --surface-container: var(--ed-surf-dark);
+  --surface-container-high: var(--ed-surf-high-dark);
+  --surface-container-highest: var(--ed-surf-highest-dark);
+  --on-surface: var(--ed-on-surface-dark);
+  --on-surface-variant: var(--ed-on-surface-variant-dark);
+  --outline: var(--ed-outline-dark);
+  --outline-variant: var(--ed-outline-variant-dark);
+  --tertiary: var(--ed-tertiary-dark);
+  --tertiary-container: var(--ed-tertiary-container-dark);
+  --on-tertiary-container: var(--ed-on-tertiary-container-dark);
 }
 
 /* ─── shadcn @theme inline: keep utility classes pointing at semantic vars ─ */
@@ -133,6 +164,20 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Editorial surface utilities — match the Stitch mockup class names 1:1 */
+  --color-surface: var(--surface);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
   --radius-lg: var(--radius);
