@@ -1,13 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Background: tea-leaf green rounded square -->
-  <rect width="64" height="64" rx="12" fill="#2F5D43"/>
-  <!-- Map-pin drop: cream fill, basalt outline — volcanic island + tour location marker -->
-  <path d="M 20 26 A 12 12 0 0 0 44 26 L 32 52 Z"
-        fill="#F7F4EC" stroke="#1C3A28" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- Tea-leaf veins: central spine + lateral pairs — São Miguel identity -->
-  <path d="M 32 15 L 32 50" fill="none" stroke="#2F5D43" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="M 32 20 Q 27 19 24 18" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
-  <path d="M 32 20 Q 37 19 40 18" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
-  <path d="M 32 27 Q 26 26 23 24" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
-  <path d="M 32 27 Q 38 26 41 24" fill="none" stroke="#2F5D43" stroke-width="0.8" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Daily Tour">
+  <!-- Cream "paper" canvas (matches manifest background_color) -->
+  <rect width="64" height="64" rx="14" fill="#F7F4EC"/>
+  <!-- Map pin (tea-leaf green) — location-agnostic: any place on the island -->
+  <path d="M32 7 C 20.5 7 11 16.5 11 28 C 11 42 32 55 32 55 C 32 55 53 42 53 28 C 53 16.5 43.5 7 32 7 Z" fill="#2F5D43"/>
+  <!-- Tea leaf (Gorreana) carried inside the pin — São Miguel identity -->
+  <path d="M32 15 C 39 20.5 39 31.5 32 38 C 25 31.5 25 20.5 32 15 Z" fill="#F7F4EC"/>
+  <!-- Leaf spine + lateral veins -->
+  <path d="M32 18 L32 35" fill="none" stroke="#2F5D43" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M32 24 Q 35.5 24 37 26.5" fill="none" stroke="#2F5D43" stroke-width="1" stroke-linecap="round"/>
+  <path d="M32 24 Q 28.5 24 27 26.5" fill="none" stroke="#2F5D43" stroke-width="1" stroke-linecap="round"/>
 </svg>
