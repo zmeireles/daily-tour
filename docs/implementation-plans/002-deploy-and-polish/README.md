@@ -84,13 +84,19 @@ Slice 2.B (above) produced the _designs_ (Stitch mockups, brand mark, i18n revie
 
 **Approach:** additive + strangler-fig. Wave 0 lands editorial tokens **alongside** the existing shadcn vars (no regression to the passing guest-UAT flow); each screen opts in as it's restyled. Fonts (Fraunces) were already wired in Slice 2.B — no font-swap.
 
-- **T-2.D.0 — Foundations.** Token reconciliation (`tokens.css` + `globals.css`: MD-role editorial surface ladder — `surface-container*`, `on-surface*`, `outline-variant`, `tertiary*` — both themes, mockup class names 1:1) + shared primitives (`Overline`, `DistanceChip`, `BrandAppBar`, `BottomTabBar`; shadcn `Sheet` + `Avatar`).
-- **T-2.D.1 — `PlaceCard` editorial restyle** (highest leverage — feeds Home ribbon, Hosts-picks, Discover, Chat embed).
-- **T-2.D.2 — Place Detail** (overline + Fraunces name on canvas, hydrangea category chips, Details card, glass back/bookmark).
-- **T-2.D.3 — Home** (BrandAppBar, 6-card bento action grid, photo ribbon w/ distance chips, premium stub cards, BottomTabBar).
-- **T-2.D.4 — Daily Tour** (sun-amber overline + named-day headline, per-stop thumbnails, ring node dots, sun-amber connector pills). _Open: do `plan_payload.stops` carry image URLs? — verify before build._
+- **T-2.D.0 — Foundations. ✅ DONE (#254).** Token reconciliation (`tokens.css` + `globals.css`: MD-role editorial surface ladder — `surface-container*`, `on-surface*`, `outline-variant`, `tertiary*` — both themes, mockup class names 1:1) + shared primitives (`Overline`, `DistanceChip`, `BrandAppBar`, `BottomTabBar`; shadcn `Sheet` + `Avatar`). Verified light+dark.
+- **T-2.D.1 — `PlaceCard` editorial restyle. ✅ DONE (#254)** — `stacked` (default) + new `overlay` variant. Verified light+dark.
+- **T-2.D.2 — Place Detail. ✅ DONE (#255)** (overline + Fraunces name on canvas, hydrangea category chips, conditional Details card w/ sun-amber dot, glass back/bookmark, action tiles, BottomTabBar). Found+fixed **D1** (theme not applied on `/p/:id` — route now mounts `useThemeAuto()`).
+- **T-2.D.3 — Home. 🔄 In progress** (BrandAppBar, 6-card bento action grid, overlay-variant photo ribbon, active premium cards, BottomTabBar).
+- **T-2.D.4 — Daily Tour** (sun-amber overline + named-day headline, per-stop thumbnails, ring node dots, sun-amber connector pills). _Stop-photo data confirmed available: every step carries `place_id` and the BFF `toStop()` already loads the place to resolve its name — just wire `hero_image_url` into the stop view (fallback covers media-less stops)._
 - **T-2.D.5 — Chat** (avatar + "João · Casa do Sol · Online" header, day separator + timestamps, cream them-bubbles, rich embedded place-card message, pill input + mic + circular send). _Note: `chat.html` mockup is mis-saved (contains the Map variant) — `chat.png` is the source of truth._
 - **T-2.D.6 — Discover map + bottom-sheet rebuild** (largest; relocates the current sort/group/km/vehicle controls).
+
+**Backend follow-ups discovered during the build (separate, non-blocking):**
+
+- **BFF drops `season` (and likely `hours`/`contacts`) on place-detail.** catalog-svc returns `season` (`routes/places.ts:147`) but the BFF place-detail response doesn't carry it through, so the T-2.D.2 Details card can't light up end-to-end until the BFF plumbs it. Small backend PR.
+- **Shared authed-layout for theming.** The router is flat; each authed screen must mount `useThemeAuto()` itself (done for `/p/:id` in #255; `/` already had it). A shared layout route would mount it once and fix the same latent light-flash on chat + tour. Do as a small refactor or fold into T-2.D.4/.5.
+- **F1 — Home host's-picks payload omits `distance_km`** (`/v1/discover?action=eat` for `is_hosts_pick`), so the overlay card's distance chip won't render on Home. Cosmetic; fix only if the chip is wanted there.
 
 **Risks (from the current-vs-target delta):** `PlaceCard` blast radius (5 surfaces + the most tests); guest-UAT flow protection (each screen PR updates its `__tests__` + pre-creates a forward-flow dt-tests UAT); the bottom tab bar must not link to non-existent guest routes (stubs only); Daily Tour stop-photo data availability; keep lucide (not Material Symbols); skeleton loaders over spinners per DESIGN.md.
 

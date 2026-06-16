@@ -64,23 +64,58 @@ describe("Authed home (IndexRoute dispatcher)", () => {
     expect(document.querySelector("[data-premium='true']")).toBeNull();
   });
 
-  it("renders authed home with all 6 action tiles when JWT is present", () => {
+  it("renders authed home with all 6 action bento cards linking to /a/<slug> when JWT is present", () => {
     act(() => {
       useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
     });
 
     renderRoute();
 
-    // All 6 EN action labels visible
-    expect(screen.getByRole("link", { name: /eat/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /drink/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /see/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /do/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /buy/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /move/i })).toBeInTheDocument();
+    // Each bento card is a Link with an accessible name (the action label) and
+    // an href to /a/<slug>. Querying by exact name avoids substring collisions
+    // (e.g. "Do" matching "Explore") now that the BottomTabBar is mounted.
+    const expected: Array<[RegExp, string]> = [
+      [/^eat$/i, "/a/eat"],
+      [/^drink$/i, "/a/drink"],
+      [/^see$/i, "/a/see"],
+      [/^do$/i, "/a/do"],
+      [/^buy$/i, "/a/buy"],
+      [/^move$/i, "/a/move"],
+    ];
+    for (const [name, href] of expected) {
+      const link = screen.getByRole("link", { name });
+      expect(link).toBeInTheDocument();
+      expect(link.getAttribute("href")).toBe(href);
+    }
 
     // Premium-namespaced CTA present (Plan my day) — now an enabled link, not a disabled stub
     expect(document.querySelector("[data-premium='true']")).not.toBeNull();
+  });
+
+  it("renders an editorial 'Message João' card linking to /chat on the authed home", () => {
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+
+    renderRoute();
+
+    // The João avatar is aria-hidden, so the link's accessible name is the
+    // text label alone (not doubled by the fallback initial).
+    const chatCta = screen.getByRole("link", { name: /message joão/i });
+    expect(chatCta).toBeInTheDocument();
+    expect(chatCta.getAttribute("href")).toBe("/chat");
+  });
+
+  it("mounts the bottom tab bar with Explore active", () => {
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+
+    renderRoute();
+
+    const exploreTab = screen.getByRole("link", { name: /explore/i });
+    expect(exploreTab.getAttribute("href")).toBe("/");
+    expect(exploreTab).toHaveAttribute("aria-current", "page");
   });
 
   it("renders an enabled 'Plan my day' CTA linking to /tour/new on the authed home", () => {

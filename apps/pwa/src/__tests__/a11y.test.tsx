@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { configureAxe, toHaveNoViolations } from "jest-axe";
 
@@ -92,9 +92,30 @@ describe("WCAG 2.2 AA — a11y audit (critical/serious violations only)", () => 
       expect(await axe(container)).toHaveNoViolations();
     });
 
+    it("ActionGrid bento cards each expose an accessible name", () => {
+      render(withRouter(<ActionGrid />));
+      // Six links, each with a non-empty accessible name (the action label).
+      // A bare-icon Link with no text would be an axe violation; this asserts
+      // the label text is what names the link.
+      const links = screen.getAllByRole("link");
+      expect(links).toHaveLength(6);
+      for (const link of links) {
+        expect(link).toHaveAccessibleName(/\S/);
+      }
+    });
+
     it("PremiumStubs has no critical/serious violations", async () => {
       const { container } = render(withRouter(<PremiumStubs />));
       expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it("PremiumStubs 'Message João' link is named by its label only, not doubled by the avatar", () => {
+      render(withRouter(<PremiumStubs />));
+      const chatLink = screen.getByRole("link", { name: /message joão/i });
+      // The decorative avatar fallback "J" is aria-hidden, so it is excluded
+      // from the link's accessible name — the name is the label text alone,
+      // not "J Message João".
+      expect(chatLink).toHaveAccessibleName("Message João");
     });
   });
 

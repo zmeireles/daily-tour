@@ -95,5 +95,10 @@ describe("HostsPicksSection", () => {
       expect(screen.getByRole("region", { name: /host.s picks/i })).toBeInTheDocument();
     });
     expect(screen.getByText("Lagoa das Sete Cidades")).toBeInTheDocument();
+
+    // Home ribbon uses the portrait overlay variant (4:5 gradient cards), not
+    // the stacked cream card. The overlay shell is the only one with aspect-[4/5].
+    const region = screen.getByRole("region", { name: /host.s picks/i });
+    expect(region.querySelector(".aspect-\\[4\\/5\\]")).not.toBeNull();
   });
 });
