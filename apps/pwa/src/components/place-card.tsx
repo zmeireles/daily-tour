@@ -56,27 +56,37 @@ function DynamicIcon({ name, ...props }: { name: string } & LucideProps) {
 //   2. actions[0]?.icon (first chip's icon — currently always "MapPin"
 //      until the chip-icon registry lands; see daily-tour project task 127)
 //   3. ImageOff (generic fallback when neither is available)
+// tone "light" (default) = cream gradient for the stacked variant, where the
+// name sits BELOW the hero on a cream card. tone "dark" = forest-green editorial
+// surface for the overlay variant, where the name is OVERLAID in white — a light
+// placeholder there renders white-on-cream (unreadable for multi-line names).
 function HeroPlaceholder({
   actions,
   label,
   placeholderIcon,
+  tone = "light",
 }: {
   actions: PlaceCardAction[];
   label: string;
   placeholderIcon?: string | null;
+  tone?: "light" | "dark";
 }) {
   const iconName = placeholderIcon ?? actions[0]?.icon;
+  const iconClass = tone === "dark" ? "text-white/70" : "text-muted-foreground/60";
   return (
     <div
-      className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/60"
+      className={cn(
+        "flex h-full w-full items-center justify-center bg-gradient-to-br",
+        tone === "dark" ? "from-[var(--tea-600)] to-[var(--tea-500)]" : "from-muted to-muted/60",
+      )}
       role="img"
       aria-label={`${label} — image coming soon`}
       data-testid="place-card-hero-placeholder"
     >
       {iconName ? (
-        <DynamicIcon name={iconName} size={40} className="text-muted-foreground/60" />
+        <DynamicIcon name={iconName} size={40} className={iconClass} />
       ) : (
-        <ImageOff size={40} className="text-muted-foreground/60" />
+        <ImageOff size={40} className={iconClass} />
       )}
     </div>
   );
@@ -89,11 +99,13 @@ function HeroMedia({
   displayName,
   actions,
   placeholderIcon,
+  tone,
 }: {
   heroImageUrl: string | null | undefined;
   displayName: string;
   actions: PlaceCardAction[];
   placeholderIcon?: string | null;
+  tone?: "light" | "dark";
 }) {
   if (heroImageUrl) {
     return (
@@ -106,7 +118,12 @@ function HeroMedia({
     );
   }
   return (
-    <HeroPlaceholder actions={actions} label={displayName} placeholderIcon={placeholderIcon} />
+    <HeroPlaceholder
+      actions={actions}
+      label={displayName}
+      placeholderIcon={placeholderIcon}
+      tone={tone}
+    />
   );
 }
 
@@ -177,6 +194,7 @@ export function PlaceCard({
             displayName={displayName}
             actions={actions}
             placeholderIcon={placeholderIcon}
+            tone="dark"
           />
         </div>
         {distanceKm !== undefined && distanceLabel && (
@@ -186,7 +204,9 @@ export function PlaceCard({
             aria-label={`${distanceLabel} away`}
           />
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+        {/* Taller, stronger scrim so multi-line names stay legible over real
+            photos; the dark placeholder covers the no-photo case. */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-4 pt-12">
           <h3 className="font-display text-lg leading-tight text-white">{displayName}</h3>
         </div>
       </PressableShell>

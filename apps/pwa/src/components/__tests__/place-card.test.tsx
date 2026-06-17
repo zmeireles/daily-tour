@@ -116,9 +116,21 @@ describe("PlaceCard", () => {
       const heading = screen.getByRole("heading", { name: "Lagoa das Sete Cidades" });
       expect(heading.className).toMatch(/font-display/);
       expect(heading.className).toMatch(/text-white/);
-      const gradient = container.querySelector(".bg-gradient-to-t.from-black\\/80");
+      // Strengthened scrim (from-black/85 + via-black/40 + taller pt-12) keeps
+      // multi-line names legible over real photos.
+      const gradient = container.querySelector(".bg-gradient-to-t.from-black\\/85");
       expect(gradient).not.toBeNull();
       expect(gradient?.contains(heading)).toBe(true);
+    });
+
+    it("renders the no-photo placeholder on a dark forest-green tone (legible white name)", () => {
+      // Regression guard for the desktop-audit blocker: the overlay name is
+      // overlaid white text, so a light placeholder rendered white-on-cream
+      // (unreadable). The overlay placeholder must use the dark tea-green tone.
+      render(<PlaceCard {...baseProps} variant="overlay" heroImageUrl={null} />);
+      const placeholder = screen.getByTestId("place-card-hero-placeholder");
+      expect(placeholder.className).toMatch(/tea-600/);
+      expect(placeholder.className).not.toMatch(/from-muted/);
     });
 
     it("renders a glass DistanceChip top-right", () => {
