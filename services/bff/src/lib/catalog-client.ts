@@ -50,6 +50,7 @@ export interface HydratedPlace {
     social?: Array<{ kind: string; handle: string }>;
   };
   hours: Array<{ dow: number; open: string; close: string }>;
+  season: "summer" | "winter" | null;
   status: string;
   is_hosts_pick: boolean;
   source_kind: string;

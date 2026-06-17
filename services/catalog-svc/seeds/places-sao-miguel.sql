@@ -1073,3 +1073,18 @@ INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort
   ('d0000001-0000-4000-a000-000000004303','c0000001-0000-4000-a000-000000000043','image','/media/the-view-point/03.jpg','{"en":"The View Point","pt-PT":"The View Point"}',NULL,3),
   ('d0000001-0000-4000-a000-000000004304','c0000001-0000-4000-a000-000000000043','image','/media/the-view-point/04.jpg','{"en":"The View Point","pt-PT":"The View Point"}',NULL,4)
 ON CONFLICT (id) DO NOTHING;
+
+-- Seasonal-operation flag: mark the genuinely summer-season spots (the Vila
+-- Franca islet ferry, the beaches, the sea pool, the beach bar) so the
+-- place-detail Details card surfaces a "best season" row (T-2.D follow-up:
+-- catalog → bff → pwa season plumbing). Idempotent; safe to re-run.
+UPDATE catalog.place SET season = 'summer'
+WHERE id IN (
+  'c0000001-0000-4000-a000-000000000009',  -- Ilhéu Vila Franca do Campo (summer ferry)
+  'c0000001-0000-4000-a000-000000000010',  -- Praia de Santa Bárbara
+  'c0000001-0000-4000-a000-000000000011',  -- Praia dos Mosteiros
+  'c0000001-0000-4000-a000-000000000023',  -- Bar Caloura (sea pool)
+  'c0000001-0000-4000-a000-000000000033',  -- Sunset Beach Bar
+  'c0000001-0000-4000-a000-000000000034',  -- Praia de São Roque
+  'c0000001-0000-4000-a000-000000000035'   -- Praia do Pópulo
+);

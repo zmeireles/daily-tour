@@ -63,6 +63,7 @@ const FIXTURE_HYDRATED = {
   address: "Ponta Delgada, Açores",
   contacts: {},
   hours: [],
+  season: "summer" as const,
   status: "published",
   is_hosts_pick: true,
   source_kind: "manual",
@@ -119,6 +120,8 @@ describe("GET /v1/places/:id", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json<typeof FIXTURE_HYDRATED & { weather_ok_today: boolean }>();
     expect(body.id).toBe(FIXTURE_PLACE_ID);
+    // season passes through the BFF (catalog-svc /hydrated → ...place spread)
+    expect(body.season).toBe("summer");
     expect(body.media).toHaveLength(1);
     expect(body.media[0]!.kind).toBe("image");
     expect(body.actions).toHaveLength(1);
