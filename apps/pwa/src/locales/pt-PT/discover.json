@@ -3,9 +3,12 @@
   "chat": {
     "title": "Falar com o anfitrião",
     "back": "Voltar",
+    "status_online": "Online",
+    "day_today": "Hoje",
     "connecting": "A ligar…",
     "empty": "Diga olá para começar a conversa.",
     "placeholder": "Escreva uma mensagem",
+    "voice": "Mensagem de voz",
     "send": "Enviar"
   },
   "controls": {

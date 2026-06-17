@@ -98,6 +98,16 @@ describe("Chat route", () => {
     });
   });
 
+  it("shows the host name (Miguel) and an Online status in the app bar", () => {
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    expect(screen.getByRole("heading", { name: "Miguel" })).toBeInTheDocument();
+    expect(screen.getByText(/online/i)).toBeInTheDocument();
+  });
+
   it("shows the connecting indicator and opens a WS to /v1/chat/ws", () => {
     act(() => {
       useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
@@ -128,13 +138,23 @@ describe("Chat route", () => {
     fireEvent.click(screen.getByRole("button", { name: /send/i }));
 
     expect(socket.sent).toEqual(["olá!"]);
-    expect(screen.getByTestId("chat-bubble-me")).toHaveTextContent("olá!");
+    const meBubble = screen.getByTestId("chat-bubble-me");
+    expect(meBubble).toHaveTextContent("olá!");
+    // Editorial surfaces: guest = tea-green primary, host = cream paper.
+    expect(meBubble).toHaveClass("bg-primary");
+
+    // A per-message timestamp (HH:MM) renders next to the sent bubble.
+    expect(screen.getByTestId("chat-time-me")).toBeInTheDocument();
+    // A day separator anchors the start of today's group.
+    expect(screen.getByTestId("chat-day-separator")).toBeInTheDocument();
 
     act(() => {
       socket._message(JSON.stringify({ body: "olá de volta" }));
     });
 
-    expect(screen.getByTestId("chat-bubble-them")).toHaveTextContent("olá de volta");
+    const themBubble = screen.getByTestId("chat-bubble-them");
+    expect(themBubble).toHaveTextContent("olá de volta");
+    expect(themBubble).toHaveClass("bg-surface-container-low");
   });
 
   it("re-hydrates persisted history on mount (UAT-G08 step 5)", async () => {
