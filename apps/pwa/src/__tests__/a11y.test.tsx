@@ -109,13 +109,13 @@ describe("WCAG 2.2 AA — a11y audit (critical/serious violations only)", () => 
       expect(await axe(container)).toHaveNoViolations();
     });
 
-    it("PremiumStubs 'Message João' link is named by its label only, not doubled by the avatar", () => {
+    it("PremiumStubs 'Message Miguel' link is named by its label only, not doubled by the avatar", () => {
       render(withRouter(<PremiumStubs />));
-      const chatLink = screen.getByRole("link", { name: /message joão/i });
-      // The decorative avatar fallback "J" is aria-hidden, so it is excluded
+      const chatLink = screen.getByRole("link", { name: /message miguel/i });
+      // The decorative avatar fallback "M" is aria-hidden, so it is excluded
       // from the link's accessible name — the name is the label text alone,
-      // not "J Message João".
-      expect(chatLink).toHaveAccessibleName("Message João");
+      // not "M Message Miguel".
+      expect(chatLink).toHaveAccessibleName("Message Miguel");
     });
   });
 
