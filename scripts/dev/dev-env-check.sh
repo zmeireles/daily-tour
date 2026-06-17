@@ -267,10 +267,11 @@ if [[ $SKIP_SMOKE -eq 0 ]]; then
     PG_EXEC=(docker compose --env-file "$COMPOSE_ENV_FILE" -f infra/compose/docker-compose.base.yml exec -T postgres)
   fi
   PLACES=$("${PG_EXEC[@]}" psql -U postgres -d dailytour -t -c "SELECT count(*) FROM catalog.place;" 2>/dev/null | tr -d ' \n')
-  if [[ "$PLACES" == "28" ]]; then
-    row "catalog seeded" "$OK 28 places"
+  # Count-robust: assert the ≥28 baseline (seed grows over time), not an exact 28.
+  if [[ "$PLACES" =~ ^[0-9]+$ ]] && ((PLACES >= 28)); then
+    row "catalog seeded" "$OK $PLACES places (≥28)"
   else
-    row "catalog seeded" "$NO got '$PLACES' (want 28)" "rerun seed: pnpm --filter @daily-tour/catalog-svc run seed"
+    row "catalog seeded" "$NO got '$PLACES' (want ≥28)" "rerun seed: pnpm --filter @daily-tour/catalog-svc run seed"
     fail
   fi
 
