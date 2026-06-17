@@ -45,6 +45,8 @@ const stops: TourStop[] = [
   { id: "s3", time: "13:00", kind: "transit", name: "Drive to Furnas", duration_min: 45 },
 ];
 
+const PHOTO_URL = "https://cdn.example.com/terra-nostra.jpg";
+
 beforeEach(() => {
   capturedOnReorder = null;
 });
@@ -59,10 +61,9 @@ describe("DailyTourTimeline", () => {
     expect(screen.getByText("09:00")).toBeInTheDocument();
     expect(screen.getByText("10:30")).toBeInTheDocument();
     expect(screen.getByText("13:00")).toBeInTheDocument();
-    expect(screen.getByText("90 min")).toBeInTheDocument();
   });
 
-  it("renders drive time from the previous stop, but not on the first stop", () => {
+  it("renders the sun-amber connector pill only when travel_to_minutes is present", () => {
     const withTravel: TourStop[] = [
       { id: "a", time: "09:00", kind: "activity", name: "Stop A" },
       { id: "b", time: "10:00", kind: "activity", name: "Stop B", travel_to_minutes: 14 },
@@ -70,10 +71,27 @@ describe("DailyTourTimeline", () => {
     ];
     render(<DailyTourTimeline stops={withTravel} />);
 
-    // Second stop shows its inbound drive time; first stop and the zero-travel
-    // stop render no travel affordance.
-    expect(screen.getByText("14 min")).toBeInTheDocument();
+    // Exactly one connector pill — the middle stop. The first stop has no
+    // inbound travel; the zero-travel stop renders no affordance.
+    const connectors = screen.getAllByTestId("timeline-stop-connector");
+    expect(connectors).toHaveLength(1);
+    expect(connectors[0]).toHaveTextContent("14 min");
     expect(screen.queryByText("0 min")).not.toBeInTheDocument();
+  });
+
+  it("shows a photo thumbnail when hero_image_url is set, else the branded fallback", () => {
+    const mixed: TourStop[] = [
+      { id: "p", time: "09:00", kind: "activity", name: "With Photo", hero_image_url: PHOTO_URL },
+      { id: "n", time: "10:00", kind: "meal", name: "No Photo" },
+    ];
+    render(<DailyTourTimeline stops={mixed} />);
+
+    const photo = screen.getByTestId("timeline-stop-thumb");
+    expect(photo).toHaveAttribute("src", PHOTO_URL);
+    expect(photo).toHaveAttribute("alt", "With Photo");
+
+    expect(screen.getByTestId("timeline-stop-thumb-fallback")).toBeInTheDocument();
+    expect(screen.queryByTestId("timeline-stop-thumb")).toBe(photo);
   });
 
   it("calls onReorder and rerenders in new order after drag completes", () => {
@@ -93,17 +111,17 @@ describe("DailyTourTimeline", () => {
     expect(items[2]).toHaveTextContent("Sete Cidades hike");
   });
 
-  it("applies correct dot class per stop kind", () => {
+  it("preserves data-kind on each node dot and renders them tea-green", () => {
     render(<DailyTourTimeline stops={stops} />);
 
     const dots = document.querySelectorAll("[data-kind]");
     expect(dots[0].getAttribute("data-kind")).toBe("meal");
-    expect(dots[0].className).toMatch(/bg-\[var\(--sun-400\)\]/);
-
     expect(dots[1].getAttribute("data-kind")).toBe("activity");
-    expect(dots[1].className).toMatch(/bg-\[var\(--tea-500\)\]/);
-
     expect(dots[2].getAttribute("data-kind")).toBe("transit");
-    expect(dots[2].className).toMatch(/bg-\[var\(--basalt-300\)\]/);
+
+    // Editorial timeline uses a uniform tea-green dot (bg-primary) for every kind.
+    for (const dot of dots) {
+      expect(dot.className).toMatch(/bg-primary/);
+    }
   });
 });

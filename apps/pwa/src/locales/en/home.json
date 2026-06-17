@@ -52,6 +52,12 @@
       "rejected": "Could not create a plan. Please try again.",
       "weather_adjusted": "Adjusted for weather",
       "back": "Back to home"
+    },
+    "editorial": {
+      "overline": "YOUR DAILY TOUR",
+      "headline": "Your day on São Miguel",
+      "subline": "{{count}} stops · ~{{hours}}h",
+      "subline_no_hours": "{{count}} stops"
     }
   }
 }

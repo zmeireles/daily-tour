@@ -186,7 +186,11 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
         ],
       },
     });
-    fetchPlaceMock.mockResolvedValueOnce({ id: placeId, name: { en: "Tasca da Praça" } });
+    fetchPlaceMock.mockResolvedValueOnce({
+      id: placeId,
+      name: { en: "Tasca da Praça" },
+      media: [{ kind: "image", url: "https://cdn.example.com/tasca.jpg" }],
+    });
 
     const res = await app.inject({
       method: "GET",
@@ -206,6 +210,7 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
         kind: "meal",
         name: "Tasca da Praça",
         description: "Time to eat.",
+        hero_image_url: "https://cdn.example.com/tasca.jpg",
         duration_min: 60,
         travel_to_minutes: 5,
       },

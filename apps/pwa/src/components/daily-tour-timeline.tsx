@@ -18,11 +18,23 @@ export function DailyTourTimeline({ stops: initialStops, onReorder }: DailyTourT
   }
 
   return (
-    <Reorder.Group axis="y" values={stops} onReorder={handleReorder} className="list-none p-0 m-0">
-      {stops.map((stop, idx) => (
-        <DraggableStop key={stop.id} stop={stop} isLast={idx === stops.length - 1} />
-      ))}
-    </Reorder.Group>
+    <div className="relative pl-8">
+      {/* Vertical basalt timeline line, behind the node dots. */}
+      <div
+        className="pointer-events-none absolute left-[1.375rem] top-2 bottom-4 w-px bg-outline-variant"
+        aria-hidden="true"
+      />
+      <Reorder.Group
+        axis="y"
+        values={stops}
+        onReorder={handleReorder}
+        className="relative m-0 list-none p-0"
+      >
+        {stops.map((stop, idx) => (
+          <DraggableStop key={stop.id} stop={stop} isLast={idx === stops.length - 1} />
+        ))}
+      </Reorder.Group>
+    </div>
   );
 }
 

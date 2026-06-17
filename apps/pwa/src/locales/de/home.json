@@ -55,6 +55,12 @@
       "ready": "Ihr Plan ist fertig!",
       "rejected": "Ein Plan konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
       "back": "Zurück zur Startseite"
+    },
+    "editorial": {
+      "overline": "IHR TAG",
+      "headline": "Ihr Tag auf São Miguel",
+      "subline": "{{count}} Stopps · ~{{hours}} Std.",
+      "subline_no_hours": "{{count}} Stopps"
     }
   }
 }

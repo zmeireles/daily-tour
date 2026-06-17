@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@/store/session";
+import { useThemeAuto } from "@/lib/theme/use-theme-auto";
 import { IntakeForm, type IntakeFormData } from "@/features/tour/intake-form";
 import { useCreateTourPlan } from "@/features/tour/use-tour-plan";
 
@@ -10,6 +11,9 @@ export default function TourNewRoute() {
   const jwt = useSessionStore((s) => s.jwt);
   const { t } = useTranslation("home");
   const mutation = useCreateTourPlan();
+  // D1: opt into sunrise/sunset theme (flat router has no shared authed layout).
+  // Full editorial restyle of this screen is deferred to a follow-up pass.
+  useThemeAuto();
 
   useEffect(() => {
     if (!jwt) void navigate("/?reason=expired", { replace: true });
