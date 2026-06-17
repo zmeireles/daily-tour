@@ -173,7 +173,10 @@ describe("GET /v1/discover", () => {
     const body = res.json<{
       action: string;
       count: number;
-      groups: { wish: string; places: { id: string; distance_km: number }[] }[];
+      groups: {
+        wish: string;
+        places: { id: string; distance_km: number; geom_lat: number; geom_lng: number }[];
+      }[];
     }>();
     expect(body.action).toBe("eat");
     // Only place-near (0 km) is returned by search-svc; place-far is filtered out.
@@ -183,6 +186,9 @@ describe("GET /v1/discover", () => {
       expect(group.places.length).toBe(1);
       expect(group.places[0]!.id).toBe("aabbccdd-0000-4000-8000-000000000001");
       expect(group.places[0]!.distance_km).toBeCloseTo(0, 1);
+      // Coordinates threaded through so the PWA can place map pins (T-2.D.6).
+      expect(group.places[0]!.geom_lat).toBeCloseTo(37.74, 2);
+      expect(group.places[0]!.geom_lng).toBeCloseTo(-25.66, 2);
     }
   });
 

@@ -22,6 +22,13 @@
     "car": "Auto",
     "foot": "Zu Fuß"
   },
+  "map": {
+    "nearby": "In der Nähe",
+    "search_placeholder": "Orte suchen…",
+    "locate_me": "Meinen Standort verwenden",
+    "expand_sheet": "Alle Orte und Filter anzeigen",
+    "collapse_sheet": "Auf Karte zuklappen"
+  },
   "geolocation_denied": "Standortzugriff verweigert. Zeige Nähe zu Ihrer Unterkunft.",
   "empty": "Nichts für {{action}} innerhalb von {{km}} km.",
   "loading": "Wird geladen…",

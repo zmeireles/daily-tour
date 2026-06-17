@@ -8,6 +8,11 @@ export type DiscoverPlace = {
   name: I18nText;
   description: I18nText;
   hero_image_url: string | null;
+  // Coordinates thread through from catalog-svc → BFF /v1/discover so the
+  // Discover map can place a pin per place (T-2.D.6). Optional because older
+  // payloads / fixtures may omit them; pin rendering guards on presence.
+  geom_lat?: number;
+  geom_lng?: number;
   wishes: string[];
   is_hosts_pick?: boolean;
   distance_km?: number;

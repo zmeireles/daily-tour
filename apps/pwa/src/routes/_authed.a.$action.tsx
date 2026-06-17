@@ -2,17 +2,17 @@ import * as React from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { pickLocale, type Locale } from "@daily-tour/shared-types";
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
 import { useSessionStore } from "@/store/session";
 import { GUESTHOUSE_LOCATIONS } from "@/lib/config";
 import { useDiscover } from "@/features/discover/use-discover";
-import { ControlsBar, type GroupBy } from "@/features/discover/controls-bar";
-import { WishGroupList } from "@/features/discover/wish-group-list";
-import { FlatList } from "@/features/discover/flat-list";
+import { type GroupBy } from "@/features/discover/controls-bar";
 import { EmptyState } from "@/features/discover/empty-state";
-import { HostsPicksRibbon } from "@/features/discover/hosts-picks-ribbon";
+import { DiscoverMap } from "@/features/discover/discover-map";
+import { DiscoverSheet, type SheetSnap } from "@/features/discover/discover-sheet";
 import type { LocationValue } from "@/components/location-toggle";
-import type { SortBy } from "@/features/discover/sort-utils";
+import type { SortBy, WishGroup } from "@/features/discover/sort-utils";
 import { flattenGroups } from "@/features/discover/sort-utils";
 import { useVehiclePref, WALK_KM_LIMIT } from "@/lib/preferences/use-vehicle-pref";
 import { isEntireIsland, ISLAND_KM, type KmSelection } from "@/components/range-slider";
@@ -49,10 +49,26 @@ function getGuesthouseLoc(guesthouseId: string | undefined): { lat: number; lng:
   return SAO_MIGUEL_CENTER;
 }
 
+// Client-side name filter for the map search field. Empty query → all groups.
+function filterGroupsByName(groups: WishGroup[], query: string, locale: string): WishGroup[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return groups;
+  return groups
+    .map((g) => ({
+      wish: g.wish,
+      places: g.places.filter((p) =>
+        pickLocale(p.name, locale as Locale)
+          .toLowerCase()
+          .includes(q),
+      ),
+    }))
+    .filter((g) => g.places.length > 0);
+}
+
 export default function ActionDrillDownRoute() {
   const { action } = useParams<{ action: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation("discover");
+  const { t, i18n } = useTranslation("discover");
 
   useThemeAuto();
 
@@ -71,6 +87,11 @@ export default function ActionDrillDownRoute() {
   const [sortBy, setSortBy] = React.useState<SortBy>("distance");
   const [groupBy, setGroupBy] = React.useState<GroupBy>("grouped");
 
+  // Map-first screen state (T-2.D.6).
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState("");
+  const [snap, setSnap] = React.useState<SheetSnap>("peek");
+
   const vehicleMode = useVehiclePref((s) => s.mode);
   const setVehicleMode = useVehiclePref((s) => s.setMode);
   // "Entire island" means "show everything" — it bypasses the foot-mode clamp.
@@ -86,21 +107,25 @@ export default function ActionDrillDownRoute() {
     }
   }, [jwt, navigate]);
 
+  function requestMyLocation() {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setActiveLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocValue("me");
+        setGeolocationDenied(false);
+      },
+      () => {
+        setGeolocationDenied(true);
+        setLocValue("guesthouse");
+        setActiveLoc(defaultLoc);
+        toast.error(t("geolocation_denied"));
+      },
+    );
+  }
+
   function handleLocationChange(val: LocationValue) {
     if (val === "me") {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setActiveLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLocValue("me");
-          setGeolocationDenied(false);
-        },
-        () => {
-          setGeolocationDenied(true);
-          setLocValue("guesthouse");
-          setActiveLoc(defaultLoc);
-          toast.error(t("geolocation_denied"));
-        },
-      );
+      requestMyLocation();
     } else {
       setLocValue("guesthouse");
       setActiveLoc(defaultLoc);
@@ -115,75 +140,85 @@ export default function ActionDrillDownRoute() {
   const actionLabel = ACTION_LABELS[action ?? ""] ?? action ?? "";
   const actionIcon = ACTION_ICONS[action ?? ""] ?? null;
 
+  const filteredGroups = data ? filterGroupsByName(data.groups, search, i18n.language) : [];
+  const filteredPlaces = flattenGroups(filteredGroups);
+
   return (
-    <div className="min-h-svh bg-background flex flex-col">
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
-        <header className="flex items-center gap-3 px-4 py-4 border-b border-border">
-          <Link
-            to="/"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Back to home"
+    <div className="relative flex h-svh flex-col bg-background">
+      <header className="z-40 flex items-center gap-3 border-b border-border bg-background px-4 py-3">
+        <Link
+          to="/"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+          aria-label="Back to home"
+        >
+          ←
+        </Link>
+        <h1
+          className="flex-1 font-display text-xl leading-tight"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {t("title")} · {actionLabel}
+        </h1>
+      </header>
+
+      <main className="relative flex-1 overflow-hidden">
+        {isLoading && (
+          <div
+            className="flex h-full items-center justify-center"
+            aria-live="polite"
+            aria-busy="true"
           >
-            ←
-          </Link>
-          <h1
-            className="font-display text-2xl leading-tight flex-1"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {t("title")} · {actionLabel}
-          </h1>
-        </header>
+            <p className="text-muted-foreground">{t("loading")}</p>
+          </div>
+        )}
 
-        <ControlsBar
-          locValue={locValue}
-          geolocationDenied={geolocationDenied}
-          kmRange={kmRange}
-          sortBy={sortBy}
-          groupBy={groupBy}
-          vehicleMode={vehicleMode}
-          onLocationChange={handleLocationChange}
-          onKmChange={setKmRange}
-          onSortChange={setSortBy}
-          onGroupChange={setGroupBy}
-          onVehicleChange={setVehicleMode}
-        />
+        {isError && (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-muted-foreground">{t("error")}</p>
+          </div>
+        )}
 
-        <main className="flex-1">
-          {isLoading && (
-            <div
-              className="flex items-center justify-center py-16"
-              aria-live="polite"
-              aria-busy="true"
-            >
-              <p className="text-muted-foreground">{t("loading")}</p>
-            </div>
-          )}
+        {data && data.count === 0 && (
+          <EmptyState action={action ?? ""} km={isEntireIsland(kmRange) ? ISLAND_KM : kmRange} />
+        )}
 
-          {isError && (
-            <div className="flex items-center justify-center py-16">
-              <p className="text-muted-foreground">{t("error")}</p>
-            </div>
-          )}
-
-          {data && data.count === 0 && (
-            <EmptyState action={action ?? ""} km={isEntireIsland(kmRange) ? ISLAND_KM : kmRange} />
-          )}
-
-          {data && data.count > 0 && <HostsPicksRibbon places={flattenGroups(data.groups)} />}
-
-          {data && data.count > 0 && groupBy === "grouped" && (
-            <WishGroupList groups={data.groups} sortBy={sortBy} placeholderIcon={actionIcon} />
-          )}
-
-          {data && data.count > 0 && groupBy === "flat" && (
-            <FlatList
-              places={flattenGroups(data.groups)}
-              sortBy={sortBy}
-              placeholderIcon={actionIcon}
+        {data && data.count > 0 && (
+          <>
+            <DiscoverMap
+              places={filteredPlaces}
+              center={activeLoc}
+              selectedId={selectedId}
+              search={search}
+              onSearchChange={setSearch}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setSnap("peek");
+              }}
+              onLocateMe={requestMyLocation}
             />
-          )}
-        </main>
-      </div>
+
+            <DiscoverSheet
+              groups={filteredGroups}
+              snap={snap}
+              onSnapChange={setSnap}
+              selectedId={selectedId}
+              onOpenPlace={(id) => void navigate(`/p/${id}`)}
+              placeholderIcon={actionIcon}
+              sortBy={sortBy}
+              groupBy={groupBy}
+              locValue={locValue}
+              geolocationDenied={geolocationDenied}
+              kmRange={kmRange}
+              vehicleMode={vehicleMode}
+              onLocationChange={handleLocationChange}
+              onKmChange={setKmRange}
+              onSortChange={setSortBy}
+              onGroupChange={setGroupBy}
+              onVehicleChange={setVehicleMode}
+            />
+          </>
+        )}
+      </main>
     </div>
   );
 }
