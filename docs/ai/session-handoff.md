@@ -1,6 +1,39 @@
-# Session Handoff — 2026-05-28 → … → 06-16 (PLAN-002 THRUST B + Miguel's real guesthouses in the app) → next session
+# Session Handoff — 2026-05-28 → … → 06-17 (PLAN-002 THRUST B — Slice 2.D editorial implementation COMPLETE) → next session
 
-> **UPDATE 2026-06-16 (LATEST): Big session — polish tails dispositioned, Plan-006 deployed to qual, and Plan-002 Thrust B (design pass) largely shipped, ending with Miguel's 4 REAL guesthouses + 11 real POIs seeded into the catalog with real photos. 6 PRs merged (#247–#252) + the qual deploy. Resume from the "FIRST TASKS NEXT SESSION" block below.**
+> **UPDATE 2026-06-17 (LATEST): Marathon session — built ALL of Plan-002 Thrust B / Slice 2.D: the 5 PWA screens rebuilt to the "São Miguel Editorial" design + foundations + host rename + a polish + a backend follow-up. Every screen browser-verified in light AND dark. 8 PRs MERGED (#254–#261); #262 (season) OPEN as a PR. Resume from the "FIRST TASKS NEXT SESSION" block below.**
+>
+> ### What shipped (main tip after #261 = `e92b4de`; #262 awaiting merge)
+>
+> - **#254** foundations — editorial tokens both themes (MD-role surface ladder in `tokens.css`/`globals.css`, mockup classes 1:1) + primitives (`Overline`, `DistanceChip`, `BrandAppBar`, `BottomTabBar` 4-tab+stubs, shadcn `Sheet`/`Avatar`) + `PlaceCard` restyle (`stacked` default + `overlay` variant).
+> - **#255** Place Detail · **#256** Home · **#257** Daily Tour (+per-stop hero thumbnails via new BFF `toStop` plumbing) · **#259** Chat · **#260** Discover (map+draggable-sheet rebuild + BFF discover `geom_lat/lng`). All browser-UAT'd both themes (screenshots in `temp/uat-2d-*/`).
+> - **#258** host rename **João → Miguel** everywhere hardcoded. **#261** editorial `BackLink` (lucide arrow, tea-green, no underline) replacing the bare-"←" underlined links (tour/place-detail/discover) — the user's design critique.
+> - **#262 (OPEN PR)** place `season` plumbing: catalog-svc `/hydrated` now returns `season`, BFF passes it through, 7 summer spots seeded → the Place-Detail **Details card is now functional end-to-end** (verified: BFF `/v1/places/<#010>` returns `season:"summer"`).
+> - **D1 theme bug** (route renders light fallback because it never mounts `useThemeAuto()`) found on #255 and fixed per-route on `/p/:id`, tour+`/tour/new`, `/chat`. (`/` + `/a/:action` already had it.)
+>
+> ### Scope decisions locked this session (human)
+>
+> Auto **light+dark** editorial (kept sunrise/sunset switch; light extrapolated from the dark-only mockups) · Discover = **full map+sheet rebuild** · bottom nav = **full 4-tab with "coming soon" stubs** · premium cards kept **active** (not disabled) · the chat host is **Miguel**.
+>
+> ### FIRST TASKS NEXT SESSION
+>
+> 1. **dt-tests poll** (ritual).
+> 2. **Merge #262** (season plumbing — verified, draft/PR; the only open PR). Squash → main.
+> 3. **Open follow-ups** (all non-blocking, recorded in `002-deploy-and-polish/README.md` "Backend follow-ups (status)"): shared authed-layout to mount `useThemeAuto()` once (replaces the per-route calls) · rich embedded place-card message in Chat (needs a chat-hub protocol extension — text-only today) · OSM base map basalt-theming in dark (Discover) · `hours` content for the Details card (plumbing done, no data seeded) · F1 Home host's-picks `distance_km`.
+> 4. **dt-tests forward-flow UATs** for the editorial screens (UI-touching; none minted this session — the browser-uat agent verified each instead).
+>
+> ### Gotchas / env state (learned this session)
+>
+> - **Guest session is IN-MEMORY** (no persist) → a full page reload onto an authed route drops it and bounces to `/?reason=expired`. To screenshot an authed route: redeem `/r/<token>` → set `localStorage.theme` on home (where `useThemeAuto` mounts) → **SPA-navigate** (not a hard `goto`). The working multi-use redeem token: `YI3yn18QsI4jGxF6yxGswb7v4BXLC-Ik` (reservation `ccc…002`, pt-PT). Reservation `…001` is past-checkout (mint → 410).
+> - **Dev stack crashed mid-session** (~11 services SIGKILL/SIGTERM, exit 137/143 — transient host memory spike) and was brought back with `make up`; dt_bff also cycled once and recovered on `docker restart`. The **first redeem after a BFF restart can 500** (cold start) — retry clears it. Stack is UP at handoff.
+> - **maplibre can't render in jsdom** → Discover unit tests mock `MapView` + assert pin data; the map/drag/pins are proven only by the browser-uat (5/5 PASS, `temp/uat-2d-discover/`).
+> - The **rebase of each editorial PR auto-merged the `*.json` i18n overlaps** (different key regions) — no manual conflict resolution needed.
+> - Dev-DB residue (harmless, reset by volume wipe): I seeded `season='summer'` on 7 places via the committed seed; a verification chat thread for guest `aaa…002` was seeded then cleaned. `places-seed.test.ts` still hard-codes 43 places / 32 media (season UPDATEs don't change counts).
+>
+> ### State
+>
+> `main` synced (`e92b4de`). **1 open PR: #262** (season). Local branches: only `main` + `docs/slice-2d-closeout` (this doc PR) + `feat/place-detail-season` (#262). dt-tests `review` empty (polled). **Slice 2.D = DONE**; Plan-002 Thrust B implementation complete (Slice 2.B design + 2.D build both done).
+
+> **UPDATE 2026-06-16: Big session — polish tails dispositioned, Plan-006 deployed to qual, and Plan-002 Thrust B (design pass) largely shipped, ending with Miguel's 4 REAL guesthouses + 11 real POIs seeded into the catalog with real photos. 6 PRs merged (#247–#252) + the qual deploy. Resume from the "FIRST TASKS NEXT SESSION" block below.**
 >
 > ### What shipped this session (all merged to main, tip `eb93224`)
 >
