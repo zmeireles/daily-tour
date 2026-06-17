@@ -3,9 +3,12 @@
   "chat": {
     "title": "Chat with your host",
     "back": "Back",
+    "status_online": "Online",
+    "day_today": "Today",
     "connecting": "Connecting…",
     "empty": "Say hello to start the conversation.",
     "placeholder": "Type a message",
+    "voice": "Voice message",
     "send": "Send"
   },
   "controls": {

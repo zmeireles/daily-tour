@@ -1,14 +1,26 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { ChevronLeft } from "lucide-react";
 import { useSessionStore } from "@/store/session";
+import { useThemeAuto } from "@/lib/theme/use-theme-auto";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatWindow } from "@/features/chat/chat-window";
 import { useChatWs } from "@/features/chat/use-chat-ws";
+
+// The host of every Daily Tour guesthouse thread is Miguel. The guesthouse
+// name (e.g. "· Casa do Sol") isn't carried in the session — only its id — so
+// the app bar shows the host name and a cosmetic presence line.
+const HOST_NAME = "Miguel";
 
 export default function ChatRoute() {
   const navigate = useNavigate();
   const jwt = useSessionStore((s) => s.jwt);
   const { t } = useTranslation("discover");
+  // Flat router: each authed screen opts into the sunrise/sunset (or stored
+  // override) theme. Without this the chat renders the light fallback when
+  // landed on directly. Same fix applied to /p/:id and the tour routes.
+  useThemeAuto();
   const { messages, status, send } = useChatWs(jwt);
 
   useEffect(() => {
@@ -18,22 +30,32 @@ export default function ChatRoute() {
   if (!jwt) return null;
 
   return (
-    <main className="flex flex-col h-svh max-w-lg mx-auto">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
+    <main className="flex flex-col h-svh max-w-lg mx-auto bg-surface">
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-outline-variant shrink-0 bg-surface">
         <button
           type="button"
           onClick={() => void navigate(-1)}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="-ml-1 text-on-surface-variant hover:text-on-surface transition-colors"
           aria-label={t("chat.back")}
         >
-          ←
+          <ChevronLeft size={24} aria-hidden="true" />
         </button>
-        <h1
-          className="font-display text-lg font-semibold"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {t("chat.title")}
-        </h1>
+        <Avatar className="size-10">
+          <AvatarFallback>{HOST_NAME.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <h1
+            className="font-display text-lg font-semibold leading-tight text-on-surface"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {HOST_NAME}
+          </h1>
+          <p className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+            <span className="inline-block size-2 rounded-full bg-green-500" aria-hidden="true" />
+            {/* Cosmetic: no presence system is wired — status is static. */}
+            {t("chat.status_online")}
+          </p>
+        </div>
       </header>
       <ChatWindow messages={messages} status={status} onSend={send} />
     </main>
