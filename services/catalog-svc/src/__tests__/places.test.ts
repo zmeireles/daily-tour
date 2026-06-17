@@ -256,6 +256,8 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
       [mediaId, placeId],
     );
 
+    await ctx.pool.query(`UPDATE catalog.place SET season = 'summer' WHERE id = $1`, [placeId]);
+
     const res = await app.inject({
       method: "GET",
       url: `/v1/places/${placeId}/hydrated`,
@@ -263,6 +265,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json<{
       id: string;
+      season: string | null;
       media: {
         id: string;
         kind: string;
@@ -273,6 +276,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
       wishes: { slug: string; action_slug: string; label_i18n: Record<string, string> }[];
     }>();
     expect(body.id).toBe(placeId);
+    expect(body.season).toBe("summer");
     expect(body.media).toHaveLength(1);
     expect(body.media[0]!.kind).toBe("image");
     expect(body.media[0]!.attribution).toEqual({
