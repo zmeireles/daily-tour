@@ -1,4 +1,31 @@
-# Session Handoff — 2026-05-28 → … → 06-17 (PLAN-002 THRUST B — Slice 2.D editorial implementation COMPLETE) → next session
+# Session Handoff — 2026-05-28 → … → 06-17 (Slice 2.D editorial COMPLETE + LIVE on qual; DESKTOP UI/UX phase planned) → next session
+
+> **UPDATE 2026-06-17 (LATEST): Slice 2.D shipped + DEPLOYED LIVE to qual; new phase locked — DESKTOP UI/UX (first-class). Resume from this block.**
+>
+> ### Now live
+>
+> - **Slice 2.D (mobile editorial) = DONE + DEPLOYED to qual** (deploy run 27702539590; bundle `index-B65MhZie.js`; 43 places, 7 seasons, Miguel's 4 guesthouses). **13 PRs merged this session (#254–#265).** main `14181ef`. 0 open PRs.
+> - **`make qual-token`** (#265) → prints a ready guest link `https://qual.stay.portugalodyssey.pt/r/<token>` (mints from the furthest-checkout reservation on the VPS via SSH). Owner backoffice at `/admin` via Authentik.
+> - Deploy gotcha fixed (#264): `dev-smoke.sh` + `dev-env-check.sh` hard-coded `== 28` places; now `≥ 28` (the exact count false-failed the deploy — the image was actually fine; seed grew to 43).
+>
+> ### NEXT PHASE — Desktop UI/UX (FIRST-CLASS). Locked decisions (human, 2026-06-17)
+>
+> The mobile "São Miguel Editorial" app breaks badly on desktop (naive responsiveness stretches a mobile layout). Locked: **desktop = FIRST-CLASS**; **ONE design system, TWO layout systems** — share the editorial _language_ + primitives (`PlaceCard`/`Overline`/`DistanceChip`/tokens); **diverge** page-level layout + IA + interaction per form factor; implement as **desktop-specific layout components** (e.g. `HomeDesktop`/`DiscoverDesktop`) composing the SAME shared primitives, switched at a real breakpoint (~`lg`/1024) — NOT one set of CSS classes for both (that produced the mess). **Scope = guest app now** (backoffice later). **Stitch via web-UI prompts** (MCP unreliable E2E). Full detail: memory `project_desktop_redesign.md`.
+>
+> ### Desktop critique already captured (from the user's 6 qual desktop screenshots)
+>
+> `aspect-square` bento → giant empty squares at desktop width (worst); full-width `stacked` PlaceCards in the expanded Discover list → one card = a full-screen banner; the bottom-tab-bar is stranded + the map/bottom-sheet is a phone metaphor (desktop wants **map + list side-by-side**); inconsistent content widths / huge whitespace / tiny click targets. **Non-layout noise to clean first:** qual's media-less businesses show the stale pre-#250 single-Unsplash placeholder (seed residue → truncate like dev did); a stray purple arc on the Discover map (route geometry drawn at world scale).
+>
+> ### FIRST TASKS NEXT SESSION (the agreed plan — 2 workflows, then build)
+>
+> 1. **Capture fresh desktop + tablet states** of all 5 screens (browser-uat qual via `make qual-token`) + **clean qual's stale Unsplash business media** (truncate the residue). Both become trusted workflow inputs.
+> 2. **Author + run WF1 — UX audit:** parallel expert lenses (mobile-purist · desktop/responsive · IA · visual · a11y) → adversarial dedupe/reconcile + a completeness critic → one curated, prioritized **defect → proposed-solution** list.
+> 3. **Author + run WF2 — design exploration** (fed by WF1's curated output): per screen generate N candidate desktop layouts → judge panel (density / IA fit / primitive-reuse / build cost / brand) → recommended direction + concrete build plan + Stitch prompts for the chosen direction.
+> 4. **Build** the chosen desktop layout components.
+>
+> - dt-tests `review` poll at start (ritual). main clean, 0 open PRs.
+
+## Prior (mobile) Slice 2.D detail — 2026-06-17
 
 > **UPDATE 2026-06-17 (LATEST): Marathon session — built ALL of Plan-002 Thrust B / Slice 2.D: the 5 PWA screens rebuilt to the "São Miguel Editorial" design + foundations + host rename + a polish + a backend follow-up. Every screen browser-verified in light AND dark. 8 PRs MERGED (#254–#261); #262 (season) OPEN as a PR. Resume from the "FIRST TASKS NEXT SESSION" block below.**
 >
