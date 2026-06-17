@@ -33,6 +33,13 @@
     "car": "Carro",
     "foot": "A pé"
   },
+  "map": {
+    "nearby": "Por perto",
+    "search_placeholder": "Procurar locais…",
+    "locate_me": "Usar a minha localização",
+    "expand_sheet": "Ver todos os locais e filtros",
+    "collapse_sheet": "Recolher para o mapa"
+  },
   "geolocation_denied": "Sem acesso à localização. A mostrar a partir da casa.",
   "empty": "Nada aqui para {{action}} até {{km}} km.",
   "loading": "A carregar…",

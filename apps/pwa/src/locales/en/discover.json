@@ -33,6 +33,13 @@
     "car": "Car",
     "foot": "On foot"
   },
+  "map": {
+    "nearby": "Nearby",
+    "search_placeholder": "Search places…",
+    "locate_me": "Use my location",
+    "expand_sheet": "Show all places and filters",
+    "collapse_sheet": "Collapse to map"
+  },
   "geolocation_denied": "Location access denied. Showing nearby from your guesthouse.",
   "empty": "Nothing here for {{action}} within {{km}} km.",
   "loading": "Loading…",

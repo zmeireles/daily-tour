@@ -22,9 +22,13 @@ vi.mock("motion/react", () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock("maplibre-gl", () => ({
-  default: { Map: vi.fn(() => ({ remove: vi.fn(), on: vi.fn() })) },
-  Map: vi.fn(() => ({ remove: vi.fn(), on: vi.fn() })),
+// MapView wraps a maplibre canvas that can't run in jsdom. Replace it with a
+// lightweight stub that surfaces the pin count it would render so the route's
+// pin data (one per place with coords) is assertable without the canvas.
+vi.mock("@/components/map-view", () => ({
+  MapView: ({ pins }: { pins?: { id: string }[] }) => (
+    <div data-testid="map-view" data-pin-count={(pins ?? []).length} />
+  ),
 }));
 
 // Suppress timer-based side effects from theme/locale auto hooks.
@@ -53,6 +57,8 @@ function makeDiscoverResponse(
         name: { en: p.name },
         description: { en: `Desc of ${p.name}` },
         hero_image_url: null,
+        geom_lat: 37.74,
+        geom_lng: -25.67,
         wishes: [g.wish],
         distance_km: 1,
       })),
@@ -120,7 +126,49 @@ describe("ActionDrillDownRoute", () => {
     });
   });
 
-  it("renders grouped list with two wish groups and all place names", async () => {
+  // Expand the draggable sheet so the relocated controls + full grouped/flat
+  // list become reachable (peek state shows only the horizontal ribbon).
+  function expandSheet() {
+    fireEvent.click(screen.getByRole("button", { name: /show all places and filters/i }));
+  }
+
+  it("peek ribbon shows all place names; expanding reveals the two wish groups", async () => {
+    mockFetch();
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+
+    renderRoute();
+
+    // Peek state: the "Nearby" sheet title + ribbon cards (place names) are visible.
+    await waitFor(() => {
+      expect(screen.getByText("Sete Cidades")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { name: /nearby/i })).toBeInTheDocument();
+    expect(screen.getByText("Furnas Valley")).toBeInTheDocument();
+    expect(screen.getByText("Terra Nostra")).toBeInTheDocument();
+
+    // Expanded state: the grouped wish-group sections appear.
+    expandSheet();
+    expect(screen.getByRole("region", { name: /scenic views/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /family friendly/i })).toBeInTheDocument();
+  });
+
+  it("feeds one map pin per place that carries coordinates", async () => {
+    mockFetch();
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+
+    renderRoute();
+
+    // 3 places in DEFAULT_RESPONSE, all carry geom_lat/geom_lng → 3 pins.
+    await waitFor(() => {
+      expect(screen.getByTestId("map-view")).toHaveAttribute("data-pin-count", "3");
+    });
+  });
+
+  it("map search field filters the visible places by name", async () => {
     mockFetch();
     act(() => {
       useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
@@ -132,12 +180,13 @@ describe("ActionDrillDownRoute", () => {
       expect(screen.getByText("Sete Cidades")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Furnas Valley")).toBeInTheDocument();
-    expect(screen.getByText("Terra Nostra")).toBeInTheDocument();
+    const searchField = screen.getByRole("textbox", { name: /search places/i });
+    fireEvent.change(searchField, { target: { value: "furnas" } });
 
-    // Both wish group section labels
-    expect(screen.getByRole("region", { name: /scenic views/i })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /family friendly/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Sete Cidades")).not.toBeInTheDocument();
+    });
+    expect(screen.getByText("Furnas Valley")).toBeInTheDocument();
   });
 
   it("LocationToggle to 'me' with denied permission snaps back and shows toast", async () => {
@@ -169,6 +218,8 @@ describe("ActionDrillDownRoute", () => {
       expect(screen.getByText("Sete Cidades")).toBeInTheDocument();
     });
 
+    // Controls live in the expanded sheet now.
+    expandSheet();
     const meButton = screen.getByRole("radio", { name: /use my location/i });
     fireEvent.click(meButton);
 
@@ -196,6 +247,8 @@ describe("ActionDrillDownRoute", () => {
       expect(screen.getByText("Sete Cidades")).toBeInTheDocument();
     });
 
+    // The RangeSlider lives in the expanded sheet controls.
+    expandSheet();
     const initialCount = fetchSpy.mock.calls.length;
 
     // Find slider by its role — Radix Slider renders thumbs with role="slider"
@@ -225,7 +278,8 @@ describe("ActionDrillDownRoute", () => {
       expect(screen.getByText("Sete Cidades")).toBeInTheDocument();
     });
 
-    // Grouped view: sections present
+    // Controls + grouped sections live in the expanded sheet.
+    expandSheet();
     expect(screen.getByRole("region", { name: /scenic views/i })).toBeInTheDocument();
 
     // Click the "List" flat toggle
