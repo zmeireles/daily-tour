@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-002 Thrust B / Slice 2.D: "São Miguel Editorial" implementation (2026-06-17)
+
+The 5 PWA screens rebuilt to the editorial design system, plus a polish and a backend follow-up. **Every screen browser-verified in light + dark.** PRs #254–#262:
+
+- **#254** Foundations — editorial tokens (both themes; MD-role surface ladder, mockup class names 1:1) + shared primitives (`Overline`, `DistanceChip`, `BrandAppBar`, `BottomTabBar`, shadcn `Sheet`/`Avatar`) + `PlaceCard` restyle (`stacked` + new `overlay` variant).
+- **#255** Place Detail — tea-green overline + Fraunces name on canvas + hydrangea category chips + conditional Details card + glass back/bookmark + action tiles. Found+fixed **D1** (theme not applied on `/p/:id`).
+- **#256** Home — `BrandAppBar`, 6-card cream bento action grid, overlay-variant photo ribbon, active premium cards, `BottomTabBar`.
+- **#257** Daily Tour — editorial timeline + **per-stop hero thumbnails** (new BFF `toStop` hero plumbing) + sun-amber connector pills; D1 fix on the tour routes.
+- **#258** Host rename **João → Miguel** (placeholder persona → the real host).
+- **#259** Chat — Miguel/Online header, day separators + timestamps, cream/tea bubbles, pill input + mic + circular send; D1 fix.
+- **#260** Discover — **map-first + draggable bottom-sheet rebuild** (maplibre tea-green pins, search, locate FAB, controls relocated into the expanded sheet) + new BFF discover `geom_lat`/`geom_lng`.
+- **#261** Editorial `BackLink` — replaced the bare "←" underlined links (tour / place-detail / discover) with a lucide-arrow tea-green affordance.
+- **#262** Place `season` plumbing (catalog-svc `/hydrated` → BFF) + 7 seeded summer-season spots → the Place-Detail Details card is functional end-to-end.
+
+Theme stance: auto **light + dark** editorial (kept the sunrise/sunset auto-switch; light extrapolated from the dark-only mockups). Open follow-ups: shared authed-layout theming, rich chat place-card message, OSM dark map tiles.
+
 ### Added — Plan-006 sweep: reservations + owner field-editing (6.E/6.F/6.C.2) (2026-06-13/14)
 
 Closed out the remaining Plan-006 slices via a two-round cs-agent fan-out (orchestrator-reviewed every diff). Plan-006 now **15/15 code-complete** (UATs pending). 5 PRs:
