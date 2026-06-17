@@ -136,6 +136,10 @@ VPS_HOST ?= 77.37.86.126
 vps:
 	@ssh -o ConnectTimeout=12 $(VPS_USER)@$(VPS_HOST) $(CMD)
 
+## Mint a guest redeem link for qual — prints the full https://…/r/<token> URL. e.g. make qual-token
+qual-token:
+	@ssh -o ConnectTimeout=12 $(VPS_USER)@$(VPS_HOST) 'bash -s' < scripts/qual/mint-guest-token.sh
+
 ## List available targets.
 help:
 	@echo "Daily Tour — make targets (ENV=$(ENV), env-file=$(ENV_FILE))"
