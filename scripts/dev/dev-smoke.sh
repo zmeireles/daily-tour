@@ -46,13 +46,16 @@ BFF="http://bff:8080"
 
 info "Smoking via internal network: dt_bff → {token-svc, bff}"
 
-# ─── Step 1: catalog-svc has 28 places ─────────────────────────────────────────
-step "Step 1 — catalog-svc has 28 seeded places"
+# ─── Step 1: catalog-svc is seeded (≥28 baseline staples) ──────────────────────
+# Count-robust: the seed grows over time (28 day-1 staples → 43 with Miguel's
+# guesthouses + POIs → more). Assert the baseline is present, not an exact count,
+# so the smoke doesn't false-fail every time the catalog grows.
+step "Step 1 — catalog-svc seeded (≥28 places)"
 PLACE_COUNT=$(docker compose $COMPOSE_BASE exec -T postgres psql -U postgres -d dailytour -t -c "SELECT count(*) FROM catalog.place;" 2>/dev/null | tr -d ' \n')
-if [[ "$PLACE_COUNT" == "28" ]]; then
-  pass "28 places in catalog"
+if [[ "$PLACE_COUNT" =~ ^[0-9]+$ ]] && ((PLACE_COUNT >= 28)); then
+  pass "$PLACE_COUNT places in catalog (≥28 baseline)"
 else
-  fail "expected 28 places, got: '$PLACE_COUNT'"
+  fail "expected ≥28 places, got: '$PLACE_COUNT'"
 fi
 
 # ─── Step 2: mint a test token ─────────────────────────────────────────────────
