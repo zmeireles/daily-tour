@@ -12,7 +12,7 @@
   },
   "premium": {
     "plan_my_day": "Planear mi día",
-    "message_host": "Hablar con João"
+    "message_host": "Hablar con Miguel"
   },
   "locale": {
     "en": "English",
@@ -56,6 +56,12 @@
       "rejected": "No se pudo crear un plan. Por favor inténtalo de nuevo.",
       "weather_adjusted": "Ajustado al clima",
       "back": "Volver al inicio"
+    },
+    "editorial": {
+      "overline": "TU DÍA",
+      "headline": "Tu día en São Miguel",
+      "subline": "{{count}} paradas · ~{{hours}}h",
+      "subline_no_hours": "{{count}} paradas"
     }
   }
 }

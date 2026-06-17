@@ -12,6 +12,9 @@ export interface TourStop {
   // Drive time from the previous stop (OSRM/haversine, populated by planner-svc
   // slice C). Omitted for the first stop and whenever it's absent or zero.
   travel_to_minutes?: number;
+  // First image media URL for the resolved place, or null when the place has
+  // none / can't be hydrated. Drives the editorial thumbnail in the PWA.
+  hero_image_url: string | null;
 }
 
 // planner-svc step shape — what plan_payload.steps[] carries.
@@ -49,24 +52,34 @@ function pickName(names: Record<string, string>): string | undefined {
   return names["en"] ?? Object.values(names)[0];
 }
 
-// Resolve place_id → display name. Tolerant: any catalog miss/error falls back to the id.
-async function resolvePlaceName(placeId: string): Promise<string> {
+interface PlaceMeta {
+  name: string;
+  heroImageUrl: string | null;
+}
+
+// Resolve place_id → display name + hero image. Tolerant: any catalog miss/error
+// falls back to the id with no image.
+async function resolvePlaceMeta(placeId: string): Promise<PlaceMeta> {
   try {
     const place = await fetchPlaceHydrated(placeId);
-    return pickName(place.name) ?? placeId;
+    return {
+      name: pickName(place.name) ?? placeId,
+      heroImageUrl: place.media.find((m) => m.kind === "image")?.url ?? null,
+    };
   } catch {
-    return placeId;
+    return { name: placeId, heroImageUrl: null };
   }
 }
 
-function toStop(step: PlanStep, name: string, idx: number, hasDuplicateId: boolean): TourStop {
+function toStop(step: PlanStep, meta: PlaceMeta, idx: number, hasDuplicateId: boolean): TourStop {
   const duration = durationMinutes(step.start, step.end);
   return {
     id: hasDuplicateId ? `${step.place_id}#${idx}` : step.place_id,
     time: isoToHHMM(step.start),
     kind: slotToKind(step.slot),
-    name,
+    name: meta.name,
     description: step.rationale,
+    hero_image_url: meta.heroImageUrl,
     ...(duration !== undefined ? { duration_min: duration } : {}),
     ...(typeof step.travel_to_minutes === "number" && step.travel_to_minutes > 0
       ? { travel_to_minutes: step.travel_to_minutes }
@@ -95,11 +108,11 @@ export async function withStops(plan: TourPlanResponse): Promise<TourPlanRespons
   if (!plan.plan_payload) return plan;
 
   const steps = extractSteps(plan.plan_payload);
-  const names = await Promise.all(steps.map((step) => resolvePlaceName(step.place_id)));
+  const metas = await Promise.all(steps.map((step) => resolvePlaceMeta(step.place_id)));
   const duplicated = findDuplicateIds(steps);
 
   const stops = steps.map((step, idx) =>
-    toStop(step, names[idx]!, idx, duplicated.has(step.place_id)),
+    toStop(step, metas[idx]!, idx, duplicated.has(step.place_id)),
   );
   return { ...plan, plan_payload: { ...plan.plan_payload, stops } };
 }

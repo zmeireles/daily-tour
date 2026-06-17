@@ -12,7 +12,7 @@
   },
   "premium": {
     "plan_my_day": "Planifier ma journée",
-    "message_host": "Écrire à João"
+    "message_host": "Écrire à Miguel"
   },
   "locale": {
     "en": "English",
@@ -55,6 +55,12 @@
       "ready": "Votre plan est prêt !",
       "rejected": "Impossible de créer un plan. Veuillez réessayer.",
       "back": "Retour à l'accueil"
+    },
+    "editorial": {
+      "overline": "VOTRE JOURNÉE",
+      "headline": "Votre journée à São Miguel",
+      "subline": "{{count}} étapes · ~{{hours}} h",
+      "subline_no_hours": "{{count}} étapes"
     }
   }
 }
