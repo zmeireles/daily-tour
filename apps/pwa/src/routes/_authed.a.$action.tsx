@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useParams, useNavigate, Link } from "react-router";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { pickLocale, type Locale } from "@daily-tour/shared-types";
@@ -148,10 +149,10 @@ export default function ActionDrillDownRoute() {
       <header className="z-40 flex items-center gap-3 border-b border-border bg-background px-4 py-3">
         <Link
           to="/"
-          className="text-muted-foreground transition-colors hover:text-foreground"
+          className="text-on-surface-variant transition-colors hover:text-on-surface"
           aria-label="Back to home"
         >
-          ←
+          <ArrowLeft size={20} aria-hidden="true" />
         </Link>
         <h1
           className="flex-1 font-display text-xl leading-tight"

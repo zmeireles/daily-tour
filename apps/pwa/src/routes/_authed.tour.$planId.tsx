@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CloudRain } from "lucide-react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@/store/session";
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
@@ -11,6 +11,7 @@ import { FailureFallback } from "@/features/tour/failure-fallback";
 import { ShareButton } from "@/features/tour/share-button";
 import { Overline } from "@/components/overline";
 import { BottomTabBar } from "@/components/bottom-tab-bar";
+import { BackLink } from "@/components/back-link";
 
 const TIMEOUT_MS = 2 * 60 * 1000;
 
@@ -154,12 +155,9 @@ export default function TourPlanRoute() {
           <ShareButton planId={planId!} editorial />
         </div>
 
-        <Link
-          to="/"
-          className="mt-6 inline-block text-primary underline underline-offset-4 text-sm"
-        >
-          ← {t("tour.status.back")}
-        </Link>
+        <div className="mt-6 flex justify-center">
+          <BackLink to="/">{t("tour.status.back")}</BackLink>
+        </div>
 
         <BottomTabBar active="explore" />
       </main>

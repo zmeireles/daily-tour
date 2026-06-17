@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useCallback, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { I18nText, Locale } from "@daily-tour/shared-types";
 import { useSessionStore } from "@/store/session";
@@ -14,6 +14,7 @@ import { ActionRow } from "@/features/place-detail/action-row";
 import { DetailsCard } from "@/features/place-detail/details-card";
 import { Overline } from "@/components/overline";
 import { BottomTabBar } from "@/components/bottom-tab-bar";
+import { BackLink } from "@/components/back-link";
 import { appleMapsHref, telHref, waMeHref } from "@/lib/maps/deep-links";
 import { GUESTHOUSE_CONTACT_PHONE } from "@/lib/config";
 
@@ -69,9 +70,7 @@ export default function PlaceDetailRoute() {
     return (
       <main className="min-h-svh flex flex-col items-center justify-center gap-4 p-6">
         <p className="text-muted-foreground">{t("not_found")}</p>
-        <Link to="/" className="text-primary underline underline-offset-4 text-sm">
-          ← {t("actions.navigate", "Back")}
-        </Link>
+        <BackLink to="/">{t("actions.navigate", "Back")}</BackLink>
       </main>
     );
   }
@@ -80,9 +79,7 @@ export default function PlaceDetailRoute() {
     return (
       <main className="min-h-svh flex flex-col items-center justify-center gap-4 p-6">
         <p className="text-muted-foreground">{t("error")}</p>
-        <Link to="/" className="text-primary underline underline-offset-4 text-sm">
-          ← Home
-        </Link>
+        <BackLink to="/">Home</BackLink>
       </main>
     );
   }
