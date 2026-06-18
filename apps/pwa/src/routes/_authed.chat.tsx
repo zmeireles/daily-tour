@@ -7,27 +7,21 @@ import { useThemeAuto } from "@/lib/theme/use-theme-auto";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatWindow } from "@/features/chat/chat-window";
 import { useChatWs } from "@/features/chat/use-chat-ws";
+import { ResponsiveScreen } from "@/components/responsive-screen";
+import { ChatDesktop } from "@/features/chat/chat-desktop";
 
 // The host of every Daily Tour guesthouse thread is Miguel. The guesthouse
 // name (e.g. "· Casa do Sol") isn't carried in the session — only its id — so
 // the app bar shows the host name and a cosmetic presence line.
 const HOST_NAME = "Miguel";
 
-export default function ChatRoute() {
+// Mobile Chat — the shipped phone tree, kept byte-identical (chat.test.tsx
+// snapshot-guards it). The WS hook lives here, not on the route, so it mounts
+// only when the mobile branch is rendered (the desktop sibling owns its own).
+function ChatMobile({ jwt }: { jwt: string }) {
   const navigate = useNavigate();
-  const jwt = useSessionStore((s) => s.jwt);
   const { t } = useTranslation("discover");
-  // Flat router: each authed screen opts into the sunrise/sunset (or stored
-  // override) theme. Without this the chat renders the light fallback when
-  // landed on directly. Same fix applied to /p/:id and the tour routes.
-  useThemeAuto();
   const { messages, status, send } = useChatWs(jwt);
-
-  useEffect(() => {
-    if (!jwt) void navigate("/?reason=expired", { replace: true });
-  }, [jwt, navigate]);
-
-  if (!jwt) return null;
 
   return (
     <main className="flex flex-col h-svh max-w-lg mx-auto bg-surface">
@@ -60,4 +54,23 @@ export default function ChatRoute() {
       <ChatWindow messages={messages} status={status} onSend={send} />
     </main>
   );
+}
+
+export default function ChatRoute() {
+  const navigate = useNavigate();
+  const jwt = useSessionStore((s) => s.jwt);
+  // Flat router: each authed screen opts into the sunrise/sunset (or stored
+  // override) theme. Without this the chat renders the light fallback when
+  // landed on directly. Same fix applied to /p/:id and the tour routes.
+  useThemeAuto();
+
+  useEffect(() => {
+    if (!jwt) void navigate("/?reason=expired", { replace: true });
+  }, [jwt, navigate]);
+
+  if (!jwt) return null;
+
+  // Calmest screen, lowest risk: contained editorial column at lg (1024), no
+  // rail. Below the floor the byte-identical mobile tree renders.
+  return <ResponsiveScreen mobile={<ChatMobile jwt={jwt} />} desktop={<ChatDesktop jwt={jwt} />} />;
 }
