@@ -68,6 +68,14 @@
       "headline": "O seu dia em São Miguel",
       "subline": "{{count}} paragens · ~{{hours}}h",
       "subline_no_hours": "{{count}} paragens"
+    },
+    "intake": {
+      "imagery_kicker": "CONHEÇA A ILHA",
+      "imagery_headline": "O seu dia, à sua medida",
+      "imagery_host": "Miguel · o seu anfitrião"
+    },
+    "desktop": {
+      "index_label": "Paragens do roteiro"
     }
   }
 }

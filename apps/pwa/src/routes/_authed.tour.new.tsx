@@ -5,6 +5,8 @@ import { useSessionStore } from "@/store/session";
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
 import { IntakeForm, type IntakeFormData } from "@/features/tour/intake-form";
 import { useCreateTourPlan } from "@/features/tour/use-tour-plan";
+import { ResponsiveScreen } from "@/components/responsive-screen";
+import { DailyTourDesktop } from "@/features/tour/daily-tour-desktop";
 
 export default function TourNewRoute() {
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ export default function TourNewRoute() {
     }
   }
 
-  return (
+  const mobile = (
     <main className="min-h-svh px-4 py-8 max-w-lg mx-auto">
       <h1 className="text-2xl font-semibold mb-2">{t("tour.new.title")}</h1>
       <p className="text-muted-foreground text-sm mb-6">{t("tour.new.subtitle")}</p>
@@ -42,5 +44,20 @@ export default function TourNewRoute() {
       )}
       <IntakeForm onSubmit={handleSubmit} submitting={mutation.isPending} />
     </main>
+  );
+
+  return (
+    <ResponsiveScreen
+      engageAt="md"
+      mobile={mobile}
+      desktop={
+        <DailyTourDesktop
+          stage="intake"
+          onSubmit={handleSubmit}
+          submitting={mutation.isPending}
+          errorMessage={mutation.isError ? t("tour.new.error") : null}
+        />
+      }
+    />
   );
 }

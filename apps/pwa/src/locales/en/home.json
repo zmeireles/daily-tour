@@ -68,6 +68,14 @@
       "headline": "Your day on São Miguel",
       "subline": "{{count}} stops · ~{{hours}}h",
       "subline_no_hours": "{{count}} stops"
+    },
+    "intake": {
+      "imagery_kicker": "GET TO KNOW THE ISLAND",
+      "imagery_headline": "Your day, tailored to you",
+      "imagery_host": "Miguel · your host"
+    },
+    "desktop": {
+      "index_label": "Itinerary stops"
     }
   }
 }
