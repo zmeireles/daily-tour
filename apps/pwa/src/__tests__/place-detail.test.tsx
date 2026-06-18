@@ -48,6 +48,40 @@ const MOCK_PLACE = {
   weather_ok_today: true,
 };
 
+// The COMMON case: an owner-pending business — one placeholder image (so the
+// Gallery auto-absents) and no season (so the DetailsCard stays empty). Must not
+// look broken: rail = actions + map only.
+const MOCK_BUSINESS = {
+  ...MOCK_PLACE,
+  id: "place-uuid-2",
+  name: { en: "Café Atlântico" },
+  description: { en: "A cosy harbour-front café." },
+  season: null,
+  media: [
+    {
+      id: "media-b1",
+      kind: "image",
+      url: "https://example.com/cafe.jpg",
+      alt: { en: "Café Atlântico" },
+      sort_order: 1,
+    },
+  ],
+};
+
+// Forces useLayoutMode("lg") to report desktop (matchMedia is absent in jsdom).
+function mockMatchMedia(matches: boolean) {
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+    onchange: null,
+  }));
+}
+
 function makeRouter(placeId = "place-uuid-1") {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -212,5 +246,140 @@ describe("PlaceDetailRoute", () => {
     // Capitalized season label rendered inside the card.
     expect(screen.getByText("Summer")).toBeInTheDocument();
     expect(screen.getByText("Best season")).toBeInTheDocument();
+  });
+
+  // Below the lg floor the route must mount the UNTOUCHED mobile tree — the
+  // additive props default to mobile behaviour and no desktop chrome leaks in.
+  it("mounts the mobile tree (glass back, no breadcrumb) below the lg floor", async () => {
+    mockMatchMedia(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(MOCK_PLACE) }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    await waitFor(() => expect(screen.getByText("Sete Cidades")).toBeInTheDocument());
+
+    // Hero chrome defaults to "full": the glass back button is present.
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
+    // The desktop-only breadcrumb is absent.
+    expect(screen.queryByRole("navigation", { name: /breadcrumb/i })).toBeNull();
+  });
+});
+
+describe("PlaceDetailRoute — desktop layout (≥ lg)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    mockMatchMedia(true);
+    useSessionStore.getState().clearSession();
+    useSessionStore.getState().setSession("test-jwt", {
+      sub: "guest-1",
+      rid: "res-1",
+      gh: "gh-1",
+      locale: "en",
+      exp: 9_999_999_999,
+    });
+  });
+
+  it("rich landmark: breadcrumb, display title, gallery + full rail (actions + season)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ...MOCK_PLACE, season: "summer" }),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    // Name appears twice by design (breadcrumb + h1 restatement) — assert the
+    // heading specifically.
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Sete Cidades" })).toBeInTheDocument(),
+    );
+
+    // Desktop chrome: breadcrumb replaces the glass back button.
+    expect(screen.getByRole("navigation", { name: /breadcrumb/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /back/i })).toBeNull();
+
+    // The three rail deep-links survive the fork.
+    expect(screen.getByRole("link", { name: /navigate/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /call/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /message/i })).toBeInTheDocument();
+
+    // Multi-image → the Gallery renders its slides (distinctive 2nd-image alt).
+    expect(screen.getByAltText("Sete Cidades panorama")).toBeInTheDocument();
+
+    // Season lives in the rail META chip (not duplicated in a left DetailsCard).
+    expect(screen.getByText("Summer")).toBeInTheDocument();
+    expect(screen.queryByTestId("place-details-card")).toBeNull();
+  });
+
+  it("single-photo owner-pending business: no gallery, empty details, actions + map only", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(MOCK_BUSINESS) }),
+    );
+
+    const { ui } = makeRouter("place-uuid-2");
+    render(ui);
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Café Atlântico" })).toBeInTheDocument(),
+    );
+
+    // Single image → Gallery auto-absents; no degenerate one-slide carousel
+    // (the carousel marks each slide with aria-roledescription="slide").
+    expect(document.querySelector('[aria-roledescription="slide"]')).toBeNull();
+    // No season + no hours → DetailsCard stays empty.
+    expect(screen.queryByTestId("place-details-card")).toBeNull();
+    // The rail is still functional: the three actions + the single-pin map.
+    expect(screen.getByRole("link", { name: /navigate/i })).toBeInTheDocument();
+    expect(screen.getByTestId("map-view")).toBeInTheDocument();
+  });
+
+  // The opaque photo-credit chip is a SHARED token-only contrast fix. It must read
+  // ≥4.5:1 in BOTH themes — bg-on-surface ⇄ text-surface flip together, so the
+  // pairing holds. Here we assert it under the dark theme.
+  it("hardens the photo-credit caption to the opaque on-surface chip (dark theme)", async () => {
+    document.documentElement.setAttribute("data-theme", "dark");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            ...MOCK_PLACE,
+            media: [
+              {
+                id: "media-attr",
+                kind: "image",
+                url: "https://example.com/sete-cidades.jpg",
+                alt: { en: "Sete Cidades lake" },
+                sort_order: 1,
+                attribution: {
+                  author: "Jane Doe",
+                  license: "CC BY-SA 4.0",
+                  source_url: "https://commons.example/sete",
+                },
+              },
+            ],
+          }),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    const caption = await screen.findByRole("link", { name: /Jane Doe/i });
+    expect(caption.className).toContain("bg-on-surface/90");
+    expect(caption.className).toContain("text-surface");
+    expect(caption.className).not.toContain("bg-black/50");
+
+    document.documentElement.removeAttribute("data-theme");
   });
 });
