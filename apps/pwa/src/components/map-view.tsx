@@ -25,6 +25,11 @@ export type MapViewProps = {
   pins?: MapViewPin[];
   pmtilesUrl?: string;
   className?: string;
+  // When true, frame the viewport to the current pin cluster (fitBounds) instead
+  // of the static center/zoom — used by the desktop Discover map so São Miguel
+  // fills the edge-to-edge canvas and any stray world-scale geometry stays
+  // off-screen. Default false → the mobile map is unchanged.
+  fitToPins?: boolean;
 };
 
 export function MapView({
@@ -33,6 +38,7 @@ export function MapView({
   pins = [],
   pmtilesUrl,
   className,
+  fitToPins = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -90,6 +96,18 @@ export function MapView({
       markersRef.current.push(marker);
     });
   }, [pins]);
+
+  // Fit the viewport to the current pin cluster (desktop Discover). Re-fits when
+  // the filtered pin set changes; the center/zoom effect below still applies
+  // selection-centering on top.
+  useEffect(() => {
+    if (!fitToPins) return;
+    const map = mapRef.current;
+    if (!map || pins.length === 0) return;
+    const bounds = new maplibregl.LngLatBounds();
+    pins.forEach((p) => bounds.extend([p.lng, p.lat]));
+    map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 });
+  }, [pins, fitToPins]);
 
   // Navigate to new center — skip initial call (map was created with the right center)
   useEffect(() => {
