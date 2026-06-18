@@ -24,8 +24,14 @@ export function HomeBodyGrid({ picks }: { picks: DiscoverPlace[] }) {
           </h2>
           <p className="mt-1 text-sm text-on-surface-variant">{t("hosts_picks.subtitle")}</p>
           <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-4">
-            {picks.map((p) => (
-              <li key={p.id}>
+            {picks.map((p, i) => (
+              // Cover-story: the first pick spans 2×2 as a featured card (when
+              // there are >=3) — a magazine focal point that also fills the grid
+              // height so the right-rail panels don't leave a ragged gap.
+              <li
+                key={p.id}
+                className={cn(picks.length >= 3 && i === 0 && "col-span-2 row-span-2")}
+              >
                 <PlaceCard
                   id={p.id}
                   name={p.name}
