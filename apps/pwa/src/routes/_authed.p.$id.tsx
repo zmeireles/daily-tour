@@ -15,6 +15,8 @@ import { DetailsCard } from "@/features/place-detail/details-card";
 import { Overline } from "@/components/overline";
 import { BottomTabBar } from "@/components/bottom-tab-bar";
 import { BackLink } from "@/components/back-link";
+import { ResponsiveScreen } from "@/components/responsive-screen";
+import { PlaceDetailDesktop } from "@/features/place-detail/place-detail-desktop";
 import { appleMapsHref, telHref, waMeHref } from "@/lib/maps/deep-links";
 import { GUESTHOUSE_CONTACT_PHONE } from "@/lib/config";
 
@@ -107,9 +109,16 @@ export default function PlaceDetailRoute() {
   const primaryWish = place.wishes[0];
   const overlineLabel = primaryWish ? wishLabel(primaryWish, locale) : null;
 
-  return (
+  // Deep links, resolved once and shared by both layouts.
+  const navigateHref = appleMapsHref(place.geom_lat, place.geom_lng);
+  const callHref = telHref(phone);
+  const waHref = waMeHref(phone, waText);
+
+  const mobile = (
     <>
-      <main className="min-h-svh w-full bg-surface pb-24">
+      {/* pb-28 (not pb-24) so the bottom PlaceMap clears the fixed BottomTabBar +
+          its safe-area inset at tablet width (placedetail-map-tabbar-overlap). */}
+      <main className="min-h-svh w-full bg-surface pb-28">
         <Hero
           imageUrl={firstImageUrl}
           title={nameResult.text}
@@ -178,5 +187,28 @@ export default function PlaceDetailRoute() {
       </main>
       <BottomTabBar active="explore" />
     </>
+  );
+
+  return (
+    <ResponsiveScreen
+      engageAt="lg"
+      mobile={mobile}
+      desktop={
+        <PlaceDetailDesktop
+          place={place}
+          name={nameResult.text}
+          nameFallback={nameResult.fallback}
+          description={descResult.text}
+          descriptionFallback={descResult.fallback}
+          overlineLabel={overlineLabel}
+          wishLabels={place.wishes.map((wish) => wishLabel(wish, locale))}
+          heroImageUrl={firstImageUrl}
+          heroAttribution={firstImage?.attribution ?? null}
+          navigateHref={navigateHref}
+          callHref={callHref}
+          waHref={waHref}
+        />
+      }
+    />
   );
 }
