@@ -225,3 +225,18 @@
     }
   }
 }
+
+/* ─── Desktop timeline density ──────────────────────────────────────────────
+   The desktop Daily Tour mounts the UNFORKED DailyTourTimeline inside a
+   [data-density="desktop"] ancestor. Descendant CSS scales the stop titles and
+   square thumbnails up to the editorial desktop tier WITHOUT a prop or a fork —
+   TimelineStop markup stays byte-identical. Mobile (no ancestor) is unaffected. */
+[data-density="desktop"] article h3 {
+  font-size: var(--text-2xl);
+  line-height: 1.15;
+}
+[data-density="desktop"] [data-testid="timeline-stop-thumb"],
+[data-density="desktop"] [data-testid="timeline-stop-thumb-fallback"] {
+  width: 5rem;
+  height: 5rem;
+}
