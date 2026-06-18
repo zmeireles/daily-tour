@@ -4,7 +4,11 @@ import type { DiscoverResponse, DiscoverPlace } from "@/features/discover/sort-u
 import { flattenGroups } from "@/features/discover/sort-utils";
 
 async function fetchHostsPicks(jwt: string): Promise<DiscoverPlace[]> {
-  const res = await fetch("/v1/discover?action=eat", {
+  // action=see: the host's picks are photographed must-see landmarks (Sete
+  // Cidades, Lagoa do Fogo, …), surfaced via is_hosts_pick. (eat places are the
+  // owner-upload-blocked businesses with no photos — they read as blank tiles.)
+  // No loc → the BFF returns all is_hosts_pick see places, no distance filter.
+  const res = await fetch("/v1/discover?action=see", {
     headers: { Authorization: `Bearer ${jwt}` },
   });
   if (!res.ok) throw new Error(`discover ${res.status}`);
