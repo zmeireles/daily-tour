@@ -1088,3 +1088,29 @@ WHERE id IN (
   'c0000001-0000-4000-a000-000000000034',  -- Praia de São Roque
   'c0000001-0000-4000-a000-000000000035'   -- Praia do Pópulo
 );
+
+-- ─── HOST'S PICKS (re-pointed to photographed landmarks) ──────────────────────
+-- "Escolhas do anfitrião" on the home queries action=see — the eat businesses
+-- are owner-upload-blocked and have no photos (they render as blank tiles).
+-- Surface 6 photographed must-see landmarks as picks, and drop the lodging
+-- listings (#40-43 are Miguel's own properties, not recommendations). The 4 eat
+-- businesses keep is_hosts_pick for the Discover "eat" view. UPDATEs (not INSERT
+-- values) so they apply to existing rows where the INSERTs above are ON CONFLICT
+-- DO NOTHING. Idempotent. (Proper per-guesthouse pick management is the owner
+-- backoffice flow.)
+UPDATE catalog.place SET is_hosts_pick = true
+WHERE id IN (
+  'c0000001-0000-4000-a000-000000000001',  -- Sete Cidades (Vista do Rei + Lagoa Azul)
+  'c0000001-0000-4000-a000-000000000002',  -- Lagoa do Fogo
+  'c0000001-0000-4000-a000-000000000003',  -- Furnas — Caldeiras Village Walk
+  'c0000001-0000-4000-a000-000000000012',  -- Salto do Cabrito Waterfall
+  'c0000001-0000-4000-a000-000000000013',  -- Caldeira Velha (Thermal + Forest)
+  'c0000001-0000-4000-a000-000000000016'   -- Pico do Carvão / Pico da Barrosa
+);
+UPDATE catalog.place SET is_hosts_pick = false
+WHERE id IN (
+  'c0000001-0000-4000-a000-000000000040',  -- The Place
+  'c0000001-0000-4000-a000-000000000041',  -- The Escape
+  'c0000001-0000-4000-a000-000000000042',  -- The View
+  'c0000001-0000-4000-a000-000000000043'   -- The View Point
+);
