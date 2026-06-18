@@ -12,6 +12,8 @@ import { type GroupBy } from "@/features/discover/controls-bar";
 import { EmptyState } from "@/features/discover/empty-state";
 import { DiscoverMap } from "@/features/discover/discover-map";
 import { DiscoverSheet, type SheetSnap } from "@/features/discover/discover-sheet";
+import { DiscoverDesktop } from "@/features/discover/discover-desktop";
+import { useLayoutMode } from "@/lib/responsive/use-layout-mode";
 import type { LocationValue } from "@/components/location-toggle";
 import type { SortBy, WishGroup } from "@/features/discover/sort-utils";
 import { flattenGroups } from "@/features/discover/sort-utils";
@@ -93,6 +95,10 @@ export default function ActionDrillDownRoute() {
   const [search, setSearch] = React.useState("");
   const [snap, setSnap] = React.useState<SheetSnap>("peek");
 
+  // Desktop fork: ≥lg renders DiscoverDesktop (rail-frame map+list split);
+  // <lg keeps the untouched mobile map+sheet below.
+  const layoutMode = useLayoutMode("lg");
+
   const vehicleMode = useVehiclePref((s) => s.mode);
   const setVehicleMode = useVehiclePref((s) => s.setMode);
   // "Entire island" means "show everything" — it bypasses the foot-mode clamp.
@@ -143,6 +149,26 @@ export default function ActionDrillDownRoute() {
 
   const filteredGroups = data ? filterGroupsByName(data.groups, search, i18n.language) : [];
   const filteredPlaces = flattenGroups(filteredGroups);
+
+  if (layoutMode === "desktop") {
+    return (
+      <DiscoverDesktop
+        action={action ?? ""}
+        actionIcon={actionIcon}
+        places={filteredPlaces}
+        center={activeLoc}
+        selectedId={selectedId}
+        onSelect={(id) => setSelectedId(id)}
+        search={search}
+        onSearchChange={setSearch}
+        onOpenPlace={(id) => void navigate(`/p/${id}`)}
+        onLocateMe={requestMyLocation}
+        km={isEntireIsland(kmRange) ? ISLAND_KM : kmRange}
+        isLoading={isLoading}
+        isError={isError}
+      />
+    );
+  }
 
   return (
     <div className="relative flex h-svh flex-col bg-background">

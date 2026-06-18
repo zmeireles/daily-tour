@@ -16,12 +16,18 @@ export type DesktopFrame = "contained" | "rail";
 export function DesktopAppShell({
   frame = "contained",
   rail,
+  railSide = "left",
+  railWidth = "300px",
   subHeader,
   children,
   className,
 }: {
   frame?: DesktopFrame;
   rail?: React.ReactNode;
+  // Which side the rail sits on + its width. Default left/300px (Tour timeline).
+  // Discover mirrors it to the right at 400px ("map = the subject").
+  railSide?: "left" | "right";
+  railWidth?: string;
   subHeader?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -38,12 +44,28 @@ export function DesktopAppShell({
 
       <main className={cn("flex-1", className)}>
         {frame === "rail" ? (
-          <div className="grid grid-cols-[300px_1fr]">
-            <aside className="sticky top-20 h-[calc(100svh-5rem)] overflow-y-auto border-r border-outline-variant bg-surface-container-low">
-              {rail}
-            </aside>
-            {/* fluid, edge-to-edge content column — no max-w cap */}
-            <div className="min-w-0">{children}</div>
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: railSide === "right" ? `1fr ${railWidth}` : `${railWidth} 1fr`,
+            }}
+          >
+            {railSide === "right" ? (
+              <>
+                {/* fluid, edge-to-edge content column — no max-w cap */}
+                <div className="min-w-0">{children}</div>
+                <aside className="sticky top-20 h-[calc(100svh-5rem)] overflow-y-auto border-l border-outline-variant bg-surface-container-low">
+                  {rail}
+                </aside>
+              </>
+            ) : (
+              <>
+                <aside className="sticky top-20 h-[calc(100svh-5rem)] overflow-y-auto border-r border-outline-variant bg-surface-container-low">
+                  {rail}
+                </aside>
+                <div className="min-w-0">{children}</div>
+              </>
+            )}
           </div>
         ) : (
           <div className="mx-auto w-full max-w-[1200px] px-8 pt-12 xl:px-12">{children}</div>
