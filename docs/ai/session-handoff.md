@@ -1,6 +1,33 @@
-# Session Handoff — 2026-05-28 → … → 06-17 (Slice 2.D editorial COMPLETE + LIVE on qual; DESKTOP UI/UX phase planned) → next session
+# Session Handoff — 2026-05-28 → … → 06-18 (DESKTOP UI/UX phase EXECUTING: audit + design DONE, foundation + desktop Home MERGED + LIVE on qual; 4 screens left) → next session
 
-> **UPDATE 2026-06-17 (LATEST): Slice 2.D shipped + DEPLOYED LIVE to qual; new phase locked — DESKTOP UI/UX (first-class). Resume from this block.**
+> **UPDATE 2026-06-18 (LATEST): Desktop UI/UX phase EXECUTING — WF1 audit + WF2 design done; #267 (PlaceCard) + #268 (foundation) + #269 (desktop Home) all MERGED + DEPLOYED to qual; desktop Home browser-UAT'd LIVE (5/5). Remaining: Discover, Daily Tour, Place Detail, Chat. Resume from this block.**
+>
+> ### Done this session
+>
+> - **qual cleaned (live DB):** deleted 14 stale Unsplash `place_media` rows → qual now **43 places / 32 media** (exact dev parity); the 14 businesses fall back to the branded panel. One-off manual op, forward-compatible (committed seed has no Unsplash).
+> - **13 desktop+tablet captures** of all 5 guest screens (browser-uat qual, light theme, 1440 + 834) → `temp/desktop-audit/captures/`.
+> - **WF1 — desktop UX audit** (5 lenses → adversarial reconcile → completeness critic) → `temp/desktop-audit/wf1-audit.md`. 6 blockers / 6 majors / 5 minors. Key correction (code-verified): the "bottom-tab stranded mid-page" finding is a full-page-screenshot ARTIFACT, not a CSS bug; the ActionGrid `aspect-square` collapse is the real worst defect.
+> - **WF2 — design exploration** (foundation → 5 screens × 3 candidates → judge) → `temp/desktop-audit/wf2-design.md`. **LOCKED foundation = "Editorial AppShell"**: `DesktopAppShell` (contained|rail) + `DesktopTopNav` masthead + opt-in `ContextRail` + `useLayoutMode`/`ResponsiveScreen` + `FullBleed` + `BrandLockup` extraction + `--text-display-lg/-xl`. Breakpoint: lg/1024 floor, md/768 early-engage for Home+DailyTour. **Build seq: Foundation → Discover → DailyTour → Home → PlaceDetail → Chat.** Per-screen specs + 5 paste-ready Stitch prompts in the doc.
+> - **#267 MERGED** — PlaceCard overlay no-photo contrast (dark forest surface + stronger scrim); fixes a WCAG blocker on the live mobile app too.
+> - **PR1 #268 MERGED** (`main` @ `c1a0984`) — desktop foundation INFRA: `DesktopAppShell`/`DesktopTopNav`/`ContextRail`/`FullBleed`/`useLayoutMode`/`ResponsiveScreen`/`BrandLockup`/tokens. Guarded edits: BrandLockup byte-identical; LocaleSwitcher → `components/`; en/pt-PT `nav.*`. +23 tests.
+> - **Desktop Home #269 MERGED + DEPLOYED to qual — LIVE-VERIFIED (5/5)** (`main` @ `981a39b`). FIRST screen, mounts the shell (`ResponsiveScreen engageAt="md"`; <1024 phones untouched). `HomeDesktop` = masthead spread (Greeting `masthead` variant + `--text-display-lg`) + `DesktopSectionNav` (6 verbs as bounded nav cards, icon+label same box → artifact gone) + `HomeBodyGrid` `[1fr_360px]` (picks fluid grid + 2 `DesktopPlanPanel`s). DRY: `ACTIONS`→`actions.ts`, hosts-picks→`use-hosts-picks.ts`, mobile JSX→`home.tsx`. **Cover-story span deferred** (needs a PlaceCard aspect variant). +4 tests; full pwa **253/253**. Deploy: `publish-images` (rebuilds `pwa:qual`) → `deploy-qa.yml -f image_tag=qual` (push-deploy is skipped/manual-only). browser-uat at 1440+834 PASS; screenshot `temp/desktop-audit/captures/home-desktop-NEW-1440.png`.
+>
+> ### FIRST TASKS NEXT SESSION
+>
+> 1. dt-tests `review` poll (ritual) — empty at close.
+> 2. **Build remaining desktop screens** (foundation + Home merged + live): **Discover** (rail frame MIRRORED `[1fr_400px]`, map LEFT/list RIGHT + `MapView fitToPins` keeps the stray arc off-screen; **requires refactoring the live `_authed.a.$action.tsx`** into a shared hook + mobile component — higher-risk, do carefully) → **Daily Tour** (intake planner + spatial timeline, `engageAt="md"`) → **Place Detail** (FullBleed hero + sticky info rail) → **Chat** (bounded ConversationPanel). Specs in `wf2-design.md` §2.2–2.5 + Stitch prompts §4. Each is independently shippable + deployable like Home.
+> 3. Optional: run the 5 Stitch prompts (web UI) to mock screens.
+>
+> ### Deferred / notes
+>
+> - **Home picks render the green photo-fallback** (the "eat" host's-picks are media-less businesses → #135 owner-upload-blocked) → left grid is a wall of identical green tiles. Layout is correct; needs business photos to lift visually. + minor right-rail vertical-rhythm gap (panels shorter than the picks grid).
+> - **2 demo-critical NON-layout bugs** (out of layout scope, backend — track separately): Daily Tour itinerary descriptions render in **English** on a PT-PT app; the planner returned 4 lodging places for a See/Eat request (relevance).
+> - Discover **stray magenta route arc** — NO line-layer in the codebase (`buildStyle` = OSM raster only); `fitToPins` keeps it off-screen; true source needs live devtools (folds into Discover).
+> - **Home cover-story span** (16:10 featured first pick) deferred — needs a PlaceCard aspect variant; kept the shared contract clean.
+> - The spec's "Overline contrast hardening" = **no-op** (token already 6.8:1 AA on cream) — skipped, verified.
+> - **State:** main `981a39b` (#267 + #268 + #269 all merged + LIVE on qual); **0 open code PRs**. Local branches: `main` only. dt-tests `review` empty. Desktop Home live at `https://qual.stay.portugalodyssey.pt` (≥768).
+
+> **UPDATE 2026-06-17: Slice 2.D shipped + DEPLOYED LIVE to qual; new phase locked — DESKTOP UI/UX (first-class).**
 >
 > ### Now live
 >
