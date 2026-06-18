@@ -22,12 +22,17 @@ const tourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
     }
 
-    const { sub: guestId, rid: reservationId } = req.user as { sub: string; rid?: string };
+    const {
+      sub: guestId,
+      rid: reservationId,
+      locale,
+    } = req.user as { sub: string; rid?: string; locale?: string };
 
     try {
       const plan = await createTourPlan({
         guestId,
         reservationId,
+        locale,
         requestPayload: parsed.data,
       });
       return reply.code(201).send(plan);
@@ -51,7 +56,8 @@ const tourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       if (!plan) {
         return reply.code(404).send({ error: "not_found" });
       }
-      return plan.status === "ready" ? await withStops(plan) : plan;
+      const { locale } = req.user as { locale?: string };
+      return plan.status === "ready" ? await withStops(plan, locale) : plan;
     } catch (err) {
       if (err instanceof PlannerError) {
         req.log.error({ err }, "[bff:tour-plans] planner-svc error on get");

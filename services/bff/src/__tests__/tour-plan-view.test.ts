@@ -25,8 +25,9 @@ function hydrated(
   id: string,
   names: Record<string, string>,
   media: Array<{ kind: string; url: string }> = [],
+  geom: { geom_lat: number; geom_lng: number } = { geom_lat: 37.74, geom_lng: -25.68 },
 ) {
-  return { id, name: names, media };
+  return { id, name: names, media, ...geom };
 }
 
 function step(overrides: Record<string, unknown> = {}) {
@@ -68,6 +69,8 @@ describe("tour-plan-view withStops", () => {
       name: "Sete Cidades",
       description: "A great start to the day.",
       hero_image_url: null,
+      geom_lat: 37.74,
+      geom_lng: -25.68,
       duration_min: 90,
       travel_to_minutes: 10,
     });
@@ -157,14 +160,60 @@ describe("tour-plan-view withStops", () => {
     expect(stops[0]!.time).toBe("23:05");
   });
 
-  it("prefers en name, falls back to first available locale", async () => {
+  it("with no locale, prefers en name and falls back to first available", async () => {
     fetchMock.mockResolvedValueOnce(hydrated(PLACE_A, { "pt-PT": "Lagoa do Fogo" }));
 
     const plan = { id: "p1", status: "ready", plan_payload: { steps: [step()] } };
     const out = await withStops(plan);
     const stops = (out.plan_payload as { stops: { name: string }[] }).stops;
 
+    // No pt-PT-preferring locale passed → defaults to en, then first available.
     expect(stops[0]!.name).toBe("Lagoa do Fogo");
+  });
+
+  it("prefers the requested locale's name over en", async () => {
+    fetchMock.mockResolvedValueOnce(
+      hydrated(PLACE_A, { en: "Fire Lagoon", "pt-PT": "Lagoa do Fogo" }),
+    );
+
+    const plan = { id: "p1", status: "ready", plan_payload: { steps: [step()] } };
+    const out = await withStops(plan, "pt-PT");
+    const stops = (out.plan_payload as { stops: { name: string }[] }).stops;
+
+    expect(stops[0]!.name).toBe("Lagoa do Fogo");
+  });
+
+  it("falls back to en when the requested locale name is absent", async () => {
+    fetchMock.mockResolvedValueOnce(hydrated(PLACE_A, { en: "Fire Lagoon" }));
+
+    const plan = { id: "p1", status: "ready", plan_payload: { steps: [step()] } };
+    const out = await withStops(plan, "pt-PT");
+    const stops = (out.plan_payload as { stops: { name: string }[] }).stops;
+
+    expect(stops[0]!.name).toBe("Fire Lagoon");
+  });
+
+  it("emits geom_lat/geom_lng from the catalog place; null when the place is missing", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        hydrated(PLACE_A, { en: "Sete Cidades" }, [], { geom_lat: 37.86, geom_lng: -25.79 }),
+      )
+      .mockRejectedValueOnce(new Error("404"));
+
+    const plan = {
+      id: "p1",
+      status: "ready",
+      plan_payload: { steps: [step({ place_id: PLACE_A }), step({ place_id: PLACE_B })] },
+    };
+    const out = await withStops(plan);
+    const stops = (
+      out.plan_payload as { stops: { geom_lat: number | null; geom_lng: number | null }[] }
+    ).stops;
+
+    expect(stops[0]!.geom_lat).toBe(37.86);
+    expect(stops[0]!.geom_lng).toBe(-25.79);
+    expect(stops[1]!.geom_lat).toBeNull();
+    expect(stops[1]!.geom_lng).toBeNull();
   });
 
   it("falls back to raw place_id and null hero when the place is missing from catalog", async () => {

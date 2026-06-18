@@ -13,6 +13,10 @@ export interface TourStop {
   // First image media URL for this stop's place, or null/absent when none.
   // Drives the editorial thumbnail; missing → branded tea-green fallback.
   hero_image_url?: string | null;
+  // Place coordinates (catalog geom). Optional — absent on older payloads.
+  // Drives the desktop tour route map.
+  geom_lat?: number | null;
+  geom_lng?: number | null;
 }
 
 // Icon shown in the photo-less fallback panel, by stop kind.
