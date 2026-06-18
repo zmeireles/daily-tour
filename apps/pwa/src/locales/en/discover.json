@@ -9,7 +9,15 @@
     "empty": "Say hello to start the conversation.",
     "placeholder": "Type a message",
     "voice": "Voice message",
-    "send": "Send"
+    "send": "Send",
+    "welcome_title": "Hi! I'm Miguel.",
+    "welcome_subtitle": "Ask me anything about the island and your stay.",
+    "prompts": {
+      "visit": "What's worth seeing today?",
+      "eat": "Where can I eat nearby?",
+      "calheta": "How do I get to Calheta?",
+      "taxi": "Do I need a taxi?"
+    }
   },
   "controls": {
     "location": {

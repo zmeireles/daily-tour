@@ -9,7 +9,15 @@
     "empty": "Diga olá para começar a conversa.",
     "placeholder": "Escreva uma mensagem",
     "voice": "Mensagem de voz",
-    "send": "Enviar"
+    "send": "Enviar",
+    "welcome_title": "Olá! Sou o Miguel.",
+    "welcome_subtitle": "Pergunte-me o que quiser sobre a ilha e o alojamento.",
+    "prompts": {
+      "visit": "O que visitar hoje?",
+      "eat": "Onde comer perto?",
+      "calheta": "Como chego à Calheta?",
+      "taxi": "Preciso de táxi?"
+    }
   },
   "controls": {
     "location": {
