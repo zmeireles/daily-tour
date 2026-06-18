@@ -12,6 +12,8 @@ import { ShareButton } from "@/features/tour/share-button";
 import { Overline } from "@/components/overline";
 import { BottomTabBar } from "@/components/bottom-tab-bar";
 import { BackLink } from "@/components/back-link";
+import { ResponsiveScreen } from "@/components/responsive-screen";
+import { DailyTourDesktop } from "@/features/tour/daily-tour-desktop";
 
 const TIMEOUT_MS = 2 * 60 * 1000;
 
@@ -129,7 +131,7 @@ export default function TourPlanRoute() {
         ? t("tour.editorial.subline", { count: stops.length, hours: spanHours })
         : t("tour.editorial.subline_no_hours", { count: stops.length });
 
-    return (
+    const mobile = (
       <main className="min-h-svh bg-surface px-4 pt-6 pb-24 max-w-lg mx-auto">
         {/* Editorial header */}
         <header className="mb-10">
@@ -161,6 +163,22 @@ export default function TourPlanRoute() {
 
         <BottomTabBar active="explore" />
       </main>
+    );
+
+    return (
+      <ResponsiveScreen
+        engageAt="md"
+        mobile={mobile}
+        desktop={
+          <DailyTourDesktop
+            stage="timeline"
+            planId={planId!}
+            stops={stops}
+            subline={subline}
+            weatherAware={weatherAware}
+          />
+        }
+      />
     );
   }
 
