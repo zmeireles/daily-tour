@@ -20,7 +20,9 @@
   },
   "premium": {
     "plan_my_day": "Plan my day",
-    "message_host": "Message Miguel"
+    "plan_my_day_sub": "Tell us your mood and we'll craft a day around São Miguel.",
+    "message_host": "Message Miguel",
+    "message_host_sub": "Questions about the island? Miguel is one message away."
   },
   "locale": {
     "en": "English",
