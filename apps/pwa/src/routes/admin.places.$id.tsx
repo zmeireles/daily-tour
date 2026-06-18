@@ -13,7 +13,9 @@ export default function AdminPlacesEditRoute() {
   }
   if (isError || !data) {
     return (
-      <p className="text-destructive text-sm">{t("places.form.load_error", "Failed to load place.")}</p>
+      <p className="text-destructive text-sm">
+        {t("places.form.load_error", "Failed to load place.")}
+      </p>
     );
   }
 

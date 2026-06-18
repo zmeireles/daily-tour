@@ -18,9 +18,7 @@ describe("useTourTelemetry", () => {
 
   beforeEach(() => {
     useSessionStore.getState().clearSession();
-    fetchSpy = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValue(new Response(null, { status: 204 }));
+    fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
   });
 
   afterEach(() => {

@@ -46,7 +46,9 @@ export function BetaDashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">{t("beta.title", "Beta Dashboard")}</h1>
-      <p className="text-sm text-muted-foreground">{t("beta.window", "Last 30 days · beta guests only")}</p>
+      <p className="text-sm text-muted-foreground">
+        {t("beta.window", "Last 30 days · beta guests only")}
+      </p>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <MetricCard label={t("beta.total_guests", "Guests")} value={String(data.total_guests)} />
@@ -62,7 +64,9 @@ export function BetaDashboard() {
       </div>
 
       <section>
-        <h2 className="text-base font-medium mb-2">{t("beta.top_places", "Top 5 engaged places")}</h2>
+        <h2 className="text-base font-medium mb-2">
+          {t("beta.top_places", "Top 5 engaged places")}
+        </h2>
         {data.top_places.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("beta.no_places", "No data yet.")}</p>
         ) : (
