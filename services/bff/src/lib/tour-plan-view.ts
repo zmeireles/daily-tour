@@ -15,6 +15,10 @@ export interface TourStop {
   // First image media URL for the resolved place, or null when the place has
   // none / can't be hydrated. Drives the editorial thumbnail in the PWA.
   hero_image_url: string | null;
+  // Place coordinates (catalog geom), or null when the place can't be
+  // hydrated. Drives the desktop tour route map.
+  geom_lat: number | null;
+  geom_lng: number | null;
 }
 
 // planner-svc step shape — what plan_payload.steps[] carries.
@@ -48,26 +52,33 @@ function durationMinutes(start: string, end: string): number | undefined {
   return Math.round((endMs - startMs) / 60000);
 }
 
-function pickName(names: Record<string, string>): string | undefined {
-  return names["en"] ?? Object.values(names)[0];
+// Prefer the guest's locale, then English, then whatever's first — so the 28
+// bilingual landmark names localize on a PT-PT app instead of always rendering
+// the `en` entry.
+function pickName(names: Record<string, string>, locale: string): string | undefined {
+  return names[locale] ?? names["en"] ?? Object.values(names)[0];
 }
 
 interface PlaceMeta {
   name: string;
   heroImageUrl: string | null;
+  geom_lat: number | null;
+  geom_lng: number | null;
 }
 
-// Resolve place_id → display name + hero image. Tolerant: any catalog miss/error
-// falls back to the id with no image.
-async function resolvePlaceMeta(placeId: string): Promise<PlaceMeta> {
+// Resolve place_id → display name + hero image + coordinates. Tolerant: any
+// catalog miss/error falls back to the id with no image and null coords.
+async function resolvePlaceMeta(placeId: string, locale: string): Promise<PlaceMeta> {
   try {
     const place = await fetchPlaceHydrated(placeId);
     return {
-      name: pickName(place.name) ?? placeId,
+      name: pickName(place.name, locale) ?? placeId,
       heroImageUrl: place.media.find((m) => m.kind === "image")?.url ?? null,
+      geom_lat: place.geom_lat ?? null,
+      geom_lng: place.geom_lng ?? null,
     };
   } catch {
-    return { name: placeId, heroImageUrl: null };
+    return { name: placeId, heroImageUrl: null, geom_lat: null, geom_lng: null };
   }
 }
 
@@ -80,6 +91,8 @@ function toStop(step: PlanStep, meta: PlaceMeta, idx: number, hasDuplicateId: bo
     name: meta.name,
     description: step.rationale,
     hero_image_url: meta.heroImageUrl,
+    geom_lat: meta.geom_lat,
+    geom_lng: meta.geom_lng,
     ...(duration !== undefined ? { duration_min: duration } : {}),
     ...(typeof step.travel_to_minutes === "number" && step.travel_to_minutes > 0
       ? { travel_to_minutes: step.travel_to_minutes }
@@ -104,11 +117,11 @@ function findDuplicateIds(steps: PlanStep[]): Set<string> {
 
 // Anti-corruption layer: add a PWA-shaped plan_payload.stops[] enriched with place names.
 // Additive — leaves the original `steps` (and any other keys) untouched.
-export async function withStops(plan: TourPlanResponse): Promise<TourPlanResponse> {
+export async function withStops(plan: TourPlanResponse, locale = "en"): Promise<TourPlanResponse> {
   if (!plan.plan_payload) return plan;
 
   const steps = extractSteps(plan.plan_payload);
-  const metas = await Promise.all(steps.map((step) => resolvePlaceMeta(step.place_id)));
+  const metas = await Promise.all(steps.map((step) => resolvePlaceMeta(step.place_id, locale)));
   const duplicated = findDuplicateIds(steps);
 
   const stops = steps.map((step, idx) =>

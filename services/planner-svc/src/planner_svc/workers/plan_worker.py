@@ -116,6 +116,12 @@ def _build_plan_request(payload: dict[str, Any]) -> PlanRequest:
     if free_text is not None and not isinstance(free_text, str):
         free_text = None
 
+    # Guest locale forwarded by the BFF inside request_payload (e.g. "pt-PT").
+    # Passed through faithfully so the assembler can ask the LLM to write
+    # rationales in the guest's language; defaults to PlanRequest's "en".
+    locale = payload.get("locale")
+    locale = locale if isinstance(locale, str) and locale else "en"
+
     try:
         return PlanRequest(
             loc=_DEFAULT_LOC,
@@ -126,6 +132,7 @@ def _build_plan_request(payload: dict[str, Any]) -> PlanRequest:
             party_size=_DEFAULT_PARTY_SIZE,
             vehicle=_coerce_vehicle(vehicle_raw),
             free_text=free_text,
+            locale=locale,
         )
     except ValidationError as exc:
         raise WorkerError(reason="invalid_request", detail=str(exc)) from exc

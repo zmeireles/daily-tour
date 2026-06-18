@@ -88,7 +88,10 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
 
   it("POST happy path — 201 with plan id + status=queued", async () => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
-    const jwt = await signJwt({ sub: GUEST_ID, rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
+    const jwt = await signJwt(
+      { sub: GUEST_ID, rid: "res-1", gh: "gh-1", locale: "pt-PT" },
+      futureExp,
+    );
     createMock.mockResolvedValueOnce({ id: PLAN_ID, status: "queued", plan_payload: null });
 
     const res = await app.inject({
@@ -111,11 +114,14 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
     const callArg = createMock.mock.calls[0]![0] as {
       guestId: string;
       reservationId?: string;
+      locale?: string;
       requestPayload: { wishes: string[]; duration_hours: number; vehicle: string };
     };
     expect(callArg.guestId).toBe(GUEST_ID);
     // The JWT `rid` claim is forwarded as the real reservation_id (#147).
     expect(callArg.reservationId).toBe("res-1");
+    // The JWT `locale` claim is forwarded so the planner writes localized rationales.
+    expect(callArg.locale).toBe("pt-PT");
     expect(callArg.requestPayload.wishes).toEqual(["eat", "see"]);
     expect(callArg.requestPayload.vehicle).toBe("car");
   });
@@ -190,6 +196,8 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
       id: placeId,
       name: { en: "Tasca da Praça" },
       media: [{ kind: "image", url: "https://cdn.example.com/tasca.jpg" }],
+      geom_lat: 37.74,
+      geom_lng: -25.68,
     });
 
     const res = await app.inject({
@@ -211,6 +219,8 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
         name: "Tasca da Praça",
         description: "Time to eat.",
         hero_image_url: "https://cdn.example.com/tasca.jpg",
+        geom_lat: 37.74,
+        geom_lng: -25.68,
         duration_min: 60,
         travel_to_minutes: 5,
       },

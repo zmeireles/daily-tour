@@ -19,6 +19,10 @@ export interface TourPlanResponse {
 interface CreatePlanParams {
   guestId: string;
   reservationId?: string;
+  // Guest locale from the JWT claim (e.g. "pt-PT"). Folded into
+  // request_payload so plan_worker._build_plan_request reads it without a
+  // planner-svc schema change; falls back to "en" when the claim is absent.
+  locale?: string;
   requestPayload: Record<string, unknown>;
 }
 
@@ -30,7 +34,7 @@ export async function createTourPlan(params: CreatePlanParams): Promise<TourPlan
     body: JSON.stringify({
       guest_id: params.guestId,
       reservation_id: params.reservationId ?? null,
-      request_payload: params.requestPayload,
+      request_payload: { ...params.requestPayload, locale: params.locale ?? "en" },
     }),
   });
   if (!res.ok) {
