@@ -20,7 +20,9 @@
   },
   "premium": {
     "plan_my_day": "Planear o meu dia",
-    "message_host": "Falar com o Miguel"
+    "plan_my_day_sub": "Diga-nos o que lhe apetece e desenhamos um dia em São Miguel.",
+    "message_host": "Falar com o Miguel",
+    "message_host_sub": "Dúvidas sobre a ilha? O Miguel está a uma mensagem de distância."
   },
   "locale": {
     "en": "English",

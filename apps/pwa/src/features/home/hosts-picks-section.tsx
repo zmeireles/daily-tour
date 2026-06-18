@@ -1,32 +1,13 @@
-import * as React from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import { PlaceCard } from "@/components/place-card";
-import { useSessionStore } from "@/store/session";
-import type { DiscoverResponse, DiscoverPlace } from "@/features/discover/sort-utils";
-import { flattenGroups } from "@/features/discover/sort-utils";
-
-async function fetchHostsPicks(jwt: string): Promise<DiscoverPlace[]> {
-  const res = await fetch("/v1/discover?action=eat", {
-    headers: { Authorization: `Bearer ${jwt}` },
-  });
-  if (!res.ok) throw new Error(`discover ${res.status}`);
-  const data = (await res.json()) as DiscoverResponse;
-  return flattenGroups(data.groups).filter((p) => p.is_hosts_pick);
-}
+import { useHostsPicks } from "@/features/home/use-hosts-picks";
 
 export function HostsPicksSection() {
   const { t } = useTranslation("discover");
   const navigate = useNavigate();
-  const jwt = useSessionStore((s) => s.jwt);
 
-  const { data: picks } = useQuery({
-    queryKey: ["hosts-picks"],
-    queryFn: () => fetchHostsPicks(jwt!),
-    enabled: !!jwt,
-    staleTime: 60_000,
-  });
+  const { data: picks } = useHostsPicks();
 
   if (!picks || picks.length === 0) return null;
 
