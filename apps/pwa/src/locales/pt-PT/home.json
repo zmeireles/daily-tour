@@ -1,6 +1,14 @@
 {
   "greeting": "Bem-vindo de volta",
   "locale_hint": "A mostrar em {{locale}}",
+  "nav": {
+    "discover": "Descobrir",
+    "my_day": "O meu dia",
+    "talk_to_host": "Falar com o Miguel",
+    "saved": "Guardados",
+    "profile": "Perfil",
+    "coming_soon": "Brevemente"
+  },
   "actions": {
     "eat": "Comer",
     "drink": "Beber",

@@ -32,6 +32,18 @@
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
   --text-display: 3rem;
+  /* Desktop display tier — consumed ONLY by *Desktop layout components, so the
+     shipped mobile type ramp is untouched (one design system, two layouts). */
+  --text-display-lg: 4.25rem;
+  --text-display-xl: 5.5rem;
+
+  /* ─── Desktop layout rhythm ───────────────────────────────────────────────
+     Named vertical-rhythm scale for the *Desktop layout components, replacing
+     the per-screen ad-hoc max-w/pb spacing. (--spacing-* so Tailwind v4 emits
+     mt-section / gap-block / space-y-stack utilities.) */
+  --spacing-section: 4rem;
+  --spacing-block: 2rem;
+  --spacing-stack: 1rem;
 
   /* ─── Radii ───────────────────────────────────────────────────────────── */
   --radius-sm: 0.375rem;

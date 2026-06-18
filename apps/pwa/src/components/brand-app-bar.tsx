@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Overline } from "@/components/overline";
+import { BrandLockup } from "@/components/brand-lockup";
 
 export type BrandAppBarProps = {
   // Slot rendered at the right edge — screens pass <LocaleSwitcher/> and/or
@@ -19,13 +19,7 @@ export function BrandAppBar({ right, className }: BrandAppBarProps) {
         className,
       )}
     >
-      <div className="flex items-center gap-2">
-        <img src="/logo.svg" alt="" className="h-8 w-8" />
-        <span className="flex flex-col">
-          <span className="font-display text-lg leading-none text-primary">Daily Tour</span>
-          <Overline size="sm">São Miguel</Overline>
-        </span>
-      </div>
+      <BrandLockup size="bar" />
       {right}
     </header>
   );

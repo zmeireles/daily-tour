@@ -51,11 +51,7 @@ export function FeedbackDrawer() {
           aria-label={t("feedback.title", "Send feedback")}
           className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
         >
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={handleClose}
-            aria-hidden="true"
-          />
+          <div className="absolute inset-0 bg-black/40" onClick={handleClose} aria-hidden="true" />
           <div className="relative z-10 w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-background p-6 shadow-xl">
             <h2 className="text-lg font-semibold mb-4">{t("feedback.title", "Send feedback")}</h2>
 
@@ -64,11 +60,19 @@ export function FeedbackDrawer() {
                 {t("feedback.thanks", "Thank you for your feedback!")}
               </p>
             ) : (
-              <form onSubmit={(e) => { void handleSubmit(e); }}>
+              <form
+                onSubmit={(e) => {
+                  void handleSubmit(e);
+                }}
+              >
                 <p className="text-sm text-muted-foreground mb-3">
                   {t("feedback.rating_label", "How was your experience?")}
                 </p>
-                <div className="flex gap-3 justify-center mb-4" role="group" aria-label={t("feedback.rating_label", "Rating")}>
+                <div
+                  className="flex gap-3 justify-center mb-4"
+                  role="group"
+                  aria-label={t("feedback.rating_label", "Rating")}
+                >
                   {EMOJI_RATINGS.map((emoji, idx) => {
                     const value = idx + 1;
                     return (
