@@ -33,11 +33,14 @@ from .repository.messages import (
     insert_message,
     list_messages_for_guest,
 )
+from .repository.threads import ThreadSummary, list_threads
 
 logger = logging.getLogger(__name__)
 
 SessionScopeFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 HistoryProvider = Callable[[UUID], Awaitable[list[dict[str, object]]]]
+HostReplySender = Callable[[UUID, str], Awaitable[dict[str, object]]]
+ThreadListProvider = Callable[[], Awaitable[list[dict[str, object]]]]
 
 
 class SupportsSendJson(Protocol):
@@ -104,6 +107,43 @@ def build_in_app_persister(
     return on_inbound
 
 
+def build_host_reply_sender(
+    driver: SupportsSendJson,
+    session_scope_factory: SessionScopeFactory = session_scope,
+) -> HostReplySender:
+    """Return the sender the host-reply route calls to answer a guest.
+
+    Persistence is the source of truth: the outbound message is committed
+    first, then pushed best-effort over the socket. An offline guest picks
+    the reply up via GET /v1/history on reconnect, so a missing socket is
+    reported (delivered=False) but never fails the request.
+    """
+
+    async def send_host_reply(guest_id: UUID, body: str) -> dict[str, object]:
+        async with session_scope_factory() as session:
+            thread = await get_or_create_thread(session, guest_id=guest_id)
+            msg = await insert_message(
+                session,
+                thread_id=thread.id,
+                channel="in_app",
+                sender_id="host",
+                direction="outbound",
+                body=body,
+            )
+            await session.commit()
+            frame: dict[str, object] = {
+                "type": "message",
+                "id": str(msg.id),
+                "from": "host",
+                "body": body,
+                "ts": msg.created_at.isoformat(),
+            }
+        delivered = await driver.send_json(str(guest_id), frame)
+        return {"id": str(msg.id), "ts": msg.created_at.isoformat(), "delivered": delivered}
+
+    return send_host_reply
+
+
 async def default_history_provider(guest_id: UUID) -> list[dict[str, object]]:
     async with session_scope() as session:
         rows = await list_messages_for_guest(session, guest_id=guest_id)
@@ -115,11 +155,48 @@ def get_history_provider() -> HistoryProvider:
     return default_history_provider
 
 
+def thread_summary_to_dict(summary: ThreadSummary) -> dict[str, object]:
+    """Serialize an owner-inbox thread row for the GET /v1/threads route."""
+    return {
+        "guest_id": str(summary.guest_id),
+        "last_body": summary.last_body,
+        "last_ts": summary.last_ts.isoformat() if summary.last_ts is not None else None,
+        "updated_at": summary.updated_at.isoformat(),
+    }
+
+
+async def default_thread_list_provider() -> list[dict[str, object]]:
+    async with session_scope() as session:
+        rows = await list_threads(session)
+    return [thread_summary_to_dict(row) for row in rows]
+
+
+def get_thread_list_provider() -> ThreadListProvider:
+    """FastAPI dependency — overridden in tests to avoid a live DB."""
+    return default_thread_list_provider
+
+
+def get_host_reply_sender() -> HostReplySender:
+    """FastAPI dependency — built on the same in-app driver singleton the WS
+    endpoint registers sockets on, so a reply reaches a live guest socket.
+    Overridden in tests to inject a stub driver / avoid a live DB."""
+    from .drivers.in_app import get_in_app_driver
+
+    return build_host_reply_sender(get_in_app_driver())
+
+
 __all__ = [
     "HistoryProvider",
+    "HostReplySender",
+    "ThreadListProvider",
+    "build_host_reply_sender",
     "build_in_app_persister",
     "default_history_provider",
+    "default_thread_list_provider",
     "get_history_provider",
+    "get_host_reply_sender",
+    "get_thread_list_provider",
     "message_to_dict",
     "parse_guest_id",
+    "thread_summary_to_dict",
 ]

@@ -24,12 +24,13 @@ class _FakeSession:
 
 
 class _FakeDriver:
-    def __init__(self) -> None:
+    def __init__(self, *, online: bool = True) -> None:
         self.sent: list[tuple[str, dict[str, object]]] = []
+        self._online = online
 
     async def send_json(self, recipient_id: str, payload: dict[str, object]) -> bool:
         self.sent.append((recipient_id, payload))
-        return True
+        return self._online
 
 
 def test_parse_guest_id_accepts_uuid_rejects_other() -> None:
@@ -118,3 +119,81 @@ async def test_persister_skips_non_uuid_client(monkeypatch) -> None:
 
     assert called is False
     assert driver.sent == []
+
+
+def _patch_repo(monkeypatch, *, thread, msg, captured):
+    async def fake_get_or_create(session, *, guest_id):
+        captured["thread_guest_id"] = guest_id
+        return thread
+
+    async def fake_insert(session, **kwargs):
+        captured.update(kwargs)
+        return msg
+
+    monkeypatch.setattr(chat_persistence, "get_or_create_thread", fake_get_or_create)
+    monkeypatch.setattr(chat_persistence, "insert_message", fake_insert)
+
+
+async def test_host_reply_persists_outbound_and_pushes_frame(monkeypatch) -> None:
+    guest_id = uuid4()
+    thread = SimpleNamespace(id=uuid4())
+    msg = SimpleNamespace(id=uuid4(), created_at=datetime.now(UTC))
+    captured: dict[str, object] = {}
+    _patch_repo(monkeypatch, thread=thread, msg=msg, captured=captured)
+
+    session = _FakeSession()
+
+    @asynccontextmanager
+    async def fake_scope():
+        yield session
+
+    driver = _FakeDriver(online=True)
+    send_reply = chat_persistence.build_host_reply_sender(driver, fake_scope)
+    result = await send_reply(guest_id, "see you at 7")
+
+    # Persisted as an outbound host message on the guest's thread.
+    assert captured["thread_guest_id"] == guest_id
+    assert captured["thread_id"] == thread.id
+    assert captured["channel"] == "in_app"
+    assert captured["sender_id"] == "host"
+    assert captured["direction"] == "outbound"
+    assert captured["body"] == "see you at 7"
+    assert session.committed is True
+
+    # Pushed the EXACT host-message frame over the socket.
+    assert len(driver.sent) == 1
+    recipient, frame = driver.sent[0]
+    assert recipient == str(guest_id)
+    assert frame == {
+        "type": "message",
+        "id": str(msg.id),
+        "from": "host",
+        "body": "see you at 7",
+        "ts": msg.created_at.isoformat(),
+    }
+
+    # Response carries the persisted id/ts + the online delivery flag.
+    assert result == {"id": str(msg.id), "ts": msg.created_at.isoformat(), "delivered": True}
+
+
+async def test_host_reply_offline_guest_still_persists(monkeypatch) -> None:
+    guest_id = uuid4()
+    thread = SimpleNamespace(id=uuid4())
+    msg = SimpleNamespace(id=uuid4(), created_at=datetime.now(UTC))
+    captured: dict[str, object] = {}
+    _patch_repo(monkeypatch, thread=thread, msg=msg, captured=captured)
+
+    session = _FakeSession()
+
+    @asynccontextmanager
+    async def fake_scope():
+        yield session
+
+    driver = _FakeDriver(online=False)
+    send_reply = chat_persistence.build_host_reply_sender(driver, fake_scope)
+    result = await send_reply(guest_id, "offline reply")
+
+    # Committed even though the guest had no live socket (history delivers later).
+    assert session.committed is True
+    assert captured["direction"] == "outbound"
+    assert result["delivered"] is False
