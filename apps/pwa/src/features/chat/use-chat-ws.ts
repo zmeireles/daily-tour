@@ -42,7 +42,7 @@ function historyToMessage(m: HistoryMessage): ChatMessage {
  * (acks: the optimistic "me" bubble already covers the sent message; the
  *  ack only confirms persistence, visible in the WS frame count).
  */
-function frameToMessage(raw: string): ChatMessage | null {
+export function frameToMessage(raw: string): ChatMessage | null {
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -51,6 +51,19 @@ function frameToMessage(raw: string): ChatMessage | null {
   }
 
   if (parsed.type === "ack") return null;
+
+  // Explicit host/system message frame: {"type":"message","from":"host","body",…}.
+  // The guest sees the host as "them". Handled ahead of the legacy-body branch
+  // so a future {"type":"message"} frame without a body can't fall through and
+  // render as an empty bubble.
+  if (parsed.type === "message" && typeof parsed.body === "string") {
+    return {
+      id: typeof parsed.id === "string" ? parsed.id : crypto.randomUUID(),
+      from: "them",
+      body: parsed.body,
+      ts: tsToNumber(parsed.ts),
+    };
+  }
 
   if (typeof parsed.body === "string") {
     return {
