@@ -1,4 +1,5 @@
 /* eslint-disable no-console, no-restricted-syntax */
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { guestTable, reservationTable } from "../db/schema.js";
@@ -68,7 +69,19 @@ async function main(): Promise<void> {
         status: "confirmed",
       },
     ])
-    .onConflictDoNothing();
+    // Refresh the rolling dates on re-seed. The dates are relative to seed time
+    // (dayOffset), but onConflictDoNothing froze them at first-insert on the
+    // persistent qual volume → checkouts went stale → token mint 410 Gone broke
+    // the deploy smoke (#286). Updating from `excluded` rolls them forward each
+    // deploy so the fixtures stay mintable.
+    .onConflictDoUpdate({
+      target: reservationTable.id,
+      set: {
+        checkin: sql`excluded.checkin`,
+        checkout: sql`excluded.checkout`,
+        status: sql`excluded.status`,
+      },
+    });
 
   await pool.end();
   console.log("[seed] done");

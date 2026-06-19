@@ -60,8 +60,14 @@ fi
 
 # ─── Step 2: mint a test token ─────────────────────────────────────────────────
 step "Step 2 — mint test token for fixture reservation"
-# Fixed UUID from services/token-svc/src/seed/run.ts — EN guest, checkout 2026-06-05.
-RESERVATION_ID="ccc00001-0000-4000-c000-000000000001"
+# Pick the furthest-checkout confirmed reservation that hasn't passed checkout.
+# token-svc returns 410 Gone for past-checkout reservations, so a hardcoded id
+# goes stale once its seeded date passes (#286). Mirrors mint-guest-token.sh.
+RESERVATION_ID=$(docker compose $COMPOSE_BASE exec -T postgres psql -U postgres -d dailytour -tA -c \
+  "SELECT id FROM auth_tokens.reservation WHERE status = 'confirmed' AND checkout >= CURRENT_DATE ORDER BY checkout DESC LIMIT 1" 2>/dev/null | tr -d ' \r\n')
+if [[ -z "$RESERVATION_ID" ]]; then
+  fail "no confirmed, future-checkout reservation seeded (run pnpm --filter token-svc seed)"
+fi
 
 MINT_RESP=$(internal_wget --post-data='{}' --header='Content-Type: application/json' "$TOKEN_SVC/v1/reservations/$RESERVATION_ID/token" 2>&1) || true
 TOKEN=$(echo "$MINT_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))" 2>/dev/null || echo "")
