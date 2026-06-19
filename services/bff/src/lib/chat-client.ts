@@ -38,3 +38,48 @@ export async function getChatHistory(guestId: string): Promise<ChatHistoryRespon
   }
   return (await res.json()) as ChatHistoryResponse;
 }
+
+export interface HostReplyResponse {
+  id: string;
+  ts: string;
+  delivered: boolean;
+}
+
+export interface ChatThread {
+  guest_id: string;
+  last_body: string | null;
+  last_ts: string | null;
+  updated_at: string;
+}
+
+/**
+ * Post a host→guest reply to chat-hub (T-4.x, owner-gated path). The owner
+ * backoffice reaches this only through the BFF's `auth: "owner"` proxy; the
+ * guestId is the thread key, mirroring `getChatHistory`'s identity model.
+ */
+export async function postHostReply(guestId: string, body: string): Promise<HostReplyResponse> {
+  const { CHAT_HUB_URL } = loadConfig();
+  const res = await fetch(`${CHAT_HUB_URL}/v1/reply/${encodeURIComponent(guestId)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ body }),
+  });
+  if (!res.ok) {
+    throw new ChatHubError(res.status, `chat-hub ${res.status}`);
+  }
+  return (await res.json()) as HostReplyResponse;
+}
+
+/**
+ * List every guest thread for the owner inbox. chat-hub returns the threads
+ * pre-sorted; the BFF forwards the array verbatim (no owner-side filtering in
+ * single-owner v1).
+ */
+export async function listChatThreads(): Promise<ChatThread[]> {
+  const { CHAT_HUB_URL } = loadConfig();
+  const res = await fetch(`${CHAT_HUB_URL}/v1/threads`);
+  if (!res.ok) {
+    throw new ChatHubError(res.status, `chat-hub ${res.status}`);
+  }
+  return (await res.json()) as ChatThread[];
+}
