@@ -1,6 +1,29 @@
-# Session Handoff — 2026-05-28 → … → 06-18 (DESKTOP UI/UX phase EXECUTING: foundation + Home + Discover + Daily Tour LIVE on qual; 2 demo-critical backend bugs FIXED; 2 screens left: Place Detail, Chat) → next session
+# Session Handoff — 2026-05-28 → … → 06-18 (DESKTOP UI/UX phase COMPLETE: ALL 5 guest screens LIVE + browser-UAT'd on qual; open follow-up = chat send-only on qual #281) → next session
 
-> **UPDATE 2026-06-18 (LATEST — MARATHON): Desktop UI/UX EXECUTING. WF1 audit + WF2 design done. MERGED + DEPLOYED to qual: #267 PlaceCard contrast · #268 foundation · #269 Home · #271 picks-photos · #272 Discover · #274 Home cover-story · #276 BFF+planner (guest LOCALE + per-stop COORDS) · #277 Daily Tour desktop. LIVE-VERIFIED via browser-uat: Home 5/5 · Discover (split + sync + no bold arc; mobile fork intact) · picks 6/6 photographed · cover-story · BUG1 (English itinerary copy → now PT-PT, ptHits=3/enHits=0) · BUG2 (planner returned lodging → now landmarks). Daily Tour desktop LIVE-VERIFIED both stages (two-pane intake + spatial timeline rail + edge-to-edge route map with numbered markers + route line; Voltar present; PT copy; landmark+restaurant stops, no lodging; mobile fork intact). 3 of 5 desktop screens live (Home, Discover, Daily Tour). REMAINING: Place Detail, Chat. Resume from this block.**
+> **UPDATE 2026-06-18 (LATEST — DESKTOP PHASE COMPLETE): The final 2 desktop screens (Place Detail #279 + Chat #280) are MERGED, DEPLOYED to qual, and browser-UAT'd 9/9 PASS (0 JS errors). ALL 5 desktop guest screens (Home, Discover, Daily Tour, Place Detail, Chat) are now LIVE + verified on qual. One out-of-criteria finding filed: chat is send-only on qual (#281). Resume from this block.**
+>
+> ### Shipped this session
+>
+> - **#279 Place Detail desktop** (main @ `75a9226`) + **#280 Chat desktop** (main @ `7aad186`) MERGED. `publish-images` (auto on push) → `deploy-qa.yml -f image_tag=qual` both green; live on qual.
+> - **browser-uat 9/9 PASS, 0 JS errors** (harness `e2e/uat-desktop-screens.e2e.mjs`; captures in `temp/desktop-audit/captures/`). **Place Detail:** full-bleed hero (chrome suppressed, opaque caption), breadcrumb, display-lg title, two-pane + sticky 360 rail (stacked Navegar/Ligar/Mensagem + Guardar-ghost + map), no tab bar ≥lg, single-photo business looks intentional, rail-float guard holds at the 1024 seam, 1920 cap 1104 centered, 834 mobile + PlaceMap clears tab bar (pb-28). **Chat:** SubHeader (Miguel+Online, no chevron), centered 820 panel, empty-state (welcome 68px Fraunces + 4 exact PT chips), chip→seed→send, composer pinned + 44px send + NO mic, SuggestionStrip persists, 1920 gutter, 834 mobile.
+> - **Process gotcha + recovery:** the two build agents were launched with Agent-tool `isolation:worktree` but it did NOT isolate them — they shared the main tree and crossed branches (Place Detail commit stacked on the Chat branch). Zero file overlap → untangled cleanly (`git branch -f` chat→its own commit; `cherry-pick` place-detail onto its own branch off main). No work lost. Memory: [[feedback-agent-worktree-isolation]] — use cs-agent or strictly non-overlapping file scopes for parallel builds.
+>
+> ### Open follow-up
+>
+> - **#281 — chat send-only on qual (FILED):** a guest chat message persists + gets a WS `ack` but no host/agent reply (`them` bubble) ever returns (waited 50s/6 msgs). Server-side reply-path gap on qual (chat-hub reply worker / LLM path / qual overlay), NOT a UI bug — the Chat layout UAT passed regardless. **Confirm/repair before any chat-involving demo.** Candidate next thread.
+> - **Multi-image gallery + season rich-path** on Place Detail desktop is untested with real data — no seeded place has >1 image AND a season (Lagoa do Fogo = 1 image, no season). Layout degrades cleanly (auto-absent gallery + no season chip). Seed a true rich place to demo the gallery + season chip.
+>
+> ### FIRST TASKS NEXT SESSION
+>
+> 1. dt-tests `review` poll (ritual) — empty at close.
+> 2. **#281 chat send-only** — triage chat-hub on qual (is the reply worker running? LLM reply path wired? check `docker logs` on the VPS via `make vps`). Demo-relevant.
+> 3. Optionally seed a multi-image + season place to fully exercise Place Detail's gallery/season rich path.
+>
+> ### State
+>
+> main `7aad186` (#279 + #280 merged; both LIVE on qual + UAT'd). **0 open code PRs** (this handoff aside). Local branches: `main` only (feature branches deleted post-merge). dt-tests `review` empty. Open issue: **#281** (chat send-only, qual). qual data fixes from prior sessions still apply (not in committed seed). All 5 desktop guest screens live at `https://qual.stay.portugalodyssey.pt`. New captures: `placedetail-desktop-1440-{rich,business}`, `placedetail-{1024-railguard,1920-cap,834-mobile-mapclear}`, `chat-desktop-1440-{empty,active}`, `chat-{1920-gutter,834-mobile}`.
+
+> **UPDATE 2026-06-18 (MARATHON — superseded by the block above): Desktop UI/UX EXECUTING. WF1 audit + WF2 design done. MERGED + DEPLOYED to qual: #267 PlaceCard contrast · #268 foundation · #269 Home · #271 picks-photos · #272 Discover · #274 Home cover-story · #276 BFF+planner (guest LOCALE + per-stop COORDS) · #277 Daily Tour desktop. LIVE-VERIFIED via browser-uat: Home 5/5 · Discover (split + sync + no bold arc; mobile fork intact) · picks 6/6 photographed · cover-story · BUG1 (English itinerary copy → now PT-PT, ptHits=3/enHits=0) · BUG2 (planner returned lodging → now landmarks). Daily Tour desktop LIVE-VERIFIED both stages (two-pane intake + spatial timeline rail + edge-to-edge route map with numbered markers + route line; Voltar present; PT copy; landmark+restaurant stops, no lodging; mobile fork intact). 3 of 5 desktop screens live (Home, Discover, Daily Tour). REMAINING: Place Detail, Chat. Resume from this block.**
 >
 > ### Done this session
 >
