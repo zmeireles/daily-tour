@@ -2,6 +2,7 @@
   "shell": {
     "nav": {
       "guesthouses": "Unterkünfte",
+      "chat": "Nachrichten",
       "places": "Orte",
       "profile": "Profil",
       "beta": "Beta-Metriken"
@@ -121,5 +122,15 @@
       "yes": "Archivieren",
       "no": "Abbrechen"
     }
+  },
+  "chat": {
+    "title": "Nachrichten",
+    "loading": "Wird geladen…",
+    "threads_empty": "Noch keine Konversationen.",
+    "threads_error": "Konversationen konnten nicht geladen werden.",
+    "history_error": "Nachrichten konnten nicht geladen werden.",
+    "select_thread": "Wählen Sie eine Konversation, um die Nachrichten zu sehen.",
+    "placeholder": "Antwort schreiben…",
+    "send": "Senden"
   }
 }

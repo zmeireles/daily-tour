@@ -3,6 +3,7 @@
     "nav": {
       "guesthouses": "Guesthouses",
       "reservations": "Reservations",
+      "chat": "Messages",
       "places": "Places",
       "profile": "Profile",
       "beta": "Beta metrics"
@@ -178,5 +179,15 @@
       "active": "Active",
       "revoked": "Revoked"
     }
+  },
+  "chat": {
+    "title": "Messages",
+    "loading": "Loading…",
+    "threads_empty": "No conversations yet.",
+    "threads_error": "Failed to load conversations.",
+    "history_error": "Failed to load messages.",
+    "select_thread": "Select a conversation to view messages.",
+    "placeholder": "Type a reply…",
+    "send": "Send"
   }
 }

@@ -5,6 +5,7 @@ import { LocaleSwitcher } from "./locale-switcher";
 const NAV_ITEMS = [
   { key: "guesthouses", to: "/admin/guesthouses" },
   { key: "reservations", to: "/admin/reservations" },
+  { key: "chat", to: "/admin/chat" },
   { key: "places", to: "/admin/places" },
   { key: "profile", to: "/admin/profile" },
   { key: "beta", to: "/admin/beta" },

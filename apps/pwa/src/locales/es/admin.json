@@ -2,6 +2,7 @@
   "shell": {
     "nav": {
       "guesthouses": "Alojamientos",
+      "chat": "Mensajes",
       "places": "Lugares",
       "profile": "Perfil",
       "beta": "Métricas beta"
@@ -121,5 +122,15 @@
       "yes": "Archivar",
       "no": "Cancelar"
     }
+  },
+  "chat": {
+    "title": "Mensajes",
+    "loading": "Cargando…",
+    "threads_empty": "Aún no hay conversaciones.",
+    "threads_error": "No se pudieron cargar las conversaciones.",
+    "history_error": "No se pudieron cargar los mensajes.",
+    "select_thread": "Selecciona una conversación para ver los mensajes.",
+    "placeholder": "Escribe una respuesta…",
+    "send": "Enviar"
   }
 }

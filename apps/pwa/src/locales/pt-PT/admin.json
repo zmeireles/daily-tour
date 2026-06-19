@@ -3,6 +3,7 @@
     "nav": {
       "guesthouses": "Alojamentos",
       "reservations": "Reservas",
+      "chat": "Mensagens",
       "places": "Locais",
       "profile": "Perfil",
       "beta": "Métricas beta"
@@ -178,5 +179,15 @@
       "active": "Activo",
       "revoked": "Revogado"
     }
+  },
+  "chat": {
+    "title": "Mensagens",
+    "loading": "A carregar…",
+    "threads_empty": "Ainda não há conversas.",
+    "threads_error": "Erro ao carregar conversas.",
+    "history_error": "Erro ao carregar mensagens.",
+    "select_thread": "Seleccione uma conversa para ver as mensagens.",
+    "placeholder": "Escreva uma resposta…",
+    "send": "Enviar"
   }
 }
