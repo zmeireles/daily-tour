@@ -1,6 +1,23 @@
-# Session Handoff — 2026-05-28 → … → 06-18 (DESKTOP UI/UX phase COMPLETE: ALL 5 guest screens LIVE + browser-UAT'd on qual; open follow-up = chat send-only on qual #281) → next session
+# Session Handoff — 2026-05-28 → … → 06-19 (DESKTOP UI/UX phase COMPLETE + host→guest CHAT REPLY shipped & live (#281) + deploy smoke blocker fixed (#286)) → next session
 
-> **UPDATE 2026-06-18 (LATEST — DESKTOP PHASE COMPLETE): The final 2 desktop screens (Place Detail #279 + Chat #280) are MERGED, DEPLOYED to qual, and browser-UAT'd 9/9 PASS (0 JS errors). ALL 5 desktop guest screens (Home, Discover, Daily Tour, Place Detail, Chat) are now LIVE + verified on qual. One out-of-criteria finding filed: chat is send-only on qual (#281). Resume from this block.**
+> **UPDATE 2026-06-19 (LATEST — CHAT REPLY SHIPPED + DEPLOY SMOKE FIXED): The host→guest chat reply path (#281) is IMPLEMENTED, MERGED, DEPLOYED to qual, and core-verified LIVE — closing the send-only gap. Also fixed a deploy blocker (#286). Both issues CLOSED. Resume from this block.**
+>
+> ### Shipped this session (2026-06-19)
+>
+> - **#281 host→guest chat reply** — 3 PRs merged: **#283** chat-hub (`POST /v1/reply/{guest_id}` persist-outbound + best-effort WS push + `GET /v1/threads`), **#284** BFF owner-gated `/v1/admin/chat/*` proxy (mirrors #240), **#285** PWA owner inbox (`/admin/chat`) + guest host-frame handling. Built sequentially by delegated agents (chat-hub → bff → pwa) on a clean tree to dodge the shared-tree tangle. Caught + fixed a contract mismatch in review (BFF history returns `{messages:[...]}`; owner hook had expected a bare array). **Verified LIVE on qual** (creds-free): triggered an internal chat-hub reply → it persisted + came back through the BFF guest-history route as an `outbound/host` message. Owner-UI + live-WS push covered by unit suites (chat-hub 34, bff 109, pwa 288) + the deploy 401 gate check. **#281 CLOSED.**
+> - **#286 deploy smoke fix** — **#287**: the qual deploy red-gated on token mint 410 — the seed used `onConflictDoNothing`, so its rolling `dayOffset` checkout dates froze on the persistent volume and went stale. Fixed: seed `onConflictDoUpdate` refreshes checkin/checkout/status on each re-seed; `dev-smoke.sh` now picks the furthest-checkout valid reservation dynamically (mirrors `mint-guest-token.sh`). **Verified: deploy run 27848700405 fully GREEN** (smoke ✓, readiness gate ✓, success recorded). **#286 CLOSED.**
+> - Process note: Agent-tool `isolation:worktree` is unreliable here (it didn't isolate the earlier desktop builds) — use sequential builds on a clean tree + non-overlapping scopes (or cs-agent). See [[feedback-agent-worktree-isolation]].
+>
+> ### State (2026-06-19)
+>
+> main at the #287 merge (`982381e`). **0 open code PRs** (this handoff aside). Local branches: `main` only. Chat-reply (#283/#284/#285) + #286 (#287) all merged + deployed; qual deploy GREEN again. **Demo note:** the test guest thread `aaa…002` holds UAT scratch messages (06-18 desktop UAT + the #281 verification reply) — clear it / use a fresh reservation before a live demo. **Optional remaining:** full owner-UI browser walk-through of `/admin/chat` (Authentik akadmin login) — covered by tests, not re-walked live.
+>
+> ### FIRST TASKS NEXT SESSION
+>
+> 1. dt-tests `review` poll (ritual).
+> 2. Pick a new thread — desktop phase + chat reply both done. Candidates: clear/refresh the demo guest thread; optional owner-UI live UAT (`/admin/chat` via Authentik); seed a multi-image + season place for Place Detail's rich gallery path; or new product work.
+
+> **UPDATE 2026-06-18 (DESKTOP PHASE COMPLETE — superseded by the block above): The final 2 desktop screens (Place Detail #279 + Chat #280) are MERGED, DEPLOYED to qual, and browser-UAT'd 9/9 PASS (0 JS errors). ALL 5 desktop guest screens (Home, Discover, Daily Tour, Place Detail, Chat) are now LIVE + verified on qual. One out-of-criteria finding filed: chat is send-only on qual (#281). Resume from this block.**
 >
 > ### Shipped this session
 >
