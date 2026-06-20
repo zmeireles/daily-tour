@@ -3,6 +3,7 @@ import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyWebSocket from "@fastify/websocket";
+import { setupSentryFastifyErrorHandler } from "@daily-tour/shared-sentry";
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import mediaSvcPlugin from "./plugins/media-client.js";
@@ -114,6 +115,10 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(publicTourPlansRoute);
   await app.register(chatHistoryRoute);
   await app.register(chatWsRoute);
+
+  // Report route errors to Sentry, then defer to Fastify's default handler.
+  // No-op when SENTRY_DSN is unset (see @daily-tour/shared-sentry).
+  setupSentryFastifyErrorHandler(app);
 
   return app;
 }

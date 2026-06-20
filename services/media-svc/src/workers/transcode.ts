@@ -1,6 +1,7 @@
 import amqp from "amqplib";
 import sharp from "sharp";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { captureException } from "@daily-tour/shared-sentry";
 import { eq } from "drizzle-orm";
 import { getDb } from "../db.js";
 import { assetTable } from "../schema.js";
@@ -66,6 +67,9 @@ export async function runTranscodeWorker(): Promise<void> {
       })
       .catch((err: unknown) => {
         console.error("transcode worker: processing failed", err);
+        // The Fastify error handler never sees worker errors; report here.
+        // No-op when SENTRY_DSN is unset (see @daily-tour/shared-sentry).
+        captureException(err);
         ch.nack(msg, false, false);
       });
   });

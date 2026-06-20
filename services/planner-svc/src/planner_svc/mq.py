@@ -43,7 +43,7 @@ from aio_pika.abc import (
     AbstractRobustQueue,
     DeliveryMode,
 )
-from daily_tour_common import TourPlan
+from daily_tour_common import TourPlan, capture_exception
 
 from .cache import get_redis
 from .config import get_settings
@@ -210,7 +210,15 @@ async def _handle_requested(message: AbstractIncomingMessage) -> None:
                 extra={"err": str(exc), "body_preview": message.body[:200]},
             )
             return
-        await _process_plan(plan_id)
+        try:
+            await _process_plan(plan_id)
+        except Exception as exc:
+            # Unexpected (non-WorkerError) failure: the FastAPI integration
+            # never sees consumer errors, so report here, then re-raise to
+            # preserve the message.process(requeue=False) nack-to-DLX path.
+            # No-op when SENTRY_DSN is unset (see daily_tour_common.sentry).
+            capture_exception(exc)
+            raise
 
 
 async def start_consumer(

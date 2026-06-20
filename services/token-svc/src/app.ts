@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import helmet from "@fastify/helmet";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import { setupSentryFastifyErrorHandler } from "@daily-tour/shared-sentry";
 import { loadConfig } from "./config.js";
 import { healthRoutes } from "./routes/health.js";
 import { issueRoutes } from "./routes/issue.js";
@@ -44,6 +45,10 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(exchangeRoutes);
   await app.register(revokeRoutes);
   await app.register(listRoutes);
+
+  // Report route errors to Sentry, then defer to Fastify's default handler.
+  // No-op when SENTRY_DSN is unset (see @daily-tour/shared-sentry).
+  setupSentryFastifyErrorHandler(app);
 
   return app;
 }
