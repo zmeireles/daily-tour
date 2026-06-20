@@ -1,8 +1,30 @@
 # Plan-003 — Real-User Readiness
 
-> **Lifecycle: DRAFT (scoped 2026-06-20).** Gated on **Q1** (launch scope: friends-and-family beta on qual **vs** real production cutover). Promote DRAFT→READY once Q1 + the downstream questions are answered, then mint a `TODO.md` with per-task checkboxes from the slices below.
+> **Lifecycle: READY — Q1 decided 2026-06-20 → option (a): friends-and-family beta on the qual box.** Execution profile + locked decisions below; `TODO.md` minted. **3.E (prod cutover) is DEFERRED to Plan-004.** Now executing — first slice **3.A (observability)**.
 >
 > Sequential after Plans 006 (owner backoffice) + 007 (qual VPS), both DONE. Plan-003 takes the feature-complete, qual-deployed system through the gates that separate "runs on the demo box" from "safely serving real EU/PT guests and owners in production."
+
+## Execution profile — Q1 = (a) friends-and-family beta on qual (decided 2026-06-20)
+
+The launch target is a **friends-and-family beta on the existing qual box** — no separate prod environment this plan. This collapses Plan-003:
+
+- **3.E (Production environment + promotion path) → DEFERRED to Plan-004.** Qual _is_ the beta box.
+- **Lean critical path:** 3.A (observability) → 3.B-lite (a backup + restore drill) → 3.C-lite (LLM-cost rate-limit) → 3.D-lite (privacy/terms + telemetry consent) → 3.H (onboarding + run the beta).
+- **3.F / 3.G** stay light-touch (accept branded fallback + en/pt-PT for launch; a quick axe pass, not a full WCAG cycle) unless promoted.
+
+**Decisions locked (the open questions, answered):**
+
+| Q                                   | Decision                                                                                                                                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Q1 launch scope                     | **(a) F&F beta on qual**; prod cutover (3.E) → Plan-004                                                                                                                                                            |
+| Q3 error tracking                   | **GlitchTip** self-hosted (EU residency, free; +1 container on the box)                                                                                                                                            |
+| Cohort (3.H)                        | **Both / mixed** — friends-and-family first, then fold in Miguel's real guesthouse bookings                                                                                                                        |
+| Q4 backups                          | **MinIO** as the backup target. ⚠️ Same-box MinIO is logical-backup only (corruption / accidental delete), **NOT box-loss DR** — off-site replication to a second location is an open sub-decision settled in 3.B. |
+| Q5 GDPR                             | **Template + self-review** (privacy/terms from a reputable EU/PT template; telemetry behind consent) — adequate for the F&F beta. Cohort includes real guests → 3.D-lite is in, not skipped.                       |
+| Q6 locales _(default, overridable)_ | en + pt-PT for launch; de/es/fr stay unwired/descoped                                                                                                                                                              |
+| Q7 photos _(default, overridable)_  | accept the branded fallback for the beta; real photos are a content/owner follow-up                                                                                                                                |
+
+Suggested execution order: **3.A.0 (GlitchTip) → 3.A.2 (uptime + alert) → 3.B.0 (Postgres backup → MinIO) → 3.D.0/3.D.1 (privacy + consent) → 3.H (beta)**.
 
 ## Status note — what already exists (so this plan only covers the genuine gap)
 
