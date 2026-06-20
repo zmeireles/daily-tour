@@ -1,6 +1,24 @@
-# Session Handoff — 2026-05-28 → … → 06-19 (DESKTOP UI/UX phase COMPLETE + host→guest CHAT REPLY shipped & live (#281) + deploy smoke blocker fixed (#286)) → next session
+# Session Handoff — 2026-05-28 → … → 06-20 (DESKTOP phase DONE + CHAT REPLY live + Plan-003 EXECUTING: error tracking LIVE on qual via a SHARED GlitchTip; cross-project comms channel established) → next session
 
-> **UPDATE 2026-06-19 (LATEST — CHAT REPLY SHIPPED + DEPLOY SMOKE FIXED): The host→guest chat reply path (#281) is IMPLEMENTED, MERGED, DEPLOYED to qual, and core-verified LIVE — closing the send-only gap. Also fixed a deploy blocker (#286). Both issues CLOSED. Resume from this block.**
+> **UPDATE 2026-06-20 (LATEST — Plan-003 EXECUTING: error tracking LIVE on qual; backlog tidied; cross-project comms channel established). Resume from this block.**
+>
+> ### Shipped this session (2026-06-20)
+>
+> - **Backlog tidied:** Plan-006 TODO stale boxes closed (#289). **Plan-003 (Real-User Readiness) scoped → READY (#289/#290); Q1 decided = (a) friends-and-family beta on qual** (3.E prod cutover deferred → Plan-004). Locked: GlitchTip / cohort both-mixed / MinIO backup / template-GDPR / en+pt-PT. Lean path: 3.A → 3.B-lite → 3.C-lite → 3.D-lite → 3.H. Docs: `docs/implementation-plans/003-real-user-readiness/{README,TODO}.md`. See [[project-plan-003]].
+> - **Plan-003 T-3.A.0 (error tracking) DONE + LIVE on qual.** DSN-gated SDK across all tiers: `@sentry/node` (bff/token-svc/catalog-svc/media-svc) + `sentry-sdk` (chat-hub/notif-svc/planner-svc/search-svc) + `@sentry/react` (pwa) — **#291** (also fixed a HIGH vite CVE via `pnpm.overrides "vite": ">=6.4.3 <7"` + worker-exception capture for media-svc transcode + planner-svc consumer). **GlitchTip is a SHARED service** operated by po-platform (sA:Douro) at **https://errors.portugalodyssey.pt** (po box `195.35.3.6`, postgres:17, nightly backups); Daily Tour is a tenant **org** — we do NOT self-host (repo holds client-config only: `infra/glitchtip/README.md`; #292 mirror → #293 client-config after Douro consolidated to one instance). DSN + `OTEL_DEPLOYMENT_ENVIRONMENT=qual` wired into qual (**#294**) + a **Node-image Dockerfile fix** (**#295** — the 4 Node Dockerfiles needed `@daily-tour/shared-sentry` in their curated COPY/build; had silently failed Node image builds since #291). Verified: `SENTRY_DSN` present in `dt_bff` + `dt_planner_svc` containers + a synthetic ingest → **HTTP 200, event `fe47cef3`** in the Daily Tour org. Also fixed the deploy-smoke stale-fixture blocker earlier (#286/#287).
+> - **Cross-project comms channel established** at `/media/jmeireles/ssd3/my-projects/orchestrator-comms/` (file mailbox, sA:Douro ↔ me). **My handle: `dt-orch:Furnas`.** READ `inbox-daily-tour.md`, WRITE `inbox-po-platform.md`; append-only, newest at bottom; **poll at session start + when blocked**. Governance codified in its README (po-platform owns shared services; each tenant owns its org/project/DSN/SDK; tenants never `docker compose up` a shared instance). See [[reference-orchestrator-comms]].
+>
+> ### FIRST TASKS NEXT SESSION
+>
+> 1. **Rituals:** poll the comms inbox (`inbox-daily-tour.md`) + the dt-tests `review` queue.
+> 2. **Plan-003 slice 3.A (continue):** **3.A.1** observability overlay (OTel→Prometheus→Grafana) into the qual deploy stack → **3.A.2** uptime + Telegram alerts → **3.A.3** `/ready` probes. Then 3.B-lite (backup → MinIO; settle off-site replication) → 3.C-lite (rate-limit `/v1/tour-plans`+`/v1/discover`) → 3.D-lite (privacy/terms + telemetry consent) → 3.F/3.G light-touch → 3.H (onboarding + beta).
+> 3. **GlitchTip follow-ups:** (a) **`SENTRY_DSN` durability** — it was hand-appended to `/opt/daily-tour/.env.qual` on the qual box; fold it into `gen-env-qual.sh` / `.env.qual.example` so a fresh env regen preserves it. (b) **SMTP (`EMAIL_URL`)** for real alert emails — Douro owns the instance; request via the comms channel (currently `consolemail://`). (c) optional real-service-error smoke (vs the synthetic event); ask Douro to confirm events in the org UI.
+>
+> ### State (2026-06-20)
+>
+> main `efcb15c`; **0 open code PRs, 0 open issues**; local branches: `main` only. Error tracking LIVE on qual across PWA + all 8 services (shared GlitchTip tenant). Comms channel active. **Lessons recorded:** [[feedback-agent-worktree-isolation]] (Agent `isolation:worktree` did NOT isolate parallel builds → use cs-agent or strictly non-overlapping file scopes); [[feedback-service-dockerfile-workspace-dep]] (a new `@daily-tour/*` workspace dep on a service ⇒ update its Dockerfile's curated COPY/build; PR-CI passes, only `publish-images` catches it — check it post-merge). Desktop phase + chat reply (#281) both done/live earlier this arc.
+
+> **UPDATE 2026-06-19 (CHAT REPLY SHIPPED + DEPLOY SMOKE FIXED): The host→guest chat reply path (#281) is IMPLEMENTED, MERGED, DEPLOYED to qual, and core-verified LIVE — closing the send-only gap. Also fixed a deploy blocker (#286). Both issues CLOSED. Resume from this block.**
 >
 > ### Shipped this session (2026-06-19)
 >

@@ -12,23 +12,23 @@ GlitchTip (self-host) · cohort both/mixed (friends → Miguel's real guests) ·
 
 ## Progress
 
-| Slice | Title                                | (a) scope         | Status |
-| ----- | ------------------------------------ | ----------------- | ------ |
-| 3.A   | Observability                        | full              | ☐ next |
-| 3.B   | Reliability — backup + restore drill | lite (→ MinIO)    | ☐      |
-| 3.C   | Security — abuse/cost hardening      | lite              | ☐      |
-| 3.D   | Legal / GDPR                         | lite              | ☐      |
-| 3.E   | Production environment               | **DEFERRED →004** | —      |
-| 3.F   | Content                              | light-touch       | ☐      |
-| 3.G   | a11y + performance                   | light-touch       | ☐      |
-| 3.H   | Onboarding + closed beta             | full              | ☐      |
+| Slice | Title                                | (a) scope         | Status                   |
+| ----- | ------------------------------------ | ----------------- | ------------------------ |
+| 3.A   | Observability                        | full              | ◑ A.0 done; A.1–A.3 next |
+| 3.B   | Reliability — backup + restore drill | lite (→ MinIO)    | ☐                        |
+| 3.C   | Security — abuse/cost hardening      | lite              | ☐                        |
+| 3.D   | Legal / GDPR                         | lite              | ☐                        |
+| 3.E   | Production environment               | **DEFERRED →004** | —                        |
+| 3.F   | Content                              | light-touch       | ☐                        |
+| 3.G   | a11y + performance                   | light-touch       | ☐                        |
+| 3.H   | Onboarding + closed beta             | full              | ☐                        |
 
 ---
 
-## Slice 3.A — Observability · next
+## Slice 3.A — Observability · IN PROGRESS (3.A.0 done; A.1–A.3 next)
 
-- [ ] **T-3.A.0** — GlitchTip (self-host, compose service) + `@sentry/node` in bff/token-svc/catalog-svc/chat-hub/media-svc/notif-svc + `@sentry/react` in pwa; DSN via env; DSN-absent ⇒ no-op. **(executing)**
-- [ ] **T-3.A.1** — Deploy the observability overlay (OTel→Prometheus→Grafana) into the qual deploy stack; resource-capped; 4 dashboards render live qual data.
+- [x] **T-3.A.0** — **error tracking DONE (2026-06-20).** DSN-gated SDK: `@sentry/node` in the 4 Node svcs (bff/token-svc/catalog-svc/media-svc) + `sentry-sdk` in the 4 Python svcs (chat-hub/notif-svc/planner-svc/search-svc) + `@sentry/react` in pwa (#291). **GlitchTip is NOT self-hosted by us** — Daily Tour is a tenant **org** in the shared `po-glitchtip` instance (https://errors.portugalodyssey.pt, po-platform-owned; postgres:17, nightly backups). DSN + `OTEL_DEPLOYMENT_ENVIRONMENT=qual` wired into qual (#294) + node-image Dockerfile fix for `shared-sentry` (#295); verified live (synthetic ingest HTTP 200, event `fe47cef3`). Repo holds client-config only (`infra/glitchtip/README.md`).
+- [ ] **T-3.A.1 — NEXT** — Deploy the observability overlay (OTel→Prometheus→Grafana) into the qual deploy stack; resource-capped; 4 dashboards render live qual data.
 - [ ] **T-3.A.2** — Uptime check (Uptime-Kuma / Cloudflare) on the qual apex + `/health`; **Telegram** alerts (service down ≥2min, error-rate spike, GlitchTip new-issue).
 - [ ] **T-3.A.3** — `/ready` readiness probes (DB + broker + downstream) distinct from `/health`; wire `--wait`/`service_healthy` to readiness.
 
