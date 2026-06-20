@@ -1,0 +1,83 @@
+name: daily-tour-glitchtip
+
+# Self-hosted GlitchTip (error tracking) for the Daily Tour project.
+# Runs on the po-platform prod box (195.35.3.6) STRICTLY ADDITIVELY:
+#   - own compose project (daily-tour-glitchtip) — never touches po-prod
+#   - own postgres + valkey + volumes (gt-pg-data, gt-uploads)
+#   - web joins `traefik-public` ONLY for routing; pg/valkey stay on the
+#     private `glitchtip-internal` net — GlitchTip never sees po's data mesh
+#   - zero host-port publishing; routed solely via po-traefik labels
+#   - resource-capped so a spike can't touch prod
+# Exposed at https://glitchtip.portugalodyssey.pt via po-traefik
+# (entrypoint=websecure, certresolver=letsencrypt / Cloudflare DNS-01).
+# Base: official GlitchTip compose.sample.yml (glitchtip/glitchtip:6, all_in_one).
+# Secrets (SECRET_KEY, GT_PG_PASS) live ONLY in ./.env on the box (chmod 600).
+
+x-environment: &gt-env
+  DATABASE_URL: postgres://glitchtip:${GT_PG_PASS}@postgres:5432/glitchtip
+  VALKEY_URL: redis://valkey:6379
+  SECRET_KEY: ${SECRET_KEY}
+  GLITCHTIP_DOMAIN: https://glitchtip.portugalodyssey.pt
+  EMAIL_URL: consolemail:// # TODO(daily-tour): wire SMTP for real alert emails
+  DEFAULT_FROM_EMAIL: glitchtip@portugalodyssey.pt
+  ENABLE_USER_REGISTRATION: "True" # FLIP to "False" once the first admin registers
+  ENABLE_ADMIN: "False"
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.5
+    environment:
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: ${GT_PG_PASS}
+      POSTGRES_DB: glitchtip
+    volumes:
+      - gt-pg-data:/var/lib/postgresql
+    networks:
+      - glitchtip-internal
+
+  valkey:
+    image: valkey/valkey:9
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.25
+    networks:
+      - glitchtip-internal
+
+  web:
+    image: glitchtip/glitchtip:6 # pin a major; see https://glitchtip.com/blog/ before bumping
+    restart: unless-stopped
+    mem_limit: 1g
+    cpus: 1.0
+    depends_on:
+      - postgres
+      - valkey
+    environment:
+      <<: *gt-env
+      SERVER_ROLE: all_in_one # web + worker + beat in one process (runs migrations on boot)
+    volumes:
+      - gt-uploads:/code/uploads
+    networks:
+      - glitchtip-internal # reach pg + valkey
+      - traefik-public # routing only (po-traefik provider network)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.daily-tour-glitchtip.rule=Host(`glitchtip.portugalodyssey.pt`)"
+      - "traefik.http.routers.daily-tour-glitchtip.entrypoints=websecure"
+      - "traefik.http.routers.daily-tour-glitchtip.tls=true"
+      - "traefik.http.routers.daily-tour-glitchtip.tls.certresolver=letsencrypt"
+      - "traefik.http.services.daily-tour-glitchtip.loadbalancer.server.port=8000"
+
+networks:
+  glitchtip-internal:
+    driver: bridge
+  traefik-public:
+    external: true
+    name: traefik-public
+
+volumes:
+  gt-pg-data:
+  gt-uploads:
