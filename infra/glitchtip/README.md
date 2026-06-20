@@ -1,62 +1,33 @@
-# GlitchTip (error tracking) — Daily Tour
+# GlitchTip (error tracking) — Daily Tour client config
 
-Self-hosted GlitchTip, deployed + operated by the **po-platform** session (sA:Douro)
-on the po-platform 8-vCPU box `195.35.3.6` (Daily Tour's 2-vCPU box lacks headroom),
-strictly additively — it never touches the `po-prod` stack.
+Daily Tour uses the **shared** GlitchTip instance operated by po-platform. We do
+**not** host an instance — this directory holds client/tenant config only.
 
-> **Shared service (convergence).** This GlitchTip instance is shared observability
-> for **both Daily Tour and po-platform** — each consumer gets its own GlitchTip
-> organization/project + uses the Sentry `environment` tag (qual/prod). It lives on
-> the po box as converged infra, not a Daily-Tour-only freeloader.
+- **Instance:** https://errors.portugalodyssey.pt — `po-glitchtip`, owned + operated
+  by po-platform (sA:Douro): instance, version, caps, networking, **nightly pg
+  backups**, upgrades.
+- **Our tenant:** Daily Tour has its **own GlitchTip organization** inside that
+  shared instance — separate projects, DSNs, members, and data scoping from
+  po-platform's org. One instance serves all Daily Tour environments via the
+  Sentry `environment` tag (qual/prod).
 
-> **Source of truth = the box.** The live deployment at `/opt/daily-tour-glitchtip/`
-> on `195.35.3.6` is authoritative and is owned/operated by sA:Douro. This directory
-> is a **committed mirror** of that deployment (the real `.env` with secrets stays
-> only on the box, chmod 600, never committed). When Douro changes the box, re-sync
-> `docker-compose.yml` here.
+## Governance (po-platform ↔ daily-tour)
 
-- **URL:** https://glitchtip.portugalodyssey.pt
-- **Live location:** `/opt/daily-tour-glitchtip/` on `195.35.3.6`
-- **Compose project:** `daily-tour-glitchtip` (isolated from `po-prod`)
-- **Routing:** po-traefik, `entrypoints=websecure`, `certresolver=letsencrypt`
-  (Cloudflare DNS-01). Cert issues automatically (`*.portugalodyssey.pt` → the box).
+- **po-platform owns the SERVICE** — accountable that it's up + isolated.
+- **Daily Tour owns its TENANT config** — org/project/DSN/alerts + the SDK wiring
+  (the DSN-gated error SDK shipped in T-3.A.0).
+- **Never `docker compose up` the shared instance.** Instance-level needs (caps,
+  SMTP, upgrades, registration lock) → ask po-platform via the orchestrator comms
+  channel: `/media/jmeireles/ssd3/my-projects/orchestrator-comms/inbox-po-platform.md`.
 
-## Isolation guarantees
+## Wiring (once po-platform posts the Daily Tour DSN in the comms channel)
 
-- `web` joins the external `traefik-public` network **for routing only**.
-- `postgres` + `valkey` stay on the private `glitchtip-internal` network — GlitchTip
-  cannot reach po's data mesh.
-- **No host ports published** — reachable only through po-traefik (TLS).
-- Resource-capped (web 1 CPU/1 GB, pg 0.5/512 MB, valkey 0.25/256 MB).
-- Own volumes (`gt-pg-data`, `gt-uploads`); own secrets in `./.env` (chmod 600).
+1. Set `SENTRY_DSN` (services) + `VITE_SENTRY_DSN` (PWA) in the qual env
+   (`.env.qual` on the box — gitignored; never commit the DSN).
+2. Set `OTEL_DEPLOYMENT_ENVIRONMENT=qual` on the services (overlay.qual.yml) so the
+   Sentry `environment` tag is correct — Plan-003 **T-3.A.1**.
+3. Redeploy qual → errors flow. Verify by throwing a test error and confirming it
+   lands in the Daily Tour org at errors.portugalodyssey.pt.
 
-## Deploy / operate (on the box)
-
-```bash
-cd /opt/daily-tour-glitchtip
-docker compose -p daily-tour-glitchtip up -d        # start / update
-docker compose -p daily-tour-glitchtip ps           # status
-docker compose -p daily-tour-glitchtip logs -f web  # logs
-docker compose -p daily-tour-glitchtip down         # stop (never affects po-prod)
-```
-
-Always pass `-p daily-tour-glitchtip`. Do **not** restart/recreate `po-traefik`.
-
-## First-run / TODO (owners)
-
-1. Register the first account at the URL → it becomes the org owner.
-2. **Then immediately** flip `ENABLE_USER_REGISTRATION` to `"False"` in `.env` and
-   `docker compose -p daily-tour-glitchtip up -d web` to lock public sign-up.
-   ⚠️ Registration is currently OPEN on a public URL — close it right after the
-   first account is created.
-3. Wire `EMAIL_URL` (SMTP) for real alert emails — currently `consolemail://`
-   (alerts log to stdout only).
-4. Create a project in the UI → copy its DSN → set `SENTRY_DSN` (+ `VITE_SENTRY_DSN`
-   for the PWA) and `OTEL_DEPLOYMENT_ENVIRONMENT=qual` in the Daily Tour qual env,
-   then redeploy so errors flow (Plan-003 T-3.A.1).
-
-## Notes
-
-- `docker-compose.yml` here is a verbatim snapshot of the box file. **Pending sync:**
-  Douro is moving postgres 18 → 17 (more mature); the box compose still showed 18 at
-  snapshot time — re-fetch + re-commit once that change lands on the box.
+The error-reporting SDK itself is already wired (T-3.A.0) and is a no-op until the
+DSN env is set, so steps 1–3 are all that remain to go live.
