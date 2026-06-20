@@ -79,6 +79,7 @@ jobs:
             build_args: |
               VITE_AUTHENTIK_URL=https://auth.qual.stay.portugalodyssey.pt/application/o/owner-app/
               VITE_BFF_URL=https://qual.stay.portugalodyssey.pt
+              VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
           # ── 2 infra images — context is the service's own subdir ───────────
           - name: postgres
             context: infra/postgres
