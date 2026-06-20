@@ -94,3 +94,28 @@ class TestInitSentry:
             enabled = init_sentry("svc-a")
 
         assert enabled is False
+
+
+class TestCaptureException:
+    def setup_method(self) -> None:
+        _reset_sentry_module()
+
+    def test_noop_when_not_initialised(self) -> None:
+        with patch("sentry_sdk.capture_exception") as mock_capture:
+            from daily_tour_common.sentry import capture_exception
+            capture_exception(ValueError("boom"))
+
+        mock_capture.assert_not_called()
+
+    def test_reports_when_initialised(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("SENTRY_DSN", "https://abc@example.invalid/1")
+
+        with patch("sentry_sdk.init"), patch("sentry_sdk.set_tag"), patch(
+            "sentry_sdk.capture_exception"
+        ) as mock_capture:
+            from daily_tour_common.sentry import capture_exception, init_sentry
+            init_sentry("svc-a")
+            err = ValueError("boom")
+            capture_exception(err)
+
+        mock_capture.assert_called_once_with(err)

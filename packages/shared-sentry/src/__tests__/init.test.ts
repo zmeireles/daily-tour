@@ -5,6 +5,7 @@ vi.mock("@sentry/node", () => ({
   init: vi.fn(),
   setTags: vi.fn(),
   setupFastifyErrorHandler: vi.fn(),
+  captureException: vi.fn(),
 }));
 
 function clearEnv() {
@@ -116,5 +117,27 @@ describe("initSentry", () => {
     setupSentryFastifyErrorHandler(fakeApp);
 
     expect(Sentry.setupFastifyErrorHandler).toHaveBeenCalledWith(fakeApp);
+  });
+
+  it("captureException is a no-op when Sentry is disabled", async () => {
+    const Sentry = await import("@sentry/node");
+    const { initSentry, captureException } = await importModule();
+
+    initSentry({ serviceName: "test-svc" }); // disabled (no DSN)
+    captureException(new Error("boom"));
+
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("captureException reports the error when Sentry is enabled", async () => {
+    process.env["SENTRY_DSN"] = "https://abc@example.invalid/1";
+    const Sentry = await import("@sentry/node");
+    const { initSentry, captureException } = await importModule();
+
+    initSentry({ serviceName: "test-svc" });
+    const err = new Error("boom");
+    captureException(err);
+
+    expect(Sentry.captureException).toHaveBeenCalledWith(err);
   });
 });

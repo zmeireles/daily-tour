@@ -78,3 +78,22 @@ def init_sentry(service_name: str, *, release: str | None = None) -> bool:
     sentry_sdk.set_tag("service", service_name)
 
     return True
+
+
+def capture_exception(error: BaseException) -> None:
+    """Report an exception caught outside the HTTP request lifecycle — e.g. a
+    background message-queue consumer whose errors never reach the FastAPI
+    integration.
+
+    No-op when Sentry was not initialised (DSN absent), so callers can wire it
+    unconditionally inside their existing except blocks.
+    """
+    if not _initialized:
+        return
+
+    try:
+        import sentry_sdk
+    except ImportError:
+        return
+
+    sentry_sdk.capture_exception(error)

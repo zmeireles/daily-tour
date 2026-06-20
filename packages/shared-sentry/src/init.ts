@@ -69,3 +69,16 @@ export function setupSentryFastifyErrorHandler(
   if (!initialized) return;
   Sentry.setupFastifyErrorHandler(app);
 }
+
+/**
+ * Report an exception caught outside the HTTP request lifecycle — e.g. a
+ * background message-queue worker whose errors are swallowed and never reach
+ * the Fastify error handler.
+ *
+ * No-op when Sentry was not initialised (DSN absent), so callers can wire it
+ * unconditionally inside their existing catch blocks.
+ */
+export function captureException(error: unknown): void {
+  if (!initialized) return;
+  Sentry.captureException(error);
+}
