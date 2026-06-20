@@ -212,9 +212,9 @@ Real akadmin OIDC login; harness `temp/uat-plan006.mjs`, screenshots `temp/uat-p
 >   **Live browser-verified**: upload hero → renders → save → reopen → persisted
 >   hero renders (`/v1/media/:id`).
 
-### ⬜ T-6.C.2 — Backoffice: per-place hero upload (business places)
+### ✅ T-6.C.2 — Backoffice: per-place hero upload (business places)
 
-- [ ] Owner uploads a hero for an own/added place → unblocks the 14 business photos.
+- [x] Owner uploads a hero for an own/added place → unblocks the 14 business photos.
 - **owns**: `apps/pwa/src/features/backoffice/places/**`
 - **deps**: T-6.C.0, T-6.B.0
 - **acceptance**: business place shows owner-uploaded hero in guest discover/detail.
@@ -241,18 +241,18 @@ Real akadmin OIDC login; harness `temp/uat-plan006.mjs`, screenshots `temp/uat-p
 
 ## Slice 6.E — Reservations management `[#142d]`
 
-### ⬜ T-6.E.0 — BFF: reservations list + token lifecycle endpoint
+### ✅ T-6.E.0 — BFF: reservations list + token lifecycle endpoint
 
-- [ ] Owner-gated `GET /v1/admin/reservations` (list `auth_tokens.reservation`) +
+- [x] Owner-gated `GET /v1/admin/reservations` (list `auth_tokens.reservation`) +
       issue/revoke guest token via token-svc.
 - **owns**: `services/bff/src/routes/admin-reservations.ts`, `services/token-svc/src/routes/*`
 - **deps**: none
 - **acceptance**: list returns the owner's reservations; revoke invalidates the guest
   token (token-svc test); owner_id scoped.
 
-### ⬜ T-6.E.1 — Backoffice: reservations screen
+### ✅ T-6.E.1 — Backoffice: reservations screen
 
-- [ ] New `admin.reservations` route — list + per-row issue/revoke guest link.
+- [x] New `admin.reservations` route — list + per-row issue/revoke guest link.
 - **owns**: `apps/pwa/src/routes/admin.reservations.tsx`, `apps/pwa/src/features/backoffice/reservations/**`
 - **deps**: T-6.E.0
 - **acceptance**: list renders; issue/revoke round-trips; **paired UAT**. Replaces the
@@ -262,17 +262,17 @@ Real akadmin OIDC login; harness `temp/uat-plan006.mjs`, screenshots `temp/uat-p
 
 ## Slice 6.F — Owner field-editing gaps `[#150, #151]`
 
-### ⬜ T-6.F.0 — Verify/complete hours + contacts editing `[#151]`
+### ✅ T-6.F.0 — Verify/complete hours + contacts editing `[#151]`
 
-- [ ] Verify `admin.places` form exposes weekly-hours + contacts; add missing controls.
+- [x] Verify `admin.places` form exposes weekly-hours + contacts; add missing controls.
 - **owns**: `apps/pwa/src/routes/admin.places.$id.tsx`, `services/bff/src/routes/admin-places.ts`
 - **deps**: none
 - **acceptance**: owner sets weekly hours + contacts; round-trips to catalog-svc. If
   already complete, close as verified.
 
-### ⬜ T-6.F.1 — `place.season` column + backoffice control `[#150]`
+### ✅ T-6.F.1 — `place.season` column + backoffice control `[#150]`
 
-- [ ] Add `place.season` (shape TBD — enum vs `{months:int[]}`); backoffice control.
+- [x] Add `place.season` (shape TBD — enum vs `{months:int[]}`); backoffice control.
 - **owns**: `services/catalog-svc/src/db/schema.ts`, migration, `apps/pwa/src/routes/admin.places.$id.tsx`
 - **deps**: none
 - **acceptance**: owner marks a place seasonal; flag flows catalog-svc → BFF.
@@ -288,3 +288,13 @@ Real akadmin OIDC login; harness `temp/uat-plan006.mjs`, screenshots `temp/uat-p
   user-visible parts of 6.F.
 - **Riff mirror**: 6.A→#142a, 6.B→#135, 6.C→#142c, 6.D→#142b, 6.E→#142d, 6.F→#150/#151.
   When promoted DRAFT→READY, mint cs-agent prompt files under `temp/prompt-t6-*.md`.
+
+## Closure (2026-06-20 — doc tidy)
+
+Plan-006 is DONE; the final checkboxes were ticked retroactively (they shipped but the doc wasn't updated). Mapping:
+
+- **T-6.C.2** (per-place hero upload) — #244. Capability done. The 14 businesses remain photo-less: that's pending **actual owner uploads** (content/ops), not a code gap — see memory `project_135_photo_sourcing`.
+- **T-6.E.0** (reservations list + token lifecycle) — #240.
+- **T-6.E.1** (reservations screen) — #243.
+- **T-6.F.0** (hours + contacts editing) — #244.
+- **T-6.F.1** (`place.season` column + control) — #241 (column/migration 0006) + #244 (control).
