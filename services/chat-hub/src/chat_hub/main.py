@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 
 from daily_tour_common.otel import init_otel
+from daily_tour_common.sentry import init_sentry
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,6 +20,10 @@ from .version import __version__
 logger = logging.getLogger(__name__)
 
 init_otel("chat-hub")
+# Error reporting runs alongside OTel. DSN-gated: a complete no-op when
+# SENTRY_DSN is unset/empty, so this is safe before a Sentry-compatible
+# backend (GlitchTip) exists.
+init_sentry("chat-hub", release=__version__)
 
 
 def create_app() -> FastAPI:

@@ -16,6 +16,7 @@ from .models import (
 )
 from .models.common import Slug
 from .otel import OtelConfig, init_otel
+from .sentry import init_sentry
 from .version import __version__
 
 __all__ = [
@@ -37,4 +38,5 @@ __all__ = [
     "configure_logging",
     "create_app",
     "init_otel",
+    "init_sentry",
 ]

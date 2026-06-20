@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@daily-tour/shared-otel": "workspace:*",
+    "@daily-tour/shared-sentry": "workspace:*",
     "@daily-tour/shared-types": "workspace:*",
     "@fastify/cookie": "^11.0.0",
     "@fastify/cors": "^11.0.0",
