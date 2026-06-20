@@ -8,11 +8,13 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
 COPY packages/shared-config/package.json packages/shared-config/
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/shared-otel/package.json packages/shared-otel/
+COPY packages/shared-sentry/package.json packages/shared-sentry/
 COPY services/catalog-svc/package.json services/catalog-svc/
 RUN pnpm install --frozen-lockfile \
     --filter @daily-tour/catalog-svc... \
     --filter @daily-tour/shared-types \
-    --filter @daily-tour/shared-otel
+    --filter @daily-tour/shared-otel \
+    --filter @daily-tour/shared-sentry
 
 # ─── build: bundle catalog-svc ───────────────────────────────────────────
 FROM deps AS build
@@ -20,9 +22,11 @@ COPY tsconfig.base.json ./
 COPY packages/shared-config/ packages/shared-config/
 COPY packages/shared-types/ packages/shared-types/
 COPY packages/shared-otel/ packages/shared-otel/
+COPY packages/shared-sentry/ packages/shared-sentry/
 COPY services/catalog-svc/ services/catalog-svc/
 RUN pnpm --filter @daily-tour/shared-types build \
  && pnpm --filter @daily-tour/shared-otel build \
+ && pnpm --filter @daily-tour/shared-sentry build \
  && pnpm --filter @daily-tour/catalog-svc build
 
 # ─── deploy: hoisted prod-only node_modules ──────────────────────────────
