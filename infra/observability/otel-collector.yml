@@ -1,6 +1,9 @@
-# OTel Collector — minimal pipeline for Daily Tour Python services.
-# Receives OTLP/HTTP traces from all Python services on port 4318.
-# Batches and logs to debug; swap in a Tempo/Grafana exporter for prod.
+# OTel Collector — Daily Tour telemetry bridge.
+# Receives OTLP/HTTP traces AND metrics from all 8 services on port 4318.
+# Traces go to the debug exporter. Metrics are re-exposed in Prometheus
+# exposition format on :8889 so the observability overlay's Prometheus can
+# scrape them over dt_internal (target dt_otel_collector:8889). The 8889
+# endpoint is internal-only — never published to the host.
 
 receivers:
   otlp:
@@ -15,6 +18,12 @@ processors:
 exporters:
   debug:
     verbosity: normal
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    # Promote OTLP resource attributes (e.g. service.name) to Prometheus labels
+    # so series carry per-service identity instead of collapsing together.
+    resource_to_telemetry_conversion:
+      enabled: true
 
 service:
   pipelines:
@@ -22,3 +31,7 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]

@@ -50,6 +50,7 @@ jobs:
         -f infra/compose/docker-compose.authentik.yml
         -f infra/compose/overlay.qual.yml
         -f infra/compose/overlay.qual-authentik.yml
+        -f infra/compose/overlay.observability.yml
 
     steps:
       - name: Resolve image tag + rollback target
