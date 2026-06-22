@@ -30,4 +30,10 @@ for bucket in media-place media-owner media-tour daily-tour-media; do
   mc anonymous set download "${ALIAS}/${bucket}/public/" >/dev/null 2>&1 || true
 done
 
-echo "[minio-init] Buckets ready: media-place, media-owner, media-tour, daily-tour-media"
+# Private bucket — created idempotently, NO anonymous policy. The `backups`
+# bucket holds Postgres dumps (T-3.B.0, scripts/ops/backup-postgres.sh) and must
+# never be publicly readable. (Add further private buckets here the same way.)
+mc mb --ignore-existing "${ALIAS}/backups"
+echo "[minio-init] Private bucket ready: backups"
+
+echo "[minio-init] Buckets ready: media-place, media-owner, media-tour, daily-tour-media, backups (private)"

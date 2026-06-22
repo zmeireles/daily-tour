@@ -1,0 +1,12 @@
+# Nightly trigger for dt-backup.service. 01:00 UTC matches the runbook's
+# logical-dump window; Persistent=true catches a missed run after downtime.
+[Unit]
+Description=Daily Tour nightly Postgres backup timer
+
+[Timer]
+OnCalendar=*-*-* 01:00:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
