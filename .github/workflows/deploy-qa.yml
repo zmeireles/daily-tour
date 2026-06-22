@@ -71,6 +71,15 @@ jobs:
           # .last_deploy_tag / .deploy-history.md are NOT touched by checkout.
           git checkout -f "${{ github.sha }}"
 
+      - name: Render alertmanager config (telegram secrets from .env.qual)
+        run: |
+          set -euo pipefail
+          set -a; . ./.env.qual; set +a
+          envsubst '${ALERT_TELEGRAM_BOT_TOKEN} ${ALERT_TELEGRAM_CHAT_ID}' \
+            < infra/observability/alertmanager.yml.tmpl \
+            > infra/observability/alertmanager.yml
+          echo "rendered alertmanager.yml (telegram chat ${ALERT_TELEGRAM_CHAT_ID:-UNSET})"
+
       - name: Pull images + start stack
         run: |
           set -euo pipefail

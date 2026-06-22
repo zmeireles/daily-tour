@@ -34,6 +34,8 @@ volumes:
     name: dt_prometheus_data
   dt_grafana_data:
     name: dt_grafana_data
+  dt_alertmanager_data:
+    name: dt_alertmanager_data
 
 services:
   # ─────────────────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ services:
       - "127.0.0.1:${DT_HOST_PORT_PROMETHEUS:-27990}:9090"
     volumes:
       - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
       - dt_prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -106,3 +109,59 @@ services:
     deploy: !reset null
     mem_limit: 256m
     cpus: 0.5
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Blackbox-exporter — uptime probing
+  # Prometheus's `blackbox` / `blackbox_live` jobs hit /probe here, passing the
+  # real target URL. Modules live in ../observability/blackbox.yml. Internal
+  # only (no host port) — operator access is via Prometheus.
+  # ─────────────────────────────────────────────────────────────────────────
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: dt_blackbox_exporter
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    volumes:
+      - ../observability/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command:
+      - "--config.file=/etc/blackbox_exporter/config.yml"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:9115/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy: !reset null
+    mem_limit: 48m
+    cpus: 0.25
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Alertmanager — alert routing → Telegram
+  # Mounts the deploy-rendered alertmanager.yml (gitignored; rendered from
+  # alertmanager.yml.tmpl by deploy-qa.yml with the ALERT_TELEGRAM_* secrets).
+  # Loopback host-port for operator access / debugging.
+  # ─────────────────────────────────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: dt_alertmanager
+    restart: unless-stopped
+    networks:
+      - dt_internal
+    ports:
+      - "127.0.0.1:27993:9093"
+    volumes:
+      - ../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - dt_alertmanager_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy: !reset null
+    mem_limit: 64m
+    cpus: 0.25

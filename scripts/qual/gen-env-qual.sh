@@ -290,6 +290,25 @@ N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
 SMTP_URL=smtp://localhost:1025
 SMTP_FROM=no-reply@qual.stay.portugalodyssey.pt
 NOTIF_SVC_URL=http://dt_notif_svc:8085
+
+# ─────────────────────────────────────────────────────────────────────────
+# Error reporting (Sentry-API-compatible backend; GlitchTip — T-3.A.1)
+# ─────────────────────────────────────────────────────────────────────────
+# Project DSN read by every Node + Python service; VITE_ variant for the PWA.
+# Provider-issued (GlitchTip) — set before error tracking reports anything;
+# the SDK is a complete no-op while blank. Emitting __SET_MANUALLY__ (not an
+# empty value) keeps a --force regen from silently dropping a live DSN.
+SENTRY_DSN=__SET_MANUALLY__
+VITE_SENTRY_DSN=__SET_MANUALLY__
+
+# ─────────────────────────────────────────────────────────────────────────
+# Alerting → Telegram (T-3.A.2) — Alertmanager Telegram receiver
+# ─────────────────────────────────────────────────────────────────────────
+# Bot token + chat id are provider-issued (@BotFather + the target chat).
+# Rendered into infra/observability/alertmanager.yml by deploy-qa.yml. Until
+# set, alerts fire in Prometheus/Alertmanager but Telegram delivery fails.
+ALERT_TELEGRAM_BOT_TOKEN=__SET_MANUALLY__
+ALERT_TELEGRAM_CHAT_ID=__SET_MANUALLY__
 EOF
 
 chmod 600 "$ENV_OUT"
@@ -343,6 +362,10 @@ MANUAL_KEYS=(
   WHATSAPP_PHONE_NUMBER_ID
   WHATSAPP_ACCESS_TOKEN
   WHATSAPP_APP_SECRET
+  SENTRY_DSN
+  VITE_SENTRY_DSN
+  ALERT_TELEGRAM_BOT_TOKEN
+  ALERT_TELEGRAM_CHAT_ID
 )
 [[ "$ACME_EMAIL" == "$ACME_EMAIL_PLACEHOLDER" ]] && MANUAL_KEYS+=(TRAEFIK_ACME_EMAIL)
 
