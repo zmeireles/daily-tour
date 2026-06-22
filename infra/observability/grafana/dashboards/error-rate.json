@@ -7,7 +7,7 @@
     { "type": "panel", "id": "stat", "name": "Stat", "version": "" }
   ],
   "annotations": { "list": [] },
-  "description": "HTTP 5xx error rate and error ratio across all services (T-5.4.0)",
+  "description": "HTTP error rate across services — 4xx+5xx ratio + breakdowns. Sourced from the OTel http.server.duration_count series, bridged OTLP→Prometheus (T-3.A.1).",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -23,8 +23,8 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.01 },
-              { "color": "red", "value": 0.05 }
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.2 }
             ]
           },
           "unit": "percentunit",
@@ -45,12 +45,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[$__rate_interval])) by (job) / sum(rate(http_requests_total[$__rate_interval])) by (job)",
-          "legendFormat": "{{job}}",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{http_status_code=~\"[45]..\"}[$__rate_interval])) by (service_name) / sum(rate(http_server_duration_milliseconds_count[$__rate_interval])) by (service_name)",
+          "legendFormat": "{{service_name}}",
           "refId": "A"
         }
       ],
-      "title": "Error Ratio (5xx / total) per Service",
+      "title": "Error Ratio (4xx+5xx / total) per Service",
       "type": "stat"
     },
     {
@@ -72,12 +72,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[$__rate_interval])) by (job, route)",
-          "legendFormat": "{{job}} {{route}}",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{http_status_code=~\"5..\"}[$__rate_interval])) by (service_name)",
+          "legendFormat": "{{service_name}}",
           "refId": "A"
         }
       ],
-      "title": "5xx Rate by Service and Route",
+      "title": "5xx Rate by Service",
       "type": "timeseries"
     },
     {
@@ -99,12 +99,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "sum(rate(http_requests_total{status_code=~\"4..\"}[$__rate_interval])) by (job, status_code)",
-          "legendFormat": "{{job}} {{status_code}}",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{http_status_code=~\"4..\"}[$__rate_interval])) by (service_name, http_status_code)",
+          "legendFormat": "{{service_name}} {{http_status_code}}",
           "refId": "A"
         }
       ],
-      "title": "4xx Rate by Service",
+      "title": "4xx Rate by Service & Status",
       "type": "timeseries"
     },
     {
@@ -126,12 +126,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[$__rate_interval])) by (job) / sum(rate(http_requests_total[$__rate_interval])) by (job)",
-          "legendFormat": "{{job}} error ratio",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{http_status_code=~\"[45]..\"}[$__rate_interval])) by (service_name) / sum(rate(http_server_duration_milliseconds_count[$__rate_interval])) by (service_name)",
+          "legendFormat": "{{service_name}}",
           "refId": "A"
         }
       ],
-      "title": "5xx Error Ratio Trend",
+      "title": "Error Ratio Trend (4xx+5xx)",
       "type": "timeseries"
     }
   ],
@@ -143,5 +143,5 @@
   "timezone": "browser",
   "title": "Error Rate",
   "uid": "dt-error-rate",
-  "version": 1
+  "version": 2
 }
