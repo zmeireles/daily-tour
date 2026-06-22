@@ -159,7 +159,7 @@ services:
     healthcheck:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but the
       # Fastify listener binds 0.0.0.0 only.
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8088/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8088/ready || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -196,7 +196,7 @@ services:
     healthcheck:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
       # Fastify only listens on 0.0.0.0.
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/ready || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -250,7 +250,7 @@ services:
     healthcheck:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
       # Fastify only listens on 0.0.0.0.
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8087/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8087/ready || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 30s
@@ -297,7 +297,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8083/health",timeout=2).status==200 else 1)''',
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8083/ready",timeout=2).status==200 else 1)''',
         ]
       interval: 30s
       timeout: 5s
@@ -381,7 +381,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8082/health",timeout=2).status==200 else 1)''',
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8082/ready",timeout=2).status==200 else 1)''',
         ]
       interval: 30s
       timeout: 5s
@@ -429,7 +429,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8084/health",timeout=2).status==200 else 1)''',
+          'python -c ''import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8084/ready",timeout=2).status==200 else 1)''',
         ]
       interval: 30s
       timeout: 5s
