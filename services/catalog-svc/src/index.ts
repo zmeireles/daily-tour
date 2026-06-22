@@ -1,10 +1,10 @@
-import "./instrumentation.js"; // MUST be first
-
-import { createApp } from "./app.js";
-import { loadConfig } from "./config.js";
-import { closePool, runMigrations } from "./db/client.js";
+import "./instrumentation.js"; // MUST be first — bootstraps OTel before instrumented imports are loaded.
 
 async function main(): Promise<void> {
+  const { createApp } = await import("./app.js");
+  const { loadConfig } = await import("./config.js");
+  const { closePool, runMigrations } = await import("./db/client.js");
+
   const config = loadConfig();
 
   // Idempotent: custom migrator tracks state in `catalog.__drizzle_migrations`.
