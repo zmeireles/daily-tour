@@ -56,6 +56,18 @@ b2://daily-tour-backups/
 
 > The logical dump is **automated** via `scripts/ops/backup-postgres.sh` (uploads `postgres/main/` to the private `backups` bucket on the in-cluster MinIO; pruned by `BACKUP_RETENTION_DAYS`). Restorability is proven by `scripts/ops/restore-drill-postgres.sh`.
 > **Deferred (Plan-004 / T-3.B.1):** WAL+base PITR (15-min RPO) and Backblaze-B2 off-site replication are not yet wired — the MinIO logical dump is the current automated path.
+>
+> **⚠️ Signed DR disposition (F&F beta, 2026-06-22):** the nightly dump lands in the **same-box** MinIO, on the same disk as the live data. This protects against logical corruption / bad migrations / accidental deletes, but **NOT box loss / disk failure / VPS termination**. On-box-only is **explicitly accepted for the friends-and-family beta** (tiny DBs, no real prod users yet); the off-site (Backblaze-B2) leg that closes the disk-loss-DR gap is deferred to T-3.B.1 / Plan-004. — accepted by the project owner.
+
+#### Scheduling (systemd timer)
+
+The nightly run is driven by a **systemd timer** on the qual box (chosen over a GitHub-scheduled workflow for reboot-survivable, GitHub-independent reliability). Units are committed at `infra/systemd/dt-backup.{service,timer}` (01:00 UTC, `Persistent=true`). One-time install as root:
+
+```bash
+cp /opt/daily-tour/infra/systemd/dt-backup.{service,timer} /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now dt-backup.timer
+systemctl start dt-backup.service   # manual/on-demand run; logs in journalctl -u dt-backup.service
+```
 
 #### Nightly base backup script (`/opt/dt-backup/postgres-base.sh`)
 
