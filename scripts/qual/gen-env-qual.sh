@@ -204,6 +204,11 @@ RABBITMQ_URL=${RABBITMQ_URL}
 MINIO_ROOT_USER=dailytour
 MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
 
+# Nightly Postgres backup → MinIO (T-3.B.0, scripts/ops/backup-postgres.sh).
+# Plain config (not secrets): target bucket + local retention window in days.
+BACKUP_BUCKET=backups
+BACKUP_RETENTION_DAYS=7
+
 # ─────────────────────────────────────────────────────────────────────────
 # Media service (T-1.4.0)
 # ─────────────────────────────────────────────────────────────────────────
