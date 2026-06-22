@@ -18,43 +18,46 @@ docker compose \
 
 ## Access
 
-| UI          | URL                                                         | Default credentials |
-| ----------- | ----------------------------------------------------------- | ------------------- |
-| Prometheus  | `http://127.0.0.1:${DT_HOST_PORT_PROMETHEUS:-27990}`        | none                |
-| Grafana     | `http://127.0.0.1:${DT_HOST_PORT_GRAFANA:-27300}`           | admin / admin       |
+| UI         | URL                                                  | Default credentials |
+| ---------- | ---------------------------------------------------- | ------------------- |
+| Prometheus | `http://127.0.0.1:${DT_HOST_PORT_PROMETHEUS:-27990}` | none                |
+| Grafana    | `http://127.0.0.1:${DT_HOST_PORT_GRAFANA:-27300}`    | admin / admin       |
 
 Override `GF_SECURITY_ADMIN_PASSWORD` in `dev-environment` to change the Grafana password.
 
-## Scraped services
+## Metrics path (OTLP → collector → Prometheus)
 
-Prometheus scrapes `/metrics` from all seven application services on `dt_internal`:
+The 8 application services do **not** expose a `/metrics` endpoint. They push
+OTLP metrics (and traces) to the `otel-collector` (`dt_otel_collector`, defined
+in `docker-compose.app.yml`) when `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` is set.
+The collector re-exposes those metrics in Prometheus exposition format on its
+internal `:8889` (never published to the host). Prometheus then scrapes that
+single endpoint over `dt_internal`:
 
-| Job         | Target              | Port |
-| ----------- | ------------------- | ---- |
-| bff         | dt_bff              | 8080 |
-| catalog-svc | dt_catalog_svc      | 8081 |
-| search-svc  | dt_search_svc       | 8082 |
-| planner-svc | dt_planner_svc      | 8083 |
-| chat-hub    | dt_chat_hub         | 8084 |
-| media-svc   | dt_media_svc        | 8087 |
-| token-svc   | dt_token_svc        | 8088 |
+| Job            | Target                  | Port |
+| -------------- | ----------------------- | ---- |
+| otel-collector | dt_otel_collector       | 8889 |
+| prometheus     | localhost (self-scrape) | 9090 |
 
-Services that are not running (e.g. `chat-hub` or `search-svc` in a partial stack) appear as `DOWN` in Prometheus — scraping continues for the remaining targets.
+Per-service identity is preserved by the `service` label: the collector's
+`resource_to_telemetry_conversion` promotes the OTLP `service.name` resource
+attribute to a Prometheus label. If the collector is down, the
+`otel-collector` target shows `DOWN` and app series go stale.
 
 ## Dashboards
 
 Four dashboards are provisioned automatically from `grafana/dashboards/`:
 
-| Dashboard      | UID                 | Description                                             |
-| -------------- | ------------------- | ------------------------------------------------------- |
-| BFF Latency    | `dt-bff-latency`    | p50/p95/p99 HTTP latency by route + request rate        |
-| Service Health | `dt-service-health` | UP/DOWN status, RSS memory, CPU usage per service       |
-| MQ Depth       | `dt-mq-depth`       | RabbitMQ queue depth, publish rate, consume rate        |
-| Error Rate     | `dt-error-rate`     | 5xx/4xx rate and error ratio by service and route       |
+| Dashboard      | UID                 | Description                                       |
+| -------------- | ------------------- | ------------------------------------------------- |
+| BFF Latency    | `dt-bff-latency`    | p50/p95/p99 HTTP latency by route + request rate  |
+| Service Health | `dt-service-health` | UP/DOWN status, RSS memory, CPU usage per service |
+| MQ Depth       | `dt-mq-depth`       | RabbitMQ queue depth, publish rate, consume rate  |
+| Error Rate     | `dt-error-rate`     | 5xx/4xx rate and error ratio by service and route |
 
 ## Metric naming
 
-The dashboards assume these metric names (emitted by `prom-client` on Node.js services and `prometheus-fastapi-instrumentator` on Python services):
+The dashboards (Phase 2 work — not yet reconciled to the OTLP series) assume these metric names:
 
 - `http_request_duration_seconds_bucket` — HTTP latency histogram (labels: `route`, `method`, `status_code`)
 - `http_requests_total` — HTTP request counter (labels: `route`, `method`, `status_code`)
@@ -68,16 +71,16 @@ Services that have not yet wired up `/metrics` will show no data for their panel
 
 ## Volumes
 
-| Volume               | Purpose                      |
-| -------------------- | ---------------------------- |
-| `dt_prometheus_data` | TSDB (15-day retention)      |
-| `dt_grafana_data`    | Grafana DB + user state      |
+| Volume               | Purpose                 |
+| -------------------- | ----------------------- |
+| `dt_prometheus_data` | TSDB (7-day retention)  |
+| `dt_grafana_data`    | Grafana DB + user state |
 
 ## Troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| Target shows DOWN in Prometheus | The service is not running or not exposing `/metrics`. Check `docker compose ps`. |
-| Grafana shows "No data" for a panel | The service has not yet instrumented `/metrics` — expected until each service adds `prom-client`. |
-| Port conflict on 27990 or 27300 | Override via `DT_HOST_PORT_PROMETHEUS` / `DT_HOST_PORT_GRAFANA` in `dev-environment`. |
-| Grafana login fails | Default credentials are `admin` / `admin`. Override with `GF_SECURITY_ADMIN_PASSWORD`. |
+| Symptom                             | Fix                                                                                                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `otel-collector` target shows DOWN  | The collector is not running or `:8889` is unreachable on `dt_internal`. Check `docker compose ps` and the collector logs.                                |
+| Grafana shows "No data" for a panel | Either the service isn't setting `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, or the dashboard's metric names predate the OTLP series (Phase 2 reconciliation). |
+| Port conflict on 27990 or 27300     | Override via `DT_HOST_PORT_PROMETHEUS` / `DT_HOST_PORT_GRAFANA` in `dev-environment`.                                                                     |
+| Grafana login fails                 | Default credentials are `admin` / `admin`. Override with `GF_SECURITY_ADMIN_PASSWORD`.                                                                    |

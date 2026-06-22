@@ -1,8 +1,10 @@
-# Daily Tour — Observability overlay (T-5.4.0)
+# Daily Tour — Observability overlay (T-5.4.0; qual bridge T-3.A.1)
 #
-# Adds Prometheus + Grafana to the stack. Prometheus scrapes /metrics from all
-# seven application services on dt_internal. Grafana mounts the four dashboards
-# and the Prometheus datasource as read-only config-maps.
+# Adds Prometheus + Grafana to the stack. Services push OTLP metrics to the
+# otel-collector (in docker-compose.app.yml), which re-exposes them on :8889;
+# Prometheus scrapes that single endpoint (dt_otel_collector:8889) over
+# dt_internal. Grafana mounts the four dashboards and the Prometheus datasource
+# as read-only config-maps.
 #
 # Port reservations (27xxx block, matching infra/README.md):
 #   Prometheus → 127.0.0.1:${DT_HOST_PORT_PROMETHEUS:-27990}:9090
@@ -36,9 +38,9 @@ volumes:
 services:
   # ─────────────────────────────────────────────────────────────────────────
   # Prometheus — metrics collector
-  # Scrapes all seven application services on dt_internal via /metrics.
-  # Retention defaults to 15d (Prometheus default). Internal-only except for
-  # the host-port binding for operator access.
+  # Scrapes the otel-collector's Prometheus exporter (dt_otel_collector:8889)
+  # on dt_internal. Retention trimmed to 7d for the RAM-tight 2-vCPU qual box.
+  # Internal-only except for the loopback host-port binding for operator access.
   # ─────────────────────────────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:v3.4.0
@@ -54,7 +56,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=15d"
+      - "--storage.tsdb.retention.time=7d"
       - "--web.enable-lifecycle"
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:9090/-/healthy || exit 1"]
@@ -62,11 +64,12 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
+    # deploy.resources.limits is Swarm-only and IGNORED by plain `docker compose
+    # up`; top-level mem_limit/cpus are the sole authority (same pattern as
+    # overlay.qual.yml). Modest caps for the RAM-tight 2-vCPU/8GB qual box.
+    deploy: !reset null
+    mem_limit: 384m
+    cpus: 0.5
 
   # ─────────────────────────────────────────────────────────────────────────
   # Grafana — dashboard UI
@@ -100,8 +103,6 @@ services:
       timeout: 5s
       start_period: 20s
       retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.5"
+    deploy: !reset null
+    mem_limit: 256m
+    cpus: 0.5

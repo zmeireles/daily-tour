@@ -49,4 +49,4 @@ COPY --from=deploy --chown=app:app /repo/__deploy__/bff/package.json /app/packag
 ENV NODE_ENV=production
 EXPOSE 8080
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "--import", "@daily-tour/shared-otel/register", "dist/index.js"]

@@ -7,7 +7,7 @@
     { "type": "panel", "id": "gauge", "name": "Gauge", "version": "" }
   ],
   "annotations": { "list": [] },
-  "description": "BFF HTTP latency — p50, p95, p99 by route (T-5.4.0)",
+  "description": "BFF HTTP server latency — p50/p95/p99 + request rate by status. Sourced from the OTel http.server.duration histogram (ms), bridged OTLP→Prometheus (T-3.A.1).",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -20,7 +20,7 @@
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": { "lineWidth": 2, "fillOpacity": 10 },
-          "unit": "s"
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -33,20 +33,20 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"bff\"}[$__rate_interval])) by (le, route))",
-          "legendFormat": "p50 {{route}}",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{service_name=\"bff\"}[$__rate_interval])) by (le))",
+          "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"bff\"}[$__rate_interval])) by (le, route))",
-          "legendFormat": "p95 {{route}}",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{service_name=\"bff\"}[$__rate_interval])) by (le))",
+          "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"bff\"}[$__rate_interval])) by (le, route))",
-          "legendFormat": "p99 {{route}}",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{service_name=\"bff\"}[$__rate_interval])) by (le))",
+          "legendFormat": "p99",
           "refId": "C"
         }
       ],
@@ -62,22 +62,27 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.5 },
-              { "color": "red", "value": 1 }
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
             ]
           },
-          "unit": "s",
-          "max": 2
+          "unit": "ms",
+          "max": 2000
         },
         "overrides": []
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
       "id": 2,
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"bff\"}[$__rate_interval])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{service_name=\"bff\"}[$__rate_interval])) by (le))",
           "legendFormat": "p95 overall",
           "refId": "A"
         }
@@ -104,12 +109,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "dt_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"bff\"}[$__rate_interval])) by (route, status_code)",
-          "legendFormat": "{{route}} {{status_code}}",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{service_name=\"bff\"}[$__rate_interval])) by (http_status_code)",
+          "legendFormat": "{{http_status_code}}",
           "refId": "A"
         }
       ],
-      "title": "BFF Request Rate by Route",
+      "title": "BFF Request Rate by Status",
       "type": "timeseries"
     }
   ],
@@ -121,5 +126,5 @@
   "timezone": "browser",
   "title": "BFF Latency",
   "uid": "dt-bff-latency",
-  "version": 1
+  "version": 2
 }

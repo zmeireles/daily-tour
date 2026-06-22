@@ -130,6 +130,8 @@ services:
       NODE_ENV: production
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 384m
     cpus: 0.5
@@ -151,6 +153,8 @@ services:
       NODE_ENV: production
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 256m
     cpus: 0.25
@@ -161,6 +165,8 @@ services:
       NODE_ENV: production
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 320m
     cpus: 0.5
@@ -171,6 +177,8 @@ services:
       NODE_ENV: production
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 320m
     cpus: 0.5
@@ -185,6 +193,7 @@ services:
       OSRM_URL: http://dt_osrm:5000
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 512m
     cpus: 1.0
@@ -194,6 +203,7 @@ services:
     environment:
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 512m
     cpus: 0.75
@@ -203,6 +213,7 @@ services:
     environment:
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 384m
     cpus: 0.5
@@ -212,6 +223,7 @@ services:
     environment:
       SENTRY_DSN: ${SENTRY_DSN:-}
       OTEL_DEPLOYMENT_ENVIRONMENT: qual
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://dt_otel_collector:4318
     deploy: !reset null
     mem_limit: 384m
     cpus: 0.25
