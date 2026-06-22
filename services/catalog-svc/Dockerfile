@@ -48,4 +48,4 @@ COPY --from=build --chown=app:app /repo/services/catalog-svc/drizzle/migrations 
 ENV NODE_ENV=production
 EXPOSE 8081
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "--import", "@daily-tour/shared-otel/register", "dist/index.js"]

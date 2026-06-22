@@ -1,12 +1,12 @@
-import "./instrumentation.js"; // MUST be first — bootstraps OTel before instrumented imports are loaded.
+import "./instrumentation.js"; // MUST be first
+
+import { createApp } from "./server.js";
+import { loadConfig } from "./config.js";
+import { closePool, runMigrations } from "./db.js";
+import { getS3Client, ensureBucket } from "./lib/s3.js";
+import { runTranscodeWorker } from "./workers/transcode.js";
 
 async function main(): Promise<void> {
-  const { createApp } = await import("./server.js");
-  const { loadConfig } = await import("./config.js");
-  const { closePool, runMigrations } = await import("./db.js");
-  const { getS3Client, ensureBucket } = await import("./lib/s3.js");
-  const { runTranscodeWorker } = await import("./workers/transcode.js");
-
   const config = loadConfig();
 
   // Idempotent: custom migrator tracks state in `media.__drizzle_migrations`.
