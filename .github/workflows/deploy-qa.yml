@@ -75,10 +75,18 @@ jobs:
         run: |
           set -euo pipefail
           set -a; . ./.env.qual; set +a
-          envsubst '${ALERT_TELEGRAM_BOT_TOKEN} ${ALERT_TELEGRAM_CHAT_ID}' \
-            < infra/observability/alertmanager.yml.tmpl \
-            > infra/observability/alertmanager.yml
-          echo "rendered alertmanager.yml (telegram chat ${ALERT_TELEGRAM_CHAT_ID:-UNSET})"
+          OUT=infra/observability/alertmanager.yml
+          if [ -n "${ALERT_TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${ALERT_TELEGRAM_CHAT_ID:-}" ]; then
+            envsubst '${ALERT_TELEGRAM_BOT_TOKEN} ${ALERT_TELEGRAM_CHAT_ID}' \
+              < infra/observability/alertmanager.yml.tmpl > "$OUT"
+            echo "rendered alertmanager.yml → telegram chat ${ALERT_TELEGRAM_CHAT_ID}"
+          else
+            # Creds not set yet: render a null receiver so alertmanager starts
+            # healthy (no delivery) instead of crashing on an empty chat_id and
+            # failing the deploy. Set ALERT_TELEGRAM_* in .env.qual to enable.
+            printf 'route:\n  receiver: "null"\nreceivers:\n  - name: "null"\n' > "$OUT"
+            echo "::warning::ALERT_TELEGRAM_* unset — alertmanager started with a null receiver (no Telegram delivery)"
+          fi
 
       - name: Pull images + start stack
         run: |
