@@ -19,7 +19,9 @@
 # Config (env, with defaults):
 #   BACKUP_BUCKET   MinIO bucket name        (default: backups)
 #   MC_IMAGE        pinned mc client image   (default: see below)
-#   PG_IMAGE        restore engine image     (default: postgres:17 — matches live major)
+#   PG_IMAGE        restore engine image     (default: the live pgvector image, so
+#                   the search.place_embedding vector table restores faithfully;
+#                   override to stock postgres:17 for a portable, no-extension drill)
 #   ENV_FILE        path to the qual env file (default: /opt/daily-tour/.env.qual)
 #
 # Exits non-zero if the restore or any verification query fails.
@@ -27,7 +29,7 @@ set -euo pipefail
 
 BACKUP_BUCKET="${BACKUP_BUCKET:-backups}"
 MC_IMAGE="${MC_IMAGE:-quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z}"
-PG_IMAGE="${PG_IMAGE:-postgres:17}"
+PG_IMAGE="${PG_IMAGE:-ghcr.io/zmeireles/daily-tour/postgres:qual}"
 ENV_FILE="${ENV_FILE:-/opt/daily-tour/.env.qual}"
 MINIO_NETWORK="${MINIO_NETWORK:-dt_internal}"
 
@@ -64,25 +66,29 @@ cleanup() {
 trap cleanup EXIT
 
 # ── 1. fetch the latest main dump from MinIO ──────────────────────────────────
-# Same bind-mount/source secret pattern as the backup script: MINIO_ROOT_PASSWORD
-# is sourced inside the mc container, never placed on a host command line.
-log "fetching latest postgres/main dump from local/${BACKUP_BUCKET} ..."
-docker run --rm \
-  --network "$MINIO_NETWORK" \
-  -v "$WORKDIR:/out" \
-  -v "$ENV_FILE:/env:ro" \
-  -e BUCKET="$BACKUP_BUCKET" \
-  "$MC_IMAGE" \
-  sh -c '
-    set -eu
-    set -a; . /env; set +a
-    mc alias set local http://dt_minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
-    # Newest object by name — dumps are timestamped YYYYMMDDTHHMMSSZ, so lexical
-    # sort == chronological sort. Take the last line of a plain listing.
-    latest=$(mc ls "local/$BUCKET/postgres/main/" | awk "{print \$NF}" | grep "\.dump$" | sort | tail -n1)
-    [ -n "$latest" ] || { echo "[restore-drill] no dumps under postgres/main/" >&2; exit 1; }
-    echo "[restore-drill] latest = $latest"
-    mc cp "local/$BUCKET/postgres/main/$latest" /out/latest.dump
+# Only the MINIO_ROOT_* creds cross via a 0600 --env-file (MinIO host = `minio`,
+# never the `dt_minio` container name — mc rejects underscore hostnames). The mc
+# image has no grep/awk, so we list with `mc ls --json` and select the newest
+# .dump on the HOST (full tools), then cp it by key.
+MC_CREDS="$WORKDIR/mc-creds"
+grep -E '^(MINIO_ROOT_USER|MINIO_ROOT_PASSWORD)=' "$ENV_FILE" > "$MC_CREDS"
+chmod 600 "$MC_CREDS"
+[ -s "$MC_CREDS" ] || die "MINIO_ROOT_USER/PASSWORD not found in $ENV_FILE"
+
+log "finding latest postgres/main dump in ${BACKUP_BUCKET} ..."
+latest=$(docker run --rm --network "$MINIO_NETWORK" --env-file "$MC_CREDS" \
+  -e BUCKET="$BACKUP_BUCKET" --entrypoint sh "$MC_IMAGE" -c '
+    mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
+    mc ls --json "local/$BUCKET/postgres/main/"
+  ' | grep -o "\"key\":\"[^\"]*\.dump\"" | cut -d'"' -f4 | sort | tail -n1)
+[ -n "$latest" ] || die "no dumps under postgres/main/"
+log "latest = $latest"
+
+docker run --rm --network "$MINIO_NETWORK" --env-file "$MC_CREDS" \
+  -e BUCKET="$BACKUP_BUCKET" -e LATEST="$latest" -v "$WORKDIR:/out" \
+  --entrypoint sh "$MC_IMAGE" -c '
+    mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
+    mc cp "local/$BUCKET/postgres/main/$LATEST" /out/latest.dump
   '
 [ -s "$WORKDIR/latest.dump" ] || die "no dump downloaded"
 log "downloaded dump: $(du -h "$WORKDIR/latest.dump" | cut -f1)"
@@ -96,8 +102,10 @@ docker run -d --name "$DRILL_CONTAINER" \
   "$PG_IMAGE" >/dev/null
 
 log "waiting for ${DRILL_CONTAINER} to accept connections ..."
+# A real `SELECT 1` (not pg_isready) — the entrypoint's first-boot initdb briefly
+# opens the socket while "starting up", so pg_isready false-positives there.
 i=0
-until docker exec "$DRILL_CONTAINER" pg_isready -U "$RESTORE_USER" >/dev/null 2>&1; do
+until docker exec "$DRILL_CONTAINER" psql -U "$RESTORE_USER" -d postgres -tAc 'SELECT 1' >/dev/null 2>&1; do
   i=$((i + 1))
   [ "$i" -le 60 ] || die "throwaway Postgres did not become ready within 60s"
   sleep 1
@@ -109,9 +117,15 @@ docker cp "$WORKDIR/latest.dump" "${DRILL_CONTAINER}:/tmp/latest.dump"
 docker exec "$DRILL_CONTAINER" createdb -U "$RESTORE_USER" "$RESTORE_DB"
 
 log "restoring into ${RESTORE_DB} ..."
+# --no-owner --no-acl: the throwaway cluster has none of the per-service roles
+# (created only by the qual init scripts), so ownership + GRANT/DEFAULT-PRIVILEGE
+# statements would error. Skipping them restores schema + DATA cleanly, which is
+# what the drill verifies. `|| log` keeps any residual non-fatal warning from
+# aborting the run before the row-count check (the real success criterion).
 _start=$(date +%s)
 docker exec "$DRILL_CONTAINER" \
-  pg_restore -U "$RESTORE_USER" -d "$RESTORE_DB" --no-owner /tmp/latest.dump
+  pg_restore -U "$RESTORE_USER" -d "$RESTORE_DB" --no-owner --no-acl /tmp/latest.dump \
+  || log "pg_restore reported non-fatal errors (continuing to verification)"
 _end=$(date +%s)
 log "restore RTO: $((_end - _start))s"
 

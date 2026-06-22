@@ -9,9 +9,12 @@
 # prunes anything older than the retention window.
 #
 # Secret handling: the 48-char MINIO_ROOT_PASSWORD is NEVER interpolated onto a
-# command line. The only validated pattern is to bind-mount .env.qual into the mc
-# container and `source` it there, so the secret only ever lives in the
-# container's environment, never in a host process's argv.
+# command line. Only the two MINIO_ROOT_* lines are extracted into a 0600 temp
+# file inside $WORKDIR and handed to the mc container via `docker run --env-file`
+# (docker parses KEY=VALUE directly — no shell sourcing, robust to special chars,
+# and no other .env.qual secret reaches the container). The MinIO host must be
+# `minio` (NOT the `dt_minio` container name — underscores are invalid hostnames
+# and mc rejects them with "invalid hostname").
 #
 # Usage:
 #   scripts/ops/backup-postgres.sh
@@ -71,21 +74,24 @@ log "local dumps ready:"
 ls -lh "$WORKDIR"
 
 # ── upload + retention, inside one mc container ───────────────────────────────
-# The secret is sourced from the bind-mounted /env INSIDE the container; it is
-# never passed as a host-side argument. $BUCKET/$RET cross the boundary as plain
-# (non-secret) env vars. Everything below the `sh -c` runs in the mc container.
-log "uploading to local/${BACKUP_BUCKET} via ${MC_IMAGE} ..."
+# Only the MINIO_ROOT_* creds cross the boundary, via a 0600 --env-file; $BUCKET/
+# $RET cross as plain (non-secret) env vars. Everything below `-c` runs in mc.
+MC_CREDS="$WORKDIR/mc-creds"
+grep -E '^(MINIO_ROOT_USER|MINIO_ROOT_PASSWORD)=' "$ENV_FILE" > "$MC_CREDS"
+chmod 600 "$MC_CREDS"
+[ -s "$MC_CREDS" ] || die "MINIO_ROOT_USER/PASSWORD not found in $ENV_FILE"
+log "uploading to ${BACKUP_BUCKET} via ${MC_IMAGE} ..."
 docker run --rm \
   --network "$MINIO_NETWORK" \
   -v "$WORKDIR:/dumps:ro" \
-  -v "$ENV_FILE:/env:ro" \
+  --env-file "$MC_CREDS" \
   -e BUCKET="$BACKUP_BUCKET" \
   -e RET="$BACKUP_RETENTION_DAYS" \
+  --entrypoint sh \
   "$MC_IMAGE" \
-  sh -c '
+  -c '
     set -eu
-    set -a; . /env; set +a
-    mc alias set local http://dt_minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
+    mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
     # Private bucket — deliberately NO `mc anonymous set`; backups stay closed.
     mc mb --ignore-existing "local/$BUCKET"
     mc cp /dumps/dailytour-*.dump "local/$BUCKET/postgres/main/"
