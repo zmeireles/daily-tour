@@ -105,6 +105,17 @@ jobs:
           # `up` couldn't do pre-migrate).
           docker compose $COMPOSE up -d --wait --wait-timeout 300
 
+      - name: Reload otel-collector config
+        run: |
+          set -euo pipefail
+          export IMAGE_TAG
+          # `compose up` does NOT recreate a container when only its mounted
+          # config file content changed — the collector reads
+          # infra/observability/otel-collector.yml once at startup. Force-recreate
+          # it so config-only changes (e.g. the OTLP→Prometheus bridge) actually
+          # take effect on redeploy; otherwise it keeps serving stale config.
+          docker compose $COMPOSE up -d --force-recreate --no-deps otel-collector
+
       - name: Provision owner access (akadmin → staff)
         run: |
           set -euo pipefail
