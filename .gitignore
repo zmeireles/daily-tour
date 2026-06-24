@@ -42,6 +42,10 @@ infra/traefik/acme/acme.json
 # Only scripts/qual/gen-env-qual.sh writes it (on the VPS at deploy time).
 infra/postgres/init-qual/
 
+# Deploy-rendered Alertmanager config — holds the Telegram bot token; never
+# commit. Rendered from alertmanager.yml.tmpl by deploy-qa.yml on the VPS.
+infra/observability/alertmanager.yml
+
 # Qual deploy state on the VPS clone (written by deploy-qa.yml; survives the
 # git-checkout sync because untracked). Never committed.
 .last_deploy_tag

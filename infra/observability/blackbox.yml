@@ -1,0 +1,20 @@
+# Blackbox-exporter modules — Daily Tour uptime probing (T-3.A.2)
+#
+# Prometheus's `blackbox` scrape jobs hit /probe on dt_blackbox_exporter:9115
+# with ?module=<name>&target=<url>; this file defines those modules.
+#
+#   http_2xx  — plain liveness; default valid status codes = 2xx.
+#   http_live — like http_2xx but treats 401 as alive too, for the
+#               /v1/auth/refresh probe which returns 401 when the BFF is up.
+modules:
+  http_2xx:
+    prober: http
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [] # default → 2xx
+
+  http_live:
+    prober: http
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [200, 401]
