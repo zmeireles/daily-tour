@@ -15,5 +15,12 @@
   },
   "offline": {
     "message": "You're offline. Showing cached content."
+  },
+  "consent": {
+    "title": "Help us improve",
+    "body": "We'd like to measure how the tour is used to make it better. Essential features work either way.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "learn_more": "Learn more"
   }
 }
