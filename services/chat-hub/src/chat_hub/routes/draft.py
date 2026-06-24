@@ -16,14 +16,17 @@ router = APIRouter()
 
 
 class ReservationDraftBody(BaseModel):
+    # Defensive input-size caps (T-3.C.3): this route reaches Anthropic, so bound
+    # every free-text field even though it's currently unwired (no BFF/PWA caller).
     place_id: str = Field(..., min_length=1)
-    place_name: str = Field(..., min_length=1)
+    place_name: str = Field(..., min_length=1, max_length=200)
     dates: str = Field(
         ...,
         min_length=1,
+        max_length=200,
         description="Free-form date range, e.g. '2026-06-12 19:30'",
     )
-    guest_message: str = Field("", description="Optional context from the guest")
+    guest_message: str = Field("", max_length=2000, description="Optional context from the guest")
     party_size: int | None = Field(default=None, ge=1, le=50)
     locale: str | None = Field(
         default=None,
