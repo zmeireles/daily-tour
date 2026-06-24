@@ -16,7 +16,9 @@ export function healthRoutes(app: FastifyInstance): void {
   // 503s — the compose `--wait` gate uses this, so peer checks would deadlock
   // startup. Broker liveness is reported informationally (cached amqp
   // connection-open check, no publish/round-trip) but never fails readiness.
-  app.get("/ready", { config: { rateLimit: false } }, async (_req, reply) => {
+  // Inherits the global rate-limit (unlike /health): a DB-touching route must be
+  // rate-limited (CWE-770). The loopback healthcheck runs far under the limit.
+  app.get("/ready", async (_req, reply) => {
     try {
       await getPool().query("SELECT 1");
       return {
