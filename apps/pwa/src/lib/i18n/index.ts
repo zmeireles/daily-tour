@@ -8,6 +8,7 @@ import enHome from "../../locales/en/home.json";
 import enPlace from "../../locales/en/place.json";
 import enDiscover from "../../locales/en/discover.json";
 import enAdmin from "../../locales/en/admin.json";
+import enLegal from "../../locales/en/legal.json";
 
 import ptCommon from "../../locales/pt-PT/common.json";
 import ptPublic from "../../locales/pt-PT/public.json";
@@ -15,6 +16,7 @@ import ptHome from "../../locales/pt-PT/home.json";
 import ptPlace from "../../locales/pt-PT/place.json";
 import ptDiscover from "../../locales/pt-PT/discover.json";
 import ptAdmin from "../../locales/pt-PT/admin.json";
+import ptLegal from "../../locales/pt-PT/legal.json";
 
 // Lazy-loading via i18next-resources-to-backend deferred — bundle size of
 // 12 small JSON files is negligible for v1.
@@ -26,6 +28,7 @@ const resources = {
     place: enPlace,
     discover: enDiscover,
     admin: enAdmin,
+    legal: enLegal,
   },
   "pt-PT": {
     common: ptCommon,
@@ -34,6 +37,7 @@ const resources = {
     place: ptPlace,
     discover: ptDiscover,
     admin: ptAdmin,
+    legal: ptLegal,
   },
 };
 
@@ -42,7 +46,7 @@ void i18n
   .use(initReactI18next)
   .init({
     resources,
-    ns: ["common", "public", "home", "place", "discover", "admin"],
+    ns: ["common", "public", "home", "place", "discover", "admin", "legal"],
     defaultNS: "common",
     fallbackLng: "en",
     interpolation: { escapeValue: false },

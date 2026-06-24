@@ -1,4 +1,5 @@
 import { useSessionStore } from "@/store/session";
+import { useConsentStore } from "@/lib/consent/use-consent";
 
 export function isBetaSession(): boolean {
   try {
@@ -9,6 +10,10 @@ export function isBetaSession(): boolean {
 }
 
 export function emit(eventType: string, planId?: string): void {
+  // Consent gate: non-essential telemetry only flows after explicit accept.
+  // "unset" (undecided) and "denied" both no-op, leaving analytics.tour_event empty.
+  if (useConsentStore.getState().analytics !== "granted") return;
+
   const jwt = useSessionStore.getState().jwt;
   if (!jwt) return;
 

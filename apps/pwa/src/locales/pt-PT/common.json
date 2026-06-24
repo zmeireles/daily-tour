@@ -15,5 +15,12 @@
   },
   "offline": {
     "message": "Está sem ligação. A mostrar conteúdo em cache."
+  },
+  "consent": {
+    "title": "Ajude-nos a melhorar",
+    "body": "Gostaríamos de medir a forma como o passeio é utilizado para o tornar melhor. As funcionalidades essenciais funcionam de qualquer forma.",
+    "accept": "Aceitar",
+    "decline": "Recusar",
+    "learn_more": "Saber mais"
   }
 }

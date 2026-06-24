@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useSessionStore } from "@/store/session";
+import { useConsentStore } from "@/lib/consent/use-consent";
 import { useTourTelemetry } from "@/features/tour/use-tour-telemetry";
 
 const MOCK_JWT = "header.payload.sig";
@@ -18,12 +19,15 @@ describe("useTourTelemetry", () => {
 
   beforeEach(() => {
     useSessionStore.getState().clearSession();
+    // Telemetry is consent-gated (T-3.D.1); these tests cover the granted path.
+    useConsentStore.setState({ analytics: "granted" });
     fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     useSessionStore.getState().clearSession();
+    useConsentStore.setState({ analytics: "unset" });
   });
 
   it("emits tour.started on mount when authenticated", () => {
