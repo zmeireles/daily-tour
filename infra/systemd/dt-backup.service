@@ -1,0 +1,18 @@
+# Daily Tour — nightly Postgres backup → MinIO (T-3.B.0).
+# Install (one-time, as root on the qual box):
+#   cp infra/systemd/dt-backup.{service,timer} /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now dt-backup.timer
+# Manual run:  systemctl start dt-backup.service   (logs: journalctl -u dt-backup.service)
+[Unit]
+Description=Daily Tour nightly Postgres backup to MinIO
+Documentation=file:/opt/daily-tour/docs/security/backup-recovery-runbook.md
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-tour
+# Runs as root (docker access). The script reads its config from env defaults
+# (BACKUP_BUCKET/BACKUP_RETENTION_DAYS) and sources MinIO creds by bind-mounting
+# .env.qual into the mc container — so no secrets are loaded into the unit env.
+ExecStart=/opt/daily-tour/scripts/ops/backup-postgres.sh

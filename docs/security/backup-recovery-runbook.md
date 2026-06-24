@@ -4,15 +4,15 @@
 
 ## Quick-reference table
 
-| Component | Volume / path | RPO | RTO | Strategy |
-|-----------|--------------|-----|-----|----------|
-| PostgreSQL (main) | `dt_postgres_data` | 15 min | 30 min | WAL streaming + nightly base |
-| PostgreSQL (Authentik) | `dt_authentik_postgres_data` | 24 h | 45 min | Nightly pg_dump |
-| MinIO (media) | `dt_minio_data` | 24 h | 60 min | Nightly `mc mirror` to B2 |
-| n8n workflows | `dt_n8n_data` | 24 h | 30 min | Nightly pg_dump (Phase 5) / volume snapshot (Phase 0–4) |
-| Authentik blueprints | `infra/authentik/blueprints/` | N/A | 10 min | In git — restore from branch |
-| Redis | `dt_redis_data` | N/A (ephemeral) | 0 min | No backup; reconstructed from upstream on restart |
-| RabbitMQ | `dt_rabbitmq_data` | N/A (ephemeral) | 5 min | Definitions file in git; in-flight messages accepted as lost |
+| Component              | Volume / path                 | RPO             | RTO    | Strategy                                                                                        |
+| ---------------------- | ----------------------------- | --------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| PostgreSQL (main)      | `dt_postgres_data`            | 15 min          | 30 min | Nightly logical `pg_dump` → MinIO (automated, T-3.B.0); WAL+base PITR deferred (Plan-004/3.B.1) |
+| PostgreSQL (Authentik) | `dt_authentik_postgres_data`  | 24 h            | 45 min | Nightly logical `pg_dump` → MinIO (automated, T-3.B.0)                                          |
+| MinIO (media)          | `dt_minio_data`               | 24 h            | 60 min | Nightly `mc mirror` to B2                                                                       |
+| n8n workflows          | `dt_n8n_data`                 | 24 h            | 30 min | Nightly pg_dump (Phase 5) / volume snapshot (Phase 0–4)                                         |
+| Authentik blueprints   | `infra/authentik/blueprints/` | N/A             | 10 min | In git — restore from branch                                                                    |
+| Redis                  | `dt_redis_data`               | N/A (ephemeral) | 0 min  | No backup; reconstructed from upstream on restart                                               |
+| RabbitMQ               | `dt_rabbitmq_data`            | N/A (ephemeral) | 5 min  | Definitions file in git; in-flight messages accepted as lost                                    |
 
 ---
 
@@ -20,10 +20,10 @@
 
 **Recommended provider**: [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html)
 
-| Tier | Retention | Storage class | Estimated cost (1 GB base) |
-|------|-----------|--------------|---------------------------|
-| Hot | 30 days | B2 Standard | ~$0.006/GB/month |
-| Cold | 1 year | B2 Standard (lifecycle rule) | same; no retrieval cost for small ops |
+| Tier | Retention | Storage class                | Estimated cost (1 GB base)            |
+| ---- | --------- | ---------------------------- | ------------------------------------- |
+| Hot  | 30 days   | B2 Standard                  | ~$0.006/GB/month                      |
+| Cold | 1 year    | B2 Standard (lifecycle rule) | same; no retrieval cost for small ops |
 
 **Why B2 over S3 Glacier**: For a single-VPS operator, Glacier Deep Archive retrieval latency (12 h) is impractical during an incident. B2 gives immediate retrieval at competitive price. If regulatory retention >1 year is ever required, add a second lifecycle rule to copy 30 d+ objects to a Glacier-equivalent policy.
 
@@ -48,13 +48,26 @@ b2://daily-tour-backups/
 
 ### Backup schedule
 
-| Job | Frequency | Method | Retention |
-|-----|-----------|--------|-----------|
-| Base backup | Nightly 02:00 UTC | `pg_basebackup` | 7 days local, 30 days B2 |
-| WAL archiving | Continuous (15-min segments) | `archive_command` → rclone | 48 h local, 30 days B2 |
-| Logical dump | Nightly 01:00 UTC | `pg_dump -Fc` | 7 days local, 30 days B2 |
+| Job           | Frequency                    | Method                                              | Retention                       |
+| ------------- | ---------------------------- | --------------------------------------------------- | ------------------------------- |
+| Base backup   | Nightly 02:00 UTC            | `pg_basebackup`                                     | 7 days local, 30 days B2        |
+| WAL archiving | Continuous (15-min segments) | `archive_command` → rclone                          | 48 h local, 30 days B2          |
+| Logical dump  | Nightly                      | `pg_dump -Fc -Z 9` → MinIO **(automated, T-3.B.0)** | 7 days, `BACKUP_RETENTION_DAYS` |
 
-> The logical dump is a second safety net for schema-only restores or single-table recovery; WAL + base is the primary path.
+> The logical dump is **automated** via `scripts/ops/backup-postgres.sh` (uploads `postgres/main/` to the private `backups` bucket on the in-cluster MinIO; pruned by `BACKUP_RETENTION_DAYS`). Restorability is proven by `scripts/ops/restore-drill-postgres.sh`.
+> **Deferred (Plan-004 / T-3.B.1):** WAL+base PITR (15-min RPO) and Backblaze-B2 off-site replication are not yet wired — the MinIO logical dump is the current automated path.
+>
+> **⚠️ Signed DR disposition (F&F beta, 2026-06-22):** the nightly dump lands in the **same-box** MinIO, on the same disk as the live data. This protects against logical corruption / bad migrations / accidental deletes, but **NOT box loss / disk failure / VPS termination**. On-box-only is **explicitly accepted for the friends-and-family beta** (tiny DBs, no real prod users yet); the off-site (Backblaze-B2) leg that closes the disk-loss-DR gap is deferred to T-3.B.1 / Plan-004. — accepted by the project owner.
+
+#### Scheduling (systemd timer)
+
+The nightly run is driven by a **systemd timer** on the qual box (chosen over a GitHub-scheduled workflow for reboot-survivable, GitHub-independent reliability). Units are committed at `infra/systemd/dt-backup.{service,timer}` (01:00 UTC, `Persistent=true`). One-time install as root:
+
+```bash
+cp /opt/daily-tour/infra/systemd/dt-backup.{service,timer} /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now dt-backup.timer
+systemctl start dt-backup.service   # manual/on-demand run; logs in journalctl -u dt-backup.service
+```
 
 #### Nightly base backup script (`/opt/dt-backup/postgres-base.sh`)
 
@@ -218,9 +231,11 @@ docker exec dt_postgres psql -U postgres -c "SELECT pg_last_wal_replay_lsn(), no
 
 ### Backup schedule
 
-| Job | Frequency | Method | Retention |
-|-----|-----------|--------|-----------|
-| Logical dump | Nightly 01:30 UTC | `pg_dump -Fc` | 7 days local, 30 days B2 |
+| Job          | Frequency | Method                                              | Retention                       |
+| ------------ | --------- | --------------------------------------------------- | ------------------------------- |
+| Logical dump | Nightly   | `pg_dump -Fc -Z 9` → MinIO **(automated, T-3.B.0)** | 7 days, `BACKUP_RETENTION_DAYS` |
+
+> The Authentik dump is **automated** via `scripts/ops/backup-postgres.sh` (same run as the main cluster; uploads `postgres/authentik/` to the private `backups` bucket). Backblaze-B2 off-site replication remains **deferred** (Plan-004 / T-3.B.1).
 
 WAL archiving is not configured for Authentik's Postgres. A 24-hour RPO is acceptable because Authentik state (users, OAuth apps, tokens) changes infrequently. If MFA tokens or active sessions are lost, users re-authenticate — acceptable UX.
 
@@ -321,8 +336,8 @@ The OIDC client secret (`AUTHENTIK_OWNER_APP_CLIENT_SECRET`) is in `.env` and th
 
 ### Backup schedule
 
-| Job | Frequency | Method | Retention |
-|-----|-----------|--------|-----------|
+| Job          | Frequency         | Method                           | Retention                          |
+| ------------ | ----------------- | -------------------------------- | ---------------------------------- |
 | Mirror to B2 | Nightly 03:00 UTC | `mc mirror --overwrite --remove` | 30 days B2 (B2 file versioning on) |
 
 Turn on B2 file versioning for the `minio-mirror/` prefix so accidental deletes survive.
@@ -407,8 +422,8 @@ mc policy get local/media
 
 ### Backup schedule (Phase 0–4 — SQLite)
 
-| Job | Frequency | Method | Retention |
-|-----|-----------|--------|-----------|
+| Job             | Frequency         | Method               | Retention                |
+| --------------- | ----------------- | -------------------- | ------------------------ |
 | Volume snapshot | Nightly 01:45 UTC | Stop + tar + restart | 7 days local, 30 days B2 |
 
 n8n must be stopped during the SQLite backup to avoid a mid-write snapshot.
@@ -517,10 +532,12 @@ curl -s -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
 **Purpose**: Async job dispatch (ingest scoring, notification fan-out, export jobs).
 
 **What survives a restart**:
-- Exchange and queue *topology* — restored from `infra/rabbitmq/definitions.json` (in git, applied on boot via the `RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS` definitions import).
+
+- Exchange and queue _topology_ — restored from `infra/rabbitmq/definitions.json` (in git, applied on boot via the `RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS` definitions import).
 - Durable queues configured in `definitions.json`.
 
 **What is lost on an unplanned restart**:
+
 - In-flight messages that were not yet acknowledged.
 - Transient queues.
 
@@ -638,10 +655,10 @@ ls -lh /var/backups/dt/postgres/dumps/ | tail -5
 
 ## 10. Related documents
 
-| Document | Location |
-|----------|---------|
-| Secrets rotation (MINIO, PG passwords) | [`secrets-rotation-playbook.md`](./secrets-rotation-playbook.md) |
-| PII erasure / GDPR DSR | [`pii-inventory-gdpr.md`](./pii-inventory-gdpr.md) |
-| Threat model | [`threat-model-2026-05-18.md`](./threat-model-2026-05-18.md) |
-| Infra operator runbook | [`infra/README.md`](../../infra/README.md) |
-| Auto-merge doctrine | [`docs/operations/auto-merge-doctrine.md`](../operations/auto-merge-doctrine.md) |
+| Document                               | Location                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------- |
+| Secrets rotation (MINIO, PG passwords) | [`secrets-rotation-playbook.md`](./secrets-rotation-playbook.md)                 |
+| PII erasure / GDPR DSR                 | [`pii-inventory-gdpr.md`](./pii-inventory-gdpr.md)                               |
+| Threat model                           | [`threat-model-2026-05-18.md`](./threat-model-2026-05-18.md)                     |
+| Infra operator runbook                 | [`infra/README.md`](../../infra/README.md)                                       |
+| Auto-merge doctrine                    | [`docs/operations/auto-merge-doctrine.md`](../operations/auto-merge-doctrine.md) |

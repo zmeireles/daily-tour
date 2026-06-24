@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import IndexRoute from "@/routes/index";
 import { InstallBanner } from "@/features/pwa-install/install-banner";
 import { OfflineBanner } from "@/components/offline-banner";
+import { ConsentBanner } from "@/components/consent-banner";
 import { SessionBootstrap } from "@/components/session-bootstrap";
 import { queryPersister } from "@/lib/offline/cache";
 
@@ -41,6 +42,8 @@ const router = createBrowserRouter([
   { path: "/chat", element: lazyRoute(() => import("@/routes/_authed.chat")) },
   { path: "/tour/new", element: lazyRoute(() => import("@/routes/_authed.tour.new")) },
   { path: "/tour/share/:planId", element: lazyRoute(() => import("@/routes/tour.share.$planId")) },
+  { path: "/privacy", element: lazyRoute(() => import("@/routes/privacy")) },
+  { path: "/terms", element: lazyRoute(() => import("@/routes/terms")) },
   { path: "/tour/:planId", element: lazyRoute(() => import("@/routes/_authed.tour.$planId")) },
   {
     path: "/admin",
@@ -79,6 +82,7 @@ export default function App() {
         <Toaster />
         <InstallBanner />
         <OfflineBanner />
+        <ConsentBanner />
       </SessionBootstrap>
     </PersistQueryClientProvider>
   );
