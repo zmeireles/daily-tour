@@ -1,0 +1,26 @@
+# Prometheus alert rules — Daily Tour qual (T-3.A.2)
+#
+# Mounted read-only at /etc/prometheus/alert-rules.yml (see overlay.observability.yml)
+# and referenced from prometheus.yml `rule_files`. Alerts route to Alertmanager
+# (dt_alertmanager:9093) → Telegram.
+groups:
+  - name: uptime
+    rules:
+      - alert: BlackboxProbeDown
+        expr: probe_success == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Endpoint down: {{ $labels.instance }}"
+          description: "Blackbox probe to {{ $labels.instance }} has failed for >1m on qual."
+  - name: errors
+    rules:
+      - alert: HighServerErrorRate
+        expr: |
+          sum by (service_name) (rate(http_server_duration_milliseconds_count{http_status_code=~"5.."}[5m]))
+            / sum by (service_name) (rate(http_server_duration_milliseconds_count[5m])) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "High 5xx rate: {{ $labels.service_name }}"
+          description: "{{ $labels.service_name }} 5xx ratio >10% for 5m on qual."
