@@ -30,6 +30,15 @@ export async function publishMediaUploaded(assetId: string): Promise<void> {
   );
 }
 
+// Reports whether the cached amqp publisher connection is currently open.
+// Pure cached-state check — no publish or round-trip. The `close` handler
+// above clears both caches on disconnect, so a live channel means a live
+// connection. Used by /ready for informational broker liveness (never gates
+// readiness). Returns false before the first publish lazily opens the channel.
+export function isBrokerConnected(): boolean {
+  return cachedChannel !== undefined;
+}
+
 export async function closeMqPublisher(): Promise<void> {
   await cachedChannel?.close().catch(() => undefined);
   await cachedConn?.close().catch(() => undefined);
