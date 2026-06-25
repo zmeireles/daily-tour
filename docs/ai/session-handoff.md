@@ -1,6 +1,37 @@
-# Session Handoff — 2026-05-28 → … → 06-20 (DESKTOP phase DONE + CHAT REPLY live + Plan-003 EXECUTING: error tracking LIVE on qual via a SHARED GlitchTip; cross-project comms channel established) → next session
+# Session Handoff — … → 06-25 (Plan-003 LEAN PATH A→D-eng MERGED + LIVE + verified on qual: observability · alerting→Telegram · `/ready` · backups · rate-limits · consent) → next session
 
-> **UPDATE 2026-06-20 (LATEST — Plan-003 EXECUTING: error tracking LIVE on qual; backlog tidied; cross-project comms channel established). Resume from this block.**
+> **UPDATE 2026-06-25 (LATEST — Plan-003 lean path A→B→C→D-eng ALL MERGED + LIVE + verified on qual. Remaining: 3.D.0 privacy/terms COPY (José) → 3.H beta. Resume from this block.)**
+>
+> ### Shipped this session (2026-06-25) — 7 PRs merged (#297–#303), one consolidated main deploy, all verified live on qual
+>
+> - **3.A.1 (#297)** OTLP→Prometheus **bridge** (collector `prometheus` exporter `:8889` + metrics pipeline; overlay added to `deploy-qa.yml`); bff-latency + error-rate Grafana dashboards render live qual data. **Surfaced + fixed a latent OTel bug** → [[reference-otel-esm-preload]]: tsup-bundled ESM hoists `import fastify` above `initOtel()` so the http.server metric never recorded → fixed via a `node --import @daily-tour/shared-otel/register` preload (Dockerfile CMD).
+> - **3.A.2 (#298 + msg-fix #303)** **alertmanager + blackbox-exporter → Telegram.** Ops bot **`dt_farol_bot`** → group **"Daily Tour Farol Group"** (`ALERT_TELEGRAM_CHAT_ID=-5587963851`, in `.env.qual`). Rules: `BlackboxProbeDown`, `HighServerErrorRate`. **Verified live: kill `dt_bff` → firing + resolve both delivered (0 failures).** #303 fixed a real bug José caught — the message was a single-quoted YAML string so `\n` stayed literal, mangling the alert URL into a 404 (`/health%5Cn`); now a block scalar (real newlines), link works.
+> - **3.A.3 (#299)** own-DB **`/ready`** (`SELECT 1`) on token/catalog/media (Node) + planner/search/chat-hub (Python); 6 healthchecks flipped `/health`→`/ready` → **gate `up --wait`** on readiness. CodeQL flagged `/ready` (DB route, rate-limit-exempt, CWE-770) → fixed with an explicit per-route 60/min limit.
+> - **3.B.0 (#300)** nightly **pg backup → MinIO** (`scripts/ops/backup-postgres.sh`, both clusters → private `backups` bucket) + **restore drill** (`restore-drill-postgres.sh`, throwaway pgvector container, RTO ~1s) + **systemd timer installed on the box** (`infra/systemd/dt-backup.{service,timer}`, 01:00 UTC). On-box-only DR **signed for beta**; B2 off-site deferred to 3.B.1.
+> - **3.C.3 (#301)** **per-guest LLM rate-limits** (JWT-decode keyGenerator — the limiter `onRequest` runs before auth `preHandler`, so it decodes the bearer itself): `/v1/tour-plans` 5/min, `/v1/discover` 30/min; `bodyLimit` 16KB→413 + `wishes[]` 120-char cap. **Verified live: 429 on the 6th tour-plans.**
+> - **3.D.1 (#302)** **consent gate**: persisted store (default essential-only) + banner mounted above the router (works in both shells) + 1-line gate on `emit()` so declining ⇒ no `/v1/telemetry/tour`. Privacy/terms **route stubs + `legal` i18n namespace** shipped (en + pt-PT, linter-clean) — **copy is 3.D.0 (José's)**.
+>
+> ### Gotchas learned this arc (save the next session pain)
+>
+> - **Never `cp`/`scp` into the `/opt/daily-tour` deploy clone as root** — files become root-owned and the `ghrunner`-run `git checkout -f` can't unlink them → deploy **"Sync" step fails** ("Permission denied"). Fix: `chown -R ghrunner:ghrunner`. (Bit us via `scripts/ops/` after #300 made them tracked.)
+> - **CodeQL `js/missing-rate-limiting` (CWE-770):** a DB-touching route needs an **explicit per-route** `config.rateLimit` — CodeQL doesn't model the _global_ fastify limiter for routes inside a child plugin scope. `--admin` can NOT bypass a failing CodeQL gate.
+> - **Repo ruleset** requires 10 checks on an **up-to-date** branch → merging N PRs is sequential (each squash re-advances main → re-`update-branch` + re-CI for the rest).
+> - **`gh workflow run --ref <branch>`** can race a fresh `git push` (resolves the stale tip → builds wrong commit) → **verify the run's `headSha`**.
+> - **Alertmanager** `group_interval=5m` → the resolve message lands ~5 min after firing (not a bug). Bot **privacy mode** (`can_read_all_group_messages:false`) hides plain group msgs → get the group chat_id via `/start@bot` (commands reach the bot even in privacy mode) or @getidsbot, then `getUpdates`.
+> - **YAML single-quoted strings keep `\n` literal** → use a block scalar (`|-`) for multi-line message templates.
+>
+> ### FIRST TASKS NEXT SESSION
+>
+> 1. **Rituals:** poll `inbox-daily-tour.md` (a new project **jo:Pico / JORAA** introduced itself — intro only, no ask) + the dt-tests `review` queue.
+> 2. **3.D.0 — privacy/terms COPY (José's legal call).** Stubs + `legal` i18n ns are wired; just needs the real content in `apps/pwa/src/locales/{en,pt-PT}/legal.json` + `routes/{privacy,terms}.tsx`. **Claude offered to draft template-based GDPR copy** (data collected / lawful basis / retention / contact), en + pt-PT (pré-AO via `ptpt-excellence`) for José's review. Then **browser-UAT the consent surface** (banner shows on entry, declining truly stops telemetry, both pages render in both locales).
+> 3. **3.H — closed beta** (gated on 3.D.0): 3.H.0 onboarding/orientation + 3.H.2 run the beta (`docs/beta/beta-program-2026.md`).
+> 4. **Optional lean follow-ups:** Python services' `http.server` metric gap (separate FastAPI cause); a deploy smoke-assertion that every Node svc emits `http_server_duration`; mq-depth/service-health dashboards (still prom-client names); 3.B.1 (MinIO media `mc mirror` + off-site B2 decision); 3.D.2 (DSR export/erase scripts).
+>
+> ### State (2026-06-25)
+>
+> main **`96ca2fd`** (#297–#303 all merged); **0 open PRs, 0 open issues**; local branches: **main only** (clean — only pre-existing untracked `e2e/`). **qual fully healthy + current** on one consolidated deploy of main (`dt_otel_collector` shows "Up" without "(healthy)" — it has no healthcheck, benign). **Ops Telegram alerting LIVE + verified**; **systemd backup timer running** (nightly 01:00 UTC). `.env.qual` on the box now holds `ALERT_TELEGRAM_BOT_TOKEN` + `ALERT_TELEGRAM_CHAT_ID` (MANUAL_KEYS — a `gen-env --force` would reset them). Deploy-clone hygiene: `scripts/` chowned to ghrunner; `alertmanager.yml` hand-rendered live (re-renders identically on next deploy). Memory updated: [[project-plan-003]], [[reference-otel-esm-preload]], `MEMORY.md`. **Plan-003 is one legal-copy task + the beta away from done.**
+
+> **UPDATE 2026-06-20 (Plan-003 EXECUTING: error tracking LIVE on qual; backlog tidied; cross-project comms channel established).**
 >
 > ### Shipped this session (2026-06-20)
 >

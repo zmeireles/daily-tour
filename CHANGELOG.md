@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-003 Real-User Readiness: lean path A→D-eng live on qual (2026-06-25)
+
+The friends-and-family-beta readiness path **merged, deployed, and verified live on qual** — 7 PRs (#297–#303), one consolidated main deploy:
+
+- **Observability (#297)** — OTLP→Prometheus bridge (otel-collector `prometheus` exporter on `:8889` + metrics pipeline) and the observability overlay wired into the qual deploy; bff-latency + error-rate Grafana dashboards render live data. Fixed a latent OTel bug — tsup-bundled ESM hoisted `import fastify` above `initOtel()`, so the `http.server.duration` metric never recorded — via a `node --import @daily-tour/shared-otel/register` preload.
+- **Uptime + alerting (#298, msg-fix #303)** — Alertmanager + blackbox-exporter → **Telegram** (ops bot `dt_farol_bot` + alert group); rules for endpoint-down (`BlackboxProbeDown`) and high 5xx (`HighServerErrorRate`); null-receiver fallback until creds are set. Verified live: kill `dt_bff` → firing + resolve delivered.
+- **`/ready` readiness probes (#299)** — own-DB (`SELECT 1`) probes on the 6 DB-backed services, distinct from `/health`, gating `docker compose up --wait`; explicit per-route rate-limit on the probes (CWE-770).
+- **Backups (#300)** — nightly Postgres `pg_dump` of both clusters → MinIO `backups` bucket + a restore drill (throwaway pgvector container), driven by a **systemd timer** on the box (01:00 UTC); on-box-only DR signed off for the beta.
+- **Per-guest LLM rate-limits (#301)** — `/v1/tour-plans` 5/min and `/v1/discover` 30/min keyed on the guest JWT, plus a 16 KB body cap (413) and input-length caps, protecting Anthropic spend.
+- **Consent gate (#302)** — persisted consent store + banner; non-essential telemetry (`/v1/telemetry/tour`) gated behind explicit consent (essential-only by default); privacy/terms route stubs + `legal` i18n namespace (the legal copy is the remaining 3.D.0 task).
+
 ### Added — Plan-002 Thrust B / Slice 2.D: "São Miguel Editorial" implementation (2026-06-17)
 
 The 5 PWA screens rebuilt to the editorial design system, plus a polish and a backend follow-up. **Every screen browser-verified in light + dark.** PRs #254–#262:
