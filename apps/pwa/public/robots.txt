@@ -1,0 +1,7 @@
+# Allow all crawlers. The PWA is a token-gated guest app so there is little to
+# index, but a Disallow here would fail the Lighthouse SEO budget (is-crawlable)
+# and — since qual and production share this build — would also de-index prod.
+# If the qual beta must be kept out of search, do it per-environment at the edge
+# (e.g. an X-Robots-Tag: noindex header on the qual route), not in this file.
+User-agent: *
+Allow: /
