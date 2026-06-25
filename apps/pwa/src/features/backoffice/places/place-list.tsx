@@ -11,6 +11,7 @@ import {
 } from "../guesthouses/use-guesthouses";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/empty-state";
 
 const PAGE_SIZE = 10;
 
@@ -253,7 +254,16 @@ export function PlaceList() {
       </div>
 
       {places.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{t("places.list.empty", "No places yet.")}</p>
+        <EmptyState
+          icon="MapPin"
+          title={t("empty_states.places.title", "No places yet")}
+          description={t(
+            "empty_states.places.description",
+            "Add the spots you love so your guests can eat, drink, see and do like a local.",
+          )}
+          ctaLabel={t("empty_states.places.cta", "Add your first place")}
+          ctaHref="/admin/places/new"
+        />
       ) : (
         <div className="rounded-md border overflow-hidden">
           <table className="w-full text-sm">

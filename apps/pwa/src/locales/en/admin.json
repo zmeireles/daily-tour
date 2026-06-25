@@ -47,7 +47,6 @@
     "list": {
       "loading": "Loading…",
       "error": "Failed to load guesthouses.",
-      "empty": "No guesthouses yet.",
       "name": "Name",
       "slug": "Slug",
       "address": "Address",
@@ -80,7 +79,6 @@
     "list": {
       "loading": "Loading…",
       "error": "Failed to load places.",
-      "empty": "No places yet.",
       "name": "Name",
       "status": "Status",
       "address": "Address",
@@ -165,7 +163,6 @@
     "list": {
       "loading": "Loading…",
       "error": "Failed to load reservations.",
-      "empty": "No reservations yet.",
       "guest": "Guest",
       "checkin": "Check-in",
       "checkout": "Check-out",
@@ -183,11 +180,30 @@
   "chat": {
     "title": "Messages",
     "loading": "Loading…",
-    "threads_empty": "No conversations yet.",
     "threads_error": "Failed to load conversations.",
     "history_error": "Failed to load messages.",
     "select_thread": "Select a conversation to view messages.",
     "placeholder": "Type a reply…",
     "send": "Send"
+  },
+  "empty_states": {
+    "reservations": {
+      "title": "No reservations yet",
+      "description": "Reservations show up here as guests are added. Issue a guest link to get someone started."
+    },
+    "places": {
+      "title": "No places yet",
+      "description": "Add the spots you love so your guests can eat, drink, see and do like a local.",
+      "cta": "Add your first place"
+    },
+    "guesthouses": {
+      "title": "No guesthouses yet",
+      "description": "Add a guesthouse so guests can be linked to the right place to stay.",
+      "cta": "Add your first guesthouse"
+    },
+    "chat": {
+      "title": "No conversations yet",
+      "description": "When a guest messages you from the app, the conversation will appear here."
+    }
   }
 }

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useGuesthouses } from "./use-guesthouses";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 
 export function GuesthouseList() {
   const { t } = useTranslation("admin");
@@ -33,9 +34,16 @@ export function GuesthouseList() {
       </div>
 
       {guesthouses.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          {t("guesthouses.list.empty", "No guesthouses yet.")}
-        </p>
+        <EmptyState
+          icon="Home"
+          title={t("empty_states.guesthouses.title", "No guesthouses yet")}
+          description={t(
+            "empty_states.guesthouses.description",
+            "Add a guesthouse so guests can be linked to the right place to stay.",
+          )}
+          ctaLabel={t("empty_states.guesthouses.cta", "Add your first guesthouse")}
+          ctaHref="/admin/guesthouses/new"
+        />
       ) : (
         <div className="rounded-md border overflow-hidden">
           <table className="w-full text-sm">
