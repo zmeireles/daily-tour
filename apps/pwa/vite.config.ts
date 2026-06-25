@@ -62,7 +62,10 @@ export default defineConfig({
       // to Vite's SPA index.html, while the SPA's subsequent fetch (no
       // text/html in Accept) gets proxied to bff. Without the bypass, the
       // browser sees bff's raw JSON exchange response instead of the SPA.
-      "/r": {
+      // Trailing slash is load-bearing: a bare "/r" prefix-matches any path
+      // starting with /r (e.g. /robots.txt), proxying it to bff. "/r/" matches
+      // only real /r/:token redeem links.
+      "/r/": {
         target: `http://127.0.0.1:${process.env.DT_HOST_PORT_BFF ?? "28080"}`,
         changeOrigin: false,
         bypass: (req) => {

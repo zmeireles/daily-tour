@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
 
 // STUB — the full privacy policy text is deferred to T-3.D.0 / legal review.
-// This exists so the consent banner's "Learn more" link has a real target.
+// This exists so the consent banner's privacy-policy link has a real target.
 export default function PrivacyRoute() {
   useThemeAuto();
   const { t } = useTranslation("legal");
