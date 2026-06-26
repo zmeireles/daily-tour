@@ -633,7 +633,7 @@ pnpm --filter @daily-tour/pwa dev                            # → http://localh
 - **Lefthook can reject commits** if the subject line is too long or doesn't match conventional commits even when valid. Today's #170 first attempt failed with `docs(retro): ...` (passing CC syntax) but worked with `docs(plan-001): ...`. Worth investigating the regex on a calmer day.
 - **The `mcp__tasks-prod__*` MCP** can show schemas while the SSH tunnel is down (see L021). When in doubt: `ss -tlnp \| grep 15432`.
 
-## Riff state (daily-tour project `e98dfe58-…d3df`)
+## Riff state (daily-tour project `e98dfe58-0547-4d8d-9d06-7dfe1c44c13d`)
 
 - **#143** in-progress at "B done" — slice C pending. Comment thread documents A → B → C breakdown.
 - **#144** done via #166.
