@@ -72,7 +72,7 @@ describe("ChatInbox", () => {
   it("renders the empty state when there are no threads", () => {
     setThreads([]);
     render(<ChatInbox />);
-    expect(screen.getByText("No conversations yet.")).toBeDefined();
+    expect(screen.getByText("No conversations yet")).toBeDefined();
   });
 
   it("renders the error state when the threads query fails", () => {

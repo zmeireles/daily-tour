@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 import {
   useChatThreads,
   useThreadHistory,
@@ -145,9 +146,17 @@ export function ChatInbox() {
               {t("chat.threads_error", "Failed to load conversations.")}
             </p>
           ) : rows.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">
-              {t("chat.threads_empty", "No conversations yet.")}
-            </p>
+            <div className="p-3">
+              <EmptyState
+                icon="MessagesSquare"
+                title={t("empty_states.chat.title", "No conversations yet")}
+                description={t(
+                  "empty_states.chat.description",
+                  "When a guest messages you from the app, the conversation will appear here.",
+                )}
+                className="border-0 bg-transparent"
+              />
+            </div>
           ) : (
             rows.map((thread) => (
               <ThreadRow

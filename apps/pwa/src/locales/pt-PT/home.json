@@ -24,6 +24,29 @@
     "message_host": "Falar com o Miguel",
     "message_host_sub": "Dúvidas sobre a ilha? O Miguel está a uma mensagem de distância."
   },
+  "onboarding": {
+    "title": "Bem-vindo ao seu companheiro na ilha",
+    "intro": "Três coisas que pode fazer aqui:",
+    "plan": {
+      "label": "Planear o meu dia",
+      "blurb": "Diga-nos o que lhe apetece e desenhamos um dia em São Miguel."
+    },
+    "discover": {
+      "label": "Descobrir",
+      "blurb": "Encontre os melhores sítios para comer, beber, ver e fazer por perto."
+    },
+    "message": {
+      "label": "Falar com o seu anfitrião",
+      "blurb": "O Miguel conhece a ilha — está sempre a uma mensagem de distância."
+    },
+    "dismiss": "Percebi",
+    "close": "Fechar"
+  },
+  "support": {
+    "need_help": "Precisa de ajuda? Fale com o seu anfitrião",
+    "privacy": "Privacidade",
+    "terms": "Termos"
+  },
   "locale": {
     "en": "English",
     "pt-PT": "Português"

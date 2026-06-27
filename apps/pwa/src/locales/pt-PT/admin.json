@@ -47,7 +47,6 @@
     "list": {
       "loading": "A carregar…",
       "error": "Erro ao carregar alojamentos.",
-      "empty": "Nenhum alojamento encontrado.",
       "name": "Nome",
       "slug": "Slug",
       "address": "Morada",
@@ -80,7 +79,6 @@
     "list": {
       "loading": "A carregar…",
       "error": "Erro ao carregar locais.",
-      "empty": "Nenhum local encontrado.",
       "name": "Nome",
       "status": "Estado",
       "address": "Morada",
@@ -165,7 +163,6 @@
     "list": {
       "loading": "A carregar…",
       "error": "Erro ao carregar reservas.",
-      "empty": "Nenhuma reserva encontrada.",
       "guest": "Hóspede",
       "checkin": "Check-in",
       "checkout": "Check-out",
@@ -183,11 +180,30 @@
   "chat": {
     "title": "Mensagens",
     "loading": "A carregar…",
-    "threads_empty": "Ainda não há conversas.",
     "threads_error": "Erro ao carregar conversas.",
     "history_error": "Erro ao carregar mensagens.",
     "select_thread": "Seleccione uma conversa para ver as mensagens.",
     "placeholder": "Escreva uma resposta…",
     "send": "Enviar"
+  },
+  "empty_states": {
+    "reservations": {
+      "title": "Ainda não há reservas",
+      "description": "As reservas aparecem aqui à medida que adiciona hóspedes. Emita uma ligação de hóspede para começar."
+    },
+    "places": {
+      "title": "Ainda não há locais",
+      "description": "Adicione os sítios que adora para que os seus hóspedes possam comer, beber, ver e fazer como um local.",
+      "cta": "Adicione o seu primeiro local"
+    },
+    "guesthouses": {
+      "title": "Ainda não há alojamentos",
+      "description": "Adicione um alojamento para que os hóspedes possam ser associados ao sítio certo onde ficar.",
+      "cta": "Adicione o seu primeiro alojamento"
+    },
+    "chat": {
+      "title": "Ainda não há conversas",
+      "description": "Quando um hóspede lhe enviar uma mensagem a partir da aplicação, a conversa aparece aqui."
+    }
   }
 }

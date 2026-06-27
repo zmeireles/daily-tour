@@ -8,6 +8,7 @@ import {
   type TokenState,
 } from "./use-reservations";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 
 function guestLink(token: string): string {
   return `${window.location.origin}/r/${token}`;
@@ -68,9 +69,14 @@ export function ReservationList() {
       </div>
 
       {reservations.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          {t("reservations.list.empty", "No reservations yet.")}
-        </p>
+        <EmptyState
+          icon="CalendarCheck"
+          title={t("empty_states.reservations.title", "No reservations yet")}
+          description={t(
+            "empty_states.reservations.description",
+            "Reservations show up here as guests are added. Issue a guest link to get someone started.",
+          )}
+        />
       ) : (
         <div className="rounded-md border overflow-hidden">
           <table className="w-full text-sm">
