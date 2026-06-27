@@ -3,6 +3,13 @@
 > **Status:** DRAFT for review · **Author:** Lead Product Designer (synthesis of per-page UX critiques + 3 research lenses) · **Date:** 2026-06-27
 > **Scope:** The owner/admin PWA at `/admin/*` (apps/pwa). NOT the guest app.
 > **Design direction (locked):** Standalone best-in-class NOW. Do not constrain to the in-flux Portugal Odyssey platform design. Keep tokens/components clean for later reconciliation — express the admin look as a **scoped overlay**, never by editing `styles/tokens.css`.
+>
+> **Review decisions (locked 2026-06-27):**
+>
+> 1. **Sequencing** — the F&F beta (3.H.2) runs on the **current desktop backoffice** (owner-only; it does not gate the guest beta). This redesign's real driver is the **paid subscription launch** (selling to other hosts), so the roadmap priority tier is **"subscription-blocking," not "beta-blocking."** The only pull-forward candidates for the beta window are the two cheap cleanups (§8.11).
+> 2. **Aesthetic** — diverge to the denser, Inter-forward console look (§1.8/§2), keeping brand green + warmth as accents. Preview the token overlay on `/admin/beta` before going wide.
+> 3. **Mobile nav** — 5-item bottom tab bar as proposed (§5.1).
+> 4. **Helpers** — ship both, phased (§7): translate (Phase 3), map picker (Phase 5). Geocoder choice (self-host Photon vs commercial) deferred to Phase 5.
 
 ---
 
@@ -484,7 +491,7 @@ Both helpers degrade gracefully: a host with no internet/geocoder still types te
 
 ### 8.10 Beta metrics `/admin/beta`
 
-- **Fix the broken loading pattern:** skeleton KPI tiles while fetching; explicit localized **ErrorState + Retry** on 500 (never infinite "Loading metrics…"); real empty state. Localize the hardcoded English "Loading metrics…".
+- **Fix the broken loading pattern:** skeleton KPI tiles while fetching; explicit localized **ErrorState + Retry** on 500 (never infinite "Loading metrics…"); real empty state. Localize the hardcoded English "Loading metrics…". _(The backend 500 root cause — `bff` missing SELECT on `analytics` — is already fixed in **#159**; this item is the front-end degradation so any future fetch error never masquerades as infinite loading.)_
 - Build the actual dashboard: responsive grid of branded KPI stat-cards (reservas, visualizações, conversão, mensagens) with trend deltas + date-range control.
 - Page header + brand anchor + on-page H1 "Métricas beta" with a one-line plain-language description. Use this page as the **pilot** for the full token/skeleton/motion/i18n/light-dark stack.
 
@@ -497,22 +504,22 @@ Both helpers degrade gracefully: a host with no internet/geocoder still types te
 
 ## 9. Phased implementation roadmap
 
-> i18n is **pt/en/es from day one** on every string touched (no English leaks). Light/dark and motion ride along via the token overlay and existing machinery; they are not separate phases. **Beta-blocking** = must ship for the F&F beta on qual.
+> i18n is **pt/en/es from day one** on every string touched (no English leaks). Light/dark and motion ride along via the token overlay and existing machinery; they are not separate phases. **Subscription-blocking** = must ship for the paid subscription launch (this redesign's real driver). The **F&F beta runs on the current desktop backoffice** — it is owner-only and does not gate the guest beta — so nothing here blocks the beta except the two cheap **cleanups** (§8.11), which are pull-forward candidates for the beta window.
 
-### Phase 0 — Foundation & the two cleanups (BETA-BLOCKING, ~1 slice)
+### Phase 0 — Foundation & the two cleanups (SUBSCRIPTION-BLOCKING, ~1 slice)
 
 - Add the `[data-app="admin"]` token overlay to `globals.css` + new state-token utilities; set `data-app="admin"` on the admin root. Add `button.tsx` `touch`/`icon-touch` sizes; admin `h2/h3` → sans.
 - **Cleanup 1:** route-scope `ConsentBanner` out of `/admin`.
 - **Cleanup 2:** gate `SessionBootstrap` guest refresh off `/admin` (kill the 401).
 - Build base primitives: `tabs`, `input/label/textarea/select`, `form`, `skeleton`, `loading-state`, `error-state`, `alert-dialog`, `tooltip`.
 
-### Phase 1 — Responsive shell + states (BETA-BLOCKING, highest impact)
+### Phase 1 — Responsive shell + states (SUBSCRIPTION-BLOCKING, highest impact)
 
 - Rewrite `shell.tsx`: desktop rail (`hidden lg:flex`, grouped nav, icons, distinct active state, brand, account/theme/locale footer) + mobile top app bar + bottom tab bar (reuse `bottom-tab-bar.tsx` pattern) + `Sheet` "More" drawer. **This kills the 1301 px overflow.**
 - Add `routes/admin._index.tsx` = **Today** dashboard (greeting, KPI/action tiles, quick actions, view-as-guest, first-run checklist) wired as the default admin child.
 - Replace **all** bare `<p>` loading/error states with `LoadingState`/`ErrorState`; extend `EmptyState` to every list. **Fix `/admin/beta`** loading-vs-error.
 
-### Phase 2 — List reflow + plain language (BETA-BLOCKING)
+### Phase 2 — List reflow + plain language (SUBSCRIPTION-BLOCKING)
 
 - Table → card reflow for places, guesthouses, reservations (`hidden md:table` + `md:hidden` card list + kebab menu). Reservations → agenda-by-day.
 - Localize all enums/jargon (status labels, `Token`→Acesso, demote `Slug`, `confirmed`→Confirmada, localized dates). `AlertDialog` for archive/revoke. Optimistic toggles + success toasts. FAB/sticky create on mobile. Count + filter chips.
