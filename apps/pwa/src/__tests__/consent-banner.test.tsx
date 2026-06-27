@@ -13,13 +13,13 @@ describe("ConsentBanner", () => {
     useConsentStore.setState({ analytics: "unset" });
   });
 
-  it("renders for undecided users with both choices and a learn-more link", () => {
+  it("renders for undecided users with both choices and a privacy-policy link", () => {
     renderBanner();
 
     expect(screen.getByRole("region")).toBeInTheDocument();
     expect(screen.getByText("Accept")).toBeInTheDocument();
     expect(screen.getByText("Decline")).toBeInTheDocument();
-    const link = screen.getByText("Learn more");
+    const link = screen.getByText("Read our privacy policy");
     expect(link).toHaveAttribute("href", "/privacy");
   });
 
