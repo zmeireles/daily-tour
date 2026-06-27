@@ -1,6 +1,24 @@
 # Session Handoff — … → 06-25 (Plan-003 LEAN PATH A→D-eng MERGED + LIVE + verified on qual: observability · alerting→Telegram · `/ready` · backups · rate-limits · consent) → next session
 
-> **UPDATE 2026-06-25 (LATEST — Plan-003 lean path A→B→C→D-eng ALL MERGED + LIVE + verified on qual. Remaining: 3.D.0 privacy/terms COPY (José) → 3.H beta. Resume from this block.)**
+> **UPDATE 2026-06-25 (LATEST — crash recovery mid-session. No work lost. The crashed session opened two PWA PRs (#305, #306); both failed the Lighthouse SEO budget. Diagnosed + fixed locally on `fix/pwa-seo-lighthouse-budget` (`af2d7c2`, NOT pushed). Resume by deciding how to land it — see this block.)**
+>
+> ### Crash recovery (2026-06-25, later)
+>
+> A session crashed mid-work. State verified — **nothing lost**: working tree clean, no stashes, both feature branches pushed to origin, no orphaned dev/docker processes.
+>
+> - **Two PRs were created by the crashed session, both branched off main `5f0fc8d`:**
+>   - **#306** `feat(pwa): beta onboarding — orientation, empty-states, support footer (T-3.H.0)` — branch `feat/3-h-0-beta-onboarding`.
+>   - **#305** `feat(pwa): privacy/terms copy, en + pt-PT (T-3.D.0)` — branch `feat/3-d-0-legal-copy`.
+> - **Both green on every required check; both red only on `Lighthouse Perf Budgets`** (advisory — not one of the 6 required gates; #302 merged red on it too). Root cause: SEO 0.75 < 0.8 from three weight-1 audits — `meta-description` (always absent), `robots-txt` (always 500'd because the vite `/r` proxy key prefix-matched `/robots.txt` → forwarded to bff), and `link-text` (the #302 consent banner's generic "Learn more" link — the regression that tipped 0.83 → 0.75).
+> - **Fix committed locally → `fix/pwa-seo-lighthouse-budget` (`af2d7c2`, NOT pushed):** added `<meta name="description">`; consent link text → "Read our privacy policy" / "Ler a política de privacidade"; vite proxy key `/r` → `/r/` (still matches every `/r/:token` redeem link, #234); permissive `public/robots.txt`; `.lighthouseci` gitignored. Verified via `lhci autorun`: **SEO 0.75 → 1.0**, all four budgets pass; lefthook (gitleaks/prettier/lint/CC) green.
+> - **`public/robots.txt` is intentionally permissive** — a `Disallow` passes `robots-txt` but fails the higher-weight `is-crawlable` audit (→ SEO 0.66) and would de-index production (qual + prod share one build). De-index the beta at the edge (`X-Robots-Tag: noindex` on the qual route) if that's wanted.
+>
+> #### FIRST TASKS NEXT SESSION (crash recovery)
+>
+> 1. **Land the SEO fix** (`fix/pwa-seo-lighthouse-budget`). Either push it as its own PR → merge → `update-branch` #305 + #306 (both then go fully green), or cherry-pick `af2d7c2` into each branch. The handoff update itself sits on `docs/crash-recovery-2026-06-25` (also local, not pushed). Pre-existing untracked `e2e/` is unrelated — leave it.
+> 2. Resume the pre-crash plan: 3.D.0 copy review (#305) + 3.H.0 beta onboarding (#306) → then 3.H.2 run the closed beta.
+>
+> **UPDATE 2026-06-25 (Plan-003 lean path A→B→C→D-eng ALL MERGED + LIVE + verified on qual. Remaining: 3.D.0 privacy/terms COPY (José) → 3.H beta. Resume from this block.)**
 >
 > ### Shipped this session (2026-06-25) — 7 PRs merged (#297–#303), one consolidated main deploy, all verified live on qual
 >
@@ -615,7 +633,7 @@ pnpm --filter @daily-tour/pwa dev                            # → http://localh
 - **Lefthook can reject commits** if the subject line is too long or doesn't match conventional commits even when valid. Today's #170 first attempt failed with `docs(retro): ...` (passing CC syntax) but worked with `docs(plan-001): ...`. Worth investigating the regex on a calmer day.
 - **The `mcp__tasks-prod__*` MCP** can show schemas while the SSH tunnel is down (see L021). When in doubt: `ss -tlnp \| grep 15432`.
 
-## Riff state (daily-tour project `e98dfe58-…d3df`)
+## Riff state (daily-tour project `e98dfe58-0547-4d8d-9d06-7dfe1c44c13d`)
 
 - **#143** in-progress at "B done" — slice C pending. Comment thread documents A → B → C breakdown.
 - **#144** done via #166.
