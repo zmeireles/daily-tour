@@ -14,12 +14,14 @@ See [`LIFECYCLE.md`](./LIFECYCLE.md) for the plan lifecycle and conventions.
 | 004 | [Scale & Monetize](./004-scale-and-monetize/)               | 📋 Draft                                              | `multi-tenant` `billing` `marketing` `mobile`           |
 | 005 | [Operate](./005-operate/)                                   | 📋 Draft                                              | `slo` `incident-response` `support` `finops`            |
 | 006 | [Owner Backoffice v2](./006-owner-backoffice/)              | 🟡 In Progress — 6.A 4/4 (UAT pending)                | `backoffice` `multi-tenant` `media` `scoping` `feature` |
+| 007 | [Qual VPS Deploy](./007-qual-vps-deploy/)                   | ✅ Closed — qual live + UAT'd (2026-06-13)            | `infra` `vps` `deploy` `traefik` `authentik`            |
+| 008 | [Owner Backoffice Redesign](./008-backoffice-redesign/)     | 📋 Ready — design locked 2026-06-27; awaiting exec    | `backoffice` `responsive` `pwa` `shadcn` `subscription` |
 
 ## Statistics
 
 | Metric                  | Count |
 | ----------------------- | ----- |
-| Total Plans (numbered)  | 6     |
+| Total Plans (numbered)  | 8     |
 | Implementation-complete | 1     |
 | In progress             | 3     |
 | Draft                   | 2     |
@@ -37,6 +39,8 @@ The 5 plans tell the lifecycle of a software product:
 Plans 001-003 are designed to be agent-orchestratable (most tasks shippable via cs-agent). Plans 004-005 increasingly require human-in-the-loop decisions (Stripe, App Store, business strategy).
 
 **006** is a **feature plan**, not a lifecycle phase — owner-backoffice maturation pulled forward from the 003/004 readiness arc once the #142 product decisions landed (2026-06-02). It **supersedes Plan-004 Slice 4.B** (multi-owner scoping), reconciling it to the shared-baseline opt-out model.
+
+**007** (qual VPS deploy — infra, closed) and **008** (owner backoffice redesign — subscription-launch UX, from `docs/design/backoffice-redesign/proposal-001.md`) are likewise out-of-arc plans. **008 is subscription-launch work, not the F&F beta** — the backoffice is owner-only and does not gate the guest beta.
 
 ## Backlog
 
