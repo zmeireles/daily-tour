@@ -263,4 +263,90 @@ describe("GET /v1/discover", () => {
     const body = res.json<{ error: string }>();
     expect(body.error).toBe("search_unavailable");
   });
+
+  describe("GET /v1/discover/hosts-picks", () => {
+    const PICK_PHOTO = {
+      id: "ccddeeff-0000-4000-8000-000000000001",
+      name: { en: "Sete Cidades" },
+      description: { en: "Twin volcanic lake" },
+      geom_lat: 37.86,
+      geom_lng: -25.79,
+      is_hosts_pick: true,
+      wishes: ["scenic"],
+      hero_image_url: "https://img.example/sete.jpg",
+    };
+    const PICK_NOPHOTO = {
+      id: "ccddeeff-0000-4000-8000-000000000002",
+      name: { en: "A Tasca" },
+      description: { en: "Petiscos" },
+      geom_lat: 37.74,
+      geom_lng: -25.66,
+      is_hosts_pick: true,
+      wishes: ["traditional"],
+      hero_image_url: null,
+    };
+    const NON_PICK = {
+      id: "ccddeeff-0000-4000-8000-000000000003",
+      name: { en: "Random Café" },
+      description: { en: "A café" },
+      geom_lat: 37.7,
+      geom_lng: -25.6,
+      is_hosts_pick: false,
+      wishes: ["coffee"],
+      hero_image_url: "https://img.example/cafe.jpg",
+    };
+
+    it("returns photo'd host's picks across categories, deduped across actions", async () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 3600;
+      const jwt = await signJwt({ sub: "guest", rid: "res-1", locale: "en" }, futureExp);
+      // Same catalog set for every action → exercises the cross-action dedupe.
+      fetchMock.mockResolvedValue([PICK_PHOTO, PICK_NOPHOTO, NON_PICK]);
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/discover/hosts-picks",
+        headers: { authorization: `Bearer ${jwt}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json<{ count: number; places: { id: string }[] }>();
+      // photoless pick + non-pick excluded; the pick appears once, not 6×.
+      expect(body.places.map((p) => p.id)).toEqual([PICK_PHOTO.id]);
+      expect(body.count).toBe(1);
+    });
+
+    it("excludes picks the guest's guesthouse hid (6.A.2 scoping)", async () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 3600;
+      const GH = "bbb00001-0000-4000-b000-000000000001";
+      const jwt = await signJwt({ sub: "guest", rid: "res-1", gh: GH, locale: "en" }, futureExp);
+      fetchMock.mockResolvedValue([PICK_PHOTO]);
+      hiddenMock.mockResolvedValueOnce([PICK_PHOTO.id]);
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/discover/hosts-picks",
+        headers: { authorization: `Bearer ${jwt}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(hiddenMock).toHaveBeenCalledWith(GH);
+      expect(res.json<{ places: unknown[] }>().places).toEqual([]);
+    });
+
+    it("503 when catalog-svc is down", async () => {
+      const { CatalogError } = await import("../lib/catalog-client.js");
+      const futureExp = Math.floor(Date.now() / 1000) + 3600;
+      const jwt = await signJwt({ sub: "guest", rid: "res-1", locale: "en" }, futureExp);
+      fetchMock.mockRejectedValue(new CatalogError(500, "boom"));
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/discover/hosts-picks",
+        headers: { authorization: `Bearer ${jwt}` },
+      });
+
+      expect(res.statusCode).toBe(503);
+      expect(res.json<{ error: string }>().error).toBe("catalog_unavailable");
+    });
+  });
 });
