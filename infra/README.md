@@ -167,6 +167,34 @@ The Authentik embedded outpost at `/outpost.goauthentik.io/auth/traefik` returns
 
 **n8n (T-0.3.3)** ships with built-in basic auth instead of Authentik forward-auth. The integration is deferred to the same follow-up task that creates the Authentik Proxy Provider + binds it to the embedded outpost.
 
+## n8n on qual
+
+n8n is the subscription product's automation platform; its first use is the beta survey form. On qual it runs from the dev `docker-compose.n8n.yml` definition with `overlay.qual-n8n.yml` layered on top (TLS router on `websecure` + `letsencrypt`, https env, single-host `mem_limit`/`cpus`). Both files are composed by `deploy-qa.yml` after the Authentik overlay. SQLite-backed via the `dt_n8n_data` named volume; `N8N_ENCRYPTION_KEY` is generated into `.env.qual` by `scripts/qual/gen-env-qual.sh`.
+
+DNS is already in place: `*.qual.stay.portugalodyssey.pt` is a wildcard pointing at the box, so `n8n.qual.stay.portugalodyssey.pt` resolves without further work.
+
+### First-boot setup wizard (MANUAL post-deploy step)
+
+The deploy brings the container up but does **not** create any user — n8n has no bootstrap-from-env path (the legacy `N8N_BASIC_AUTH_*` vars were removed upstream in v0.184 and are silently ignored). After the first qual deploy, an operator must claim ownership:
+
+1. Open **`https://n8n.qual.stay.portugalodyssey.pt/setup`**.
+2. Create the owner account with a **strong, unique password** (store it in the team password manager). The first user becomes the instance owner and unlocks the editor for that account only.
+3. Until step 2 is done the `/setup` page is world-reachable — claim it promptly after deploy so nobody else can.
+
+Building the beta survey form / workflows is a separate manual step done in the editor after the owner exists — it is intentionally out of scope for the deploy wiring.
+
+### Editor security stance (beta)
+
+On qual, Traefik publishes `0.0.0.0:443`, so unlike dev (loopback-only) the n8n editor is reachable from the public internet at `https://n8n.qual.stay.portugalodyssey.pt`. For the beta the editor is protected by **n8n's built-in User Management (the strong owner password) over TLS** — that is the accepted control for this phase.
+
+**Authentik forward-auth is a deferred hardening follow-up**, not part of this deploy. Bare forward-auth returns 404 until the Authentik Proxy Provider is bound to the embedded outpost (same prerequisite as the owner backoffice gate — see [§ Forward-auth (currently 404)](#forward-auth-currently-404)). It will be wired by the follow-up task that creates that binding.
+
+> **Do NOT path-split the Traefik router to hide the editor.** n8n's forms load same-origin assets, so restricting the router to a sub-path breaks form rendering. The editor must stay on the bare `n8n.<apex>` host. Defense-in-depth is the strong owner password + TLS now, Authentik forward-auth later — not path obfuscation.
+
+### n8n encryption key
+
+`N8N_ENCRYPTION_KEY` encrypts stored credentials in the SQLite DB. `gen-env-qual.sh` generates it alongside the other secrets. **Rotating it (`gen-env-qual.sh --force`) makes existing n8n credentials undecryptable** — same caveat as every generated secret in that file (the script's model is first-deploy / full rotation). Once the beta has live n8n credentials, preserve the key across regens rather than `--force`-rotating blindly.
+
 ## Dev flows
 
 Two ways to run the app locally:

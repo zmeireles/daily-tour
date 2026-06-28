@@ -1,0 +1,63 @@
+# Daily Tour — qual n8n overlay (Plan-008 beta automation platform)
+#
+# WHY a separate overlay (not folded into docker-compose.n8n.yml):
+# docker-compose.n8n.yml is the DEV definition — its Traefik router is on the
+# plain `web` entrypoint and its env speaks http (N8N_PROTOCOL/WEBHOOK_URL).
+# Keeping the qual TLS treatment in its own overlay mirrors the
+# overlay.qual-authentik.yml pattern: each overlay renders against exactly the
+# files it needs, and the dev compose stays standalone-validatable. Composed
+# alongside docker-compose.n8n.yml (see deploy-qa.yml COMPOSE order).
+#
+# What this overlay does on top of docker-compose.n8n.yml:
+#   1. Moves the `n8n` Traefik router from the dev `web` entrypoint onto
+#      `websecure` + the `letsencrypt` cert resolver — the same TLS entrypoint
+#      and resolver every other public qual router uses (overlay.qual.yml,
+#      overlay.qual-authentik.yml). Under the qual global HTTP->HTTPS redirect a
+#      `web`-only router would 301 to https and then 404 (no TLS router to
+#      terminate it). The FULL label set is re-listed because compose merges
+#      service labels by REPLACING the whole block.
+#   2. Flips the n8n env to https: N8N_PROTOCOL + N8N_EDITOR_BASE_URL +
+#      WEBHOOK_URL so generated webhook/editor URLs carry the public https
+#      origin (n8n.<apex>). N8N_HOST is pinned to the same host. (environment
+#      is a map → these keys merge over the dev values; everything else, incl.
+#      N8N_ENCRYPTION_KEY, is inherited from docker-compose.n8n.yml.)
+#   3. Swaps the Swarm-only `deploy.resources` limits (ignored by
+#      `docker compose up`) for `mem_limit` + `cpus`, which compose honours on a
+#      single-host VPS. Budget is preserved verbatim (1g / 1.0).
+#
+# EDITOR SECURITY (beta stance): on qual, Traefik publishes 0.0.0.0:443, so the
+# n8n editor at https://n8n.<apex> is reachable from the public internet (unlike
+# dev, which is loopback-only). For the beta it is protected by n8n's built-in
+# User Management (strong owner password) over TLS. Authentik forward-auth is a
+# DEFERRED hardening follow-up — bare forward-auth 404s until the Proxy Provider
+# is bound to the embedded outpost. Do NOT path-split the router to hide the
+# editor: n8n forms load same-origin assets, so a path restriction breaks form
+# rendering. See infra/README.md § "n8n on qual".
+
+name: dailytour-base
+
+networks:
+  dt_internal:
+    external: true
+    name: dt_internal
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # n8n — qual TLS router + https env + single-host resource caps.
+  # ─────────────────────────────────────────────────────────────────────────
+  n8n:
+    environment:
+      N8N_PROTOCOL: https
+      N8N_HOST: n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
+      N8N_EDITOR_BASE_URL: https://n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}
+      WEBHOOK_URL: https://n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}/
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.n8n.service=n8n"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    deploy: !reset null
+    mem_limit: 1g
+    cpus: 1.0
