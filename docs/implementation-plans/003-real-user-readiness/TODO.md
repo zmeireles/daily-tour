@@ -12,16 +12,16 @@ GlitchTip (self-host) · cohort both/mixed (friends → Miguel's real guests) ·
 
 ## Progress
 
-| Slice | Title                                | (a) scope         | Status                                                   |
-| ----- | ------------------------------------ | ----------------- | -------------------------------------------------------- |
-| 3.A   | Observability                        | full              | ✅ DONE + LIVE (A.0–A.3; #291–#299,#303)                 |
-| 3.B   | Reliability — backup + restore drill | lite (→ MinIO)    | ✅ lite DONE (B.0 backup+drill #300); B.1/B.3 deferred   |
-| 3.C   | Security — abuse/cost hardening      | lite              | ✅ lite DONE (C.3 #301)                                  |
-| 3.D   | Legal / GDPR                         | lite              | ◑ D.1 done (#302); **D.0 copy = José**; D.2 next         |
-| 3.E   | Production environment               | **DEFERRED →004** | —                                                        |
-| 3.F   | Content                              | light-touch       | ☐                                                        |
-| 3.G   | a11y + performance                   | light-touch       | ☐                                                        |
-| 3.H   | Onboarding + closed beta             | full              | ◑ H.0 done (#306, UAT PASS); H.2 run-beta gated on 3.D.0 |
+| Slice | Title                                | (a) scope         | Status                                                 |
+| ----- | ------------------------------------ | ----------------- | ------------------------------------------------------ |
+| 3.A   | Observability                        | full              | ✅ DONE + LIVE (A.0–A.3; #291–#299,#303)               |
+| 3.B   | Reliability — backup + restore drill | lite (→ MinIO)    | ✅ lite DONE (B.0 backup+drill #300); B.1/B.3 deferred |
+| 3.C   | Security — abuse/cost hardening      | lite              | ✅ lite DONE (C.3 #301)                                |
+| 3.D   | Legal / GDPR                         | lite              | ◑ D.0+D.1 done (#305,#302); D.2 next; **gate CLEARED** |
+| 3.E   | Production environment               | **DEFERRED →004** | —                                                      |
+| 3.F   | Content                              | light-touch       | ☐                                                      |
+| 3.G   | a11y + performance                   | light-touch       | ☐                                                      |
+| 3.H   | Onboarding + closed beta             | full              | ◑ H.0 done (#306); H.2 beta UNBLOCKED (3.D.0 ✓ #305)   |
 
 ---
 
@@ -46,7 +46,7 @@ GlitchTip (self-host) · cohort both/mixed (friends → Miguel's real guests) ·
 
 ## Slice 3.D — Legal / GDPR (lite) · ⛔ gate before real guests
 
-- [ ] **T-3.D.0 — NEXT (José's legal call)** — Privacy + terms pages (en + pt-PT, template + self-review); linked from guest entry + footer. **Stubs + `legal` i18n namespace already shipped (#302)**; just needs the real COPY in `apps/pwa/src/locales/{en,pt-PT}/legal.json` + `routes/{privacy,terms}.tsx`. (Claude offered to draft template-based content for review.)
+- [x] **T-3.D.0 DONE (#305)** — Privacy + terms **copy** (en + pt-PT) merged into `apps/pwa/src/locales/{en,pt-PT}/legal.json` + `routes/{privacy,terms}.tsx`; linked from guest entry + footer (#306). **Clears the 3.D "⛔ before real guests" gate** → 3.H.2 beta unblocked on legal. (Goes live on the next qual deploy.)
 - [x] **T-3.D.1 DONE (#302)** — persisted consent store (default essential-only) + banner above the router (both shells) + 1-line gate on `emit()`; declined ⇒ no `/v1/telemetry/tour`. pt-PT linter clean. Verified: banner in the bundle, gate unit-tested.
 - [ ] **T-3.D.2** — Basic DSR: runnable export + erase scripts for a guest's PII (lighter than full prod automation, but real).
 - [ ] _(deferred for beta)_ T-3.D.3 scheduled retention sweep — promote when the beta widens.
