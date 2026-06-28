@@ -175,6 +175,82 @@ const discoverRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return { action, count: top.length, groups };
     },
   );
+
+  // GET /v1/discover/hosts-picks — the home rail's host's picks.
+  //
+  // is_hosts_pick is a PLACE-level flag, not action-scoped, so picks span ALL
+  // categories. The only catalog read is per-action, so fan out across actions,
+  // dedupe by id (unioning wish slugs), and keep the picks. Photo-gate
+  // (hero_image_url != null) so photoless picks — e.g. the owner-upload-blocked
+  // eat businesses (#135) — don't render as blank tiles; they appear automatically
+  // once a photo lands. Internal fan-out only (not the client's 30/min discover
+  // budget); a dedicated catalog hosts-picks query is a future optimization.
+  fastify.get(
+    "/v1/discover/hosts-picks",
+    {
+      config: {
+        rateLimit: { max: 60, timeWindow: "1 minute", keyGenerator: guestKeyGenerator },
+      },
+    },
+    async (req, reply) => {
+      const settled = await Promise.allSettled(
+        [...VALID_ACTIONS].map((a) => fetchPlacesByAction(a)),
+      );
+      // All six hit the same catalog-svc, so all-rejected means catalog is down.
+      if (settled.every((r) => r.status === "rejected")) {
+        const reason = (settled[0] as PromiseRejectedResult).reason as unknown;
+        if (reason instanceof CatalogError) {
+          req.log.error({ err: reason }, "[bff:hosts-picks] catalog-svc error");
+          return reply.code(503).send({ error: "catalog_unavailable" });
+        }
+        throw reason;
+      }
+
+      const byId = new Map<string, PlaceCard>();
+      for (const r of settled) {
+        if (r.status !== "fulfilled") continue;
+        for (const place of r.value) {
+          if (!place.is_hosts_pick) continue;
+          const existing = byId.get(place.id);
+          if (existing) {
+            existing.wishes = [...new Set([...existing.wishes, ...place.wishes])];
+          } else {
+            byId.set(place.id, { ...place, wishes: [...place.wishes] });
+          }
+        }
+      }
+
+      let picks = [...byId.values()].filter((p) => p.hero_image_url !== null);
+
+      // Same guesthouse opt-out scoping as /v1/discover (Plan-006 6.A.2).
+      const gh = (req.user as { gh?: string }).gh;
+      if (gh) {
+        try {
+          const hidden = new Set(await fetchHiddenPlaceIds(gh));
+          if (hidden.size > 0) picks = picks.filter((p) => !hidden.has(p.id));
+        } catch (err) {
+          req.log.warn(
+            { err },
+            "[bff:hosts-picks] hidden-places lookup failed; skipping scope filter",
+          );
+        }
+      }
+
+      return {
+        count: picks.length,
+        places: picks.map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          hero_image_url: p.hero_image_url,
+          geom_lat: p.geom_lat,
+          geom_lng: p.geom_lng,
+          wishes: p.wishes,
+          is_hosts_pick: p.is_hosts_pick,
+        })),
+      };
+    },
+  );
 };
 
 export default discoverRoute;

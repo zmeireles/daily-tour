@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useSessionStore } from "@/store/session";
 import { HostsPicksRibbon } from "@/features/discover/hosts-picks-ribbon";
 import { HostsPicksSection } from "@/features/home/hosts-picks-section";
-import type { DiscoverPlace, DiscoverResponse } from "@/features/discover/sort-utils";
+import type { DiscoverPlace } from "@/features/discover/sort-utils";
 
 vi.mock("motion/react", () => ({
   motion: {
@@ -74,11 +74,7 @@ describe("HostsPicksSection", () => {
   });
 
   it("renders section with host-pick places after fetch resolves", async () => {
-    const response: DiscoverResponse = {
-      action: "eat",
-      count: 1,
-      groups: [{ wish: "scenic", places: [PICK] }],
-    };
+    const response = { count: 1, places: [PICK] };
     vi.spyOn(global, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify(response), {
         headers: { "Content-Type": "application/json" },
