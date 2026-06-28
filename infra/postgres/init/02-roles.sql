@@ -128,6 +128,15 @@ GRANT USAGE ON SCHEMA catalog, chat, planner, ingest, auth_tokens,
 GRANT INSERT ON ALL TABLES IN SCHEMA analytics TO bff;
 ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA analytics
   GRANT INSERT ON TABLES TO bff;
+-- analytics SELECT: bff also READS analytics for the owner beta dashboard
+-- (/v1/admin/beta-metrics aggregates analytics.tour_event). The per-schema
+-- SELECT default-privileges block below omitted analytics, so the dashboard
+-- 500'd with `permission denied for table tour_event` (PG 42501) — daily-tour
+-- #159. Mirror the INSERT grant: explicit GRANT for pre-existing tables +
+-- default privileges for future ones.
+GRANT SELECT ON ALL TABLES IN SCHEMA analytics TO bff;
+ALTER DEFAULT PRIVILEGES FOR ROLE catalog_svc IN SCHEMA analytics
+  GRANT SELECT ON TABLES TO bff;
 -- Default privileges are applied per-schema by the owning service when it
 -- creates tables. We pre-declare them here so future CREATE TABLE statements
 -- by the owner role automatically grant SELECT to bff.
