@@ -24,6 +24,29 @@
     "message_host": "Message Miguel",
     "message_host_sub": "Questions about the island? Miguel is one message away."
   },
+  "onboarding": {
+    "title": "Welcome to your island companion",
+    "intro": "Three things you can do from here:",
+    "plan": {
+      "label": "Plan my day",
+      "blurb": "Tell us your mood and we'll shape a day around São Miguel."
+    },
+    "discover": {
+      "label": "Discover",
+      "blurb": "Find the best places to eat, drink, see and do nearby."
+    },
+    "message": {
+      "label": "Message your host",
+      "blurb": "Miguel knows the island — he's always a message away."
+    },
+    "dismiss": "Got it",
+    "close": "Close"
+  },
+  "support": {
+    "need_help": "Need help? Message your host",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
   "locale": {
     "en": "English",
     "pt-PT": "Português"

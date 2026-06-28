@@ -82,7 +82,7 @@ describe("admin guesthouses route", () => {
     render(ui);
 
     await waitFor(() => {
-      expect(screen.getByText("No guesthouses yet.")).toBeDefined();
+      expect(screen.getByText("No guesthouses yet")).toBeDefined();
     });
   });
 

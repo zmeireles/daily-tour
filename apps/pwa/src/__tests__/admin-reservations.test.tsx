@@ -70,7 +70,7 @@ describe("ReservationList", () => {
   it("renders the empty state when there are no reservations", () => {
     setList([]);
     render(<ReservationList />);
-    expect(screen.getByText("No reservations yet.")).toBeDefined();
+    expect(screen.getByText("No reservations yet")).toBeDefined();
   });
 
   it("renders the error state when the query fails", () => {
