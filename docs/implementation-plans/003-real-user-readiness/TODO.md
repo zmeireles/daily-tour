@@ -12,16 +12,16 @@ GlitchTip (self-host) · cohort both/mixed (friends → Miguel's real guests) ·
 
 ## Progress
 
-| Slice | Title                                | (a) scope         | Status                                                 |
-| ----- | ------------------------------------ | ----------------- | ------------------------------------------------------ |
-| 3.A   | Observability                        | full              | ✅ DONE + LIVE (A.0–A.3; #291–#299,#303)               |
-| 3.B   | Reliability — backup + restore drill | lite (→ MinIO)    | ✅ lite DONE (B.0 backup+drill #300); B.1/B.3 deferred |
-| 3.C   | Security — abuse/cost hardening      | lite              | ✅ lite DONE (C.3 #301)                                |
-| 3.D   | Legal / GDPR                         | lite              | ◑ D.1 done (#302); **D.0 copy = José**; D.2 next       |
-| 3.E   | Production environment               | **DEFERRED →004** | —                                                      |
-| 3.F   | Content                              | light-touch       | ☐                                                      |
-| 3.G   | a11y + performance                   | light-touch       | ☐                                                      |
-| 3.H   | Onboarding + closed beta             | full              | ☐ (gated on 3.D.0 copy)                                |
+| Slice | Title                                | (a) scope         | Status                                                   |
+| ----- | ------------------------------------ | ----------------- | -------------------------------------------------------- |
+| 3.A   | Observability                        | full              | ✅ DONE + LIVE (A.0–A.3; #291–#299,#303)                 |
+| 3.B   | Reliability — backup + restore drill | lite (→ MinIO)    | ✅ lite DONE (B.0 backup+drill #300); B.1/B.3 deferred   |
+| 3.C   | Security — abuse/cost hardening      | lite              | ✅ lite DONE (C.3 #301)                                  |
+| 3.D   | Legal / GDPR                         | lite              | ◑ D.1 done (#302); **D.0 copy = José**; D.2 next         |
+| 3.E   | Production environment               | **DEFERRED →004** | —                                                        |
+| 3.F   | Content                              | light-touch       | ☐                                                        |
+| 3.G   | a11y + performance                   | light-touch       | ☐                                                        |
+| 3.H   | Onboarding + closed beta             | full              | ◑ H.0 done (#306, UAT PASS); H.2 run-beta gated on 3.D.0 |
 
 ---
 
@@ -67,6 +67,6 @@ Qual is the beta box; no separate prod env this plan.
 
 ## Slice 3.H — Onboarding + closed beta
 
-- [ ] **T-3.H.0** — Guest first-run orientation + owner onboarding empty-states + a visible support/contact path.
+- [x] **T-3.H.0 DONE (#306)** — Guest first-run orientation + owner onboarding empty-states + a visible support/contact path. Merged + deployed to qual (2026-06-27); forward-flow UAT **DT-TESTS-29 PASS** (orientation card · support footer · backoffice empty-states).
 - [ ] **T-3.H.2** — Execute the closed beta (`docs/beta/beta-program-2026.md`): cohort = friends first → Miguel's real guests; invite copy (en+pt-PT); feedback survey via notif-svc; consent-gated beta telemetry. AC: ≥1 real beta guest completes token→discover→tour→chat with survey returned, zero P0/P1.
 - [ ] _(N/A under (a))_ T-3.H.1 prod rollback drill — folds into Plan-004's prod cutover.
