@@ -1,19 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSessionStore } from "@/store/session";
-import type { DiscoverResponse, DiscoverPlace } from "@/features/discover/sort-utils";
-import { flattenGroups } from "@/features/discover/sort-utils";
+import type { DiscoverPlace } from "@/features/discover/sort-utils";
 
 async function fetchHostsPicks(jwt: string): Promise<DiscoverPlace[]> {
-  // action=see: the host's picks are photographed must-see landmarks (Sete
-  // Cidades, Lagoa do Fogo, …), surfaced via is_hosts_pick. (eat places are the
-  // owner-upload-blocked businesses with no photos — they read as blank tiles.)
-  // No loc → the BFF returns all is_hosts_pick see places, no distance filter.
-  const res = await fetch("/v1/discover?action=see", {
+  // Host's picks span ALL categories — is_hosts_pick is a place-level flag — so this
+  // hits the dedicated cross-category endpoint, not /v1/discover?action=see, which
+  // only ever returned the "see" picks and hid eat/drink/do/… picks (daily-tour
+  // #160). Photoless picks are gated out server-side so they never read as blank tiles.
+  const res = await fetch("/v1/discover/hosts-picks", {
     headers: { Authorization: `Bearer ${jwt}` },
   });
-  if (!res.ok) throw new Error(`discover ${res.status}`);
-  const data = (await res.json()) as DiscoverResponse;
-  return flattenGroups(data.groups).filter((p) => p.is_hosts_pick);
+  if (!res.ok) throw new Error(`hosts-picks ${res.status}`);
+  const data = (await res.json()) as { places: DiscoverPlace[] };
+  return data.places;
 }
 
 // Shared host's-picks query so the mobile HostsPicksSection and the desktop
