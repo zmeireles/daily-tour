@@ -1,10 +1,133 @@
 {
+  "nav": {
+    "home": "Início",
+    "privacy": "Privacidade",
+    "terms": "Termos"
+  },
   "privacy": {
     "heading": "Política de Privacidade",
-    "placeholder": "A política de privacidade completa está a ser finalizada."
+    "updated": "Última actualização: 25 de Junho de 2026",
+    "intro": "O Daily Tour é um guia digital privado que lhe é oferecido através do seu anfitrião em São Miguel. Esta política explica que dados pessoais tratamos, porquê, e que escolhas tem ao seu dispor. O Daily Tour está actualmente em fase de beta fechado, pelo que esta política poderá mudar à medida que o serviço evolui.",
+    "sections": [
+      {
+        "title": "A versão curta",
+        "body": [
+          "Não existem contas, palavras-passe nem publicidade. O acesso ao Daily Tour é feito através de um link privado enviado pelo seu anfitrião. Utilizamos a sua informação apenas para fazer funcionar o seu guia, criar os seus planos para o dia e entregar as suas mensagens ao anfitrião. Nunca vendemos os seus dados. Os dados de utilização só são recolhidos se concordar, e tudo funciona da mesma forma se recusar."
+        ]
+      },
+      {
+        "title": "Que dados recolhemos",
+        "body": [
+          "A partir da sua reserva (partilhada pelo seu anfitrião): o seu nome, as datas de entrada e de saída, o número de pessoas e o seu idioma. Não guardamos o seu correio electrónico, número de telefone nem quaisquer dados de pagamento na aplicação.",
+          "A partir da forma como utiliza o guia: os planos para o dia que cria — incluindo as preferências que indica, como aquilo que lhe apetece fazer, a hora de início e se tem automóvel — e quaisquer mensagens que envia ao seu anfitrião através da aplicação.",
+          "Apenas se aceitar os dados de utilização: eventos simples sobre a forma como o guia é usado, como o início ou a conclusão de um plano para o dia. Estes estão associados à sua estadia, mas não contêm o texto das mensagens nem dados de contacto.",
+          "No seu dispositivo: um pequeno testemunho de início de sessão seguro (para que o guia o reconheça durante a estadia) e as suas preferências, como o tema claro/escuro e se viaja de automóvel."
+        ]
+      },
+      {
+        "title": "Porque utilizamos os seus dados e com que fundamento legal",
+        "body": [
+          "Para disponibilizar o guia que foi convidado a utilizar e para criar os seus planos para o dia — o que é necessário para prestar o serviço (artigo 6.º, n.º 1, alínea b) do RGPD, e o nosso interesse legítimo em disponibilizar o guia aos nossos hóspedes, alínea f)).",
+          "Para trocar mensagens entre si e o seu anfitrião.",
+          "Para compreendermos a forma como o guia é utilizado e podermos melhorá-lo — apenas com o seu consentimento (alínea a)). Pode recusar e pode mudar de ideias a qualquer momento."
+        ]
+      },
+      {
+        "title": "Com quem partilhamos",
+        "body": [
+          "O seu anfitrião: vê o seu nome, os detalhes da sua estadia e as mensagens que lhe envia através do guia.",
+          "A inteligência artificial que cria os seus planos para o dia (Anthropic): quando pede um plano, enviamos as suas preferências e informação sobre os locais. Não enviamos o seu nome nem dados de contacto.",
+          "Monitorização de erros: quando algo corre mal, o nosso software envia um relatório técnico de erro a um serviço de monitorização operado por nós através da Portugal Odyssey. Estes relatórios servem apenas para detectar e corrigir problemas, não para o seguir.",
+          "O nosso fornecedor de alojamento, que opera os servidores onde esta informação é guardada. Não vendemos nem alugamos os seus dados pessoais a ninguém."
+        ]
+      },
+      {
+        "title": "Onde os seus dados são tratados",
+        "body": [
+          "Os nossos servidores e os dados guardados localizam-se na União Europeia. Alguns dos serviços de que dependemos — como a inteligência artificial que cria os seus planos para o dia — estão sediados fora da UE/EEE. Quando tal acontece, a transferência é protegida por salvaguardas adequadas, como as Cláusulas Contratuais-Tipo."
+        ]
+      },
+      {
+        "title": "Durante quanto tempo guardamos",
+        "body": [
+          "Guardamos a informação associada à sua estadia até 30 dias após a saída, eliminando-a em seguida. As cópias de segurança encriptadas da base de dados são mantidas até 7 dias. Pode pedir-nos a eliminação dos seus dados mais cedo, a qualquer momento."
+        ]
+      },
+      {
+        "title": "Os seus direitos",
+        "body": [
+          "Ao abrigo do RGPD, pode pedir-nos para: lhe fornecer uma cópia dos seus dados; corrigi-los; eliminá-los; limitar ou opor-se à forma como os utilizamos; ou recebê-los num formato portável. Pode também retirar o seu consentimento aos dados de utilização a qualquer momento, sem afectar tudo o resto.",
+          "Para exercer qualquer um destes direitos, contacte directamente o seu anfitrião ou envie-nos um correio electrónico (ver abaixo). Respondemos no prazo de 30 dias. Tem também o direito de apresentar uma reclamação à autoridade portuguesa de protecção de dados, a CNPD (www.cnpd.pt)."
+        ]
+      },
+      {
+        "title": "Testemunhos (cookies) e armazenamento no dispositivo",
+        "body": [
+          "Utilizamos um testemunho essencial que o mantém com sessão iniciada no guia durante a sua estadia. Guardamos ainda algumas preferências no seu dispositivo, como a escolha de tema, a opção de viajar de automóvel e a sua decisão sobre os dados de utilização. Não utilizamos testemunhos de publicidade nem de seguimento de terceiros."
+        ]
+      },
+      {
+        "title": "Crianças",
+        "body": [
+          "O Daily Tour destina-se a hóspedes com 18 anos ou mais e não é dirigido a crianças."
+        ]
+      }
+    ],
+    "contact": "Tem questões sobre a sua privacidade? Fale com o seu anfitrião ou envie-nos um correio electrónico para privacy@portugalodyssey.pt. Pode também apresentar uma reclamação à CNPD (www.cnpd.pt)."
   },
   "terms": {
     "heading": "Termos de Utilização",
-    "placeholder": "Os termos de utilização completos estão a ser finalizados."
+    "updated": "Última actualização: 25 de Junho de 2026",
+    "intro": "O Daily Tour é um guia digital gratuito que lhe é oferecido através do seu anfitrião em São Miguel. Ao utilizá-lo, aceita estes termos. O Daily Tour está actualmente em fase de beta fechado.",
+    "sections": [
+      {
+        "title": "Quem pode utilizar o Daily Tour",
+        "body": [
+          "O Daily Tour destina-se a hóspedes convidados que recebem um link privado do seu anfitrião e a pessoas com 18 anos ou mais. O seu link é pessoal e referente à sua estadia — não o partilhe."
+        ]
+      },
+      {
+        "title": "O que o Daily Tour faz — e não faz",
+        "body": [
+          "O Daily Tour sugere locais, cria planos para o dia a partir das suas preferências e permite-lhe enviar mensagens ao seu anfitrião. É um guia meramente informativo.",
+          "O Daily Tour não efectua reservas em seu nome. As sugestões, os horários e os tempos de viagem são fornecidos de boa-fé, mas podem estar incompletos ou desactualizados — confirme directamente junto dos estabelecimentos antes de depender deles."
+        ]
+      },
+      {
+        "title": "Isto é um beta",
+        "body": [
+          "O Daily Tour é uma versão de teste inicial. Pode conter erros, estar indisponível por períodos e mostrar conteúdo incompleto ou impreciso. É disponibilizado para sua comodidade e não constitui aconselhamento profissional de viagem, segurança, alimentar ou médico. Use o seu próprio discernimento, sobretudo em actividades como caminhadas e condução."
+        ]
+      },
+      {
+        "title": "Utilização aceitável",
+        "body": [
+          "Utilize o Daily Tour para a sua viagem pessoal durante a estadia. Não tente perturbar, sobrecarregar ou aceder sem autorização ao serviço, nem o utilize para fins ilícitos."
+        ]
+      },
+      {
+        "title": "Conteúdo e propriedade intelectual",
+        "body": [
+          "As descrições dos locais, as fotografias e os restantes conteúdos do Daily Tour pertencem-nos a nós ou aos nossos parceiros e são disponibilizados para sua utilização pessoal. Não os reutilize para fins comerciais."
+        ]
+      },
+      {
+        "title": "Responsabilidade",
+        "body": [
+          "O Daily Tour é fornecido \"tal como está\", sem garantias de qualquer tipo. Na medida máxima permitida por lei, não somos responsáveis por quaisquer perdas decorrentes da utilização do guia ou da confiança nas suas sugestões. Nada nestes termos limita qualquer responsabilidade que não possa ser excluída ao abrigo da lei portuguesa ou da UE."
+        ]
+      },
+      {
+        "title": "Acesso e alterações",
+        "body": [
+          "O seu link de acesso é válido durante a estadia, acrescido de um curto período de tolerância, após o qual expira. Por se tratar de um beta, podemos alterar, suspender ou retirar o serviço ou estes termos a qualquer momento. A data no topo indica quando estes termos foram alterados pela última vez."
+        ]
+      },
+      {
+        "title": "Lei aplicável",
+        "body": ["Estes termos regem-se pela lei portuguesa."]
+      }
+    ],
+    "contact": "Tem questões sobre estes termos? Fale com o seu anfitrião ou envie-nos um correio electrónico para privacy@portugalodyssey.pt."
   }
 }

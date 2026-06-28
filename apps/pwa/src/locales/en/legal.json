@@ -1,10 +1,133 @@
 {
+  "nav": {
+    "home": "Home",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
   "privacy": {
     "heading": "Privacy Policy",
-    "placeholder": "The full privacy policy is being finalised."
+    "updated": "Last updated 25 June 2026",
+    "intro": "Daily Tour is a private digital guide offered to you through your guesthouse host on São Miguel. This policy explains what personal data we handle, why, and the choices you have. Daily Tour is currently a closed beta, so this policy may change as the service grows.",
+    "sections": [
+      {
+        "title": "The short version",
+        "body": [
+          "There are no accounts, no passwords, and no advertising. You reach Daily Tour through a private link from your host. We use your information only to run your guide, build your day plans, and pass your messages to your host. We never sell your data. Usage analytics are collected only if you agree, and everything works the same if you decline."
+        ]
+      },
+      {
+        "title": "What we collect",
+        "body": [
+          "From your reservation (shared by your host): your name, your check-in and check-out dates, your party size, and your language. We do not store your email, phone number, or any payment details in the app.",
+          "From how you use the guide: the day plans you create — including the preferences you enter, such as what you feel like doing, your start time, and whether you have a car — and any messages you send to your host through the app.",
+          "Only if you accept analytics: simple events about how the guide is used, such as when a day plan is started or completed. These are tied to your stay but contain no message text or contact details.",
+          "On your device: a small secure sign-in token (so the guide remembers you during your stay) and your own preferences, such as your light/dark theme and whether you travel by car."
+        ]
+      },
+      {
+        "title": "Why we use it, and our lawful basis",
+        "body": [
+          "To provide the guide you were invited to use and to build your day plans — this is necessary to deliver the service (GDPR Article 6(1)(b), and our legitimate interest in running the guide for our guests, Article 6(1)(f)).",
+          "To pass messages between you and your host.",
+          "To understand how the guide is used so we can improve it — only with your consent (Article 6(1)(a)). You can decline, and you can change your mind at any time."
+        ]
+      },
+      {
+        "title": "Who we share it with",
+        "body": [
+          "Your host: your host sees your name, your stay details, and the messages you send them through the guide.",
+          "The AI that builds your day plans (Anthropic): when you ask for a plan, we send your preferences and information about local places. We do not send your name or contact details to it.",
+          "Error monitoring: when something goes wrong, our software sends a technical error report to a monitoring service operated for us by Portugal Odyssey. These reports are used only to find and fix problems, not to track you.",
+          "Our hosting provider, which runs the servers that store this information. We do not sell or rent your personal data to anyone."
+        ]
+      },
+      {
+        "title": "Where your data is processed",
+        "body": [
+          "Our servers and stored data are located in the European Union. Some of the services we rely on — such as the AI that builds your day plans — are based outside the EU/EEA. Where that happens, the transfer is protected by appropriate safeguards such as Standard Contractual Clauses."
+        ]
+      },
+      {
+        "title": "How long we keep it",
+        "body": [
+          "We keep the information tied to your stay for up to 30 days after your check-out, and then delete it. Encrypted database backups are kept for up to 7 days. You can ask us to delete your information sooner at any time."
+        ]
+      },
+      {
+        "title": "Your rights",
+        "body": [
+          "Under the GDPR you can ask us to: give you a copy of your data; correct it; delete it; restrict or object to how we use it; or receive it in a portable format. You can also withdraw your consent to analytics at any time without affecting anything else.",
+          "To exercise any of these rights, contact your host directly or email us (see below). We respond within 30 days. You also have the right to complain to the Portuguese data protection authority, the CNPD (www.cnpd.pt)."
+        ]
+      },
+      {
+        "title": "Cookies and on-device storage",
+        "body": [
+          "We use one essential cookie that keeps you signed in to your guide during your stay. We also store a few preferences on your device, such as your theme choice, your travel-by-car choice, and your analytics decision. We do not use advertising or third-party tracking cookies."
+        ]
+      },
+      {
+        "title": "Children",
+        "body": [
+          "Daily Tour is intended for guests aged 18 or over and is not directed at children."
+        ]
+      }
+    ],
+    "contact": "Questions about your privacy? Speak to your host, or email us at privacy@portugalodyssey.pt. You can also complain to the CNPD (www.cnpd.pt)."
   },
   "terms": {
-    "heading": "Terms of Service",
-    "placeholder": "The full terms of service are being finalised."
+    "heading": "Terms of Use",
+    "updated": "Last updated 25 June 2026",
+    "intro": "Daily Tour is a free digital guide offered to you through your guesthouse host on São Miguel. By using it, you agree to these terms. Daily Tour is currently a closed beta.",
+    "sections": [
+      {
+        "title": "Who can use Daily Tour",
+        "body": [
+          "Daily Tour is for invited guests who receive a private link from their host, and is intended for people aged 18 or over. Your link is personal to your stay — please don't share it."
+        ]
+      },
+      {
+        "title": "What Daily Tour does — and does not do",
+        "body": [
+          "Daily Tour suggests local places, builds day plans from your preferences, and lets you message your host. It is an informational guide only.",
+          "Daily Tour does not make bookings or reservations for you. Suggestions, opening hours, and travel times are provided in good faith but may be incomplete or out of date — please check directly with venues before you rely on them."
+        ]
+      },
+      {
+        "title": "This is a beta",
+        "body": [
+          "Daily Tour is an early test version. It may contain bugs, be unavailable at times, and show incomplete or inaccurate content. It is provided for your convenience and is not professional travel, safety, dietary, or medical advice. Use your own judgement, especially for activities such as hiking and driving."
+        ]
+      },
+      {
+        "title": "Acceptable use",
+        "body": [
+          "Please use Daily Tour for your personal travel during your stay. Do not attempt to disrupt, overload, or gain unauthorised access to the service, and do not use it for anything unlawful."
+        ]
+      },
+      {
+        "title": "Content and intellectual property",
+        "body": [
+          "The place descriptions, photographs, and other content in Daily Tour belong to us or to our partners and are provided for your personal use. Please do not reuse them commercially."
+        ]
+      },
+      {
+        "title": "Liability",
+        "body": [
+          "Daily Tour is provided \"as is\", without warranties of any kind. To the fullest extent permitted by law, we are not liable for any loss arising from your use of the guide or reliance on its suggestions. Nothing in these terms limits any liability that cannot be excluded under Portuguese or EU law."
+        ]
+      },
+      {
+        "title": "Access and changes",
+        "body": [
+          "Your access link is valid for the duration of your stay plus a short grace period, after which it expires. As this is a beta, we may change, suspend, or withdraw the service or these terms at any time. The date at the top shows when these terms last changed."
+        ]
+      },
+      {
+        "title": "Governing law",
+        "body": ["These terms are governed by the laws of Portugal."]
+      }
+    ],
+    "contact": "Questions about these terms? Speak to your host, or email us at privacy@portugalodyssey.pt."
   }
 }
