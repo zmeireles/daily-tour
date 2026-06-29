@@ -9,13 +9,13 @@
 
 ### Who qualifies
 
-| Criterion | Rationale |
-|---|---|
-| Staying (or will stay) at **owner-1's guesthouse** on São Miguel | Real reservation = real token URL = real journey |
+| Criterion                                                                        | Rationale                                                                                        |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Staying (or will stay) at **owner-1's guesthouse** on São Miguel                 | Real reservation = real token URL = real journey                                                 |
 | Speaks **English or European Portuguese (pt-PT)** as primary or working language | Only en + pt-PT strings are reviewed; other locales have machine-grade quality not yet auditable |
-| Travelling as a **couple or solo** (party size ≤ 2) | Simpler logistics for beta logistics; Daily Tour planner handles this cleanest |
-| **Phone-first**: uses their smartphone as the primary travel tool | Core design assumption for P1 "Marta"; avoids desktop-only outliers skewing UX signal |
-| Willing to share a **5-question post-stay survey** before checking out | Completion rate is a success criterion; confirm willingness at invite time |
+| Travelling as a **couple or solo** (party size ≤ 2)                              | Simpler logistics for beta logistics; Daily Tour planner handles this cleanest                   |
+| **Phone-first**: uses their smartphone as the primary travel tool                | Core design assumption for P1 "Marta"; avoids desktop-only outliers skewing UX signal            |
+| Willing to share a **5-question post-stay survey** before checking out           | Completion rate is a success criterion; confirm willingness at invite time                       |
 
 ### Friends-and-family fallback
 
@@ -23,20 +23,20 @@ If owner-1 acquisition is not complete when the beta window opens, invite up to 
 
 ### Disqualifiers
 
-| Disqualifier | Reason |
-|---|---|
+| Disqualifier                                          | Reason                                                                                                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Primary language is German, Spanish, French, or pt-BR | de/es/fr/pt-BR strings are unreviewed machine translations; feedback would reflect translation bugs, not product bugs |
-| Staying fewer than 24 hours | Insufficient time to trigger the Daily Tour journey |
-| Travelling in a group ≥ 4 | Complex logistics; group dynamics may dominate feedback over product signals |
-| Under 18 | Data-processing consent complexity out of scope for v1 |
+| Staying fewer than 24 hours                           | Insufficient time to trigger the Daily Tour journey                                                                   |
+| Travelling in a group ≥ 4                             | Complex logistics; group dynamics may dominate feedback over product signals                                          |
+| Under 18                                              | Data-processing consent complexity out of scope for v1                                                                |
 
 ### Cohort target
 
-| Slot type | Count |
-|---|---|
-| Real reservations at owner-1 | Up to 10 |
+| Slot type                                | Count    |
+| ---------------------------------------- | -------- |
+| Real reservations at owner-1             | Up to 10 |
 | F&F substitute (if owner-1 not yet live) | Up to 10 |
-| **Total beta cohort** | **10** |
+| **Total beta cohort**                    | **10**   |
 
 ---
 
@@ -108,15 +108,19 @@ Participants are not told these are "tasks" — they experience them as natural 
 
 ## 4. Post-Stay Survey (5 questions, ≤ 3 min)
 
-Delivered as a link in a WhatsApp/email message sent 1 hour before check-out. Hosted on a simple form (Tally or native n8n form).
+Delivered as a link in a WhatsApp/email message sent 1 hour before check-out.
 
-| # | Question | Format |
-|---|---|---|
-| Q1 | "Overall, how useful was the Daily Tour guide during your stay?" | 1–5 star rating |
-| Q2 | "Did you use 'Plan my day' to create a day itinerary?" | Yes / No / Tried but had a problem |
-| Q3 | "The hardest part of using the guide was…" | Open text (max 200 chars) |
-| Q4 | "If a friend was staying here next month, would you tell them to use it?" | Definitely yes / Probably yes / Probably not / No |
-| Q5 | "Anything else — a bug, a missing place, a confusing moment?" | Open text (max 400 chars) |
+**Live form (n8n on qual):** <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey>
+
+Responses land in the n8n **Executions** history — the owner views/exports them in the n8n editor (`https://n8n.qual.stay.portugalodyssey.pt`; owner login). Add a Google-Sheet/DB export node later if a tabular view is wanted. The form is **English-only** for now; add a pt-PT variant if the cohort needs it.
+
+| #   | Question                                                                  | Format                                            |
+| --- | ------------------------------------------------------------------------- | ------------------------------------------------- |
+| Q1  | "Overall, how useful was the Daily Tour guide during your stay?"          | 1–5 star rating                                   |
+| Q2  | "Did you use 'Plan my day' to create a day itinerary?"                    | Yes / No / Tried but had a problem                |
+| Q3  | "The hardest part of using the guide was…"                                | Open text (max 200 chars)                         |
+| Q4  | "If a friend was staying here next month, would you tell them to use it?" | Definitely yes / Probably yes / Probably not / No |
+| Q5  | "Anything else — a bug, a missing place, a confusing moment?"             | Open text (max 400 chars)                         |
 
 **Opt-in for follow-up interview (appended to Q5 screen)**
 
@@ -126,12 +130,12 @@ Delivered as a link in a WhatsApp/email message sent 1 hour before check-out. Ho
 
 ## 5. Success Criteria
 
-| Metric | Target | How measured |
-|---|---|---|
-| Daily Tour journey completion | 8 / 10 guests reach a finished plan | Server-side `tour.completed` event |
-| Post-stay survey completion | 6 / 10 guests submit the survey | Form submission count |
-| P0 incidents during beta period | 0 | Production incident log |
-| Follow-up interview booked | ≥ 1 | Calendar booking from opt-in responses |
+| Metric                          | Target                              | How measured                           |
+| ------------------------------- | ----------------------------------- | -------------------------------------- |
+| Daily Tour journey completion   | 8 / 10 guests reach a finished plan | Server-side `tour.completed` event     |
+| Post-stay survey completion     | 6 / 10 guests submit the survey     | Form submission count                  |
+| P0 incidents during beta period | 0                                   | Production incident log                |
+| Follow-up interview booked      | ≥ 1                                 | Calendar booking from opt-in responses |
 
 ### What a P0 incident looks like in this context
 
@@ -148,13 +152,13 @@ If 3 or more guests report the same critical blocker within 48 hours, pause new 
 
 ## 6. Timeline
 
-| Milestone | Condition |
-|---|---|
-| Beta window opens | Plan-002 Slice 2.A complete + first owner-1 reservation imported |
-| Invite first 5 guests | Smoke tests pass; owner briefed on in-person script |
-| Invite remaining 5 | First 5 complete survey; no kill-switch events |
-| Beta closes | All 10 stays ended + surveys collected (or 4 weeks after window opens, whichever comes first) |
-| Readout | Within 1 week of beta close; synthesise survey + interviews → backlog items |
+| Milestone             | Condition                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| Beta window opens     | Plan-002 Slice 2.A complete + first owner-1 reservation imported                              |
+| Invite first 5 guests | Smoke tests pass; owner briefed on in-person script                                           |
+| Invite remaining 5    | First 5 complete survey; no kill-switch events                                                |
+| Beta closes           | All 10 stays ended + surveys collected (or 4 weeks after window opens, whichever comes first) |
+| Readout               | Within 1 week of beta close; synthesise survey + interviews → backlog items                   |
 
 ---
 
