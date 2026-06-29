@@ -1,6 +1,14 @@
 {
-  "greeting": "Bienvenue",
+  "greeting": "Bon retour",
   "locale_hint": "Affiché en {{locale}}",
+  "nav": {
+    "discover": "Découvrir",
+    "my_day": "Ma journée",
+    "talk_to_host": "Discuter avec Miguel",
+    "saved": "Enregistrés",
+    "profile": "Profil",
+    "coming_soon": "Bientôt disponible"
+  },
   "actions": {
     "eat": "Manger",
     "drink": "Boire",
@@ -12,29 +20,52 @@
   },
   "premium": {
     "plan_my_day": "Planifier ma journée",
-    "message_host": "Écrire à Miguel"
+    "plan_my_day_sub": "Dites-nous votre humeur et nous composerons une journée à São Miguel.",
+    "message_host": "Écrire à Miguel",
+    "message_host_sub": "Des questions sur l'île ? Miguel est à un message près."
+  },
+  "onboarding": {
+    "title": "Bienvenue dans votre compagnon de l'île",
+    "intro": "Trois choses que vous pouvez faire ici :",
+    "plan": {
+      "label": "Planifier ma journée",
+      "blurb": "Dites-nous votre humeur et nous composerons une journée à São Miguel."
+    },
+    "discover": {
+      "label": "Découvrir",
+      "blurb": "Trouvez les meilleurs endroits pour manger, boire, voir et faire à proximité."
+    },
+    "message": {
+      "label": "Écrire à votre hôte",
+      "blurb": "Miguel connaît l'île — il est toujours à un message près."
+    },
+    "dismiss": "Compris",
+    "close": "Fermer"
+  },
+  "support": {
+    "need_help": "Besoin d'aide ? Écrivez à votre hôte",
+    "privacy": "Confidentialité",
+    "terms": "Conditions"
   },
   "locale": {
     "en": "English",
     "pt-PT": "Português",
-    "de": "Deutsch",
-    "es": "Español",
     "fr": "Français",
-    "pt-BR": "Português (BR)"
+    "es": "Español"
   },
   "tour": {
     "new": {
-      "title": "Planifier Votre Journée",
+      "title": "Planifier votre journée",
       "subtitle": "Dites-nous ce que vous aimeriez faire",
       "wishes_label": "Qu'est-ce qui vous ferait plaisir ?",
       "duration_label": "Combien de temps avez-vous ?",
       "vehicle_label": "Comment vous déplacez-vous ?",
       "notes_label": "Autre chose ?",
-      "notes_placeholder": "Ex : Je veux éviter les pièges à touristes…",
-      "voice_hint": "Appuyer pour parler",
+      "notes_placeholder": "Ex. : je veux éviter les pièges à touristes…",
+      "voice_hint": "Appuyez pour parler",
       "voice_recording": "Écoute en cours...",
       "submit": "Planifier ma journée",
-      "error": "Une erreur s'est produite. Veuillez réessayer.",
+      "error": "Une erreur est survenue. Veuillez réessayer.",
       "vehicles": {
         "car": "Voiture",
         "bike": "Vélo",
@@ -54,6 +85,7 @@
       "queued": "Planification de votre journée...",
       "ready": "Votre plan est prêt !",
       "rejected": "Impossible de créer un plan. Veuillez réessayer.",
+      "weather_adjusted": "Adapté à la météo",
       "back": "Retour à l'accueil"
     },
     "editorial": {
@@ -61,6 +93,14 @@
       "headline": "Votre journée à São Miguel",
       "subline": "{{count}} étapes · ~{{hours}} h",
       "subline_no_hours": "{{count}} étapes"
+    },
+    "intake": {
+      "imagery_kicker": "DÉCOUVREZ L'ÎLE",
+      "imagery_headline": "Votre journée, à votre mesure",
+      "imagery_host": "Miguel · votre hôte"
+    },
+    "desktop": {
+      "index_label": "Étapes de l'itinéraire"
     }
   }
 }

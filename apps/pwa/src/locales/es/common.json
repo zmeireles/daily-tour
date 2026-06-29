@@ -1,19 +1,26 @@
 {
   "auth": {
     "exchanging": "Iniciando sesión…",
-    "token_expired": "Tu enlace ha expirado. Pide a tu anfitrión uno nuevo.",
+    "token_expired": "Tu enlace ha caducado. Pide a tu anfitrión uno nuevo.",
     "exchange_failed": "Algo salió mal. Inténtalo de nuevo."
   },
   "landing": {
-    "expired_message": "Tu enlace expiró. Por favor pide a tu anfitrión uno nuevo."
+    "expired_message": "Tu enlace ha caducado. Pide a tu anfitrión uno nuevo, por favor."
   },
   "pwa_install": {
     "title": "Instalar Daily Tour",
-    "body": "Añade a tu pantalla de inicio para acceso instantáneo.",
+    "body": "Añádelo a tu pantalla de inicio para acceder al instante.",
     "install": "Instalar",
     "dismiss": "Ahora no"
   },
   "offline": {
     "message": "Estás sin conexión. Mostrando contenido en caché."
+  },
+  "consent": {
+    "title": "Ayúdanos a mejorar",
+    "body": "Nos gustaría medir cómo se usa el tour para mejorarlo. Las funciones esenciales funcionan igualmente.",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "learn_more": "Leer nuestra política de privacidad"
   }
 }

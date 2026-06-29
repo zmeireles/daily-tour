@@ -1,19 +1,26 @@
 {
   "auth": {
     "exchanging": "Connexion en cours…",
-    "token_expired": "Votre lien a expiré. Demandez un nouveau à votre hôte.",
-    "exchange_failed": "Une erreur s'est produite. Veuillez réessayer."
+    "token_expired": "Votre lien a expiré. Demandez-en un nouveau à votre hôte.",
+    "exchange_failed": "Une erreur est survenue. Veuillez réessayer."
   },
   "landing": {
-    "expired_message": "Votre lien a expiré. Veuillez demander un nouveau à votre hôte."
+    "expired_message": "Votre lien a expiré. Veuillez en demander un nouveau à votre hôte."
   },
   "pwa_install": {
     "title": "Installer Daily Tour",
-    "body": "Ajoutez à votre écran d'accueil pour un accès instantané.",
+    "body": "Ajoutez-le à votre écran d'accueil pour un accès instantané.",
     "install": "Installer",
-    "dismiss": "Pas maintenant"
+    "dismiss": "Plus tard"
   },
   "offline": {
     "message": "Vous êtes hors ligne. Affichage du contenu en cache."
+  },
+  "consent": {
+    "title": "Aidez-nous à nous améliorer",
+    "body": "Nous aimerions mesurer la façon dont le parcours est utilisé afin de l'améliorer. Les fonctionnalités essentielles fonctionnent dans tous les cas.",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "learn_more": "Lire notre politique de confidentialité"
   }
 }

@@ -1,6 +1,14 @@
 {
   "greeting": "Bienvenido de nuevo",
   "locale_hint": "Mostrando en {{locale}}",
+  "nav": {
+    "discover": "Descubrir",
+    "my_day": "Mi día",
+    "talk_to_host": "Hablar con Miguel",
+    "saved": "Guardados",
+    "profile": "Perfil",
+    "coming_soon": "Próximamente"
+  },
   "actions": {
     "eat": "Comer",
     "drink": "Beber",
@@ -12,15 +20,38 @@
   },
   "premium": {
     "plan_my_day": "Planear mi día",
-    "message_host": "Hablar con Miguel"
+    "plan_my_day_sub": "Dinos qué te apetece y diseñamos un día por São Miguel.",
+    "message_host": "Hablar con Miguel",
+    "message_host_sub": "¿Dudas sobre la isla? Miguel está a un mensaje de distancia."
+  },
+  "onboarding": {
+    "title": "Bienvenido a tu compañero en la isla",
+    "intro": "Tres cosas que puedes hacer desde aquí:",
+    "plan": {
+      "label": "Planear mi día",
+      "blurb": "Dinos qué te apetece y damos forma a un día por São Miguel."
+    },
+    "discover": {
+      "label": "Descubrir",
+      "blurb": "Encuentra los mejores lugares para comer, beber, ver y hacer cerca de ti."
+    },
+    "message": {
+      "label": "Hablar con tu anfitrión",
+      "blurb": "Miguel conoce la isla: siempre está a un mensaje de distancia."
+    },
+    "dismiss": "Entendido",
+    "close": "Cerrar"
+  },
+  "support": {
+    "need_help": "¿Necesitas ayuda? Escribe a tu anfitrión",
+    "privacy": "Privacidad",
+    "terms": "Términos"
   },
   "locale": {
     "en": "English",
     "pt-PT": "Português",
-    "de": "Deutsch",
-    "es": "Español",
     "fr": "Français",
-    "pt-BR": "Português (BR)"
+    "es": "Español"
   },
   "tour": {
     "new": {
@@ -62,6 +93,14 @@
       "headline": "Tu día en São Miguel",
       "subline": "{{count}} paradas · ~{{hours}}h",
       "subline_no_hours": "{{count}} paradas"
+    },
+    "intake": {
+      "imagery_kicker": "CONOCE LA ISLA",
+      "imagery_headline": "Tu día, a tu medida",
+      "imagery_host": "Miguel · tu anfitrión"
+    },
+    "desktop": {
+      "index_label": "Paradas del itinerario"
     }
   }
 }

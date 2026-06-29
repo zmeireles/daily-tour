@@ -1,0 +1,80 @@
+{
+  "title": "Découvrir",
+  "chat": {
+    "title": "Discuter avec votre hôte",
+    "back": "Retour",
+    "status_online": "En ligne",
+    "day_today": "Aujourd'hui",
+    "connecting": "Connexion…",
+    "empty": "Dites bonjour pour commencer la conversation.",
+    "placeholder": "Écrivez un message",
+    "voice": "Message vocal",
+    "send": "Envoyer",
+    "welcome_title": "Bonjour ! Je suis Miguel.",
+    "welcome_subtitle": "Demandez-moi tout ce que vous voulez sur l'île et votre séjour.",
+    "prompts": {
+      "visit": "Que voir aujourd'hui ?",
+      "eat": "Où manger à proximité ?",
+      "calheta": "Comment aller à Calheta ?",
+      "taxi": "Ai-je besoin d'un taxi ?"
+    }
+  },
+  "controls": {
+    "location": {
+      "me": "Près de moi",
+      "guesthouse": "D'ici"
+    },
+    "range": "Dans un rayon de {{km}} km",
+    "entireIsland": "Toute l'île",
+    "sort": {
+      "label": "Trier",
+      "distance": "Distance",
+      "rating": "Note",
+      "name": "Nom"
+    },
+    "group": {
+      "grouped": "Groupé",
+      "flat": "Liste"
+    }
+  },
+  "vehicle": {
+    "car": "Voiture",
+    "foot": "À pied"
+  },
+  "map": {
+    "nearby": "À proximité",
+    "search_placeholder": "Rechercher des lieux…",
+    "locate_me": "Utiliser ma position",
+    "expand_sheet": "Afficher tous les lieux et filtres",
+    "collapse_sheet": "Réduire vers la carte"
+  },
+  "geolocation_denied": "Accès à la position refusé. Affichage des lieux proches de votre logement.",
+  "empty": "Rien ici pour {{action}} dans un rayon de {{km}} km.",
+  "loading": "Chargement…",
+  "error": "Échec du chargement. Veuillez réessayer.",
+  "hosts_picks": {
+    "title": "Coups de cœur de l'hôte",
+    "subtitle": "Recommandé personnellement par votre hôte"
+  },
+  "tour": {
+    "timeline": {
+      "reorder_hint": "Glissez pour réorganiser",
+      "duration": "{{min}} min"
+    },
+    "failure": {
+      "rejected_title": "Plan indisponible",
+      "rejected_body": "Votre plan de parcours n'a pas pu être créé.",
+      "timeout_title": "Planification en cours…",
+      "timeout_body": "Cela prend plus de temps que prévu. Vous pouvez réessayer ou modifier vos préférences.",
+      "retry": "Réessayer",
+      "edit": "Modifier les préférences"
+    },
+    "share": {
+      "button": "Partager",
+      "copied": "Lien copié !",
+      "title": "Mon Daily Tour",
+      "heading": "Parcours partagé",
+      "not_found": "Ce plan de parcours n'est pas disponible."
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-const LOCALES = ["en", "pt-PT"] as const;
+const LOCALES = ["en", "pt-PT", "fr", "es"] as const;
 
 export function LocaleSwitcher() {
   const { t, i18n } = useTranslation("home");
