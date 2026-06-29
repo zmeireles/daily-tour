@@ -22,10 +22,6 @@
   },
   "locale": {
     "en": "English",
-    "pt-PT": "Português",
-    "de": "Deutsch",
-    "es": "Español",
-    "fr": "Français",
-    "pt-BR": "Português (BR)"
+    "pt-PT": "Português"
   }
 }

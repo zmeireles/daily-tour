@@ -49,7 +49,9 @@
   },
   "locale": {
     "en": "English",
-    "pt-PT": "Português"
+    "pt-PT": "Português",
+    "fr": "Français",
+    "es": "Español"
   },
   "tour": {
     "new": {

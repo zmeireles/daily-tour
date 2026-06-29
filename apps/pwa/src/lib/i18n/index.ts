@@ -18,8 +18,24 @@ import ptDiscover from "../../locales/pt-PT/discover.json";
 import ptAdmin from "../../locales/pt-PT/admin.json";
 import ptLegal from "../../locales/pt-PT/legal.json";
 
+import frCommon from "../../locales/fr/common.json";
+import frPublic from "../../locales/fr/public.json";
+import frHome from "../../locales/fr/home.json";
+import frPlace from "../../locales/fr/place.json";
+import frDiscover from "../../locales/fr/discover.json";
+import frLegal from "../../locales/fr/legal.json";
+
+import esCommon from "../../locales/es/common.json";
+import esPublic from "../../locales/es/public.json";
+import esHome from "../../locales/es/home.json";
+import esPlace from "../../locales/es/place.json";
+import esDiscover from "../../locales/es/discover.json";
+import esLegal from "../../locales/es/legal.json";
+
 // Lazy-loading via i18next-resources-to-backend deferred — bundle size of
-// 12 small JSON files is negligible for v1.
+// these small JSON files is negligible for v1. fr/es ship the six guest-facing
+// namespaces; admin (owner-only backoffice) stays en/pt-PT and falls back to en
+// via fallbackLng for fr/es guests (no French/Spanish owner exists).
 const resources = {
   en: {
     common: enCommon,
@@ -38,6 +54,22 @@ const resources = {
     discover: ptDiscover,
     admin: ptAdmin,
     legal: ptLegal,
+  },
+  fr: {
+    common: frCommon,
+    public: frPublic,
+    home: frHome,
+    place: frPlace,
+    discover: frDiscover,
+    legal: frLegal,
+  },
+  es: {
+    common: esCommon,
+    public: esPublic,
+    home: esHome,
+    place: esPlace,
+    discover: esDiscover,
+    legal: esLegal,
   },
 };
 

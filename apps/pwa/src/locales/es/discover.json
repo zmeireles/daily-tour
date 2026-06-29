@@ -1,5 +1,24 @@
 {
   "title": "Descubrir",
+  "chat": {
+    "title": "Hablar con tu anfitrión",
+    "back": "Volver",
+    "status_online": "En línea",
+    "day_today": "Hoy",
+    "connecting": "Conectando…",
+    "empty": "Saluda para empezar la conversación.",
+    "placeholder": "Escribe un mensaje",
+    "voice": "Mensaje de voz",
+    "send": "Enviar",
+    "welcome_title": "¡Hola! Soy Miguel.",
+    "welcome_subtitle": "Pregúntame lo que quieras sobre la isla y tu estancia.",
+    "prompts": {
+      "visit": "¿Qué merece la pena ver hoy?",
+      "eat": "¿Dónde puedo comer cerca?",
+      "calheta": "¿Cómo llego a Calheta?",
+      "taxi": "¿Necesito un taxi?"
+    }
+  },
   "controls": {
     "location": {
       "me": "Cerca de mí",
@@ -29,7 +48,7 @@
     "expand_sheet": "Ver todos los lugares y filtros",
     "collapse_sheet": "Contraer al mapa"
   },
-  "geolocation_denied": "Acceso a ubicación denegado. Mostrando desde tu alojamiento.",
+  "geolocation_denied": "Acceso a ubicación denegado. Mostrando lugares cerca de tu alojamiento.",
   "empty": "Nada aquí para {{action}} dentro de {{km}} km.",
   "loading": "Cargando…",
   "error": "No se pudo cargar. Inténtalo de nuevo.",

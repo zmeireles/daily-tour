@@ -1,0 +1,19 @@
+{
+  "translation_pending": "EN",
+  "loading": "Chargement du lieu…",
+  "error": "Impossible de charger ce lieu. Veuillez réessayer.",
+  "not_found": "Lieu introuvable.",
+  "save_coming_soon": "Enregistrer — bientôt disponible",
+  "actions": {
+    "navigate": "Itinéraire",
+    "call": "Appeler",
+    "message": "Message",
+    "back": "Retour"
+  },
+  "details": {
+    "title": "Détails",
+    "opening_hours": "Horaires d'ouverture",
+    "best_season": "Meilleure saison"
+  },
+  "wa_prefill": "Bonjour ! Je suis à {{placeName}}, pouvez-vous me recommander la prochaine étape ?"
+}
