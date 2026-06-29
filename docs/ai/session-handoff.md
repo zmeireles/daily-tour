@@ -1,6 +1,33 @@
-# Session Handoff — … → 06-25 (Plan-003 LEAN PATH A→D-eng MERGED + LIVE + verified on qual: observability · alerting→Telegram · `/ready` · backups · rate-limits · consent) → next session
+# Session Handoff — … → 06-29 (Plan-003 beta GO-READY: legal + onboarding + n8n post-stay survey LIVE on qual; all qual bugs fixed/merged; backoffice redesign scoped → Plan-008) → next: launch the F&F beta (needs the cohort)
 
-> **UPDATE 2026-06-25 (LATEST — crash recovery mid-session. No work lost. The crashed session opened two PWA PRs (#305, #306); both failed the Lighthouse SEO budget. Diagnosed + fixed locally on `fix/pwa-seo-lighthouse-budget` (`af2d7c2`, NOT pushed). Resume by deciding how to land it — see this block.)**
+> **UPDATE 2026-06-29 (LATEST — Plan-003 beta is GO-READY. Legal gate cleared, onboarding live, n8n + post-stay survey LIVE on qual, all qual bugs fixed/merged; backoffice redesign scoped → Plan-008. ▶ RESUME HERE: the ONLY thing left to launch the F&F beta is the cohort — ask the user for the first ~5 invitees (name · contact · language), then mint links + send invites.)**
+>
+> ### Session arc (2026-06-25 crash recovery → 06-29 close)
+>
+> Recovered from a mid-session crash (nothing lost), drove Plan-003 to beta-ready, and scoped the backoffice redesign. **All work merged; main `1615f98`; 0 open PRs; local branches = main only; dt-tests `review` queue empty.**
+>
+> #### Shipped + merged this arc
+>
+> - **SEO Lighthouse fix (#307)** — added meta-description, descriptive consent link, permissive `public/robots.txt`, and fixed the vite `/r`→`/r/` proxy (it prefix-matched `/robots.txt` → 500). SEO 0.75→1.0. ⚠️ `Disallow:/` _fails_ the `is-crawlable` audit — keep robots permissive; de-index the beta at the edge if ever needed.
+> - **#305** privacy/terms legal **copy** (T-3.D.0) → **3.D legal gate CLEARED**. **#306** beta onboarding (T-3.H.0) → UAT **DT-TESTS-29 PASS** → 3.H.0 done. Both live on qual.
+> - **3 qual bugs filed; 2 fixed:** **#159 (P1)** beta-metrics 500 = `bff` lacked SELECT on `analytics` → fixed (**#309**: live `GRANT` applied + `02-roles.sql`) · **#160 (P2)** host's picks showed 6/10 (home hook only queried `action=see`) → fixed (**#312**: new `GET /v1/discover/hosts-picks`, cross-category + photo-gated) · **#161 (P3)** `/admin/profile` 404 = expected empty-state (improvement, still open in Riff).
+> - **Backoffice redesign initiative:** `/browser-uat` scan (18 screenshots in `temp/browser-uat/backoffice-scan/`) → design-critique workflow → **proposal-001** (`docs/design/backoffice-redesign/proposal-001.md`, **#311**) → reviewed with owner, **4 decisions locked** (subscription-launch _not_ beta · diverge-to-console aesthetic · 5-tab nav · both helpers phased) → **Plan-008** (`docs/implementation-plans/008-backoffice-redesign/`, **#313**; 6 slices / 28 tasks `T-8.x.y`). See [[project-subscription-backoffice]].
+> - **n8n LIVE on qual (#315)** — `dt_n8n` healthy, TLS (letsencrypt). Editor: `https://n8n.qual.stay.portugalodyssey.pt` — **owner = `zmeireles@gmail.com`; password in `temp/n8n-qual-owner.creds` (gitignored) — CHANGE IT**. **Post-stay survey LIVE:** `https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey` (responses → n8n **Executions**; English-only; URL recorded in beta doc §4 via **#316**).
+> - qual redeployed to `b181d4b` (legal pages + hosts-picks live); 3.D.0 marked done (**#314**).
+>
+> #### ▶ FIRST TASK NEXT SESSION — launch the F&F beta (T-3.H.2)
+>
+> Everything is ready EXCEPT the cohort (the people). **Ask the user for the first ~5 F&F invitees**, each: **name · contact (WhatsApp/email) · language (en/pt-PT)** (criteria in `docs/beta/beta-program-2026.md` §1: en/pt-PT, phone-first, party ≤2, willing to do the survey). Then per person: **`make qual-token`** (mints a guest `/r/<token>` link) → send invite copy (runbook §2) → survey link (the #316 URL) goes out ~1h before checkout. F&F = friends-and-family _fallback_ cohort (no real reservation needed; manual test tokens; tag `source: f_and_f`).
+> Also pending: **Miguel briefing** (in-person script §2.3 + chat inbox + P0 escalation). Optional polish: one **test survey submission** to confirm capture; a **pt-PT survey** variant; a Sheet/DB export node for responses.
+>
+> #### Gotchas learned this arc (save the next session pain)
+>
+> - **Deploy image tag = FULL 40-char SHA.** `gh workflow run deploy-qa.yml --ref main -f image_tag=<FULL-sha>`. Blank → "this commit SHA", which only has images if `publish-images` ran for that commit — **infra/docs-only commits DON'T trigger publish-images**, so deploy them with the last _code_ commit's full SHA. Short SHA → `manifest unknown` (images are tagged by full SHA).
+> - **`--admin` can't bypass the repo ruleset** (10 checks on an up-to-date branch). Merges are **sequential**: `gh pr update-branch <n>` → poll until `CLEAN` → `gh pr merge --squash --delete-branch`; each merge re-stales the others.
+> - **n8n `/setup` is public until claimed** (first POST `/rest/owner/setup` wins → claim the owner immediately post-deploy). Create a workflow with explicit `"active":false`; **activate via PATCH `/rest/workflows/{id}` `{"active":true}`** (the `/activate` endpoint needs a `versionId`).
+> - prettier reflows md tables → `pnpm exec prettier --write <doc>` before committing docs.
+>
+> **UPDATE 2026-06-25 (crash recovery 06-25 — no work lost. The crashed session opened two PWA PRs (#305, #306); both failed the Lighthouse SEO budget. Diagnosed + fixed via #307; both later merged. Kept for history.)**
 >
 > ### Crash recovery (2026-06-25, later)
 >
