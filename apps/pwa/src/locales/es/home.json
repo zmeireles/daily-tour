@@ -3,8 +3,10 @@
   "locale_hint": "Mostrando en {{locale}}",
   "nav": {
     "discover": "Descubrir",
+    "explore": "Explorar",
     "my_day": "Mi día",
     "talk_to_host": "Hablar con Miguel",
+    "host": "Anfitrión",
     "saved": "Guardados",
     "profile": "Perfil",
     "coming_soon": "Próximamente"
