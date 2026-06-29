@@ -34,7 +34,7 @@ describe("BottomTabBar", () => {
   it("renders the three non-Explore tabs as disabled stubs with coming-soon labels", () => {
     renderBar();
     for (const label of ["Saved", "Host", "Profile"]) {
-      const btn = screen.getByRole("button", { name: `${label} — coming soon` });
+      const btn = screen.getByRole("button", { name: `${label} — Coming soon` });
       expect(btn).toBeDisabled();
     }
   });
