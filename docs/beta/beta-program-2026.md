@@ -110,9 +110,16 @@ Participants are not told these are "tasks" — they experience them as natural 
 
 Delivered as a link in a WhatsApp/email message sent 1 hour before check-out.
 
-**Live form (n8n on qual):** <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey>
+**Live forms (n8n on qual) — one per cohort language; send each guest the link in their language:**
 
-Responses land in the n8n **Executions** history — the owner views/exports them in the n8n editor (`https://n8n.qual.stay.portugalodyssey.pt`; owner login). Add a Google-Sheet/DB export node later if a tabular view is wanted. The form is **English-only** for now; add a pt-PT variant if the cohort needs it.
+| Lang     | URL                                                               |
+| -------- | ----------------------------------------------------------------- |
+| English  | <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey>    |
+| pt-PT    | <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey-pt> |
+| Français | <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey-fr> |
+| Español  | <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey-es> |
+
+Responses for all four land in the n8n **Executions** history (one workflow per language — "DT Beta — Post-Stay Survey" plus (PT)/(FR)/(ES)) — the owner views/exports them in the n8n editor (`https://n8n.qual.stay.portugalodyssey.pt`; owner login). Add a Google-Sheet/DB export node later if a tabular view is wanted.
 
 | #   | Question                                                                  | Format                                            |
 | --- | ------------------------------------------------------------------------- | ------------------------------------------------- |
