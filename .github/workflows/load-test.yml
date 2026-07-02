@@ -6,6 +6,7 @@ on:
   schedule:
     # Nightly at 02:00 UTC — off-peak so it doesn't race normal CI.
     - cron: "0 2 * * *"
+  workflow_dispatch:
 
 concurrency:
   group: load-tests-${{ github.ref }}
@@ -62,12 +63,19 @@ jobs:
         timeout-minutes: 20
 
       # Start infra first so minio-init (one-shot bucket bootstrap) completes
-      # before media-svc tries to connect.
+      # before media-svc tries to connect. --wait is scoped to the long-running
+      # services: compose returns exit 1 when an unscoped --wait sees a one-shot
+      # service in "exited" state, even at exit 0 (minio-init).
       - name: Start base infrastructure
         run: |
           docker compose \
             -f infra/compose/docker-compose.base.yml \
-            up -d --wait --wait-timeout 120
+            up -d --wait --wait-timeout 120 \
+            postgres redis rabbitmq minio
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            up -d minio-init
+          test "$(docker wait dt_minio_init)" = "0"
 
       # Start only the services needed for the three k6 scenarios:
       #   token-exchange → bff → token-svc
