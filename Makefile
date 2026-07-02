@@ -140,6 +140,10 @@ vps:
 qual-token:
 	@ssh -o ConnectTimeout=12 $(VPS_USER)@$(VPS_HOST) 'bash -s' < scripts/qual/mint-guest-token.sh
 
+## Export beta post-stay survey responses (all languages) to CSV on stdout. e.g. make survey-export > out.csv
+survey-export:
+	@node scripts/beta/export-survey-responses.mjs
+
 ## List available targets.
 help:
 	@echo "Daily Tour — make targets (ENV=$(ENV), env-file=$(ENV_FILE))"
