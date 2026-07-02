@@ -104,8 +104,10 @@ jobs:
       - name: Seed places (catalog-svc)
         run: pnpm --filter @daily-tour/catalog-svc seed:places
 
+      # World-writable: the grafana/k6 container runs as its own non-root uid
+      # and must write the JSON output into this runner-owned mounted dir.
       - name: Create results directory
-        run: mkdir -p tests/load/k6/results
+        run: mkdir -p tests/load/k6/results && chmod 777 tests/load/k6/results
 
       # k6 runs inside the dt_internal network so it can reach bff (dt_bff:8080)
       # and token-svc (dt_token_svc:8088) directly — no host-port mapping needed.
