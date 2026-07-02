@@ -36,6 +36,7 @@ jobs:
       SERVICE_DB_PASSWORD_TOKEN: change-me-please-token
       SERVICE_DB_PASSWORD_CATALOG: change-me-please-catalog
       SERVICE_DB_PASSWORD_MEDIA: change-me-please-media
+      SERVICE_DB_PASSWORD_SEARCH: change-me-please-search
 
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +60,7 @@ jobs:
           docker compose \
             -f infra/compose/docker-compose.base.yml \
             -f infra/compose/docker-compose.app.yml \
-            build bff token-svc catalog-svc media-svc
+            build bff token-svc catalog-svc media-svc search-svc
         timeout-minutes: 20
 
       # Start infra first so minio-init (one-shot bucket bootstrap) completes
@@ -79,7 +80,7 @@ jobs:
 
       # Start only the services needed for the three k6 scenarios:
       #   token-exchange → bff → token-svc
-      #   discover       → bff → catalog-svc
+      #   discover       → bff → search-svc
       #   place-detail   → bff → catalog-svc
       # bff depends_on token-svc + media-svc, so compose starts those too.
       # tour-plan.js is excluded — it requires planner-svc (ANTHROPIC_API_KEY).
@@ -89,7 +90,7 @@ jobs:
             -f infra/compose/docker-compose.base.yml \
             -f infra/compose/docker-compose.app.yml \
             up -d --wait --wait-timeout 180 \
-            bff catalog-svc
+            bff catalog-svc search-svc
         timeout-minutes: 10
 
       # Seed scripts default to localhost:27432 and the hardcoded role passwords,
