@@ -1,6 +1,31 @@
-# Session Handoff — … → 06-30 (Plan-003 F&F beta LAUNCH-READY: fr/es shipped + 6-person cohort SEEDED + multilingual surveys + DB sink + invite batch + Miguel briefing; only the user SENDING invites remains) → next: send invites / Plan-008
+# Session Handoff — … → 07-02 (crash recovery 06-30→07-01: NOTHING lost; repo fully reconciled; José+Miguel Gmail invite drafts exist UNSENT, Gmail MCP authed) → next: send invites (user go) / watch beta / Plan-008
 
-> **UPDATE 2026-06-30 (LATEST — Plan-003 F&F beta is LAUNCH-READY on the engineering side. Everything built/deployed/verified on qual; the ball is on the user to SEND the 4 invites + brief Miguel. ▶ RESUME HERE: check whether the user sent the invites; if Gmail MCP is authed, send the José/Miguel emails (drafts prepared); else pick up Plan-008.)**
+> **UPDATE 2026-07-02 (LATEST — crash recovery + close-out. The 06-30 session crashed in the early hours of 07-01, AFTER finishing all engineering work; nothing was lost. Repo is fully reconciled. ▶ RESUME HERE: the beta is still one human action from running — ask the user to send/approve the invites (details below), else watch the beta or pick up Plan-008.)**
+>
+> ### Crash recovery (2026-07-02) — timeline reconstructed, everything accounted for
+>
+> - The crashed session's true extent: PRs **#318–#321 all merged 06-30** (as its handoff claimed), handoff PR **#322** pushed 15:44 green but never merged, then it kept working past midnight — updated `temp/invite-batch-2026-06-29.md` (00:07) and created **two Gmail invite drafts at ~00:16 on 07-01** (José en "Your Daily Tour beta link" → zmeireles@gmail.com · Miguel pt-PT "O seu Daily Tour — para começar" → mbamaral@gmail.com), then died. **Both drafts still UNSENT** (verified: nothing in sent mail to Miguel, 7-day window).
+> - **Recovery actions:** local main was 2 behind (never pulled #320/#321) → fast-forwarded; **#322 recovered + merged** (was `BEHIND` per ruleset → `update-branch` → auto-merge) → main **`f8a8bfd`**; deleted 4 squash-merged local branches (`chore/beta-followups`, `docs/beta-survey-variants`, `docs/session-closeout-0629`, `docs/handoff-0630`). No stashes, tree clean (only the known pre-existing untracked `e2e/`).
+> - **Rituals:** dt-tests `review` queue **empty**; orchestrator-comms inbox — nothing new (last: po-3 DSN 06-20, jo:Pico intro 06-23, both handled).
+> - **Memory updated:** [[project-plan-003]] + `MEMORY.md` (Gmail MCP IS authed; drafts unsent; ⚠️ via the API the draft links show google.com/url-wrapping — eyeball the drafts once before sending).
+>
+> ### ▶ FIRST TASK NEXT SESSION
+>
+> 1. **Send the invites (needs the user):** (a) ask whether the 4 WhatsApp invites (Pedro Amaral · Rui-fr · Pedro Albergaria · Célia-es, copy in `temp/invite-batch-2026-06-29.md`) went out — unverifiable from here; (b) on the user's go, **send the 2 Gmail drafts** (José + Miguel — Gmail MCP is authed; check the link-wrapping caveat first). Miguel also needs the briefing (`temp/miguel-briefing-2026-06-29.md`).
+> 2. **Watch the beta once invites are out:** dt-tests `review` poll · `make survey-export` / `SELECT * FROM beta.survey_responses` · n8n Executions · the in-app chat inbox (José monitors).
+> 3. **Or pick up Plan-008** (owner backoffice redesign — 28 tasks ready; see [[project-subscription-backoffice]]).
+>
+> ### Triage backlog surfaced this session (chronic, NOT crash-related)
+>
+> - **Nightly `Load Tests` on main has failed every night since ≥06-27** (runs 28276933427…28562719554). Unmentioned in any prior handoff — investigate (scheduled cron ~03:15Z).
+> - `~/.claude-squad/worktrees/jmeireles/boa-design2` is NOT a git worktree — a stray `apps/` dir from May 27, likely another project's debris. Confirm with the user, then delete.
+> - Origin carries ~10 stale merged-PR remote branches (`feat/deploy-n8n-to-qual`, `docs/3d0-done`, `fix/i18n-bottom-tab-bar`, …) — prune on request.
+>
+> ### State (07-02)
+>
+> main **`f8a8bfd`** (#322 merged); **0 open PRs**; local branches: **main only**; tree clean. qual untouched this session (still on the 06-30 deploy: fr/es + tab-bar fix + 4 survey forms + DB sink + 6 cohort reservations LIVE). dt-tests `review` empty. **The beta remains exactly one human action (send invites) from running.**
+
+> **UPDATE 2026-06-30 (Plan-003 F&F beta is LAUNCH-READY on the engineering side. Everything built/deployed/verified on qual; the ball is on the user to SEND the 4 invites + brief Miguel. ▶ RESUME HERE: check whether the user sent the invites; if Gmail MCP is authed, send the José/Miguel emails (drafts prepared); else pick up Plan-008.)**
 >
 > ### Shipped this arc (06-30) — PRs #318–#321, all live on qual
 >
