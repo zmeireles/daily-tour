@@ -77,6 +77,14 @@ jobs:
             -f infra/compose/docker-compose.base.yml \
             up -d minio-init
           test "$(docker wait dt_minio_init)" = "0"
+          # rabbitmq first-boots with the static definitions.json password hash
+          # and ignores RABBITMQ_DEFAULT_* when load_definitions is set, so the
+          # dailytour user's password never matches the job env — reconcile it
+          # (same pattern as deploy-qa). Without this, search-svc crash-loops
+          # on ACCESS_REFUSED (media-svc merely fail-softs its worker).
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            exec -T rabbitmq rabbitmqctl change_password dailytour "$RABBITMQ_PASSWORD"
 
       # Start only the services needed for the three k6 scenarios:
       #   token-exchange → bff → token-svc
