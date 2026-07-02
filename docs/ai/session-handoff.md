@@ -1,6 +1,32 @@
-# Session Handoff — … → 06-29 (Plan-003 beta GO-READY: legal + onboarding + n8n post-stay survey LIVE on qual; all qual bugs fixed/merged; backoffice redesign scoped → Plan-008) → next: launch the F&F beta (needs the cohort)
+# Session Handoff — … → 06-30 (Plan-003 F&F beta LAUNCH-READY: fr/es shipped + 6-person cohort SEEDED + multilingual surveys + DB sink + invite batch + Miguel briefing; only the user SENDING invites remains) → next: send invites / Plan-008
 
-> **UPDATE 2026-06-29 (LATEST — Plan-003 beta is GO-READY. Legal gate cleared, onboarding live, n8n + post-stay survey LIVE on qual, all qual bugs fixed/merged; backoffice redesign scoped → Plan-008. ▶ RESUME HERE: the ONLY thing left to launch the F&F beta is the cohort — ask the user for the first ~5 invitees (name · contact · language), then mint links + send invites.)**
+> **UPDATE 2026-06-30 (LATEST — Plan-003 F&F beta is LAUNCH-READY on the engineering side. Everything built/deployed/verified on qual; the ball is on the user to SEND the 4 invites + brief Miguel. ▶ RESUME HERE: check whether the user sent the invites; if Gmail MCP is authed, send the José/Miguel emails (drafts prepared); else pick up Plan-008.)**
+>
+> ### Shipped this arc (06-30) — PRs #318–#321, all live on qual
+>
+> - **fr + es guest locales first-class (#318):** completed both to exact `en`-parity across the 6 guest namespaces (common/home/public/discover/place/legal); wired into `lib/i18n` + guest & public-landing switchers (EN/PT/FR/ES); `admin` left en-only (no fr/es owner → en fallback). Reservation locale already drives the app via `routes/r.$token.tsx` → `i18n.changeLanguage`. Browser-UAT'd native on qual.
+> - **Mobile bottom-tab-bar i18n fix (#319) + CI guard (#321):** `bottom-tab-bar.tsx` hardcoded English (Explore/Saved/Host/Profile) → leaked on every authed **mobile** screen (the phone-first beta surface!), pt-PT included. Now driven from `nav.*` keys (added `nav.explore`/`nav.host` to all 4 locales). Re-UAT'd: fr `Explorer/Hôte`, es `Explorar/Anfitrión`, zero leak. #321 also adds a vitest regression guard + `scripts/beta/export-survey-responses.mjs` + `make survey-export`.
+> - **6-person F&F cohort SEEDED on qual** — distinct guest+reservation+locale each (José en · Pedro Amaral pt-PT · Rui Lima **fr** · Pedro Albergaria pt-PT · Célia Lima **es** · Miguel pt-PT; checkout +35d). All redeem 200 + correct locale. Per-person invite copy (**formal register** — pt 3rd-person, fr «vous» — `revisor-ptpt`-clean) + the links in **`temp/invite-batch-2026-06-29.md`** (gitignored: PII + live tokens). José+Miguel = dogfood/host links.
+> - **Multilingual post-stay survey:** pt/fr/es n8n form variants created+activated (`/form/dt-beta-survey-{pt,fr,es}`; URLs in beta doc §4 via #320) + a durable **`beta.survey_responses` Postgres sink** (n8n credential "DT qual postgres"; `executeQuery` insert of `lang`+`payload` jsonb) wired into all 4 survey workflows. Both export paths verified.
+> - **Miguel briefing** (PT-PT, non-technical, "José monitors the chat") in **`temp/miguel-briefing-2026-06-29.md`**. n8n owner password **ROTATED** by the user (new value in `temp/n8n-qual-owner.creds` — don't `cat` it).
+>
+> ### ▶ FIRST TASK NEXT SESSION
+>
+> 1. **Did the user send the 4 invites** (Pedro Amaral, Rui-fr, Pedro Albergaria, Célia-es from the batch)? If **Gmail MCP is authed** (user ran `/mcp` → "claude.ai Gmail"), SEND José's (zmeireles@gmail.com) + Miguel's (mbamaral@gmail.com) emails — drafts were prepared. Survey link goes per-person near end of eval (in their language).
+> 2. **Watch the beta:** dt-tests `review` poll; responses via n8n Executions / `make survey-export` / `SELECT * FROM beta.survey_responses`; the in-app chat inbox (José monitors).
+> 3. **Or pick up Plan-008** (owner backoffice redesign, subscription-launch — 28 tasks ready; see [[project-subscription-backoffice]]).
+>
+> ### Gotchas (06-30)
+>
+> - n8n create-workflow needs explicit `"active":false` (DB col NOT NULL) → then PATCH `active:true`. Form submit = multipart `field-0…N`. Execution data is **`flatted`**-encoded (string values = registry indices, numbers/bools literal) — decoder in `scripts/beta/export-survey-responses.mjs`.
+> - n8n↔postgres: both on `dt_internal`; `pg_hba` = `scram-sha-256` (password required, captured from the `dt_postgres` container env without echoing). Cohort seeding = guest+reservation CTE → token-svc mint (the `make qual-token` pattern, per-locale).
+> - The mobile bottom tab bar was an **untested i18n surface** the fr/es UAT caught — a class of "authed mobile-only" components may have similar hardcoded strings; worth an audit if more locales ship.
+>
+> ### State (06-30)
+>
+> main after #321; **0 open PRs**; local branches → main only. qual: fr/es i18n + tab-bar fix LIVE; 4 survey forms + DB sink LIVE; 6 cohort reservations live (+ the 2 original test reservations). dt-tests `review` empty. Memory updated: [[project-plan-003]]. **The beta is one user action (send invites) from running.**
+
+> **UPDATE 2026-06-29 (Plan-003 beta is GO-READY. Legal gate cleared, onboarding live, n8n + post-stay survey LIVE on qual, all qual bugs fixed/merged; backoffice redesign scoped → Plan-008. ▶ RESUME HERE: the ONLY thing left to launch the F&F beta is the cohort — ask the user for the first ~5 invitees (name · contact · language), then mint links + send invites.)**
 >
 > ### Session arc (2026-06-25 crash recovery → 06-29 close)
 >
