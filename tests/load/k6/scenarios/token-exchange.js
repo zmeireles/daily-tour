@@ -29,8 +29,11 @@ export const options = {
   vus: 50,
   duration: "1m",
   thresholds: {
-    // p95 of successful exchanges must be under 300ms
-    token_exchange_duration: ["p(95)<300"],
+    // CI budget: ~3x the 300ms qual SLO — GH runners are 2-core shared
+    // hardware running the whole Docker stack; validated p95 there is ~486ms
+    // (PR #324). A real regression still trips this; the true SLO is
+    // verified against qual via the Grafana bff-latency dashboard.
+    token_exchange_duration: ["p(95)<900"],
     // unexpected statuses (5xx, 404, …) must stay below 0.1%
     token_exchange_errors: ["rate<0.001"],
   },

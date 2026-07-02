@@ -21,7 +21,8 @@ export const options = {
   vus: 100,
   duration: "2m",
   thresholds: {
-    place_detail_duration: ["p(95)<200"],
+    // CI budget: ~3x the 200ms qual SLO (see token-exchange.js note, PR #324)
+    place_detail_duration: ["p(95)<600"],
     place_detail_errors: ["rate<0.001"],
   },
 };

@@ -28,7 +28,8 @@ export const options = {
   vus: 100,
   duration: "2m",
   thresholds: {
-    discover_duration: ["p(95)<500"],
+    // CI budget: ~3x the 500ms qual SLO (see token-exchange.js note, PR #324)
+    discover_duration: ["p(95)<1500"],
     discover_errors: ["rate<0.005"],
   },
 };
