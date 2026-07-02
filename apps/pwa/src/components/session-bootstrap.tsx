@@ -25,6 +25,9 @@ export function SessionBootstrap({ children }: Props) {
     if (typeof window !== "undefined" && window.location.pathname.startsWith("/r/")) {
       return false;
     }
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+      return false;
+    }
     return true;
   });
   const ran = useRef(false);

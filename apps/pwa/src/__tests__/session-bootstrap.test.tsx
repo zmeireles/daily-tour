@@ -101,4 +101,51 @@ describe("SessionBootstrap", () => {
     expect(screen.queryByTestId("session-bootstrap-loading")).not.toBeInTheDocument();
     expect(refreshSession).not.toHaveBeenCalled();
   });
+
+  describe("admin-path gating (T-8.0.4)", () => {
+    it("on /admin — skips bootstrap, performs zero /v1/auth/refresh calls", () => {
+      setPath("/admin");
+
+      render(
+        <SessionBootstrap>
+          <div data-testid="children">admin root</div>
+        </SessionBootstrap>,
+      );
+
+      expect(screen.getByTestId("children")).toBeInTheDocument();
+      expect(screen.queryByTestId("session-bootstrap-loading")).not.toBeInTheDocument();
+      expect(refreshSession).not.toHaveBeenCalled();
+    });
+
+    it("on /admin/* sub-routes — skips bootstrap", () => {
+      setPath("/admin/reservations");
+
+      render(
+        <SessionBootstrap>
+          <div data-testid="children">admin reservations</div>
+        </SessionBootstrap>,
+      );
+
+      expect(screen.getByTestId("children")).toBeInTheDocument();
+      expect(screen.queryByTestId("session-bootstrap-loading")).not.toBeInTheDocument();
+      expect(refreshSession).not.toHaveBeenCalled();
+    });
+
+    it("on a guest route — still fetches refresh (admin gate does not over-apply)", async () => {
+      setPath("/p/some-place");
+      vi.mocked(refreshSession).mockResolvedValue(null);
+
+      render(
+        <SessionBootstrap>
+          <div data-testid="children">guest place</div>
+        </SessionBootstrap>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("children")).toBeInTheDocument();
+      });
+
+      expect(refreshSession).toHaveBeenCalledOnce();
+    });
+  });
 });
