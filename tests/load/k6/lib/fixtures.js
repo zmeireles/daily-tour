@@ -3,7 +3,7 @@
  *
  * Token flow:
  *   token-svc: POST /v1/reservations/:id/token  → opaque token
- *   BFF:       GET  /r/:token                   → { jwt, exp }
+ *   BFF:       GET  /v1/r/:token                   → { jwt, exp }
  *
  * All authenticated scenarios (discover, place-detail, tour-plan) need a
  * valid JWT. Call getJwt() in k6's setup() and pass the returned string as
@@ -87,21 +87,19 @@ export function mintToken(reservationId) {
   const res = http.post(url, null, { tags: { name: "mint_token" } });
   check(res, { "mint_token 200": (r) => r.status === 200 });
   if (res.status !== 200) {
-    throw new Error(
-      `mintToken failed for ${reservationId}: status=${res.status} body=${res.body}`,
-    );
+    throw new Error(`mintToken failed for ${reservationId}: status=${res.status} body=${res.body}`);
   }
   return res.json("token");
 }
 
 /**
  * Exchange an opaque token via the BFF guest-link route.
- * GET /r/:token → { jwt, exp }
+ * GET /v1/r/:token → { jwt, exp }
  *
  * Returns { jwt, exp } or throws on failure.
  */
 export function exchangeToken(opaque) {
-  const url = `${baseUrl()}/r/${opaque}`;
+  const url = `${baseUrl()}/v1/r/${opaque}`;
   const res = http.get(url, { tags: { name: "exchange_token" } });
   check(res, { "exchange_token 200": (r) => r.status === 200 });
   if (res.status !== 200) {
