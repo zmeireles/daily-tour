@@ -1,6 +1,46 @@
-# Session Handoff — … → 07-02 (crash recovery 06-30→07-01: NOTHING lost; repo fully reconciled; José+Miguel Gmail invite drafts exist UNSENT, Gmail MCP authed) → next: send invites (user go) / watch beta / Plan-008
+# Session Handoff — … → 07-03 (🚀 F&F BETA LIVE for José+Miguel; Load Tests CI resurrected — first green ever; Plan-008 Slice 0 merged) → next: check first green nightly / WhatsApp invites (user) / beta watch / Slice 1
 
-> **UPDATE 2026-07-02 (LATEST — crash recovery + close-out. The 06-30 session crashed in the early hours of 07-01, AFTER finishing all engineering work; nothing was lost. Repo is fully reconciled. ▶ RESUME HERE: the beta is still one human action from running — ask the user to send/approve the invites (details below), else watch the beta or pick up Plan-008.)**
+> **UPDATE 2026-07-03 (LATEST — huge session: beta launched + Load Tests resurrected + Plan-008 Slice 0 shipped. Clean close: 0 open PRs, branches=main, no agents/monitors left, dt-tests `review` empty. ▶ RESUME HERE: ① verify tonight's nightly `Load Tests` run went green (would be the FIRST green nightly ever — cron ~03:15Z; if red, the fix history is in PR #324); ② rituals (dt-tests poll · comms inbox); ③ beta watch; ④ Plan-008 Slice 1 when the user wants it.)**
+>
+> ### 🚀 Beta state (the headline)
+>
+> - **INVITES SENT 2026-07-02 ~14:01Z** — José (en dogfood) + Miguel (pt-PT host) emails verified in sent mail; stale 07-01 duplicate drafts trashed. **Miguel's briefing = user handles IN PERSON** (`temp/miguel-briefing-2026-06-29.md`) — do not nag.
+> - **The 4 WhatsApp invites are NOT sent** (Pedro Amaral · Rui-fr · Pedro Albergaria · Célia-es). They are MANUAL copy-paste blocks the USER sends from his phone (`temp/invite-batch-2026-06-29.md`; paste-ready copies were also put in-chat 07-03). The user briefly thought he'd _receive_ them — clarified. Links valid ~35d from 06-29.
+> - **Survey links go per person AFTER their look-through**, in their language (URLs in beta doc §4). Watch: dt-tests `review` · `make survey-export` / `SELECT * FROM beta.survey_responses` · n8n Executions · in-app chat inbox (José monitors).
+> - **Gmail MCP is drafts-only BY DESIGN** (no send tool — user clicks Send). The `google.com/url?…ust=…` link-wrapping seen when reading drafts via the API is a display artifact, NOT stored content (proven; see [[project-plan-003]]). For autonomous sending later: n8n SMTP or gmail.send OAuth (offered, not built).
+>
+> ### Shipped this session (all merged; main `c873639`)
+>
+> - **#324 — `Load Tests` workflow RESURRECTED; run 28596230938 = first green run since the workflow landed (#121, 05-18).** Seven stacked fixes, each proven by a live run (full table in the PR body): pnpm `version:` vs `packageManager` conflict → compose `--wait` vs the exit-0 `minio-init` one-shot → k6 results-dir perms (container uid) → k6 fixtures still on pre-#234 `/r/:token` (+ closed a **false-green**: token-exchange passed against a broken route because only-5xx counted as errors) → **discover actually needs `search-svc`, which the job never started** (admitted requests 500'd on connect-timeout; workflow comment wrongly said catalog-svc) → RabbitMQ definitions.json password reconcile (`rabbitmqctl change_password`, deploy-qa pattern; search-svc treats rabbit as fatal, media-svc fail-softs) → scenarios made limiter-aware (post-#301 reality: 429 = expected from k6's single IP; latency only on real responses; place-detail thresholds the **median** — its p95 swung 4.19s→5.75s between identical runs). Also added `workflow_dispatch` + created the `load-test` repo label (never existed → the PR-label trigger had never been usable; re-trigger = remove+re-add the label).
+> - **Issue #328 filed (real product finding):** the BFF limiter `keyGenerator` JWT-decodes every request it REJECTS — a 429 flood (~450/s) taxes the event loop enough that admitted requests queue (median ~0.7s vs tens-of-ms idle). Candidates: per-token decode cache · cheaper limiter key · global-IP check before the decoding limiter.
+> - **Plan-008 Slice 0 DONE (#325 · #326 · #327)** — admin `[data-app="admin"]` token overlay + `touch`/`icon-touch` button sizes (T-8.0.1/2) · ConsentBanner + SessionBootstrap gated off `/admin` (T-8.0.3/4, the §8.11 pull-forwards; gates are mount-time like the `/r/` skip — noted in #326) · 11 hand-rolled radix primitives incl. `form.tsx` RHF+zod, 49 tests, zero new deps (T-8.0.5). Built by 3 parallel cs-agents (`s702-*`, sonnet-yolo); wave log in `docs/implementation-plans/008-backoffice-redesign/EXECUTION.md`; TODO now EXECUTING, **Slice 1 (T-8.1.x responsive shell) unblocked**.
+> - **#329** — post-cycle docs (CHANGELOG, EXECUTION.md, TODO flips).
+>
+> ### ⚠️ Deliberate non-action
+>
+> - **main is NOT deployed to qual.** qual stays on the 06-30 beta build while José+Miguel actively use it (Slice 0 is owner-only anyway). Deploy on the user's word — remember `image_tag` = FULL 40-char SHA of a publish-images commit.
+>
+> ### Gotchas learned (session ops)
+>
+> - **cs-agent `push` writes non-CC PR titles** (`S702 T8 0 1`) → the `pr-title` check fails; retitle with `gh pr edit` right after push.
+> - **A sonnet-yolo agent stalled ~45 min on a Claude USAGE-LIMIT prompt** ("wait for reset / add funds") after finishing its files — tmux `capture-pane` to diagnose; salvage = run gates + commit from its worktree yourself, `cs-agent push`, then kill. **Check plan quota before launching the next wave.**
+> - `git add -A` in this repo grabs the user's pre-existing untracked `e2e/` → commit bounces on hooks; stage explicit paths only.
+> - `cs-agent logs`/bare `cs-agent diff` can hang the shell (follow-mode); read `~/.claude-squad/logs/<name>.log` / `git diff main...<branch>` instead.
+> - Merge dance that works unattended: arm `gh pr merge --squash --auto --delete-branch` on ALL PRs, then loop `gh pr update-branch` on whichever reports `BEHIND` after each merge.
+>
+> ### ▶ FIRST TASKS NEXT SESSION
+>
+> 1. **Check the nightly Load Tests run** (`gh run list --workflow "Load Tests" --limit 1`) — expected the first green nightly ever. If red: diagnose per the #324 layer table; the k6 artifacts (14d retention) tally per-request statuses.
+> 2. **Rituals:** dt-tests `review` poll (empty at close) · `orchestrator-comms/inbox-daily-tour.md` (nothing new at close) · beta signals (survey sink, chat inbox).
+> 3. **Ask casually if the WhatsApp invites went out** (blocks the remaining 4/6 of the cohort); survey-link reminders per person as they finish.
+> 4. **Plan-008 Slice 1** on the user's go (T-8.1.1 shell rewrite is the big one; check usage quota first; same s-prefix naming, e.g. `s7XX-t8-1-1`).
+> 5. Chronic backlog (untouched): stray `~/.claude-squad/worktrees/jmeireles/boa-design2` (user confirm → delete) · ~10 stale merged remote branches (prune on request) · issue #328 (limiter decode cost) · #161 `/admin/profile` empty-state.
+>
+> ### State (07-03 close)
+>
+> main **`c873639`** (#324→#329 all merged) · **0 open PRs** · local branches: **main only** · tree clean (pre-existing untracked `e2e/` as always) · no cs-agents/tmux/monitors running · dt-tests `review` empty · qual = 06-30 beta build (deliberate) · **beta LIVE for 2/6 cohort members**. Memory current: [[project-plan-003]] (beta state incl. Gmail facts) · [[project-subscription-backoffice]] (Slice 0 + ops gotchas).
+
+> **UPDATE 2026-07-02 (crash recovery + close-out. The 06-30 session crashed in the early hours of 07-01, AFTER finishing all engineering work; nothing was lost. Repo is fully reconciled. ▶ RESUME HERE: the beta is still one human action from running — ask the user to send/approve the invites (details below), else watch the beta or pick up Plan-008.)**
 >
 > ### Crash recovery (2026-07-02) — timeline reconstructed, everything accounted for
 >
