@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useOwnerJwt } from "@/store/owner-session";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { StatTile } from "@/components/ui/stat-tile";
 
 interface BetaMetrics {
   total_guests: number;
@@ -22,22 +25,27 @@ export function BetaDashboard() {
   const { t } = useTranslation("admin");
   const jwt = useOwnerJwt();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "beta-metrics"],
     queryFn: () => fetchBetaMetrics(jwt!),
     enabled: !!jwt,
     staleTime: 1000 * 60 * 5,
+    retry: false,
   });
 
   if (isLoading) {
-    return <p className="text-muted-foreground">{t("beta.loading", "Loading metrics…")}</p>;
+    return <LoadingState variant="tiles" count={4} />;
   }
 
   if (isError || !data) {
     return (
-      <p className="text-destructive" role="alert">
-        {t("beta.error", "Failed to load beta metrics.")}
-      </p>
+      <ErrorState
+        title={t("beta.error_title", "Error loading metrics")}
+        description={t("beta.error", "Failed to load beta metrics.")}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
@@ -51,13 +59,13 @@ export function BetaDashboard() {
       </p>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MetricCard label={t("beta.total_guests", "Guests")} value={String(data.total_guests)} />
-        <MetricCard label={t("beta.completion_rate", "Completion")} value={`${completionPct}%`} />
-        <MetricCard
+        <StatTile label={t("beta.total_guests", "Guests")} value={String(data.total_guests)} />
+        <StatTile label={t("beta.completion_rate", "Completion")} value={`${completionPct}%`} />
+        <StatTile
           label={t("beta.avg_rating", "Avg rating")}
           value={data.average_rating != null ? data.average_rating.toFixed(1) : "—"}
         />
-        <MetricCard
+        <StatTile
           label={t("beta.funnel_started", "Started")}
           value={String(data.drop_off_funnel.started)}
         />
@@ -95,15 +103,6 @@ export function BetaDashboard() {
           </div>
         </div>
       </section>
-    </div>
-  );
-}
-
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className="text-2xl font-semibold">{value}</p>
     </div>
   );
 }
