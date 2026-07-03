@@ -44,7 +44,7 @@ export function TopAppBar({ counts, className }: { counts: NavCounts; className?
           </Button>
         </SheetTrigger>
         {/* data-app pins the admin token overlay inside the body-level portal. */}
-        <SheetContent side="left" data-app="admin" className="w-72 bg-card">
+        <SheetContent side="left" data-app="admin" aria-describedby={undefined} className="w-72 bg-card">
           <SheetHeader>
             <SheetTitle>{t("shell.nav.aria", "Admin")}</SheetTitle>
           </SheetHeader>
