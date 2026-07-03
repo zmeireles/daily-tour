@@ -33,11 +33,20 @@ export default function AdminRoute() {
 
   if (checking) {
     return (
-      <main className="min-h-svh grid place-items-center" aria-live="polite" aria-busy="true">
+      <main
+        data-app="admin"
+        className="min-h-svh grid place-items-center"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <p className="text-muted-foreground">{t("shell.redirecting", "Redirecting to login…")}</p>
       </main>
     );
   }
 
-  return <BackofficeShell />;
+  return (
+    <div data-app="admin" className="contents">
+      <BackofficeShell />
+    </div>
+  );
 }
