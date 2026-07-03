@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-008 Slice 0 foundation + Load Tests resurrected (2026-07-03)
+
+- **Backoffice redesign — Slice 0 foundation merged** (#325, #326, #327): scoped `[data-app="admin"]` console token overlay (light+dark, STATE tokens, nav-active, card shadow; guest `tokens.css` untouched) + `touch`/`icon-touch` button sizes; ConsentBanner and SessionBootstrap gated off `/admin/*` (the two §8.11 cleanups); 11 hand-rolled radix-ui primitives (tabs, input, label, textarea, select, form RHF+zod, skeleton, loading-state, error-state, alert-dialog, tooltip) with 49 unit tests and zero new dependencies. Execution log: `docs/implementation-plans/008-backoffice-redesign/EXECUTION.md`.
+
+### Fixed — nightly Load Tests CI green for the first time (2026-07-03)
+
+- **`load-test.yml` resurrected (#324)** — the workflow had never produced a green run since it landed (#121, 2026-05-18). Seven stacked fixes, each verified by a live run: pnpm version-input conflict; compose `--wait` vs the `minio-init` one-shot; k6 results-dir permissions; k6 fixtures migrated to the post-#234 `/v1/r/:token` redeem (and the token-exchange false-green closed — only 200/302/429 are acceptable now); **search-svc started for the discover path** (the job never ran it — admitted requests 500'd on connect timeout); RabbitMQ definitions.json password reconciled (`rabbitmqctl change_password`, the deploy-qa pattern); scenarios made rate-limiter-aware with CI-calibrated budgets (place-detail thresholds the stable median, not the noisy tail). Follow-up filed: #328 — the limiter JWT-decodes every rejected request, so 429 floods degrade admitted-request latency.
+
 ### Added — Plan-003 Real-User Readiness: lean path A→D-eng live on qual (2026-06-25)
 
 The friends-and-family-beta readiness path **merged, deployed, and verified live on qual** — 7 PRs (#297–#303), one consolidated main deploy:

@@ -1,6 +1,6 @@
 # Plan-008 — Owner Backoffice Redesign — TODO
 
-Status: **READY** — design decisions locked 2026-06-27; slices + acceptance criteria minted; awaiting execution kickoff. Full slice detail + acceptance criteria in [`README.md`](./README.md). Design source of truth: [`docs/design/backoffice-redesign/proposal-001.md`](../../design/backoffice-redesign/proposal-001.md). Task IDs `T-8.<phase>.<task>` (middle digit = proposal phase 0–5).
+Status: **EXECUTING** — Slice 0 merged 2026-07-03 (see [`EXECUTION.md`](./EXECUTION.md)); Slice 1 unblocked. Full slice detail + acceptance criteria in [`README.md`](./README.md). Design source of truth: [`docs/design/backoffice-redesign/proposal-001.md`](../../design/backoffice-redesign/proposal-001.md). Task IDs `T-8.<phase>.<task>` (middle digit = proposal phase 0–5).
 
 ## Priority tier
 
@@ -16,24 +16,24 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 
 ## Progress
 
-| Slice | Title                              | Priority              | Size | Status |
-| ----- | ---------------------------------- | --------------------- | ---- | ------ |
-| 0     | Foundation & two cleanups          | subscription-blocking | M    | ☐      |
-| 1     | Responsive shell + states          | subscription-blocking | L    | ☐      |
-| 2     | List reflow + plain language       | subscription-blocking | L    | ☐      |
-| 3     | Form excellence + translate helper | beta-desirable        | L    | ☐      |
-| 4     | Chat experience                    | beta-desirable        | M    | ☐      |
-| 5     | Map picker + polish                | post-beta             | M    | ☐      |
+| Slice | Title                              | Priority              | Size | Status                        |
+| ----- | ---------------------------------- | --------------------- | ---- | ----------------------------- |
+| 0     | Foundation & two cleanups          | subscription-blocking | M    | ☑ 2026-07-03 (#325 #326 #327) |
+| 1     | Responsive shell + states          | subscription-blocking | L    | ☐                             |
+| 2     | List reflow + plain language       | subscription-blocking | L    | ☐                             |
+| 3     | Form excellence + translate helper | beta-desirable        | L    | ☐                             |
+| 4     | Chat experience                    | beta-desirable        | M    | ☐                             |
+| 5     | Map picker + polish                | post-beta             | M    | ☐                             |
 
 ---
 
 ## Slice 0 — Foundation & the two cleanups · subscription-blocking · deps: none
 
-- [ ] **T-8.0.1** — `[data-app="admin"]` token overlay in `globals.css` (light+dark ladder, STATE tokens via `@theme inline`, `--shadow-card`, `--nav-active-*`); set `data-app="admin"` on admin root; admin `h2/h3`→sans, keep `h1` serif. _(§2, §2.1–2.6)_ — **AC:** cooler paper-white ladder on `/admin`; `bg-success`/`text-warning`/`bg-info` utilities resolve; dark mode rides the overlay; `tokens.css` NOT edited.
-- [ ] **T-8.0.2** — `button.tsx` `touch` (`min-h-11`) + `icon-touch` (`h-11 w-11`) sizes; do not enlarge existing. _(§3.3)_ — **AC:** new variants render ≥44 px; desktop `default`/`sm` unchanged.
-- [ ] **T-8.0.3** — **Cleanup 1 (beta pull-forward candidate):** route-scope `ConsentBanner` out of `/admin/*`; preserve the plain `<a href="/privacy">`. _(§8.11)_ — **AC:** banner never renders under `/admin/*`; still on guest routes; Save never overlapped.
-- [ ] **T-8.0.4** — **Cleanup 2 (beta pull-forward candidate):** gate `SessionBootstrap` guest refresh off `/admin` (`pathname.startsWith("/admin")`, mirror the `/r/` skip). _(§8.11)_ — **AC:** hard `/admin` load = zero `/v1/auth/refresh` 401s; guest routes + owner OIDC unaffected.
-- [ ] **T-8.0.5** — Base primitives (hand-rolled over `radix-ui`, **no `npx shadcn add`**): `tabs`, `input`, `label`, `textarea`, `select`, `form` (RHF+zod), `skeleton`, `loading-state`, `error-state`, `alert-dialog`, `tooltip`. _(§3.1–3.2, §6.1–6.3)_ — **AC:** cva+`cn()`+semantic vars match `sheet.tsx`; fields have defined borders + ≥44 px mobile height; `loading-state` has `cards`/`table`/`tiles`/`thread`; `error-state` has Retry→`refetch`.
+- [x] **T-8.0.1** — `[data-app="admin"]` token overlay in `globals.css` (light+dark ladder, STATE tokens via `@theme inline`, `--shadow-card`, `--nav-active-*`); set `data-app="admin"` on admin root; admin `h2/h3`→sans, keep `h1` serif. _(§2, §2.1–2.6)_ — **AC:** cooler paper-white ladder on `/admin`; `bg-success`/`text-warning`/`bg-info` utilities resolve; dark mode rides the overlay; `tokens.css` NOT edited.
+- [x] **T-8.0.2** — `button.tsx` `touch` (`min-h-11`) + `icon-touch` (`h-11 w-11`) sizes; do not enlarge existing. _(§3.3)_ — **AC:** new variants render ≥44 px; desktop `default`/`sm` unchanged.
+- [x] **T-8.0.3** — **Cleanup 1 (beta pull-forward candidate):** route-scope `ConsentBanner` out of `/admin/*`; preserve the plain `<a href="/privacy">`. _(§8.11)_ — **AC:** banner never renders under `/admin/*`; still on guest routes; Save never overlapped.
+- [x] **T-8.0.4** — **Cleanup 2 (beta pull-forward candidate):** gate `SessionBootstrap` guest refresh off `/admin` (`pathname.startsWith("/admin")`, mirror the `/r/` skip). _(§8.11)_ — **AC:** hard `/admin` load = zero `/v1/auth/refresh` 401s; guest routes + owner OIDC unaffected.
+- [x] **T-8.0.5** — Base primitives (hand-rolled over `radix-ui`, **no `npx shadcn add`**): `tabs`, `input`, `label`, `textarea`, `select`, `form` (RHF+zod), `skeleton`, `loading-state`, `error-state`, `alert-dialog`, `tooltip`. _(§3.1–3.2, §6.1–6.3)_ — **AC:** cva+`cn()`+semantic vars match `sheet.tsx`; fields have defined borders + ≥44 px mobile height; `loading-state` has `cards`/`table`/`tiles`/`thread`; `error-state` has Retry→`refetch`.
 
 ## Slice 1 — Responsive shell + first-class states · subscription-blocking · deps: Slice 0
 
