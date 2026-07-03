@@ -155,6 +155,94 @@
   --on-tertiary-container: var(--ed-on-tertiary-container-dark);
 }
 
+/* ─── Admin console overlay — scoped, layered over the guest semantic vars ─ */
+[data-app="admin"] {
+  /* Surfaces: paper-white working canvas instead of cream-on-cream */
+  --background: #f6f7f5;
+  --foreground: var(--basalt-950);
+  --card: #ffffff;
+  --card-foreground: var(--basalt-950);
+  --popover: #ffffff;
+  --popover-foreground: var(--basalt-950);
+
+  --primary: var(--tea-600);
+  --primary-foreground: #ffffff;
+  --secondary: #eef0ed;
+  --secondary-foreground: var(--basalt-700);
+  --muted: #eef0ed;
+  --muted-foreground: #5b665f;
+  --accent: var(--hydrangea-600);
+  --accent-foreground: #ffffff;
+  --destructive: var(--coral-600);
+  --destructive-foreground: #ffffff;
+
+  --border: #dce0db;
+  --input: #cfd5cd;
+  --ring: var(--tea-500);
+
+  /* Semantic STATE tokens (new — used by badges, dashboard tiles) */
+  --success: var(--tea-500);
+  --success-foreground: #ffffff;
+  --warning: var(--sun-400);
+  --warning-foreground: var(--basalt-950);
+  --info: var(--hydrangea-600);
+  --info-foreground: #ffffff;
+
+  --nav-active-bg: #e7efe9;
+  --nav-active-fg: var(--tea-600);
+
+  --shadow-card: 0 1px 2px rgb(14 20 19 / 0.04), 0 1px 3px rgb(14 20 19 / 0.06);
+}
+
+[data-app="admin"][data-theme="dark"],
+[data-theme="dark"] [data-app="admin"],
+[data-app="admin"] .dark,
+.dark [data-app="admin"] {
+  --background: #0e1413;
+  --foreground: #e7ece9;
+  --card: #18211f;
+  --card-foreground: #e7ece9;
+  --popover: #18211f;
+  --popover-foreground: #e7ece9;
+
+  --primary: var(--tea-400);
+  --primary-foreground: #0b1110;
+  --secondary: #232c2a;
+  --secondary-foreground: #e7ece9;
+  --muted: #232c2a;
+  --muted-foreground: #9fb0a8;
+  --accent: var(--hydrangea-300);
+  --accent-foreground: #0b1110;
+  --destructive: var(--coral-400);
+  --destructive-foreground: #0b1110;
+
+  --border: #2b3633;
+  --input: #2b3633;
+  --ring: var(--tea-400);
+
+  --success: var(--tea-400);
+  --success-foreground: #0b1110;
+  --warning: var(--sun-400);
+  --warning-foreground: #0b1110;
+  --info: var(--hydrangea-300);
+  --info-foreground: #0b1110;
+
+  --nav-active-bg: #1f2b27;
+  --nav-active-fg: var(--tea-400);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+/* Admin typography: h2/h3 → sans (tool density); h1 keeps brand serif */
+[data-app="admin"] h2,
+[data-app="admin"] h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+[data-app="admin"] h1 {
+  font-family: var(--font-display);
+}
+
 /* ─── shadcn @theme inline: keep utility classes pointing at semantic vars ─ */
 @theme inline {
   --color-background: var(--background);
@@ -190,6 +278,15 @@
   --color-tertiary: var(--tertiary);
   --color-tertiary-container: var(--tertiary-container);
   --color-on-tertiary-container: var(--on-tertiary-container);
+  /* Admin console STATE tokens — only resolve inside [data-app="admin"] */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-nav-active-bg: var(--nav-active-bg);
+  --color-nav-active-fg: var(--nav-active-fg);
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
   --radius-lg: var(--radius);
