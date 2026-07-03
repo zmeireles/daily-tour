@@ -32,7 +32,7 @@ export function ReservationList() {
     return (
       <ErrorState
         description={t("reservations.list.error", "Failed to load reservations.")}
-        onRetry={refetch}
+        onRetry={() => void refetch()}
       />
     );
   }

@@ -221,7 +221,7 @@ export function PlaceList() {
     return (
       <ErrorState
         description={t("places.list.error", "Failed to load places.")}
-        onRetry={refetch}
+        onRetry={() => void refetch()}
       />
     );
   }
