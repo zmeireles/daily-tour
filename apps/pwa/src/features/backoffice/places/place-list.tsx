@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 const PAGE_SIZE = 10;
 
@@ -204,7 +206,7 @@ function SortableHeader({
 export function PlaceList() {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
-  const { data, isLoading, isError } = usePlaces();
+  const { data, isLoading, isError, refetch } = usePlaces();
   const { data: ghData } = useGuesthouses();
   const gh = ghData?.data?.[0];
   const archiveMutation = useArchivePlace();
@@ -213,11 +215,14 @@ export function PlaceList() {
   const [page, setPage] = useState(1);
 
   if (isLoading) {
-    return <p className="text-muted-foreground text-sm">{t("places.list.loading", "Loading…")}</p>;
+    return <LoadingState variant="table" />;
   }
   if (isError) {
     return (
-      <p className="text-destructive text-sm">{t("places.list.error", "Failed to load places.")}</p>
+      <ErrorState
+        description={t("places.list.error", "Failed to load places.")}
+        onRetry={refetch}
+      />
     );
   }
 

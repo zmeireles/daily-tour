@@ -9,6 +9,8 @@ import {
 } from "./use-reservations";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 function guestLink(token: string): string {
   return `${window.location.origin}/r/${token}`;
@@ -16,7 +18,7 @@ function guestLink(token: string): string {
 
 export function ReservationList() {
   const { t } = useTranslation("admin");
-  const { data, isLoading, isError } = useReservations();
+  const { data, isLoading, isError, refetch } = useReservations();
   const issueToken = useIssueToken();
   const revokeToken = useRevokeToken();
   // Tokens minted this session, kept by reservation id so the shareable link
