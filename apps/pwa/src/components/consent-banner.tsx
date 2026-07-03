@@ -9,6 +9,7 @@ export function ConsentBanner() {
   const analytics = useConsentStore((s) => s.analytics);
   const setAnalytics = useConsentStore((s) => s.setAnalytics);
 
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) return null;
   if (analytics !== "unset") return null;
 
   return (

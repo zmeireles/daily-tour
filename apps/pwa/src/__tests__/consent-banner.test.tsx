@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ConsentBanner } from "@/components/consent-banner";
 import { useConsentStore } from "@/lib/consent/use-consent";
@@ -7,10 +7,15 @@ function renderBanner() {
   return render(<ConsentBanner />);
 }
 
+function setPath(pathname: string) {
+  window.history.replaceState({}, "", pathname);
+}
+
 describe("ConsentBanner", () => {
   beforeEach(() => {
     localStorage.clear();
     useConsentStore.setState({ analytics: "unset" });
+    setPath("/");
   });
 
   it("renders for undecided users with both choices and a privacy-policy link", () => {
@@ -45,5 +50,29 @@ describe("ConsentBanner", () => {
 
     expect(useConsentStore.getState().analytics).toBe("denied");
     expect(screen.queryByRole("region")).toBeNull();
+  });
+
+  describe("admin-path gating (T-8.0.3)", () => {
+    afterEach(() => {
+      setPath("/");
+    });
+
+    it("does not render on /admin even when consent is unset", () => {
+      setPath("/admin");
+      renderBanner();
+      expect(screen.queryByRole("region")).toBeNull();
+    });
+
+    it("does not render on /admin/* sub-routes", () => {
+      setPath("/admin/places");
+      renderBanner();
+      expect(screen.queryByRole("region")).toBeNull();
+    });
+
+    it("still renders on guest routes when consent is unset", () => {
+      setPath("/p/some-place");
+      renderBanner();
+      expect(screen.getByRole("region")).toBeInTheDocument();
+    });
   });
 });
