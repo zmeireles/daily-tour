@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 import {
   useChatThreads,
   useThreadHistory,
@@ -82,7 +84,7 @@ function MessageBubble({ message }: { message: AdminChatMessage }) {
 
 function ThreadPane({ guestId }: { guestId: string }) {
   const { t } = useTranslation("admin");
-  const { data: messages, isLoading, isError } = useThreadHistory(guestId);
+  const { data: messages, isLoading, isError, refetch: refetchHistory } = useThreadHistory(guestId);
   const sendReply = useSendReply(guestId);
   const [draft, setDraft] = useState("");
 

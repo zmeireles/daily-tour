@@ -26,15 +26,14 @@ export function ReservationList() {
   const [issuedLinks, setIssuedLinks] = useState<Record<string, string>>({});
 
   if (isLoading) {
-    return (
-      <p className="text-muted-foreground text-sm">{t("reservations.list.loading", "Loading…")}</p>
-    );
+    return <LoadingState variant="table" />;
   }
   if (isError) {
     return (
-      <p className="text-destructive text-sm">
-        {t("reservations.list.error", "Failed to load reservations.")}
-      </p>
+      <ErrorState
+        description={t("reservations.list.error", "Failed to load reservations.")}
+        onRetry={refetch}
+      />
     );
   }
 
