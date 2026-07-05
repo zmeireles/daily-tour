@@ -21,7 +21,7 @@ const dateOnly = (value: string): string => value.slice(0, 10);
 // Parse `YYYY-MM-DD` as *local* midnight. `new Date("2026-07-01")` parses as UTC
 // midnight — the previous day west of UTC — so we build the date component-wise.
 function localMidnight(dateISO: string): Date {
-  const [y, m, d] = dateOnly(dateISO).split("-").map(Number);
+  const [y, m, d] = dateOnly(dateISO).split("-").map(Number) as [number, number, number];
   return new Date(y, m - 1, d);
 }
 
