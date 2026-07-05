@@ -20,7 +20,7 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 | ----- | ---------------------------------- | --------------------- | ---- | ----------------------------- |
 | 0     | Foundation & two cleanups          | subscription-blocking | M    | ☑ 2026-07-03 (#325 #326 #327) |
 | 1     | Responsive shell + states          | subscription-blocking | L    | ☑ 2026-07-05 (#331–#335)      |
-| 2     | List reflow + plain language       | subscription-blocking | L    | ☐                             |
+| 2     | List reflow + plain language       | subscription-blocking | L    | ☑ 2026-07-05 (#337–#341)      |
 | 3     | Form excellence + translate helper | beta-desirable        | L    | ☐                             |
 | 4     | Chat experience                    | beta-desirable        | M    | ☐                             |
 | 5     | Map picker + polish                | post-beta             | M    | ☐                             |
@@ -44,11 +44,11 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 
 ## Slice 2 — List reflow + plain language · subscription-blocking · deps: Slices 0,1
 
-- [ ] **T-8.2.1** — Places list table→card reflow (`hidden md:table` + `md:hidden` card list + kebab); FAB mobile / sticky create desktop; search + status/locale filter chips + count. **No `overflow-x-auto`.** _(§4.2, §8.2)_ — **AC:** no table <`md`; card = name + status/Pick/Hidden badges + Edit + kebab; FAB ≥44 px; filters+count render.
-- [ ] **T-8.2.2** — Guesthouses list reflow with cover photo/avatar + status + nº de quartos + last updated; **demote `Slug`** out of list (into advanced collapsible on the form); FAB + first-run empty. _(§8.5)_ — **AC:** no `Slug` column; cover thumbnail per row; count subtitle; FAB.
-- [ ] **T-8.2.3** — Reservations → **agenda card list by day** (Hoje/Amanhã/Esta semana); guest name + check-in→check-out + "N noites" + party-size chip + status badge; **`Token`→"Acesso do hóspede"** (Link activo/revogado badge); outcome-based actions; fix green-button/state mismatch; property chip; localized dates. _(§8.7)_ — **AC:** grouped by day; no raw "Token"/enum; action color matches state; dates localized.
-- [ ] **T-8.2.4** — Localize all enums/jargon to pt/en/es friendly labels from a **single status→color source** (§2.1 table), consumed by every `Badge`. _(§2.1, principle 4)_ — **AC:** no raw enum renders; one badge/label map drives all lists + dashboard.
-- [ ] **T-8.2.5** — `AlertDialog` for archive/revoke (replace inline confirm); optimistic Pick + visibility toggles (cache update + rollback + `toast.error`); success toast per mutation; copy-to-clipboard + toast on issue-link. _(§6.4, §8.2, §8.7)_ — **AC:** archive/revoke via `AlertDialog`; toggle instant + rolls back on forced failure; success toast per mutation; issue-link copies.
+- [x] **T-8.2.1** — Places list table→card reflow (`hidden md:table` + `md:hidden` card list + kebab); FAB mobile / sticky create desktop; search + status/locale filter chips + count. **No `overflow-x-auto`.** _(§4.2, §8.2)_ — **AC:** no table <`md`; card = name + status/Pick/Hidden badges + Edit + kebab; FAB ≥44 px; filters+count render.
+- [x] **T-8.2.2** — Guesthouses list reflow with cover photo/avatar + status + nº de quartos + last updated; **demote `Slug`** out of list (into advanced collapsible on the form); FAB + first-run empty. _(§8.5)_ — **AC:** no `Slug` column; cover thumbnail per row; count subtitle; FAB. ⚠️ **`status` + `nº de quartos` DESCOPED** — no backing field in `GuesthouseRow`/`catalog.guesthouse`; card ships cover-thumbnail + last-updated (both real). Backend follow-up (migration + catalog-svc + shared-types) needed before those two can honestly render.
+- [x] **T-8.2.3** — Reservations → **agenda card list by day** (Hoje/Amanhã/Esta semana); guest name + check-in→check-out + "N noites" + party-size chip + status badge; **`Token`→"Acesso do hóspede"** (Link activo/revogado badge); outcome-based actions; fix green-button/state mismatch; property chip; localized dates. _(§8.7)_ — **AC:** grouped by day; no raw "Token"/enum; action color matches state; dates localized.
+- [x] **T-8.2.4** — Localize all enums/jargon to pt/en/es friendly labels from a **single status→color source** (§2.1 table), consumed by every `Badge`. _(§2.1, principle 4)_ — **AC:** no raw enum renders; one badge/label map drives all lists + dashboard.
+- [x] **T-8.2.5** — `AlertDialog` for archive/revoke (replace inline confirm); optimistic Pick + visibility toggles (cache update + rollback + `toast.error`); success toast per mutation; copy-to-clipboard + toast on issue-link. _(§6.4, §8.2, §8.7)_ — **AC:** archive/revoke via `AlertDialog`; toggle instant + rolls back on forced failure; success toast per mutation; issue-link copies.
 
 ## Slice 3 — Form excellence + Helper A (translation) · beta-desirable · deps: Slices 0,1
 
