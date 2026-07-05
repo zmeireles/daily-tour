@@ -230,6 +230,27 @@
       "none": "None",
       "active": "Active",
       "revoked": "Revoked"
+    },
+    "count_one": "{{count}} reservation",
+    "count_other": "{{count}} reservations",
+    "search_placeholder": "Search by guest name",
+    "no_matches": "No reservations match your filters.",
+    "nights_one": "{{count}} night",
+    "nights_other": "{{count}} nights",
+    "guests_one": "{{count}} guest",
+    "guests_other": "{{count}} guests",
+    "send_link": "Send link to guest",
+    "revoke_access": "Revoke access",
+    "buckets": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "this_week": "This week",
+      "later": "Later"
+    },
+    "guest_access": {
+      "title": "Guest access",
+      "active_hint": "The link is active — your guest can open their tour.",
+      "inactive_hint": "Send a private link so your guest can open their tour."
     }
   },
   "chat": {

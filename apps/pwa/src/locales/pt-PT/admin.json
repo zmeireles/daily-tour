@@ -230,6 +230,27 @@
       "none": "Nenhum",
       "active": "Activo",
       "revoked": "Revogado"
+    },
+    "count_one": "{{count}} reserva",
+    "count_other": "{{count}} reservas",
+    "search_placeholder": "Procurar por nome do hóspede",
+    "no_matches": "Nenhuma reserva corresponde aos filtros.",
+    "nights_one": "{{count}} noite",
+    "nights_other": "{{count}} noites",
+    "guests_one": "{{count}} hóspede",
+    "guests_other": "{{count}} hóspedes",
+    "send_link": "Enviar ligação ao hóspede",
+    "revoke_access": "Revogar acesso",
+    "buckets": {
+      "today": "Hoje",
+      "tomorrow": "Amanhã",
+      "this_week": "Esta semana",
+      "later": "Mais tarde"
+    },
+    "guest_access": {
+      "title": "Acesso do hóspede",
+      "active_hint": "A ligação está activa — o hóspede já pode aceder à sua experiência.",
+      "inactive_hint": "Envie uma ligação privada para o hóspede aceder à sua experiência."
     }
   },
   "chat": {

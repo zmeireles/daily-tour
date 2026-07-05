@@ -9,12 +9,18 @@ vi.mock("@/features/backoffice/reservations/use-reservations", () => ({
   useRevokeToken: vi.fn(),
 }));
 
+vi.mock("@/features/backoffice/guesthouses/use-guesthouses", () => ({
+  useGuesthouses: vi.fn(),
+}));
+
 const { useReservations, useIssueToken, useRevokeToken } =
   await import("@/features/backoffice/reservations/use-reservations");
+const { useGuesthouses } = await import("@/features/backoffice/guesthouses/use-guesthouses");
 
 const mockUseReservations = vi.mocked(useReservations);
 const mockUseIssueToken = vi.mocked(useIssueToken);
 const mockUseRevokeToken = vi.mocked(useRevokeToken);
+const mockUseGuesthouses = vi.mocked(useGuesthouses);
 
 const issueMutate = vi.fn();
 const revokeMutate = vi.fn();
@@ -49,6 +55,9 @@ function setList(
 beforeEach(() => {
   vi.clearAllMocks();
   setList([makeReservation({})]);
+  mockUseGuesthouses.mockReturnValue({
+    data: { data: [{ id: "gh-1", name: { en: "Casa Azul", "pt-PT": "Casa Azul" } }] },
+  } as unknown as ReturnType<typeof useGuesthouses>);
   mockUseIssueToken.mockReturnValue({
     mutate: issueMutate,
     isPending: false,
@@ -60,11 +69,52 @@ beforeEach(() => {
 });
 
 describe("ReservationList", () => {
-  it("renders a row from the reservations hook", () => {
+  it("renders a reservation card with the guest name, night/party chips and property", () => {
     render(<ReservationList />);
     expect(screen.getByText("Ana Costa")).toBeDefined();
-    expect(screen.getByText("2026-07-01")).toBeDefined();
-    expect(screen.getByText("2026-07-05")).toBeDefined();
+    // 2026-07-01 → 2026-07-05 is four nights; party_size 2.
+    expect(screen.getByText("4 nights")).toBeDefined();
+    expect(screen.getByText("2 guests")).toBeDefined();
+    // Property chip resolved from useGuesthouses by guesthouse_id.
+    expect(screen.getByText("Casa Azul")).toBeDefined();
+    // Status is rendered via <StatusBadge>, not a raw enum value.
+    const badge = document.querySelector('[data-status-kind="reservation"]');
+    expect(badge?.textContent).toBe("Confirmed");
+    // Token state gets its own badge in the guest-access zone.
+    expect(document.querySelector('[data-status-kind="token"]')?.textContent).toBe("Not sent");
+  });
+
+  it("groups reservations under localized day-bucket headers", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-01T09:00:00"));
+    try {
+      setList([
+        makeReservation({ id: "res-1", guest_name: "Ana Costa", checkin: "2026-07-01" }),
+        makeReservation({ id: "res-2", guest_name: "Bruno Dias", checkin: "2026-07-02" }),
+      ]);
+      render(<ReservationList />);
+      expect(screen.getByText("Today")).toBeDefined();
+      expect(screen.getByText("Tomorrow")).toBeDefined();
+      expect(screen.getByText("Ana Costa")).toBeDefined();
+      expect(screen.getByText("Bruno Dias")).toBeDefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("filters the list by guest name via the search box", () => {
+    setList([
+      makeReservation({ id: "res-1", guest_name: "Ana Costa" }),
+      makeReservation({ id: "res-2", guest_name: "Bruno Dias" }),
+    ]);
+    render(<ReservationList />);
+
+    fireEvent.change(screen.getByPlaceholderText("Search by guest name"), {
+      target: { value: "bruno" },
+    });
+
+    expect(screen.queryByText("Ana Costa")).toBeNull();
+    expect(screen.getByText("Bruno Dias")).toBeDefined();
   });
 
   it("renders the empty state when there are no reservations", () => {
@@ -87,7 +137,7 @@ describe("ReservationList", () => {
     );
     render(<ReservationList />);
 
-    fireEvent.click(screen.getByText("Issue link"));
+    fireEvent.click(screen.getByText("Send link to guest"));
 
     expect(issueMutate).toHaveBeenCalledWith("res-1", expect.any(Object));
     expect(screen.getByLabelText("Guest link")).toHaveValue(
@@ -99,7 +149,7 @@ describe("ReservationList", () => {
     setList([makeReservation({ token_state: "active" })]);
     render(<ReservationList />);
 
-    fireEvent.click(screen.getByText("Revoke"));
+    fireEvent.click(screen.getByText("Revoke access"));
 
     expect(revokeMutate).toHaveBeenCalledWith("res-1", expect.any(Object));
   });
