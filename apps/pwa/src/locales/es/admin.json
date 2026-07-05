@@ -141,12 +141,14 @@
       "hosts_pick_aria": "Alternar la elección del anfitrión para {{name}}",
       "pick_requires_published": "Solo los lugares publicados pueden marcarse como elección del anfitrión.",
       "pick_update_error": "No se pudo actualizar la elección del anfitrión.",
+      "pick_success": "Elección actualizada",
       "pick_cap_warning": "Ya tienes {{count}} elecciones del anfitrión — los huéspedes ven mejores resultados con alrededor de {{cap}}. Guardado de todos modos.",
       "sort_by": "Ordenar por {{column}}",
       "new": "Nuevo lugar",
       "visibility": "Visibilidad",
       "visibility_aria": "Alternar la visibilidad para huéspedes de {{name}}",
       "visibility_error": "No se pudo actualizar la visibilidad.",
+      "visibility_success": "Visibilidad actualizada",
       "more_actions": "Más acciones para {{name}}",
       "search_placeholder": "Buscar lugares",
       "filter_all": "Todos",
@@ -212,8 +214,10 @@
     "archive": {
       "button": "Archivar",
       "confirm": "¿Archivar este lugar?",
+      "description": "Se ocultará a los huéspedes y pasará a su archivo. Podrá restaurarlo más tarde.",
       "yes": "Archivar",
-      "no": "Cancelar"
+      "no": "Cancelar",
+      "success": "Lugar archivado"
     }
   },
   "reservations": {
@@ -248,6 +252,15 @@
     "guests_other": "{{count}} huéspedes",
     "send_link": "Enviar enlace al huésped",
     "revoke_access": "Revocar acceso",
+    "revoke_confirm": {
+      "title": "¿Revocar el acceso del huésped?",
+      "description": "Su enlace de huésped dejará de funcionar de inmediato.",
+      "cancel": "Cancelar"
+    },
+    "issued": "Enlace enviado",
+    "revoked": "Acceso revocado",
+    "copied": "Enlace copiado",
+    "copy_error": "No se pudo copiar el enlace.",
     "buckets": {
       "today": "Hoy",
       "tomorrow": "Mañana",

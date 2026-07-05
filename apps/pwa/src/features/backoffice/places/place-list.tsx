@@ -11,7 +11,7 @@ import {
   type GuesthouseRow,
 } from "../guesthouses/use-guesthouses";
 import { StatusBadge } from "@/features/backoffice/status";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -114,6 +125,7 @@ function HostsPickToggle({ place, pickCount }: { place: PlaceRow; pickCount: num
         mutation.mutate(
           { is_hosts_pick: !place.is_hosts_pick },
           {
+            onSuccess: () => toast.success(t("places.list.pick_success", "Pick updated")),
             onError: (err) => {
               const status = (err as { status?: number }).status;
               toast.error(
@@ -161,6 +173,8 @@ function VisibilityToggle({ place, gh }: { place: PlaceRow; gh?: GuesthouseRow }
         mutation.mutate(
           { guesthouseId: gh.id, placeId: place.id, hide: !hidden },
           {
+            onSuccess: () =>
+              toast.success(t("places.list.visibility_success", "Visibility updated")),
             onError: () =>
               toast.error(t("places.list.visibility_error", "Could not update visibility.")),
           },
@@ -171,18 +185,16 @@ function VisibilityToggle({ place, gh }: { place: PlaceRow; gh?: GuesthouseRow }
 }
 
 // Trailing actions shared by both surfaces: primary Edit + a kebab holding the
-// destructive Archive. Archive keeps the confirmId inline-confirm for now (the
-// AlertDialog swap is T-8.2.5). `compact` = the dense desktop table cell.
+// destructive Archive. Archive opens an AlertDialog confirm (T-8.2.5). Follows the
+// shadcn "dialog inside dropdown" pattern — AlertDialog wraps the menu, the item is
+// the AlertDialogTrigger, and `onSelect` preventDefault hands focus to the dialog.
+// `compact` = the dense desktop table cell.
 function PlaceRowActions({
   place,
-  confirmId,
-  setConfirmId,
   archiveMutation,
   compact,
 }: {
   place: PlaceRow;
-  confirmId: string | null;
-  setConfirmId: (id: string | null) => void;
   archiveMutation: ReturnType<typeof useArchivePlace>;
   compact?: boolean;
 }) {
@@ -190,24 +202,6 @@ function PlaceRowActions({
   const navigate = useNavigate();
   const name = placeDisplayName(place);
   const actionSize = compact ? "sm" : "touch";
-
-  if (confirmId === place.id) {
-    return (
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          size={actionSize}
-          variant="destructive"
-          disabled={archiveMutation.isPending}
-          onClick={() => archiveMutation.mutate(place.id, { onSuccess: () => setConfirmId(null) })}
-        >
-          {t("places.archive.yes", "Archive")}
-        </Button>
-        <Button size={actionSize} variant="outline" onClick={() => setConfirmId(null)}>
-          {t("places.archive.no", "Cancel")}
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -219,22 +213,53 @@ function PlaceRowActions({
         {t("places.list.edit", "Edit")}
       </Button>
       {place.status !== "archived" && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size={compact ? "icon" : "icon-touch"}
-              variant="ghost"
-              aria-label={t("places.list.more_actions", "More actions for {{name}}", { name })}
-            >
-              <MoreVertical aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem variant="destructive" onClick={() => setConfirmId(place.id)}>
-              {t("places.archive.button", "Archive")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AlertDialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size={compact ? "icon" : "icon-touch"}
+                variant="ghost"
+                aria-label={t("places.list.more_actions", "More actions for {{name}}", { name })}
+              >
+                <MoreVertical aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
+                  {t("places.archive.button", "Archive")}
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("places.archive.confirm", "Archive this place?")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t(
+                  "places.archive.description",
+                  "It will be hidden from guests and moved to your archive. You can restore it later.",
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("places.archive.no", "Cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                disabled={archiveMutation.isPending}
+                onClick={() =>
+                  archiveMutation.mutate(place.id, {
+                    onSuccess: () => toast.success(t("places.archive.success", "Place archived")),
+                  })
+                }
+              >
+                {t("places.archive.yes", "Archive")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );
@@ -283,7 +308,6 @@ export function PlaceList() {
   const { data: ghData } = useGuesthouses();
   const gh = ghData?.data?.[0];
   const archiveMutation = useArchivePlace();
-  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [sort, setSort] = useState<SortState>({ column: "name", direction: "asc" });
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -480,8 +504,6 @@ export function PlaceList() {
                         <td className="px-4 py-3">
                           <PlaceRowActions
                             place={place}
-                            confirmId={confirmId}
-                            setConfirmId={setConfirmId}
                             archiveMutation={archiveMutation}
                             compact
                           />
@@ -526,12 +548,7 @@ export function PlaceList() {
                             <VisibilityToggle place={place} gh={gh} />
                           </div>
                         </div>
-                        <PlaceRowActions
-                          place={place}
-                          confirmId={confirmId}
-                          setConfirmId={setConfirmId}
-                          archiveMutation={archiveMutation}
-                        />
+                        <PlaceRowActions place={place} archiveMutation={archiveMutation} />
                       </Card>
                     </li>
                   );
