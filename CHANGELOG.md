@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-008 Slice 2: backoffice list reflow + plain language (2026-07-05)
+
+Owner backoffice **Slice 2** merged (#337–#341) — the admin lists are now mobile-first, plainly-worded, and localized pt/en/es; this also clears the last of the 390px table overflow:
+
+- **Single status source (#337)** — `StatusBadge` + a `satisfies`-exhaustive status→{label,color} map (place/reservation/token/flag) + `success`/`warning`/`info` `Badge` variants; every list badge is now one localized source of truth, no raw enums.
+- **Places list (#338)** — table→card reflow (`hidden md:table` + `md:hidden` cards + kebab), a real Pick switch, status/locale filter chips + search + count, mobile FAB.
+- **Guesthouses list (#339)** — card reflow (cover thumbnail + last-updated) and the technical `Slug` demoted into an "Advanced" collapsible on the form. (`status`/`nº de quartos` descoped — no backing data field yet.)
+- **Reservations (#340)** — a **day-grouped agenda** (Hoje/Amanhã/Esta semana) with localized dates, "N noites", party/property chips, colored status + "Acesso do hóspede" (guest-link) badges — replacing the raw table of ISO dates and enum text.
+- **Mutation UX (#341)** — archive/revoke now confirm through `AlertDialog`; the Pick and guest-visibility toggles are **optimistic** (instant, with rollback on failure); success toasts on every mutation + a copy-link toast.
+
+Reviewed with the `model:"fable"` gate on every merge (caught a permanently-0 KPI, an un-pluralized count, and a half-optimistic toggle before they landed). Execution log: `docs/implementation-plans/008-backoffice-redesign/EXECUTION.md`. Not yet deployed to qual (owner-only surface).
+
 ### Added — Plan-008 Slice 1: responsive owner-backoffice shell + first-class states (2026-07-05)
 
 Owner backoffice **Slice 1** merged (#331–#335 + a polish/docs wrap) — the admin console is now responsive, stateful, and localized pt/en/es:

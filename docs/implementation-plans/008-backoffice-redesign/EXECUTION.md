@@ -47,6 +47,35 @@ Wave-by-wave record. Plan: [`README.md`](./README.md) · tasks: [`TODO.md`](./TO
 
 **Execution notes**: cs-agent "closer" auto-commits + kills tmux on idle, BUT a _self-committing_ agent leaves its session idle-open → `cs-agent wait` hangs; verify completion by **diff-scope, not wait-exit**. Fresh cs-agent worktrees lack `node_modules`/built workspace deps → `pnpm install` + `pnpm --filter @daily-tour/shared-types build` before running gates, else a phantom "Cannot find `@daily-tour/shared-types`" cascade. The responsive shell renders nav in BOTH rail + bottom-bar in jsdom → `getByRole("link")` finds duplicates; use `getAllByRole`.
 
-## Next — Wave 3 candidates
+## Wave 3 — Slice 2: List reflow + plain language (2026-07-05) ✅
 
-Slice 2 (list table→card reflow + plain language, `T-8.2.x`, deps: Slices 0+1 ✅) is unblocked — it also resolves the **residual 390px multi-column-table overflow** left by the Slice-1 shell (proposal §4.1 "fix part 2 — tables").
+**Scope**: T-8.2.1 … T-8.2.5 (all of Slice 2). A foundation task (T-8.2.4) merged first, then the three list reflows in parallel, then the mutation-UX polish — cs-agents `s703-*`, **Fable-gated every merge**. This also resolves the **residual 390px multi-column-table overflow** left by the Slice-1 shell (proposal §4.1 "fix part 2 — tables").
+
+| PR                                                       | Task    | Agent                          | Content                                                                                                                                                                                                                                  |
+| -------------------------------------------------------- | ------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#337](https://github.com/zmeireles/daily-tour/pull/337) | T-8.2.4 | `s703-t8-2-4` (opus)           | Single status→{label,color} source: `features/backoffice/status.tsx` (`STATUS_MAP` + `StatusBadge`, `satisfies`-exhaustive over the real enums) + `success`/`warning`/`info` `Badge` variants + `status.*` i18n. Consumed by every list. |
+| [#338](https://github.com/zmeireles/daily-tour/pull/338) | T-8.2.1 | `s703-t8-2-1` (opus)           | Places table→card reflow (`hidden md:table` + `md:hidden` cards + kebab), `StatusBadge`, new `switch.tsx` Pick control, status/locale filter chips + search + count, FAB.                                                                |
+| [#339](https://github.com/zmeireles/daily-tour/pull/339) | T-8.2.2 | `s703-t8-2-2` (sonnet)         | Guesthouses reflow (cover thumbnail + last-updated) + Slug demoted into an "Advanced" `Collapsible` (new `collapsible.tsx`). **`status`/`nº de quartos` descoped** (no backing field).                                                   |
+| [#340](https://github.com/zmeireles/daily-tour/pull/340) | T-8.2.3 | `s703-t8-2-3` (opus, 2 passes) | Reservations → day-grouped agenda (Hoje/Amanhã/Esta semana/Mais tarde) via a tested `agenda.ts`; localized dates + "N noites" + party/property chips + reservation & token `StatusBadge` + "Acesso do hóspede".                          |
+| [#341](https://github.com/zmeireles/daily-tour/pull/341) | T-8.2.5 | `s703-t8-2-5b` (opus)          | `AlertDialog` for archive (places) + revoke (reservations); **optimistic** Pick + visibility toggles (onMutate/rollback); success toasts per mutation; copy-link toast.                                                                  |
+
+**Fable-5 review gate** caught (before each merge) defects that Opus review + CI + hundreds of passing tests missed:
+
+- 🟠 **"Pending reservations" KPI permanently 0** (Slice-1 carry) — re-specified to "confirmed booking without an active guest link".
+- 🟠 guesthouses count not pluralized → "1 alojamentos" → fixed with `count_one`/`count_other`.
+- 🟠 **visibility toggle not optimistic** — only Pick was (the AC names both); fixed `useToggleHiddenPlace` with onMutate/rollback + a rollback test.
+- 🟡 (approved-with-note) the two greens `confirmed`/`token active` kept in separate zones on the reservation card.
+- The Fable reviewer also **proved** the es-locale + optimistic-rollback regression tests bite on revert.
+
+**Verification**: per-PR CI (10 checks) + targeted vitest per branch (13 + 15 + 23 + 24 + a status suite); es↔pt-PT key parity mechanically verified empty on every PR; agenda date-math covered by a 16-case test. **Not deployed to qual.**
+
+**Execution notes**: T-8.2.3 (reservations) stopped after the date helper on the first run (premature closer-fire) → finished with an Opus continuation. T-8.2.5 stalled on a transient API "response stalled mid-stream" → relaunched fresh (nothing committed lost). Same fresh-worktree `pnpm install` + `shared-types build` gotcha before gates. Reflow tests: jsdom renders BOTH `hidden md:table` + `md:hidden` surfaces → scope every query with `within(table)` / `within(cards)`.
+
+## Follow-ups surfaced this slice
+
+- **Guesthouse `status` + `nº de quartos`** — need a backend field (migration + catalog-svc + shared-types) before those two columns can render; descoped from T-8.2.2. Own task.
+- Optional polish (Fable 🟡, deferred): restore an `<h1>` on the guesthouses page for heading-hierarchy parity; the reservations `this_week` bucket is a rolling next-7-days window vs the literal "This week" label.
+
+## Next — Wave 4 candidates
+
+Slices 0–2 (subscription-blocking) are **DONE**. Remaining are lower-priority: **Slice 3** (form excellence + Helper A translate, `T-8.3.x`, **beta-desirable**, deps: Slices 0,1 — includes a new `POST /v1/admin/translate` BFF endpoint using `ANTHROPIC_API_KEY` + the ES data-model addition), **Slice 4** (chat experience, **beta-desirable**), **Slice 5** (map picker + polish, **post-beta** — geocoder Photon-vs-commercial decision in T-8.5.1). A priority/sequencing check-in with the owner is the natural next step.
