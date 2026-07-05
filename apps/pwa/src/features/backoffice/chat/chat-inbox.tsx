@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 import {
   useChatThreads,
   useThreadHistory,
@@ -82,7 +84,7 @@ function MessageBubble({ message }: { message: AdminChatMessage }) {
 
 function ThreadPane({ guestId }: { guestId: string }) {
   const { t } = useTranslation("admin");
-  const { data: messages, isLoading, isError } = useThreadHistory(guestId);
+  const { data: messages, isLoading, isError, refetch: refetchHistory } = useThreadHistory(guestId);
   const sendReply = useSendReply(guestId);
   const [draft, setDraft] = useState("");
 
@@ -97,11 +99,12 @@ function ThreadPane({ guestId }: { guestId: string }) {
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">{t("chat.loading", "Loading…")}</p>
+          <LoadingState variant="thread" />
         ) : isError ? (
-          <p className="text-sm text-destructive">
-            {t("chat.history_error", "Failed to load messages.")}
-          </p>
+          <ErrorState
+            description={t("chat.history_error", "Failed to load messages.")}
+            onRetry={() => void refetchHistory()}
+          />
         ) : (
           (messages ?? []).map((m) => <MessageBubble key={m.id} message={m} />)
         )}
@@ -128,7 +131,7 @@ function ThreadPane({ guestId }: { guestId: string }) {
 // owner side — useSendReply invalidates the history query so the reply appears.
 export function ChatInbox() {
   const { t, i18n } = useTranslation("admin");
-  const { data: threads, isLoading, isError } = useChatThreads();
+  const { data: threads, isLoading, isError, refetch } = useChatThreads();
   const [selected, setSelected] = useState<string | null>(null);
 
   const rows = threads ?? [];
@@ -140,11 +143,17 @@ export function ChatInbox() {
       <div className="flex h-[70vh] overflow-hidden rounded-md border">
         <div className="flex w-72 shrink-0 flex-col overflow-y-auto border-r">
           {isLoading ? (
-            <p className="p-4 text-sm text-muted-foreground">{t("chat.loading", "Loading…")}</p>
+            <div className="p-3">
+              <LoadingState variant="cards" />
+            </div>
           ) : isError ? (
-            <p className="p-4 text-sm text-destructive">
-              {t("chat.threads_error", "Failed to load conversations.")}
-            </p>
+            <div className="p-3">
+              <ErrorState
+                description={t("chat.threads_error", "Failed to load conversations.")}
+                onRetry={() => void refetch()}
+                className="border-0 bg-transparent"
+              />
+            </div>
           ) : rows.length === 0 ? (
             <div className="p-3">
               <EmptyState

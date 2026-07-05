@@ -2,20 +2,23 @@ import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { usePlace } from "@/features/backoffice/places/use-places";
 import { PlaceForm } from "@/features/backoffice/places/place-form";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 export default function AdminPlacesEditRoute() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation("admin");
-  const { data, isLoading, isError } = usePlace(id ?? "");
+  const { data, isLoading, isError, refetch } = usePlace(id ?? "");
 
   if (isLoading) {
-    return <p className="text-muted-foreground text-sm">{t("places.form.loading", "Loading…")}</p>;
+    return <LoadingState variant="cards" count={1} />;
   }
   if (isError || !data) {
     return (
-      <p className="text-destructive text-sm">
-        {t("places.form.load_error", "Failed to load place.")}
-      </p>
+      <ErrorState
+        description={t("places.form.load_error", "Failed to load place.")}
+        onRetry={() => void refetch()}
+      />
     );
   }
 

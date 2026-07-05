@@ -3,22 +3,23 @@ import { useTranslation } from "react-i18next";
 import { useGuesthouses } from "./use-guesthouses";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 export function GuesthouseList() {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useGuesthouses();
+  const { data, isLoading, isError, refetch } = useGuesthouses();
 
   if (isLoading) {
-    return (
-      <p className="text-muted-foreground text-sm">{t("guesthouses.list.loading", "Loading…")}</p>
-    );
+    return <LoadingState variant="table" />;
   }
   if (isError) {
     return (
-      <p className="text-destructive text-sm">
-        {t("guesthouses.list.error", "Failed to load guesthouses.")}
-      </p>
+      <ErrorState
+        description={t("guesthouses.list.error", "Failed to load guesthouses.")}
+        onRetry={() => void refetch()}
+      />
     );
   }
 
