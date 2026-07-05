@@ -90,9 +90,14 @@
     "list": {
       "loading": "Loading…",
       "error": "Failed to load guesthouses.",
+      "cover": "Cover",
       "name": "Name",
       "slug": "Slug",
       "address": "Address",
+      "last_updated": "Last updated",
+      "updated_at": "Updated {{date}}",
+      "count": "{{count}} guesthouses",
+      "new": "New guesthouse",
       "actions": "Actions",
       "edit": "Edit"
     },
@@ -107,6 +112,7 @@
       "map_placeholder": "Map picker deferred to Phase 2 — use numeric inputs for now.",
       "hero": "Hero photo",
       "hero_alt": "Guesthouse hero",
+      "advanced": "Advanced",
       "save": "Save",
       "cancel": "Cancel",
       "tabs": {

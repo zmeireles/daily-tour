@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { ChevronDown } from "lucide-react";
 import { useCreateGuesthouse, useUpdateGuesthouse, type GuesthouseRow } from "./use-guesthouses";
 import { MediaUploader, type UploadedAsset } from "@/features/backoffice/places/media-uploader";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 // Guesthouse media is an array of media-svc asset UUIDs; resolve each to the
 // same-origin display route so the editor shows + preserves existing media.
@@ -146,16 +148,26 @@ export function GuesthouseForm({ initialData, id }: Props) {
           </div>
         </div>
 
-        {/* Slug */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">{t("guesthouses.form.slug", "Slug")}</span>
-          <input
-            {...register("slug")}
-            placeholder="my-guesthouse"
-            className="rounded-md border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          {errors.slug && <span className="text-xs text-destructive">{errors.slug.message}</span>}
-        </label>
+        {/* Slug — hidden under "Advanced" collapsible */}
+        <Collapsible defaultOpen={!!initialData?.slug}>
+          <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
+            {t("guesthouses.form.advanced", "Advanced")}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">{t("guesthouses.form.slug", "Slug")}</span>
+              <input
+                {...register("slug")}
+                placeholder="my-guesthouse"
+                className="rounded-md border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {errors.slug && (
+                <span className="text-xs text-destructive">{errors.slug.message}</span>
+              )}
+            </label>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Location */}
         <fieldset className="flex flex-col gap-3">

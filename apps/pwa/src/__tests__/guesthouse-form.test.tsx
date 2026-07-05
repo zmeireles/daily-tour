@@ -65,6 +65,8 @@ describe("GuesthouseForm", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
     expect(screen.getByLabelText("Name (EN)")).toHaveValue("");
     expect(screen.getByLabelText("Name (PT)")).toHaveValue("");
+    // Slug lives in the Advanced collapsible; open it before querying
+    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
     expect(screen.getByLabelText("Slug")).toHaveValue("");
     expect(screen.getByLabelText("Address")).toHaveValue("");
   });
@@ -112,6 +114,8 @@ describe("GuesthouseForm", () => {
 
     fireEvent.change(screen.getByLabelText("Name (EN)"), { target: { value: "Casa Nova" } });
     fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Furnas" } });
+    // Slug lives in the Advanced collapsible; open it before interacting
+    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
     fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "Not A Slug" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -127,6 +131,8 @@ describe("GuesthouseForm", () => {
 
     fireEvent.change(screen.getByLabelText("Name (EN)"), { target: { value: "Casa Nova" } });
     fireEvent.change(screen.getByLabelText("Name (PT)"), { target: { value: "Casa Nova PT" } });
+    // Slug lives in the Advanced collapsible; open it before interacting
+    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
     fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "casa-furnas" } });
     fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Furnas" } });
     fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "38.5" } });
@@ -170,6 +176,8 @@ describe("GuesthouseForm", () => {
     render(<GuesthouseForm />);
 
     fireEvent.change(screen.getByLabelText("Name (EN)"), { target: { value: "Casa Nova" } });
+    // Slug lives in the Advanced collapsible; open it before interacting
+    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
     fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "casa-furnas" } });
     fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Furnas" } });
 
