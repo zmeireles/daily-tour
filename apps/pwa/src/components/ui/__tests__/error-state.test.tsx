@@ -3,10 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { ErrorState } from "@/components/ui/error-state";
 
 describe("ErrorState (smoke)", () => {
-  it("renders default title and description", () => {
+  it("renders i18n default title and description", () => {
     render(<ErrorState />);
-    expect(screen.getByText("Não foi possível carregar")).toBeInTheDocument();
-    expect(screen.getByText(/Ocorreu um erro inesperado/)).toBeInTheDocument();
+    expect(screen.getByText("Couldn't load")).toBeInTheDocument();
+    expect(screen.getByText(/unexpected error/i)).toBeInTheDocument();
   });
 
   it("renders custom title and description", () => {
@@ -28,7 +28,7 @@ describe("ErrorState (smoke)", () => {
   it("fires onRetry callback when button is clicked", () => {
     const onRetry = vi.fn();
     render(<ErrorState onRetry={onRetry} />);
-    fireEvent.click(screen.getByRole("button", { name: /Tentar novamente/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
 

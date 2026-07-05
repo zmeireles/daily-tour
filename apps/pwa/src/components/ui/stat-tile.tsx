@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router";
 import { cva, type VariantProps } from "class-variance-authority";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 
@@ -81,8 +82,8 @@ function StatTile({
 
   if (href) {
     return (
-      <a
-        href={href}
+      <Link
+        to={href}
         data-slot="stat-tile"
         data-variant={variant ?? "default"}
         className={cn(
@@ -93,7 +94,7 @@ function StatTile({
         )}
       >
         <TileBody icon={icon} value={value} label={label} trend={trend} trendUp={trendUp} />
-      </a>
+      </Link>
     );
   }
 
