@@ -268,5 +268,28 @@
     "title": "Couldn't load",
     "description": "An unexpected error occurred. Please try again.",
     "retry": "Try again"
+  },
+  "status": {
+    "place": {
+      "published": "Live",
+      "owner_approved": "Awaiting review",
+      "draft": "Draft",
+      "archived": "Archived"
+    },
+    "reservation": {
+      "confirmed": "Confirmed",
+      "checked_in": "Checked in",
+      "checked_out": "Checked out",
+      "cancelled": "Cancelled"
+    },
+    "token": {
+      "active": "Link active",
+      "revoked": "Revoked",
+      "none": "Not sent"
+    },
+    "flag": {
+      "hosts_pick": "Pick",
+      "hidden": "Hidden"
+    }
   }
 }
