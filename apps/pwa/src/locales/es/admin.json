@@ -268,5 +268,28 @@
     "title": "No se pudo cargar",
     "description": "Se ha producido un error inesperado. Inténtelo de nuevo.",
     "retry": "Reintentar"
+  },
+  "status": {
+    "place": {
+      "published": "Publicado",
+      "owner_approved": "Pendiente de revisión",
+      "draft": "Borrador",
+      "archived": "Archivado"
+    },
+    "reservation": {
+      "confirmed": "Confirmada",
+      "checked_in": "Check-in realizado",
+      "checked_out": "Check-out realizado",
+      "cancelled": "Cancelada"
+    },
+    "token": {
+      "active": "Enlace activo",
+      "revoked": "Revocado",
+      "none": "Sin enviar"
+    },
+    "flag": {
+      "hosts_pick": "Elección",
+      "hidden": "Oculto"
+    }
   }
 }
