@@ -1,4 +1,28 @@
-# Session Handoff — … → 07-03 (🚀 F&F BETA LIVE for José+Miguel; Load Tests CI resurrected — first green ever; Plan-008 Slice 0 merged) → next: check first green nightly / WhatsApp invites (user) / beta watch / Slice 1
+# Session Handoff — … → 07-05 (🎉 Plan-008 Slices 1 + 2 SHIPPED — owner backoffice now responsive + card-reflowed + plain-language, all subscription-blocking work done; Fable-5 review gate adopted) → next: pick Slice 3/4/5 or deploy+UAT (user) / beta invites still unsent (user)
+
+> **UPDATE 2026-07-05 (LATEST — big autonomous run: Plan-008 Slices 1 AND 2 driven end-to-end; all subscription-blocking backoffice work DONE. The Fable-5 review gate (user directive) caught real bugs at every step. Clean close: main `8b4074c`, 0 open PRs, no agents/monitors, tree clean, dt-tests `review` empty. ▶ RESUME HERE: the "what next" decision below — I asked the user (Slice 3/4/5 or pause/deploy) and got no answer; the F&F beta invites are STILL unsent (user action).)**
+>
+> ### Shipped this session — Plan-008 Slices 1 + 2 (owner backoffice redesign)
+>
+> - **Slice 1 (#331–#336):** responsive `shell.tsx` (desktop rail + mobile top-app-bar + 5-item bottom tabs — kills the 1301px overflow) · first-class `LoadingState`/`ErrorState`/`EmptyState` across all admin lists + form routes · a real **"Today" dashboard** (`/admin` no longer blank) · shared `StatTile` · beta-metrics error-not-loading fix.
+> - **Slice 2 (#337–#342):** single **`StatusBadge`** status source (no raw enums) · places/guesthouses/reservations table→**card reflows** (reservations = day-grouped agenda) · plain-language pt/en/es · `AlertDialog` confirms · **optimistic** Pick+visibility toggles · mutation toasts. Clears the last 390px table overflow.
+> - **Fable-5 review gate** (new doctrine — [[feedback-fable-review-gate]]): a `model:"fable"` adversarial reviewer gated **every** merge and caught defects Opus review + CI + hundreds of passing tests all missed — 🔴 `es` locale never registered (Español→English fallback); 🟠 permanently-0 "pending" KPI, one-flaky-query-blanks-all-tiles, un-pluralized "1 alojamentos", half-optimistic (Pick-only) toggle. All fixed before merge.
+>
+> ### ▶ NEXT — decision pending (asked the user; no answer)
+>
+> Slices 0–2 (subscription-blocking) DONE. Remaining, lower-priority:
+>
+> 1. **Slice 3** — forms + EN/PT/ES auto-translate (**beta-desirable, L**). ⚠️ needs a NEW `POST /v1/admin/translate` BFF endpoint (Claude via `ANTHROPIC_API_KEY`, PT-PT pré-AO, do-not-translate list) + an `es` data-model addition — **backend + API-cost, confirm with the user before starting.**
+> 2. **Slice 4** — chat experience (beta-desirable, M): mobile single-pane master→detail, real guest names (not `aaa001…` IDs), quick-reply templates, unread badges. Most self-contained.
+> 3. **Slice 5** — map picker + polish (post-beta, M): `LocationPicker` (MapLibre) + geocoder Photon-vs-commercial decision (T-8.5.1).
+> 4. **Deploy + UAT** Slices 0–2 to qual first (owner-only surface; wouldn't affect the guest beta) to prove the refactor end-to-end.
+>
+> - **Backend follow-up owed:** guesthouse `status` + `nº de quartos` need a real DB field (migration + catalog-svc + shared-types) — descoped from T-8.2.2.
+> - **F&F beta invites STILL unsent** (user action): 2 Gmail drafts (José + Miguel) + 4 WhatsApp (`temp/invite-batch-2026-06-29.md`).
+>
+> ### State (07-05)
+>
+> main **`8b4074c`**; **0 open PRs**; local branches = `main` + 2 merged s702 leftovers (`docs/closeout-0703`, `docs/s702-post-cycle` — deletable, NOT this session's namespace). Tree clean (only pre-existing untracked `e2e/`). No cs-agents / monitors left. dt-tests `review` empty. qual untouched (still the 06-30 F&F-beta build; Plan-008 owner work NOT deployed there). Memory updated: [[project-subscription-backoffice]], [[feedback-fable-review-gate]], `MEMORY.md`.
 
 > **UPDATE 2026-07-03 (LATEST — huge session: beta launched + Load Tests resurrected + Plan-008 Slice 0 shipped. Clean close: 0 open PRs, branches=main, no agents/monitors left, dt-tests `review` empty. ▶ RESUME HERE: ① verify tonight's nightly `Load Tests` run went green (would be the FIRST green nightly ever — cron ~03:15Z; if red, the fix history is in PR #324); ② rituals (dt-tests poll · comms inbox); ③ beta watch; ④ Plan-008 Slice 1 when the user wants it.)**
 >
