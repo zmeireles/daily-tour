@@ -59,7 +59,9 @@ export function SetupChecklist() {
   if (!settled) return null;
 
   const hasGuesthouse = (guesthouses.data?.data.length ?? 0) > 0;
-  const hasPlace = (places.data?.data.length ?? 0) > 0;
+  // usePlaces includes archived rows; an archived-only owner has nothing live for
+  // guests, so archived places don't count as "has a place".
+  const hasPlace = (places.data?.data.filter((p) => p.status !== "archived").length ?? 0) > 0;
   const hasPhoto = !!profile.data?.photo;
   if (hasGuesthouse && hasPlace && hasPhoto) return null;
 

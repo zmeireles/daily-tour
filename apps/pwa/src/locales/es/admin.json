@@ -42,8 +42,7 @@
       "messages": "Conversaciones",
       "places_attention": "Lugares que necesitan atención",
       "active_links": "Enlaces de huésped activos",
-      "error_title": "No se pudo cargar hoy",
-      "error": "No se pudo cargar el panel. Inténtalo de nuevo."
+      "tile_error": "Toca para reintentar"
     },
     "actions": {
       "add_place": "Añadir un lugar",

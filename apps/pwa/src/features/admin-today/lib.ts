@@ -31,8 +31,12 @@ export function countCheckoutsToday(rows: ReservationRow[], today: string): numb
   return rows.filter((r) => dateOnly(r.checkout) === today).length;
 }
 
+// "Pending" for a host = a confirmed booking whose guest access link has not been
+// sent/activated yet (token_state "none" or "revoked") — a real to-do: send the /r/
+// link. Reservations are never literally "pending" (the lifecycle is confirmed →
+// checked_in → checked_out / cancelled), so we derive the actionable meaning here.
 export function countPending(rows: ReservationRow[]): number {
-  return rows.filter((r) => r.status === "pending").length;
+  return rows.filter((r) => r.status === "confirmed" && r.token_state !== "active").length;
 }
 
 export function countActiveLinks(rows: ReservationRow[]): number {

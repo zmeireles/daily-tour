@@ -42,8 +42,7 @@
       "messages": "Conversations",
       "places_attention": "Places needing attention",
       "active_links": "Active guest links",
-      "error_title": "Couldn't load today",
-      "error": "We couldn't load your dashboard. Please retry."
+      "tile_error": "Tap to retry"
     },
     "actions": {
       "add_place": "Add a place",

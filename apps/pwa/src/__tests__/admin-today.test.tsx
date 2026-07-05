@@ -159,8 +159,10 @@ beforeEach(() => {
   });
   // Default: fully set-up owner with a mix of reservations.
   setReservations([
-    makeReservation({ id: "r1", checkin: TODAY }),
-    makeReservation({ id: "r2", status: "pending", token_state: "active" }),
+    // Confirmed booking whose guest link hasn't been sent → counts as "pending" (a to-do).
+    makeReservation({ id: "r1", checkin: TODAY, status: "confirmed", token_state: "none" }),
+    // Confirmed booking with an active guest link → an "active link", not pending.
+    makeReservation({ id: "r2", checkin: "2099-01-02", status: "confirmed", token_state: "active" }),
   ]);
   setPlaces([makePlace({})]);
   setThreads(3);
@@ -213,12 +215,14 @@ describe("TodayDashboard (/admin index)", () => {
     expect(screen.queryByText("Check-ins today")).not.toBeInTheDocument();
   });
 
-  it("shows an inline error with a working retry when a tile query fails", () => {
+  it("shows a per-tile retry for the failing source while healthy tiles still render", () => {
     const refetch = vi.fn();
     setPlaces([], { isError: true, data: undefined, refetch });
     renderToday();
-    expect(screen.getByText("Couldn't load today")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Tentar novamente"));
+    // Reservations are healthy → their tiles still render…
+    expect(screen.getByText("Check-ins today")).toBeInTheDocument();
+    // …while only the places-fed tile shows an inline retry that refetches that source.
+    fireEvent.click(screen.getByText("Tap to retry"));
     expect(refetch).toHaveBeenCalled();
   });
 
@@ -234,5 +238,14 @@ describe("TodayDashboard (/admin index)", () => {
   it("hides the setup checklist once places, guesthouse and photo all exist", () => {
     renderToday();
     expect(screen.queryByText("Finish setting up")).not.toBeInTheDocument();
+  });
+
+  it("counts an archived-only place as no place in the setup checklist", () => {
+    // Guesthouse + photo present (from the default fixture), but the owner's only
+    // place is archived → nothing live for guests → the checklist still shows.
+    setPlaces([makePlace({ status: "archived" })]);
+    renderToday();
+    expect(screen.getByText("Finish setting up")).toBeInTheDocument();
+    expect(screen.getByText("Add your first place")).toBeInTheDocument();
   });
 });
