@@ -143,6 +143,18 @@
       "pick_update_error": "Não foi possível actualizar a escolha do anfitrião.",
       "pick_cap_warning": "Já tem {{count}} escolhas do anfitrião — os hóspedes vêem melhores resultados com cerca de {{cap}}. Guardado mesmo assim.",
       "sort_by": "Ordenar por {{column}}",
+      "new": "Novo local",
+      "visibility": "Visibilidade",
+      "visibility_aria": "Alternar visibilidade para hóspedes de {{name}}",
+      "visibility_error": "Não foi possível actualizar a visibilidade.",
+      "more_actions": "Mais acções para {{name}}",
+      "search_placeholder": "Procurar locais",
+      "filter_all": "Todos",
+      "filter_status_aria": "Filtrar por estado",
+      "filter_locale_aria": "Filtrar por idioma",
+      "no_matches": "Nenhum local corresponde aos filtros.",
+      "count_one": "{{count}} local",
+      "count_other": "{{count}} locais",
       "pagination": {
         "previous": "Anterior",
         "next": "Seguinte",
@@ -225,6 +237,27 @@
       "none": "Nenhum",
       "active": "Activo",
       "revoked": "Revogado"
+    },
+    "count_one": "{{count}} reserva",
+    "count_other": "{{count}} reservas",
+    "search_placeholder": "Procurar por nome do hóspede",
+    "no_matches": "Nenhuma reserva corresponde aos filtros.",
+    "nights_one": "{{count}} noite",
+    "nights_other": "{{count}} noites",
+    "guests_one": "{{count}} hóspede",
+    "guests_other": "{{count}} hóspedes",
+    "send_link": "Enviar ligação ao hóspede",
+    "revoke_access": "Revogar acesso",
+    "buckets": {
+      "today": "Hoje",
+      "tomorrow": "Amanhã",
+      "this_week": "Esta semana",
+      "later": "Mais tarde"
+    },
+    "guest_access": {
+      "title": "Acesso do hóspede",
+      "active_hint": "A ligação está activa — o hóspede já pode aceder à sua experiência.",
+      "inactive_hint": "Envie uma ligação privada para o hóspede aceder à sua experiência."
     }
   },
   "chat": {

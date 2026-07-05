@@ -143,6 +143,18 @@
       "pick_update_error": "Could not update host's pick.",
       "pick_cap_warning": "You already have {{count}} host's picks — guests see best results with around {{cap}}. Saved anyway.",
       "sort_by": "Sort by {{column}}",
+      "new": "New place",
+      "visibility": "Visibility",
+      "visibility_aria": "Toggle guest visibility for {{name}}",
+      "visibility_error": "Could not update visibility.",
+      "more_actions": "More actions for {{name}}",
+      "search_placeholder": "Search places",
+      "filter_all": "All",
+      "filter_status_aria": "Filter by status",
+      "filter_locale_aria": "Filter by language",
+      "no_matches": "No places match your filters.",
+      "count_one": "{{count}} place",
+      "count_other": "{{count}} places",
       "pagination": {
         "previous": "Previous",
         "next": "Next",
@@ -225,6 +237,27 @@
       "none": "None",
       "active": "Active",
       "revoked": "Revoked"
+    },
+    "count_one": "{{count}} reservation",
+    "count_other": "{{count}} reservations",
+    "search_placeholder": "Search by guest name",
+    "no_matches": "No reservations match your filters.",
+    "nights_one": "{{count}} night",
+    "nights_other": "{{count}} nights",
+    "guests_one": "{{count}} guest",
+    "guests_other": "{{count}} guests",
+    "send_link": "Send link to guest",
+    "revoke_access": "Revoke access",
+    "buckets": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "this_week": "This week",
+      "later": "Later"
+    },
+    "guest_access": {
+      "title": "Guest access",
+      "active_hint": "The link is active — your guest can open their tour.",
+      "inactive_hint": "Send a private link so your guest can open their tour."
     }
   },
   "chat": {
