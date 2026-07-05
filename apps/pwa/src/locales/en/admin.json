@@ -96,10 +96,11 @@
       "address": "Address",
       "last_updated": "Last updated",
       "updated_at": "Updated {{date}}",
-      "count": "{{count}} guesthouses",
       "new": "New guesthouse",
       "actions": "Actions",
-      "edit": "Edit"
+      "edit": "Edit",
+      "count_one": "{{count}} guesthouse",
+      "count_other": "{{count}} guesthouses"
     },
     "form": {
       "loading": "Loading…",

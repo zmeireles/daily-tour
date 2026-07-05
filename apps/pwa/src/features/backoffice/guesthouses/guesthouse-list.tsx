@@ -54,7 +54,7 @@ export function GuesthouseList() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            {t("guesthouses.list.count", "{{count}} guesthouses", { count: guesthouses.length })}
+            {t("guesthouses.list.count", { count: guesthouses.length })}
           </p>
         </div>
         <Button size="sm" asChild className="hidden md:flex">

@@ -96,10 +96,11 @@
       "address": "Morada",
       "last_updated": "Última actualização",
       "updated_at": "Actualizado {{date}}",
-      "count": "{{count}} alojamentos",
       "new": "Novo alojamento",
       "actions": "Acções",
-      "edit": "Editar"
+      "edit": "Editar",
+      "count_one": "{{count}} alojamento",
+      "count_other": "{{count}} alojamentos"
     },
     "form": {
       "loading": "A carregar…",
