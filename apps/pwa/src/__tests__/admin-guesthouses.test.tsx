@@ -63,9 +63,12 @@ describe("admin guesthouses route", () => {
     render(ui);
 
     await waitFor(() => {
-      expect(screen.getByText("Casa das Furnas")).toBeDefined();
+      expect(screen.getAllByText("Casa das Furnas").length).toBeGreaterThan(0);
     });
-    expect(screen.getByText("casa-das-furnas")).toBeDefined();
+    // Slug is no longer shown in the list (moved to the Advanced collapsible in the edit form)
+    expect(screen.queryByText("casa-das-furnas")).toBeNull();
+    // Address visible in the list
+    expect(screen.getAllByText("Furnas, São Miguel").length).toBeGreaterThan(0);
   });
 
   it("renders empty state when list has no guesthouses", async () => {

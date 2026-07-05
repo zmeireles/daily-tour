@@ -90,11 +90,17 @@
     "list": {
       "loading": "A carregar…",
       "error": "Erro ao carregar alojamentos.",
+      "cover": "Capa",
       "name": "Nome",
       "slug": "Slug",
       "address": "Morada",
+      "last_updated": "Última actualização",
+      "updated_at": "Actualizado {{date}}",
+      "new": "Novo alojamento",
       "actions": "Acções",
-      "edit": "Editar"
+      "edit": "Editar",
+      "count_one": "{{count}} alojamento",
+      "count_other": "{{count}} alojamentos"
     },
     "form": {
       "loading": "A carregar…",
@@ -107,6 +113,7 @@
       "map_placeholder": "Selector de mapa adiado para a Fase 2 — use campos numéricos por agora.",
       "hero": "Foto principal",
       "hero_alt": "Imagem do alojamento",
+      "advanced": "Avançado",
       "save": "Guardar",
       "cancel": "Cancelar",
       "tabs": {

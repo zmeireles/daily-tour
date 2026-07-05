@@ -90,11 +90,17 @@
     "list": {
       "loading": "Cargando…",
       "error": "No se pudieron cargar los alojamientos.",
+      "cover": "Portada",
       "name": "Nombre",
       "slug": "Slug",
       "address": "Dirección",
+      "last_updated": "Última actualización",
+      "updated_at": "Actualizado {{date}}",
+      "new": "Nuevo alojamiento",
       "actions": "Acciones",
-      "edit": "Editar"
+      "edit": "Editar",
+      "count_one": "{{count}} alojamiento",
+      "count_other": "{{count}} alojamientos"
     },
     "form": {
       "loading": "Cargando…",
@@ -107,6 +113,7 @@
       "map_placeholder": "Selector de mapa diferido a la Fase 2 — use entradas numéricas por ahora.",
       "hero": "Foto principal",
       "hero_alt": "Imagen del alojamiento",
+      "advanced": "Avanzado",
       "save": "Guardar",
       "cancel": "Cancelar",
       "tabs": {
