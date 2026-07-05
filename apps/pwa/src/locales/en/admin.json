@@ -1,19 +1,31 @@
 {
   "shell": {
     "nav": {
+      "today": "Today",
       "guesthouses": "Guesthouses",
       "reservations": "Reservations",
       "chat": "Messages",
       "places": "Places",
       "profile": "Profile",
-      "beta": "Beta metrics"
+      "beta": "Beta metrics",
+      "aria": "Admin navigation",
+      "menu": "Menu",
+      "more": "More",
+      "signout": "Sign out",
+      "bottom_aria": "Primary",
+      "group": {
+        "operations": "Operations",
+        "catalogue": "Catalogue",
+        "account": "Account"
+      }
     },
     "loading": "Loading admin…",
     "redirecting": "Redirecting to login…",
     "locale": {
       "label": "Language",
       "en": "English",
-      "pt-PT": "Português"
+      "pt-PT": "Português",
+      "es": "Español"
     }
   },
   "profile": {

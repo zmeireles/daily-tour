@@ -9,6 +9,8 @@ import {
 } from "./use-reservations";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 function guestLink(token: string): string {
   return `${window.location.origin}/r/${token}`;
@@ -16,7 +18,7 @@ function guestLink(token: string): string {
 
 export function ReservationList() {
   const { t } = useTranslation("admin");
-  const { data, isLoading, isError } = useReservations();
+  const { data, isLoading, isError, refetch } = useReservations();
   const issueToken = useIssueToken();
   const revokeToken = useRevokeToken();
   // Tokens minted this session, kept by reservation id so the shareable link
@@ -24,15 +26,14 @@ export function ReservationList() {
   const [issuedLinks, setIssuedLinks] = useState<Record<string, string>>({});
 
   if (isLoading) {
-    return (
-      <p className="text-muted-foreground text-sm">{t("reservations.list.loading", "Loading…")}</p>
-    );
+    return <LoadingState variant="table" />;
   }
   if (isError) {
     return (
-      <p className="text-destructive text-sm">
-        {t("reservations.list.error", "Failed to load reservations.")}
-      </p>
+      <ErrorState
+        description={t("reservations.list.error", "Failed to load reservations.")}
+        onRetry={() => void refetch()}
+      />
     );
   }
 

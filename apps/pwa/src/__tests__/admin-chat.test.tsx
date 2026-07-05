@@ -132,7 +132,10 @@ describe("ChatInbox", () => {
         </BackofficeShell>
       </MemoryRouter>,
     );
-    const link = screen.getByRole("link", { name: "Messages" });
-    expect(link).toHaveAttribute("href", "/admin/chat");
+    // The responsive shell renders the nav in both the desktop rail and the
+    // mobile bottom tab bar (CSS-hidden per breakpoint, both in the DOM).
+    const links = screen.getAllByRole("link", { name: "Messages" });
+    expect(links.length).toBeGreaterThan(0);
+    links.forEach((link) => expect(link).toHaveAttribute("href", "/admin/chat"));
   });
 });
