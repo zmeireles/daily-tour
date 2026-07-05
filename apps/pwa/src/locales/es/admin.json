@@ -28,6 +28,37 @@
       "es": "Español"
     }
   },
+  "dashboard": {
+    "greeting": {
+      "morning": "Buenos días, {{name}}",
+      "afternoon": "Buenas tardes, {{name}}",
+      "evening": "Buenas noches, {{name}}",
+      "fallback_name": "anfitrión"
+    },
+    "tiles": {
+      "checkins": "Check-ins de hoy",
+      "checkouts": "Check-outs de hoy",
+      "pending": "Reservas pendientes",
+      "messages": "Conversaciones",
+      "places_attention": "Lugares que necesitan atención",
+      "active_links": "Enlaces de huésped activos",
+      "error_title": "No se pudo cargar hoy",
+      "error": "No se pudo cargar el panel. Inténtalo de nuevo."
+    },
+    "actions": {
+      "add_place": "Añadir un lugar",
+      "todays_reservations": "Reservas de hoy",
+      "reply_messages": "Responder a mensajes"
+    },
+    "view_as_guest": "Ver como huésped",
+    "checklist": {
+      "title": "Termina la configuración",
+      "progress": "{{done}} de {{total}} completados",
+      "add_guesthouse": "Añade tu alojamiento",
+      "add_place": "Añade tu primer lugar",
+      "add_photo": "Añade una foto de perfil"
+    }
+  },
   "profile": {
     "title": "Perfil del Anfitrión",
     "form": {
