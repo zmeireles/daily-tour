@@ -1,18 +1,31 @@
 {
   "shell": {
     "nav": {
+      "today": "Hoy",
       "guesthouses": "Alojamientos",
+      "reservations": "Reservas",
       "chat": "Mensajes",
       "places": "Lugares",
       "profile": "Perfil",
-      "beta": "Métricas beta"
+      "beta": "Métricas beta",
+      "aria": "Navegación de administración",
+      "menu": "Menú",
+      "more": "Más",
+      "signout": "Cerrar sesión",
+      "bottom_aria": "Principal",
+      "group": {
+        "operations": "Operaciones",
+        "catalogue": "Catálogo",
+        "account": "Cuenta"
+      }
     },
     "loading": "Cargando admin…",
     "redirecting": "Redirigiendo al inicio de sesión…",
     "locale": {
       "label": "Idioma",
       "en": "English",
-      "pt-PT": "Português"
+      "pt-PT": "Português",
+      "es": "Español"
     }
   },
   "profile": {

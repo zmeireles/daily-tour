@@ -1,48 +1,56 @@
-import { NavLink, Outlet } from "react-router";
+import { Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
+import { BrandLockup } from "@/components/brand-lockup";
+import { TopAppBar } from "@/components/top-app-bar";
 import { LocaleSwitcher } from "./locale-switcher";
+import { AdminBottomTabBar } from "./admin-bottom-tab-bar";
+import { AccountFooter, NavGroupList, NAV_GROUPS, type NavCounts } from "./nav";
 
-const NAV_ITEMS = [
-  { key: "guesthouses", to: "/admin/guesthouses" },
-  { key: "reservations", to: "/admin/reservations" },
-  { key: "chat", to: "/admin/chat" },
-  { key: "places", to: "/admin/places" },
-  { key: "profile", to: "/admin/profile" },
-  { key: "beta", to: "/admin/beta" },
-] as const;
-
-export function BackofficeShell({ children }: { children?: React.ReactNode }) {
+// Desktop rail (≥lg): brand · grouped nav (icons + labels + active state +
+// count-badge slots) · footer (account/sign-out + locale). Pure CSS `hidden
+// lg:flex` — no JS fork, no first-paint flicker.
+function AdminRail({ counts, className }: { counts: NavCounts; className?: string }) {
   const { t } = useTranslation("admin");
+  return (
+    <aside
+      className={cn(
+        "sticky top-0 h-svh w-56 shrink-0 flex-col border-r border-border bg-card",
+        className,
+      )}
+    >
+      <div className="flex h-16 items-center px-4">
+        <BrandLockup />
+      </div>
+      <nav
+        aria-label={t("shell.nav.aria", "Admin")}
+        className="flex-1 overflow-y-auto px-3 py-2"
+      >
+        <NavGroupList groups={NAV_GROUPS} counts={counts} />
+      </nav>
+      <div className="mt-auto flex flex-col gap-3 border-t border-border p-3">
+        <AccountFooter />
+        <LocaleSwitcher />
+      </div>
+    </aside>
+  );
+}
+
+// Responsive owner-backoffice shell. ≥lg: fixed rail + fluid content. <lg: top
+// app bar + full-width content + bottom tab bar. Content column is `min-w-0` so
+// dense tables shrink instead of forcing horizontal overflow.
+export function BackofficeShell({ children }: { children?: React.ReactNode }) {
+  // Slot-ready counts; no cheap attention-semantic source exists yet (see nav.tsx).
+  const counts: NavCounts = {};
 
   return (
-    <div className="min-h-svh flex">
-      <nav
-        className="flex w-56 shrink-0 flex-col border-r bg-sidebar"
-        aria-label={t("shell.nav.guesthouses", "Navigation")}
-      >
-        <ul className="flex flex-col gap-1 p-3">
-          {NAV_ITEMS.map(({ key, to }) => (
-            <li key={key}>
-              <NavLink
-                to={to}
-                className={({ isActive }) =>
-                  `block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`
-                }
-              >
-                {t(`shell.nav.${key}`)}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-auto border-t p-3">
-          <LocaleSwitcher />
-        </div>
-      </nav>
-      <main className="flex-1 p-6">{children ?? <Outlet />}</main>
+    <div className="flex min-h-svh flex-col bg-background lg:flex-row">
+      <AdminRail counts={counts} className="hidden lg:flex" />
+      <TopAppBar counts={counts} className="lg:hidden" />
+      <main className="min-w-0 flex-1 p-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] lg:p-6 lg:pb-6">
+        {children ?? <Outlet />}
+      </main>
+      <AdminBottomTabBar counts={counts} className="lg:hidden" />
     </div>
   );
 }

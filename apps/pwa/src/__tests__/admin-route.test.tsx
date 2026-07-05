@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, waitFor, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { useOwnerSessionStore } from "@/store/owner-session";
 import AdminRoute from "@/routes/admin";
@@ -10,6 +10,7 @@ vi.mock("@/lib/auth/owner-oidc", () => ({
     getUser: vi.fn(),
     signinRedirect: vi.fn(),
     signinCallback: vi.fn(),
+    signoutRedirect: vi.fn(),
   },
 }));
 
@@ -65,17 +66,32 @@ describe("AdminRoute", () => {
     });
   });
 
-  it("valid session → renders shell with 4 nav links", async () => {
+  it("valid session → renders grouped rail nav + bottom tabs", async () => {
     mum.getUser.mockResolvedValue(MOCK_USER);
 
-    const { getByText } = renderAdmin();
+    const { getByRole } = renderAdmin();
 
-    await waitFor(() => {
-      expect(getByText("Guesthouses")).toBeDefined();
-      expect(getByText("Places")).toBeDefined();
-      expect(getByText("Profile")).toBeDefined();
-      expect(getByText("Beta metrics")).toBeDefined();
-    });
+    // Desktop rail carries the full grouped nav set (scoped by its aria-label so
+    // the identically-labelled mobile Sheet nav — closed here — can't collide).
+    const rail = await waitFor(() => getByRole("navigation", { name: "Admin navigation" }));
+    const railNav = within(rail);
+    for (const label of [
+      "Today",
+      "Reservations",
+      "Messages",
+      "Places",
+      "Guesthouses",
+      "Profile",
+      "Beta metrics",
+    ]) {
+      expect(railNav.getByText(label)).toBeDefined();
+    }
+
+    // Mobile bottom tab bar surfaces the four primary destinations + More.
+    const bottom = within(getByRole("navigation", { name: "Primary" }));
+    expect(bottom.getByText("Reservations")).toBeDefined();
+    expect(bottom.getByText("Messages")).toBeDefined();
+    expect(bottom.getByText("More")).toBeDefined();
 
     const state = useOwnerSessionStore.getState();
     expect(state.jwt).toBe(MOCK_USER.access_token);
