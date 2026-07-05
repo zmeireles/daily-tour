@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { toast } from "sonner";
 import { PlaceList } from "@/features/backoffice/places/place-list";
@@ -75,7 +75,24 @@ function renderList() {
   return render(<RouterProvider router={router} />);
 }
 
-describe("PlaceList — host's pick column", () => {
+// The reflow renders BOTH surfaces in jsdom (it doesn't evaluate the
+// `hidden md:table` / `md:hidden` classes), so any text/label that appears on
+// both would match twice. Scope every assertion to one surface: the desktop
+// `<table>` or the mobile card `<ul>`.
+function getTable(container: HTMLElement): HTMLElement {
+  return container.querySelector("table") as HTMLElement;
+}
+function getCards(container: HTMLElement): HTMLElement {
+  return container.querySelector("ul") as HTMLElement;
+}
+// Name column (first cell) of each desktop row, in render order.
+function tableNames(container: HTMLElement): (string | null)[] {
+  return Array.from(getTable(container).querySelectorAll("tbody tr")).map(
+    (tr) => tr.querySelector("td")?.textContent ?? null,
+  );
+}
+
+describe("PlaceList — reflow, status source + controls", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseArchivePlace.mockReturnValue({
@@ -93,51 +110,80 @@ describe("PlaceList — host's pick column", () => {
     setGuesthouse([]); // default: nothing hidden
   });
 
-  it("renders the pick badge reflecting each row's is_hosts_pick", () => {
+  it("shows the load-error string when the query fails", () => {
+    mockUsePlaces.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof usePlaces>);
+
+    renderList();
+
+    expect(screen.getByText("Failed to load places.")).toBeInTheDocument();
+  });
+
+  it("renders the shared StatusBadge localized label, never the raw enum", () => {
+    setPlaces([makePlace({ id: "p1", name: { en: "Solar" }, status: "published" })]);
+
+    const { container } = renderList();
+
+    // "published" → localized "Live"; the raw enum must not leak.
+    expect(within(getTable(container)).getByText("Live")).toBeInTheDocument();
+    expect(within(getTable(container)).queryByText("published")).not.toBeInTheDocument();
+    // Count subtitle reflects the (filtered) total.
+    expect(screen.getByText("1 place")).toBeInTheDocument();
+  });
+
+  it("reflects each row's is_hosts_pick on the pick switch + shows the flag on the card", () => {
     setPlaces([
       makePlace({ id: "pick", name: { en: "Lagoa" }, is_hosts_pick: true }),
       makePlace({ id: "non", name: { en: "Bistro" }, is_hosts_pick: false }),
     ]);
 
-    renderList();
+    const { container } = renderList();
+    const table = getTable(container);
 
-    // Pick row: filled badge + "Unmark" toggle.
-    expect(screen.getByText("Pick")).toBeInTheDocument();
-    const pickToggle = screen.getByLabelText("Toggle host's pick for Lagoa");
-    expect(pickToggle).toHaveTextContent("Unmark");
+    // Desktop pick switch mirrors state.
+    expect(within(table).getByLabelText("Toggle host's pick for Lagoa")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(within(table).getByLabelText("Toggle host's pick for Bistro")).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
 
-    // Non-pick row: em-dash placeholder + "Mark pick" toggle. (Em-dashes also appear
-    // in the visibility column for non-hidden rows, so assert at least one exists.)
-    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
-    const nonToggle = screen.getByLabelText("Toggle host's pick for Bistro");
-    expect(nonToggle).toHaveTextContent("Mark pick");
+    // Mobile card surfaces the localized pick flag (StatusBadge) for the picked place.
+    expect(within(getCards(container)).getByText("Pick")).toBeInTheDocument();
 
-    // Each toggle wires up its own per-place mutation hook.
+    // Each row wires up its own per-place mutation hook.
     expect(useUpdatePlace).toHaveBeenCalledWith("pick");
     expect(useUpdatePlace).toHaveBeenCalledWith("non");
   });
 
-  it("clicking the toggle calls the update mutation with the flipped is_hosts_pick", () => {
+  it("clicking the pick switch calls the update mutation with the flipped is_hosts_pick", () => {
     setPlaces([
       makePlace({ id: "pick", name: { en: "Lagoa" }, is_hosts_pick: true }),
       makePlace({ id: "non", name: { en: "Bistro" }, is_hosts_pick: false }),
     ]);
 
-    renderList();
+    const { container } = renderList();
+    const table = getTable(container);
 
-    fireEvent.click(screen.getByLabelText("Toggle host's pick for Bistro"));
+    fireEvent.click(within(table).getByLabelText("Toggle host's pick for Bistro"));
     expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
 
-    fireEvent.click(screen.getByLabelText("Toggle host's pick for Lagoa"));
+    fireEvent.click(within(table).getByLabelText("Toggle host's pick for Lagoa"));
     expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: false }, expect.anything());
   });
 
   it("surfaces an error toast when the backend rejects the toggle with 422", () => {
     setPlaces([makePlace({ id: "non", name: { en: "Bistro" }, status: "draft" })]);
 
-    renderList();
+    const { container } = renderList();
 
-    fireEvent.click(screen.getByLabelText("Toggle host's pick for Bistro"));
+    fireEvent.click(within(getTable(container)).getByLabelText("Toggle host's pick for Bistro"));
 
     // The component passes an onError handler to mutate; simulate the catalog-svc 422.
     const onError = updateMutate.mock.calls[0]?.[1]?.onError as (err: unknown) => void;
@@ -156,9 +202,9 @@ describe("PlaceList — host's pick column", () => {
     );
     setPlaces([...picks, makePlace({ id: "ninth", name: { en: "Ninth" }, is_hosts_pick: false })]);
 
-    renderList();
+    const { container } = renderList();
 
-    fireEvent.click(screen.getByLabelText("Toggle host's pick for Ninth"));
+    fireEvent.click(within(getTable(container)).getByLabelText("Toggle host's pick for Ninth"));
 
     expect(toast.warning).toHaveBeenCalledTimes(1);
     // Saving still proceeds — the cap is a soft warning, not a block.
@@ -171,9 +217,9 @@ describe("PlaceList — host's pick column", () => {
     );
     setPlaces([...picks, makePlace({ id: "next", name: { en: "Next" }, is_hosts_pick: false })]);
 
-    renderList();
+    const { container } = renderList();
 
-    fireEvent.click(screen.getByLabelText("Toggle host's pick for Next"));
+    fireEvent.click(within(getTable(container)).getByLabelText("Toggle host's pick for Next"));
 
     expect(toast.warning).not.toHaveBeenCalled();
     expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
@@ -186,18 +232,15 @@ describe("PlaceList — host's pick column", () => {
       makePlace({ id: "b", name: { en: "Banana" } }),
     ]);
 
-    renderList();
-
-    const nameHeader = screen.getByLabelText("Sort by Name");
+    const { container } = renderList();
+    const nameHeader = within(getTable(container)).getByLabelText("Sort by Name");
 
     // Default sort is name asc.
-    const namesAsc = screen.getAllByRole("cell", { name: /Apple|Banana|Cherry/ });
-    expect(namesAsc.map((c) => c.textContent)).toEqual(["Apple", "Banana", "Cherry"]);
+    expect(tableNames(container)).toEqual(["Apple", "Banana", "Cherry"]);
 
     // Click toggles to desc.
     fireEvent.click(nameHeader);
-    const namesDesc = screen.getAllByRole("cell", { name: /Apple|Banana|Cherry/ });
-    expect(namesDesc.map((c) => c.textContent)).toEqual(["Cherry", "Banana", "Apple"]);
+    expect(tableNames(container)).toEqual(["Cherry", "Banana", "Apple"]);
   });
 
   it("paginates at 10 per page, advancing with Next (DAILY-TOUR-154)", () => {
@@ -207,28 +250,26 @@ describe("PlaceList — host's pick column", () => {
     );
     setPlaces(many);
 
-    renderList();
+    const { container } = renderList();
 
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
     // Only 10 rows on page 1: P00..P09 present, P10/P11 absent.
-    expect(screen.getByRole("cell", { name: "P00" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "P09" })).toBeInTheDocument();
-    expect(screen.queryByRole("cell", { name: "P10" })).not.toBeInTheDocument();
+    expect(tableNames(container)).toContain("P00");
+    expect(tableNames(container)).toContain("P09");
+    expect(tableNames(container)).not.toContain("P10");
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
 
     expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "P10" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "P11" })).toBeInTheDocument();
-    expect(screen.queryByRole("cell", { name: "P00" })).not.toBeInTheDocument();
+    expect(tableNames(container)).toContain("P10");
+    expect(tableNames(container)).toContain("P11");
+    expect(tableNames(container)).not.toContain("P00");
   });
 
   it("counts the pick cap across the full set, not just the visible page (6.D + 154)", () => {
-    // 8 visible picks named so they sort onto page 2 (after the 10 non-picks +
-    // the to-be-marked row on page 1). Marking a 9th pick must still warn,
-    // proving the cap counts the whole set, not the current page slice.
-    // 9 non-pick fillers (names "Bbb …") + the target ("Aaa target", sorts first)
-    // fill page 1; the 8 picks ("Zzz …") sort onto page 2.
+    // 9 non-pick fillers ("Bbb …") + the target ("Aaa target", sorts first) fill
+    // page 1; the 8 picks ("Zzz …") sort onto page 2. Marking a 9th pick must still
+    // warn, proving the cap counts the whole set, not the current page slice.
     const fillers = Array.from({ length: 9 }, (_, i) =>
       makePlace({ id: `fill${i}`, name: { en: `Bbb ${i}` }, is_hosts_pick: false }),
     );
@@ -238,41 +279,79 @@ describe("PlaceList — host's pick column", () => {
     const target = makePlace({ id: "target", name: { en: "Aaa target" }, is_hosts_pick: false });
     setPlaces([...fillers, ...picks, target]);
 
-    renderList();
+    const { container } = renderList();
 
-    // The 8 picks live on page 2 (name "Zzz …"); the target is on page 1 ("Aaa …").
-    fireEvent.click(screen.getByLabelText("Toggle host's pick for Aaa target"));
+    // The 8 picks live on page 2 ("Zzz …"); the target is on page 1 ("Aaa …").
+    fireEvent.click(
+      within(getTable(container)).getByLabelText("Toggle host's pick for Aaa target"),
+    );
 
     expect(toast.warning).toHaveBeenCalledTimes(1);
     expect(updateMutate).toHaveBeenCalledWith({ is_hosts_pick: true }, expect.anything());
   });
 
-  it("guest-visibility toggle reflects the gh hidden set + flips it (Plan-006 6.A.3)", () => {
+  it("guest-visibility switch reflects the gh hidden set + flips it (Plan-006 6.A.3)", () => {
     setGuesthouse(["pick"]); // gh hides "pick"; "non" stays visible
     setPlaces([
       makePlace({ id: "pick", name: { en: "Lagoa" } }),
       makePlace({ id: "non", name: { en: "Bistro" } }),
     ]);
 
-    renderList();
+    const { container } = renderList();
+    const table = getTable(container);
 
-    // Hidden row: "Hidden" badge + "Show"; visible row: "Hide".
-    expect(screen.getByText("Hidden")).toBeInTheDocument();
-    expect(screen.getByLabelText("Toggle guest visibility for Lagoa")).toHaveTextContent("Show");
-    expect(screen.getByLabelText("Toggle guest visibility for Bistro")).toHaveTextContent("Hide");
+    // Hidden row: switch off (not visible); visible row: switch on.
+    expect(within(table).getByLabelText("Toggle guest visibility for Lagoa")).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    expect(within(table).getByLabelText("Toggle guest visibility for Bistro")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    // Mobile card surfaces the localized "Hidden" flag for the hidden place.
+    expect(within(getCards(container)).getByText("Hidden")).toBeInTheDocument();
 
     // Hide the visible one → PUT (hide:true).
-    fireEvent.click(screen.getByLabelText("Toggle guest visibility for Bistro"));
+    fireEvent.click(within(table).getByLabelText("Toggle guest visibility for Bistro"));
     expect(toggleMutate).toHaveBeenCalledWith(
       { guesthouseId: "gh1", placeId: "non", hide: true },
       expect.anything(),
     );
 
     // Show the hidden one → DELETE (hide:false).
-    fireEvent.click(screen.getByLabelText("Toggle guest visibility for Lagoa"));
+    fireEvent.click(within(table).getByLabelText("Toggle guest visibility for Lagoa"));
     expect(toggleMutate).toHaveBeenCalledWith(
       { guesthouseId: "gh1", placeId: "pick", hide: false },
       expect.anything(),
     );
+  });
+
+  it("filters the list by the status chip", () => {
+    setPlaces([
+      makePlace({ id: "pub", name: { en: "Solar" }, status: "published" }),
+      makePlace({ id: "dr", name: { en: "Barn" }, status: "draft" }),
+    ]);
+
+    const { container } = renderList();
+
+    // "Draft" chip = the localized status label from the shared source. Radix
+    // single ToggleGroup renders items as role="radio".
+    fireEvent.click(screen.getByRole("radio", { name: "Draft" }));
+
+    expect(tableNames(container)).toEqual(["Barn"]);
+  });
+
+  it("filters the list by the name search box", () => {
+    setPlaces([
+      makePlace({ id: "pub", name: { en: "Solar" }, status: "published" }),
+      makePlace({ id: "dr", name: { en: "Barn" }, status: "draft" }),
+    ]);
+
+    const { container } = renderList();
+
+    fireEvent.change(screen.getByLabelText("Search places"), { target: { value: "sol" } });
+
+    expect(tableNames(container)).toEqual(["Solar"]);
   });
 });
