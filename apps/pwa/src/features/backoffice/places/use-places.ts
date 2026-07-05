@@ -122,7 +122,28 @@ export function useUpdatePlace(id: string) {
       }
       return res.json() as unknown;
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
+    // T-8.2.5 — optimistic: the pick toggle (and any inline PATCH) reflects in the
+    // list cache immediately so it feels instant on a weak connection, then rolls
+    // back if the server rejects. onSettled reconciles with the server either way.
+    onMutate: async (body) => {
+      await qc.cancelQueries({ queryKey: PLACES_KEY });
+      const previous = qc.getQueryData<PlacesResponse>(PLACES_KEY);
+      qc.setQueryData<PlacesResponse>(PLACES_KEY, (old) =>
+        old
+          ? {
+              ...old,
+              data: old.data.map((p) =>
+                p.id === id ? { ...p, ...(body as Partial<PlaceRow>) } : p,
+              ),
+            }
+          : old,
+      );
+      return { previous };
+    },
+    onError: (_err, _body, ctx) => {
+      if (ctx?.previous) qc.setQueryData(PLACES_KEY, ctx.previous);
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
   });
 }
 

@@ -109,6 +109,33 @@ export function useToggleHiddenPlace() {
       if (!res.ok) throw new Error(`toggle hidden place ${res.status}`);
       return res.json() as unknown;
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: GUESTHOUSES_KEY }),
+    // Optimistic: flip the guesthouse's hidden_place_ids immediately so the
+    // visibility switch feels instant on a weak connection; roll back on error.
+    onMutate: async ({ guesthouseId, placeId, hide }) => {
+      await qc.cancelQueries({ queryKey: GUESTHOUSES_KEY });
+      const previous = qc.getQueryData<GuesthousesResponse>(GUESTHOUSES_KEY);
+      qc.setQueryData<GuesthousesResponse>(GUESTHOUSES_KEY, (old) =>
+        old
+          ? {
+              ...old,
+              data: old.data.map((g) =>
+                g.id !== guesthouseId
+                  ? g
+                  : {
+                      ...g,
+                      hidden_place_ids: hide
+                        ? [...g.hidden_place_ids, placeId]
+                        : g.hidden_place_ids.filter((x) => x !== placeId),
+                    },
+              ),
+            }
+          : old,
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(GUESTHOUSES_KEY, ctx.previous);
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: GUESTHOUSES_KEY }),
   });
 }

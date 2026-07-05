@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   useReservations,
   useIssueToken,
@@ -12,7 +13,18 @@ import {
 } from "@/features/backoffice/guesthouses/use-guesthouses";
 import { StatusBadge } from "@/features/backoffice/status";
 import { BUCKET_ORDER, dayBucket, formatDate, localTodayISO, nights } from "./agenda";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -119,14 +131,37 @@ function ReservationCard({
           <div className="flex flex-col gap-2">
             <div>
               {tokenActive ? (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  disabled={revokePending}
-                  onClick={() => onRevoke(r.id)}
-                >
-                  {t("reservations.revoke_access", "Revoke access")}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive" disabled={revokePending}>
+                      {t("reservations.revoke_access", "Revoke access")}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {t("reservations.revoke_confirm.title", "Revoke the guest's access?")}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t(
+                          "reservations.revoke_confirm.description",
+                          "Their guest link will stop working immediately.",
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>
+                        {t("reservations.revoke_confirm.cancel", "Cancel")}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        className={buttonVariants({ variant: "destructive" })}
+                        onClick={() => onRevoke(r.id)}
+                      >
+                        {t("reservations.revoke_access", "Revoke access")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : (
                 <Button size="sm" disabled={issuePending} onClick={() => onIssue(r.id)}>
                   {t("reservations.send_link", "Send link to guest")}
@@ -196,23 +231,31 @@ export function ReservationList() {
 
   const handleIssue = (id: string) => {
     issueToken.mutate(id, {
-      onSuccess: (res) => setIssuedLinks((prev) => ({ ...prev, [id]: res.token })),
+      onSuccess: (res) => {
+        setIssuedLinks((prev) => ({ ...prev, [id]: res.token }));
+        toast.success(t("reservations.issued", "Link sent"));
+      },
     });
   };
 
   const handleRevoke = (id: string) => {
     revokeToken.mutate(id, {
-      onSuccess: () =>
+      onSuccess: () => {
         setIssuedLinks((prev) => {
           const next = { ...prev };
           delete next[id];
           return next;
-        }),
+        });
+        toast.success(t("reservations.revoked", "Access revoked"));
+      },
     });
   };
 
   const handleCopy = (link: string) => {
-    void navigator.clipboard?.writeText(link);
+    void navigator.clipboard
+      ?.writeText(link)
+      .then(() => toast.success(t("reservations.copied", "Link copied")))
+      .catch(() => toast.error(t("reservations.copy_error", "Couldn't copy the link.")));
   };
 
   return (

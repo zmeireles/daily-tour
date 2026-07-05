@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { ReservationList } from "@/features/backoffice/reservations/reservation-list";
 import type { ReservationRow } from "@/features/backoffice/reservations/use-reservations";
+
+vi.mock("sonner", () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+  Toaster: () => null,
+}));
 
 vi.mock("@/features/backoffice/reservations/use-reservations", () => ({
   useReservations: vi.fn(),
@@ -145,12 +151,37 @@ describe("ReservationList", () => {
     );
   });
 
-  it("revokes the active token when Revoke is clicked", () => {
+  it("revokes the active token only after confirming the AlertDialog (T-8.2.5)", () => {
     setList([makeReservation({ token_state: "active" })]);
     render(<ReservationList />);
 
+    // Clicking the destructive button opens the confirm dialog — it does NOT revoke yet.
     fireEvent.click(screen.getByText("Revoke access"));
+    expect(revokeMutate).not.toHaveBeenCalled();
 
+    const dialog = screen.getByRole("alertdialog");
+    expect(within(dialog).getByText("Revoke the guest's access?")).toBeInTheDocument();
+
+    // Confirming inside the dialog performs the revoke.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Revoke access" }));
     expect(revokeMutate).toHaveBeenCalledWith("res-1", expect.any(Object));
+  });
+
+  it("copies the guest link and toasts success (T-8.2.5)", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    issueMutate.mockImplementation(
+      (_id: string, opts?: { onSuccess?: (r: { token: string }) => void }) => {
+        opts?.onSuccess?.({ token: "opaque-abc" });
+      },
+    );
+    render(<ReservationList />);
+
+    // Issue reveals the shareable link + Copy button.
+    fireEvent.click(screen.getByText("Send link to guest"));
+    fireEvent.click(screen.getByText("Copy"));
+
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/r/opaque-abc`);
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Link copied"));
   });
 });
