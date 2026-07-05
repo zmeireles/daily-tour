@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-008 Slice 1: responsive owner-backoffice shell + first-class states (2026-07-05)
+
+Owner backoffice **Slice 1** merged (#331–#335 + a polish/docs wrap) — the admin console is now responsive, stateful, and localized pt/en/es:
+
+- **Responsive shell (#331)** — desktop rail + mobile top-app-bar + 5-item bottom tab bar + `Sheet` drawer, replacing the always-on `w-56` sidebar that caused the 1301px mobile overflow; nav-active tokens, count-badge slots, `es` added to the locale switcher.
+- **First-class states (#332)** — every admin list + single-entity form route now uses `LoadingState`/`ErrorState` (Retry→refetch) / `EmptyState` instead of bare `<p>` text.
+- **Beta metrics + shared `StatTile` (#333)** — `retry:false` so a 500 shows error+retry rather than infinite "Loading…"; new reusable KPI-tile primitive.
+- **"Today" dashboard (#334)** — `/admin` is no longer blank: greeting, KPI tiles (check-ins/outs, bookings awaiting a guest link, active links, places needing attention, conversations) tapping through to filtered lists, quick actions, view-as-guest, and a first-run setup checklist.
+- **Fable-5 review remediation (#335)** — a new `model:"fable"` adversarial review gate caught a 🔴 the normal review + full CI + 40+ passing tests all missed: the `es` admin locale was never registered, so selecting "Español" silently fell back to English. Fixed + regression-guarded; es key parity completed; ErrorState i18n; iOS safe-area top-bar fix; StatTile SPA-nav.
+
+Execution log: `docs/implementation-plans/008-backoffice-redesign/EXECUTION.md`. Not yet deployed to qual (owner-only surface; qual stays on the 06-30 F&F-beta build).
+
 ### Added — Plan-008 Slice 0 foundation + Load Tests resurrected (2026-07-03)
 
 - **Backoffice redesign — Slice 0 foundation merged** (#325, #326, #327): scoped `[data-app="admin"]` console token overlay (light+dark, STATE tokens, nav-active, card shadow; guest `tokens.css` untouched) + `touch`/`icon-touch` button sizes; ConsentBanner and SessionBootstrap gated off `/admin/*` (the two §8.11 cleanups); 11 hand-rolled radix-ui primitives (tabs, input, label, textarea, select, form RHF+zod, skeleton, loading-state, error-state, alert-dialog, tooltip) with 49 unit tests and zero new dependencies. Execution log: `docs/implementation-plans/008-backoffice-redesign/EXECUTION.md`.

@@ -43,7 +43,7 @@
       "messages": "Conversaciones",
       "places_attention": "Lugares que necesitan atención",
       "active_links": "Enlaces de huésped activos",
-      "tile_error": "Toca para reintentar"
+      "tile_error": "Toque para reintentar"
     },
     "actions": {
       "add_place": "Añadir un lugar",
@@ -225,8 +225,8 @@
     "loading": "Cargando…",
     "threads_error": "No se pudieron cargar las conversaciones.",
     "history_error": "No se pudieron cargar los mensajes.",
-    "select_thread": "Selecciona una conversación para ver los mensajes.",
-    "placeholder": "Escribe una respuesta…",
+    "select_thread": "Seleccione una conversación para ver los mensajes.",
+    "placeholder": "Escriba una respuesta…",
     "send": "Enviar"
   },
   "beta": {

@@ -19,7 +19,7 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 | Slice | Title                              | Priority              | Size | Status                        |
 | ----- | ---------------------------------- | --------------------- | ---- | ----------------------------- |
 | 0     | Foundation & two cleanups          | subscription-blocking | M    | ☑ 2026-07-03 (#325 #326 #327) |
-| 1     | Responsive shell + states          | subscription-blocking | L    | ☐                             |
+| 1     | Responsive shell + states          | subscription-blocking | L    | ☑ 2026-07-05 (#331–#335)      |
 | 2     | List reflow + plain language       | subscription-blocking | L    | ☐                             |
 | 3     | Form excellence + translate helper | beta-desirable        | L    | ☐                             |
 | 4     | Chat experience                    | beta-desirable        | M    | ☐                             |
@@ -37,10 +37,10 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 
 ## Slice 1 — Responsive shell + first-class states · subscription-blocking · deps: Slice 0
 
-- [ ] **T-8.1.1** — Rewrite `shell.tsx`: desktop rail (`hidden lg:flex`, grouped nav + icons + count badges + `--nav-active-*`, brand, account/theme/locale footer) + mobile top app bar (`top-app-bar.tsx` + `Sheet` drawer) + 5-item bottom tab bar (Today/Reservations/Messages/Places/More). **Kills the 1301 px overflow.** _(§3.4, §4.1, §5.1)_ — **AC:** no horizontal overflow at 390 px; rail only ≥`lg`; bottom tabs only <`lg`; nav-active ≠ `--primary`; count-badge slots on Reservations+Messages.
-- [ ] **T-8.1.2** — `routes/admin._index.tsx` = **Today** dashboard (greeting, `StatTile`s → filtered lists, quick actions, view-as-guest, first-run checklist), wired as default admin child; promote `beta-dashboard.tsx` scaffold. _(§5.2, §8.1)_ — **AC:** `/admin` not blank; tiles tap through; each tile skeleton-on-load + inline error+retry; first-run checklist only when setup incomplete.
-- [ ] **T-8.1.3** — Replace all bare `<p>` loading/error states with `LoadingState`/`ErrorState` (place-list, reservation-list, chat-inbox, profile, guesthouse-list, beta-dashboard); extend `EmptyState` to every list. _(§6.1–6.3)_ — **AC:** no bare `<p>` states; skeletons shaped like result; errors have Retry→`refetch`; every list has an empty state; copy pt/en/es.
-- [ ] **T-8.1.4** — Fix `/admin/beta` loading-vs-error (skeleton vs `ErrorState`+Retry; localize "Loading metrics…"). **Backend 500 already fixed in #159 — this is FE-only.** _(§6.3, §8.10)_ — **AC:** fetch error → `ErrorState`+Retry not infinite loading; string localized; page is the overlay/state pilot.
+- [x] **T-8.1.1** — Rewrite `shell.tsx`: desktop rail (`hidden lg:flex`, grouped nav + icons + count badges + `--nav-active-*`, brand, account/theme/locale footer) + mobile top app bar (`top-app-bar.tsx` + `Sheet` drawer) + 5-item bottom tab bar (Today/Reservations/Messages/Places/More). **Kills the 1301 px overflow.** _(§3.4, §4.1, §5.1)_ — **AC:** no horizontal overflow at 390 px; rail only ≥`lg`; bottom tabs only <`lg`; nav-active ≠ `--primary`; count-badge slots on Reservations+Messages.
+- [x] **T-8.1.2** — `routes/admin._index.tsx` = **Today** dashboard (greeting, `StatTile`s → filtered lists, quick actions, view-as-guest, first-run checklist), wired as default admin child; promote `beta-dashboard.tsx` scaffold. _(§5.2, §8.1)_ — **AC:** `/admin` not blank; tiles tap through; each tile skeleton-on-load + inline error+retry; first-run checklist only when setup incomplete.
+- [x] **T-8.1.3** — Replace all bare `<p>` loading/error states with `LoadingState`/`ErrorState` (place-list, reservation-list, chat-inbox, profile, guesthouse-list, beta-dashboard); extend `EmptyState` to every list. _(§6.1–6.3)_ — **AC:** no bare `<p>` states; skeletons shaped like result; errors have Retry→`refetch`; every list has an empty state; copy pt/en/es.
+- [x] **T-8.1.4** — Fix `/admin/beta` loading-vs-error (skeleton vs `ErrorState`+Retry; localize "Loading metrics…"). **Backend 500 already fixed in #159 — this is FE-only.** _(§6.3, §8.10)_ — **AC:** fetch error → `ErrorState`+Retry not infinite loading; string localized; page is the overlay/state pilot.
 
 ## Slice 2 — List reflow + plain language · subscription-blocking · deps: Slices 0,1
 

@@ -20,6 +20,33 @@ Wave-by-wave record. Plan: [`README.md`](./README.md) · tasks: [`TODO.md`](./TO
 - `cs-agent push` generates non-conventional PR titles (`S702 T8 0 1`) — the `pr-title` check fails until retitled. Retitle immediately after `cs-agent push`.
 - Merge dance under the repo ruleset: arm `gh pr merge --squash --auto --delete-branch` on all PRs, then loop `update-branch` on whichever goes `BEHIND` after each merge.
 
-## Next — Wave 2 candidates
+## Wave 2 — Slice 1: Responsive shell + first-class states (2026-07-03 → 07-05) ✅
 
-Slice 1 (responsive shell + states, `T-8.1.x`, deps: Slice 0 ✅) is unblocked. Slice 2 depends on Slices 0+1.
+**Scope**: T-8.1.1 … T-8.1.4 (all of Slice 1) + a Fable-5 review-remediation pass + a polish/docs wrap. cs-agents `s703-*` (Opus keystone + Sonnet execution against tight prompts, non-overlapping file scopes), reviewed and shepherded by the orchestrator; **a `model:"fable"` adversarial reviewer gated every merge** (see below).
+
+| PR                                                       | Tasks   | Agent                                          | Content                                                                                                                                                                                                                                |
+| -------------------------------------------------------- | ------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#331](https://github.com/zmeireles/daily-tour/pull/331) | T-8.1.1 | `s703-t8-1-1` (opus)                           | Responsive `shell.tsx` — desktop rail (`hidden lg:flex`, grouped nav + `--nav-active-*` + count-badge slots) + mobile `top-app-bar` + 5-item bottom tab bar + DRY `nav.tsx`; LocaleSwitcher +es. Kills the rail-theft 1301px overflow. |
+| [#332](https://github.com/zmeireles/daily-tour/pull/332) | T-8.1.3 | `s703-t8-1-3` (sonnet) + `s703-t8-1-3b` (opus) | First-class `LoadingState`/`ErrorState`/`EmptyState` across all admin lists + the 3 form routes. Sonnet under-delivered (3/7 files) → Opus continuation finished it.                                                                   |
+| [#333](https://github.com/zmeireles/daily-tour/pull/333) | T-8.1.4 | `s703-t8-1-4` (sonnet)                         | Beta metrics error-not-loading (`retry:false`) + new shared `StatTile` primitive.                                                                                                                                                      |
+| [#334](https://github.com/zmeireles/daily-tour/pull/334) | T-8.1.2 | `s703-t8-1-2` (opus)                           | `admin._index.tsx` = "Today" dashboard (KPI tiles → filtered lists, quick actions, view-as-guest, first-run checklist) wired as the default admin child.                                                                               |
+| [#335](https://github.com/zmeireles/daily-tour/pull/335) | —       | `s703-fable-fix` (opus)                        | Fable-review remediation of the Wave-1 findings (see below).                                                                                                                                                                           |
+
+**Fable-5 review gate** (new doctrine — [[feedback-fable-review-gate]]): the Fable reviewer caught defects that Opus review + full CI + 40+ passing tests all missed —
+
+- 🔴 **es admin locale never registered** (`lib/i18n/index.ts`): the "Español" switcher silently rendered the whole console in English (fallback); every `es` string was dead. Fixed in #335 with a **fails-on-revert** regression test (`admin-i18n-es.test.tsx`) + the ~50-key es parity gap filled (mechanically verified empty).
+- 🟠 **"Pending reservations" KPI permanently 0** — filtered a `status:"pending"` the backend never emits, and its test used an impossible row. Re-specified (owner's call) to _"confirmed booking without an active guest link"_ (`status === "confirmed" && token_state !== "active"`) with a realistic test.
+- 🟠 grid-level error blanked all 6 Today tiles when any one query failed → per-tile inline retry.
+- 🟠 archived-only place falsely marked "has a place" in the first-run checklist → filter `status !== "archived"`.
+- 🟠 ErrorState hardcoded PT (mixed-language on en/es) → i18n'd with prop-override preserved; TopAppBar `h-14` crushed under the iOS safe-area → `min-h-14`; StatTile `<a href>` full-reload → react-router `Link`.
+- Polish (post-merge, Fable-flagged): tiles-skeleton column count now matches each grid (no load→settle reflow); 3 es strings moved to the formal _usted_ register.
+
+**Verification**: per-PR CI (10 checks) + targeted vitest per branch; the Fable reviewer re-audited the fix diffs and confirmed all findings durably resolved. **Not deployed to qual.**
+
+**⚠ Deploy gate**: an isolated Slice-0/1 build must NOT reach qual/prod without the _full_ Slice-1 set — mid-slice, the Today tab was blank (no index route) and `es` was broken. Both are resolved on `main` now, so a qual Slice-1 deploy is safe when desired (qual is intentionally still on the 06-30 F&F-beta build).
+
+**Execution notes**: cs-agent "closer" auto-commits + kills tmux on idle, BUT a _self-committing_ agent leaves its session idle-open → `cs-agent wait` hangs; verify completion by **diff-scope, not wait-exit**. Fresh cs-agent worktrees lack `node_modules`/built workspace deps → `pnpm install` + `pnpm --filter @daily-tour/shared-types build` before running gates, else a phantom "Cannot find `@daily-tour/shared-types`" cascade. The responsive shell renders nav in BOTH rail + bottom-bar in jsdom → `getByRole("link")` finds duplicates; use `getAllByRole`.
+
+## Next — Wave 3 candidates
+
+Slice 2 (list table→card reflow + plain language, `T-8.2.x`, deps: Slices 0+1 ✅) is unblocked — it also resolves the **residual 390px multi-column-table overflow** left by the Slice-1 shell (proposal §4.1 "fix part 2 — tables").
