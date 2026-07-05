@@ -473,3 +473,64 @@ describe("useUpdatePlace — optimistic pick toggle (T-8.2.5)", () => {
     vi.unstubAllGlobals();
   });
 });
+
+// The optimistic visibility toggle lives in the real useToggleHiddenPlace hook
+// (mocked away in the component suite above), so exercise it directly.
+describe("useToggleHiddenPlace — optimistic visibility toggle (T-8.2.5)", () => {
+  const GUESTHOUSES_KEY = ["admin", "guesthouses"];
+
+  function seededClient(hidden_place_ids: string[]) {
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+    });
+    qc.setQueryData(GUESTHOUSES_KEY, {
+      data: [{ id: "gh1", hidden_place_ids }],
+      nextCursor: null,
+    });
+    return qc;
+  }
+
+  function hidden(qc: QueryClient): string[] {
+    return (qc.getQueryData(GUESTHOUSES_KEY) as { data: { hidden_place_ids: string[] }[] }).data[0]
+      .hidden_place_ids;
+  }
+
+  it("adds the place to hidden_place_ids immediately, then rolls back when the server rejects", async () => {
+    const { useToggleHiddenPlace } = await vi.importActual<
+      typeof import("@/features/backoffice/guesthouses/use-guesthouses")
+    >("@/features/backoffice/guesthouses/use-guesthouses");
+
+    const qc = seededClient([]);
+
+    let rejectFetch: (reason?: unknown) => void = () => {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise((_res, rej) => {
+            rejectFetch = rej;
+          }),
+      ),
+    );
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useToggleHiddenPlace(), { wrapper });
+
+    act(() => {
+      result.current.mutate({ guesthouseId: "gh1", placeId: "p1", hide: true });
+    });
+
+    // Optimistic: the place is in the hidden set before the request settles.
+    await waitFor(() => expect(hidden(qc)).toContain("p1"));
+
+    // Server rejects → rollback to the pre-mutation snapshot (empty).
+    act(() => {
+      rejectFetch(new Error("toggle hidden place 500"));
+    });
+    await waitFor(() => expect(hidden(qc)).not.toContain("p1"));
+
+    vi.unstubAllGlobals();
+  });
+});
