@@ -54,7 +54,7 @@ function TableSkeleton({ count = 5 }: { count?: number }) {
 
 function TilesSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-2">
           <Skeleton className="h-8 w-8 rounded-md" />

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useOwnerSessionStore } from "@/store/owner-session";
 import { BetaDashboard } from "@/features/admin-beta/beta-dashboard";
@@ -15,8 +15,10 @@ const MOCK_METRICS = {
   drop_off_funnel: { started: 100, completed: 75 },
 };
 
+// No retry:false here on purpose — the error path must be exercised by the
+// component's own useQuery({ retry: false }) config, not masked by the harness.
 function renderDashboard() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
       <BetaDashboard />
@@ -61,16 +63,38 @@ describe("BetaDashboard", () => {
     );
   });
 
-  it("shows an error message when the fetch fails", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) }),
-    );
+  it("shows an error message when the fetch fails (component's own retry:false)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) });
+    vi.stubGlobal("fetch", fetchMock);
 
     renderDashboard();
 
     await waitFor(() => {
       expect(screen.getByText("Failed to load beta metrics.")).toBeDefined();
+    });
+    // retry:false lives on the component's useQuery, so a single attempt fails fast.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("refetches when the Retry button is clicked", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load beta metrics.")).toBeDefined();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
 });

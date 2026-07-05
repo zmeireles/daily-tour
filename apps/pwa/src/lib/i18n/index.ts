@@ -30,12 +30,13 @@ import esPublic from "../../locales/es/public.json";
 import esHome from "../../locales/es/home.json";
 import esPlace from "../../locales/es/place.json";
 import esDiscover from "../../locales/es/discover.json";
+import esAdmin from "../../locales/es/admin.json";
 import esLegal from "../../locales/es/legal.json";
 
 // Lazy-loading via i18next-resources-to-backend deferred — bundle size of
-// these small JSON files is negligible for v1. fr/es ship the six guest-facing
-// namespaces; admin (owner-only backoffice) stays en/pt-PT and falls back to en
-// via fallbackLng for fr/es guests (no French/Spanish owner exists).
+// these small JSON files is negligible for v1. fr ships the six guest-facing
+// namespaces; the admin (owner-only backoffice) namespace ships in en, pt-PT
+// and es. fr has no admin namespace and falls back to en (no French owner).
 const resources = {
   en: {
     common: enCommon,
@@ -69,6 +70,7 @@ const resources = {
     home: esHome,
     place: esPlace,
     discover: esDiscover,
+    admin: esAdmin,
     legal: esLegal,
   },
 };

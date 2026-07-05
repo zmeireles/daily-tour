@@ -10,6 +10,7 @@
       "beta": "Métricas beta",
       "aria": "Navegación de administración",
       "menu": "Menú",
+      "menu_title": "Menú",
       "more": "Más",
       "signout": "Cerrar sesión",
       "bottom_aria": "Principal",
@@ -89,7 +90,6 @@
     "list": {
       "loading": "Cargando…",
       "error": "No se pudieron cargar los alojamientos.",
-      "empty": "Aún no hay alojamientos.",
       "name": "Nombre",
       "slug": "Slug",
       "address": "Dirección",
@@ -122,12 +122,16 @@
     "list": {
       "loading": "Cargando…",
       "error": "No se pudieron cargar los lugares.",
-      "empty": "Aún no hay lugares.",
       "name": "Nombre",
       "status": "Estado",
       "address": "Dirección",
       "actions": "Acciones",
       "edit": "Editar",
+      "hosts_pick": "Elección del Anfitrión",
+      "pick_badge": "Elección",
+      "mark_pick": "Marcar elección",
+      "unmark_pick": "Quitar elección",
+      "hosts_pick_aria": "Alternar la elección del anfitrión para {{name}}",
       "pick_requires_published": "Solo los lugares publicados pueden marcarse como elección del anfitrión.",
       "pick_update_error": "No se pudo actualizar la elección del anfitrión.",
       "pick_cap_warning": "Ya tienes {{count}} elecciones del anfitrión — los huéspedes ven mejores resultados con alrededor de {{cap}}. Guardado de todos modos.",
@@ -157,6 +161,33 @@
       "media": {
         "title": "Multimedia",
         "upload_hint": "Arrastra imágenes o haz clic para seleccionar"
+      },
+      "contacts": {
+        "title": "Contactos",
+        "phone": "Teléfono",
+        "email": "Correo electrónico",
+        "website": "Sitio web"
+      },
+      "hours": {
+        "title": "Horario",
+        "hint": "Deje un día en blanco si está cerrado. Complete ambas horas para guardarlo.",
+        "open_for": "Hora de apertura del {{day}}",
+        "close_for": "Hora de cierre del {{day}}",
+        "days": {
+          "mon": "Lun",
+          "tue": "Mar",
+          "wed": "Mié",
+          "thu": "Jue",
+          "fri": "Vie",
+          "sat": "Sáb",
+          "sun": "Dom"
+        }
+      },
+      "season": {
+        "title": "Temporada",
+        "all_year": "Todo el año",
+        "summer": "Solo verano",
+        "winter": "Solo invierno"
       }
     },
     "archive": {
@@ -165,6 +196,38 @@
       "yes": "Archivar",
       "no": "Cancelar"
     }
+  },
+  "reservations": {
+    "title": "Reservas",
+    "issue": "Emitir enlace",
+    "revoke": "Revocar",
+    "copy_link": "Copiar",
+    "guest_link": "Enlace del huésped",
+    "list": {
+      "loading": "Cargando…",
+      "error": "No se pudieron cargar las reservas.",
+      "guest": "Huésped",
+      "checkin": "Entrada",
+      "checkout": "Salida",
+      "party_size": "Personas",
+      "status": "Estado",
+      "token_state": "Token",
+      "actions": "Acciones"
+    },
+    "token_state": {
+      "none": "Ninguno",
+      "active": "Activo",
+      "revoked": "Revocado"
+    }
+  },
+  "chat": {
+    "title": "Mensajes",
+    "loading": "Cargando…",
+    "threads_error": "No se pudieron cargar las conversaciones.",
+    "history_error": "No se pudieron cargar los mensajes.",
+    "select_thread": "Selecciona una conversación para ver los mensajes.",
+    "placeholder": "Escribe una respuesta…",
+    "send": "Enviar"
   },
   "beta": {
     "loading": "Cargando métricas…",
@@ -181,14 +244,29 @@
     "top_places": "Top 5 lugares con más interacciones",
     "no_places": "Aún no hay datos."
   },
-  "chat": {
-    "title": "Mensajes",
-    "loading": "Cargando…",
-    "threads_empty": "Aún no hay conversaciones.",
-    "threads_error": "No se pudieron cargar las conversaciones.",
-    "history_error": "No se pudieron cargar los mensajes.",
-    "select_thread": "Selecciona una conversación para ver los mensajes.",
-    "placeholder": "Escribe una respuesta…",
-    "send": "Enviar"
+  "empty_states": {
+    "reservations": {
+      "title": "Aún no hay reservas",
+      "description": "Las reservas aparecen aquí a medida que añade huéspedes. Emita un enlace de huésped para empezar."
+    },
+    "places": {
+      "title": "Aún no hay lugares",
+      "description": "Añada los sitios que le encantan para que sus huéspedes puedan comer, beber, ver y hacer como un local.",
+      "cta": "Añada su primer lugar"
+    },
+    "guesthouses": {
+      "title": "Aún no hay alojamientos",
+      "description": "Añada un alojamiento para que los huéspedes puedan vincularse al lugar adecuado donde alojarse.",
+      "cta": "Añada su primer alojamiento"
+    },
+    "chat": {
+      "title": "Aún no hay conversaciones",
+      "description": "Cuando un huésped le escriba desde la aplicación, la conversación aparecerá aquí."
+    }
+  },
+  "error_state": {
+    "title": "No se pudo cargar",
+    "description": "Se ha producido un error inesperado. Inténtelo de nuevo.",
+    "retry": "Reintentar"
   }
 }

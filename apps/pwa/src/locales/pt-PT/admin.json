@@ -10,6 +10,7 @@
       "beta": "Métricas beta",
       "aria": "Navegação de administração",
       "menu": "Menu",
+      "menu_title": "Menu",
       "more": "Mais",
       "signout": "Terminar sessão",
       "bottom_aria": "Principal",
@@ -262,5 +263,10 @@
       "title": "Ainda não há conversas",
       "description": "Quando um hóspede lhe enviar uma mensagem a partir da aplicação, a conversa aparece aqui."
     }
+  },
+  "error_state": {
+    "title": "Não foi possível carregar",
+    "description": "Ocorreu um erro inesperado. Tente novamente.",
+    "retry": "Tentar novamente"
   }
 }
