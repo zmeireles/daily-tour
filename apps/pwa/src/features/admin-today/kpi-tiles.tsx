@@ -68,7 +68,7 @@ export function KpiTiles() {
   const threads = useChatThreads();
 
   if (reservations.isLoading || places.isLoading || threads.isLoading) {
-    return <LoadingState variant="tiles" count={6} />;
+    return <LoadingState variant="tiles" count={6} columns={3} />;
   }
 
   const today = localTodayISO(new Date());

@@ -8,6 +8,9 @@ type LoadingStateVariant = "cards" | "table" | "tiles" | "thread";
 interface LoadingStateProps {
   variant?: LoadingStateVariant;
   count?: number;
+  // `tiles` only: match the consumer's KPI grid so the skeleton doesn't reflow on
+  // data arrival (beta = 4-up, Today = 3-up for its 6 tiles).
+  columns?: 3 | 4;
   className?: string;
 }
 
@@ -52,9 +55,11 @@ function TableSkeleton({ count = 5 }: { count?: number }) {
   );
 }
 
-function TilesSkeleton({ count = 4 }: { count?: number }) {
+function TilesSkeleton({ count = 4, columns = 4 }: { count?: number; columns?: 3 | 4 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div
+      className={cn("grid grid-cols-2 gap-3", columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4")}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-2">
           <Skeleton className="h-8 w-8 rounded-md" />
@@ -82,12 +87,12 @@ function ThreadSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-function LoadingState({ variant = "cards", count, className }: LoadingStateProps) {
+function LoadingState({ variant = "cards", count, columns, className }: LoadingStateProps) {
   return (
     <div data-slot="loading-state" data-variant={variant} className={cn("w-full", className)}>
       {variant === "cards" && <CardsSkeleton count={count} />}
       {variant === "table" && <TableSkeleton count={count} />}
-      {variant === "tiles" && <TilesSkeleton count={count} />}
+      {variant === "tiles" && <TilesSkeleton count={count} columns={columns} />}
       {variant === "thread" && <ThreadSkeleton count={count} />}
     </div>
   );
