@@ -198,6 +198,21 @@
     "placeholder": "Escreva uma resposta…",
     "send": "Enviar"
   },
+  "beta": {
+    "loading": "A carregar métricas…",
+    "error": "Erro ao carregar métricas beta.",
+    "error_title": "Erro ao carregar métricas",
+    "title": "Painel Beta",
+    "window": "Últimos 30 dias · apenas hóspedes beta",
+    "total_guests": "Hóspedes",
+    "completion_rate": "Conclusão",
+    "avg_rating": "Avaliação média",
+    "funnel_started": "Iniciados",
+    "funnel_completed": "Concluídos",
+    "funnel_title": "Funil de abandono",
+    "top_places": "Top 5 locais com mais interacções",
+    "no_places": "Ainda não há dados."
+  },
   "empty_states": {
     "reservations": {
       "title": "Ainda não há reservas",

@@ -136,6 +136,21 @@
       "no": "Cancelar"
     }
   },
+  "beta": {
+    "loading": "Cargando métricas…",
+    "error": "Error al cargar las métricas beta.",
+    "error_title": "Error al cargar métricas",
+    "title": "Panel Beta",
+    "window": "Últimos 30 días · solo huéspedes beta",
+    "total_guests": "Huéspedes",
+    "completion_rate": "Finalización",
+    "avg_rating": "Valoración media",
+    "funnel_started": "Iniciados",
+    "funnel_completed": "Completados",
+    "funnel_title": "Embudo de abandono",
+    "top_places": "Top 5 lugares con más interacciones",
+    "no_places": "Aún no hay datos."
+  },
   "chat": {
     "title": "Mensajes",
     "loading": "Cargando…",
