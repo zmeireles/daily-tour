@@ -4,13 +4,7 @@ import { useTranslation } from "react-i18next";
 import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LocaleSwitcher } from "@/features/backoffice/locale-switcher";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AccountFooter,
   NavCountBadge,
@@ -33,15 +27,7 @@ function tabClasses(isActive: boolean) {
   );
 }
 
-function TabIcon({
-  item,
-  count,
-  isActive,
-}: {
-  item: NavItem;
-  count?: number;
-  isActive: boolean;
-}) {
+function TabIcon({ item, count, isActive }: { item: NavItem; count?: number; isActive: boolean }) {
   const { icon: Icon } = item;
   return (
     <span
@@ -51,12 +37,20 @@ function TabIcon({
       )}
     >
       <Icon size={20} aria-hidden="true" />
-      {item.badge && <NavCountBadge count={count} className="absolute -top-1 -right-0.5 border-card" />}
+      {item.badge && (
+        <NavCountBadge count={count} className="absolute -top-1 -right-0.5 border-card" />
+      )}
     </span>
   );
 }
 
-export function AdminBottomTabBar({ counts, className }: { counts: NavCounts; className?: string }) {
+export function AdminBottomTabBar({
+  counts,
+  className,
+}: {
+  counts: NavCounts;
+  className?: string;
+}) {
   const { t } = useTranslation("admin");
   const { pathname } = useLocation();
   const [moreOpen, setMoreOpen] = React.useState(false);
@@ -102,7 +96,12 @@ export function AdminBottomTabBar({ counts, className }: { counts: NavCounts; cl
               <span className="text-[11px] leading-none">{t("shell.nav.more", "More")}</span>
             </SheetTrigger>
             {/* data-app pins the admin token overlay inside the body-level portal. */}
-            <SheetContent side="bottom" data-app="admin" className="rounded-t-xl bg-card pb-[env(safe-area-inset-bottom)]">
+            <SheetContent
+              side="bottom"
+              data-app="admin"
+              aria-describedby={undefined}
+              className="rounded-t-xl bg-card pb-[env(safe-area-inset-bottom)]"
+            >
               <SheetHeader>
                 <SheetTitle>{t("shell.nav.more", "More")}</SheetTitle>
               </SheetHeader>

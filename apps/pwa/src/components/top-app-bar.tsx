@@ -4,13 +4,7 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "@/features/backoffice/locale-switcher";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AccountFooter,
   NavGroupList,
@@ -30,12 +24,14 @@ export function TopAppBar({ counts, className }: { counts: NavCounts; className?
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card px-2 pt-[env(safe-area-inset-top)]",
+        "sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-border bg-card px-2 pt-[env(safe-area-inset-top)]",
         className,
       )}
     >
       <img src="/logo.svg" alt="" className="ml-1 h-8 w-8 shrink-0" />
-      <span className="flex-1 truncate font-display text-lg leading-none text-primary">{title}</span>
+      <span className="flex-1 truncate font-display text-lg leading-none text-primary">
+        {title}
+      </span>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
@@ -44,9 +40,14 @@ export function TopAppBar({ counts, className }: { counts: NavCounts; className?
           </Button>
         </SheetTrigger>
         {/* data-app pins the admin token overlay inside the body-level portal. */}
-        <SheetContent side="left" data-app="admin" aria-describedby={undefined} className="w-72 bg-card">
+        <SheetContent
+          side="left"
+          data-app="admin"
+          aria-describedby={undefined}
+          className="w-72 bg-card"
+        >
           <SheetHeader>
-            <SheetTitle>{t("shell.nav.aria", "Admin")}</SheetTitle>
+            <SheetTitle>{t("shell.nav.menu_title", "Menu")}</SheetTitle>
           </SheetHeader>
           <nav aria-label={t("shell.nav.aria", "Admin")} className="flex-1 overflow-y-auto px-2">
             <NavGroupList groups={NAV_GROUPS} counts={counts} onNavigate={() => setOpen(false)} />

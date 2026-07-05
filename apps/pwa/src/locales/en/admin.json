@@ -10,6 +10,7 @@
       "beta": "Beta metrics",
       "aria": "Admin navigation",
       "menu": "Menu",
+      "menu_title": "Menu",
       "more": "More",
       "signout": "Sign out",
       "bottom_aria": "Primary",
@@ -232,5 +233,10 @@
       "title": "No conversations yet",
       "description": "When a guest messages you from the app, the conversation will appear here."
     }
+  },
+  "error_state": {
+    "title": "Couldn't load",
+    "description": "An unexpected error occurred. Please try again.",
+    "retry": "Try again"
   }
 }
