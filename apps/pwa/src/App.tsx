@@ -49,6 +49,7 @@ const router = createBrowserRouter([
     path: "/admin",
     element: lazyRoute(() => import("@/routes/admin")),
     children: [
+      { index: true, element: lazyRoute(() => import("@/routes/admin._index")) },
       { path: "places", element: lazyRoute(() => import("@/routes/admin.places")) },
       { path: "places/new", element: lazyRoute(() => import("@/routes/admin.places.new")) },
       { path: "places/:id", element: lazyRoute(() => import("@/routes/admin.places.$id")) },

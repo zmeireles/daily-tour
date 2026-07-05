@@ -29,6 +29,36 @@
       "es": "Español"
     }
   },
+  "dashboard": {
+    "greeting": {
+      "morning": "Bom dia, {{name}}",
+      "afternoon": "Boa tarde, {{name}}",
+      "evening": "Boa noite, {{name}}",
+      "fallback_name": "Anfitrião"
+    },
+    "tiles": {
+      "checkins": "Check-ins de hoje",
+      "checkouts": "Check-outs de hoje",
+      "pending": "Reservas pendentes",
+      "messages": "Conversas",
+      "places_attention": "Locais a precisar de atenção",
+      "active_links": "Ligações de hóspede activas",
+      "tile_error": "Tocar para tentar de novo"
+    },
+    "actions": {
+      "add_place": "Adicionar um local",
+      "todays_reservations": "Reservas de hoje",
+      "reply_messages": "Responder a mensagens"
+    },
+    "view_as_guest": "Ver como hóspede",
+    "checklist": {
+      "title": "Terminar a configuração",
+      "progress": "{{done}} de {{total}} concluídos",
+      "add_guesthouse": "Adicione o seu alojamento",
+      "add_place": "Adicione o seu primeiro local",
+      "add_photo": "Adicione uma foto de perfil"
+    }
+  },
   "profile": {
     "title": "Perfil do Anfitrião",
     "form": {

@@ -29,6 +29,36 @@
       "es": "Español"
     }
   },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}",
+      "fallback_name": "there"
+    },
+    "tiles": {
+      "checkins": "Check-ins today",
+      "checkouts": "Check-outs today",
+      "pending": "Pending reservations",
+      "messages": "Conversations",
+      "places_attention": "Places needing attention",
+      "active_links": "Active guest links",
+      "tile_error": "Tap to retry"
+    },
+    "actions": {
+      "add_place": "Add a place",
+      "todays_reservations": "Today's reservations",
+      "reply_messages": "Reply to messages"
+    },
+    "view_as_guest": "View as guest",
+    "checklist": {
+      "title": "Finish setting up",
+      "progress": "{{done}} of {{total}} done",
+      "add_guesthouse": "Add your guesthouse",
+      "add_place": "Add your first place",
+      "add_photo": "Add a profile photo"
+    }
+  },
   "profile": {
     "title": "Owner Profile",
     "form": {
