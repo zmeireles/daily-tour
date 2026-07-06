@@ -16,6 +16,12 @@ vi.mock("@/lib/auth/owner-oidc", () => ({
 
 vi.mock("@/lib/theme/use-theme-auto", () => ({ useThemeAuto: vi.fn() }));
 
+// The shell reads the chat unread count (react-query); stub it so this suite
+// doesn't need a QueryClientProvider (production wraps everything in one).
+vi.mock("@/features/backoffice/chat/use-chat-unread", () => ({
+  useUnreadChatCount: () => 0,
+}));
+
 const { ownerUserManager } = await import("@/lib/auth/owner-oidc");
 
 const mum = vi.mocked(ownerUserManager);

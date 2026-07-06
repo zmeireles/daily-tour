@@ -41,6 +41,12 @@ vi.mock("@/lib/offline/use-offline-status", () => ({
   useOfflineStatus: () => ({ isOffline: true }),
 }));
 
+// BackofficeShell reads the chat unread count (react-query); stub it so the
+// shell renders without a QueryClientProvider in this a11y suite.
+vi.mock("@/features/backoffice/chat/use-chat-unread", () => ({
+  useUnreadChatCount: () => 0,
+}));
+
 function withRouter(element: React.ReactElement, path = "/") {
   const router = createMemoryRouter([{ path: "/*", element }], { initialEntries: [path] });
   return <RouterProvider router={router} />;
