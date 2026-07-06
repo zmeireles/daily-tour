@@ -50,9 +50,8 @@ vi.mock("@/features/backoffice/guesthouses/use-guesthouses", () => ({
   useUpdateGuesthouse: vi.fn(),
 }));
 
-const { useCreateGuesthouse, useUpdateGuesthouse } = await import(
-  "@/features/backoffice/guesthouses/use-guesthouses"
-);
+const { useCreateGuesthouse, useUpdateGuesthouse } =
+  await import("@/features/backoffice/guesthouses/use-guesthouses");
 const mockCreate = vi.mocked(useCreateGuesthouse);
 const mockUpdate = vi.mocked(useUpdateGuesthouse);
 
@@ -95,9 +94,13 @@ function nameInput() {
 function saveButton() {
   return screen.getByRole("button", { name: /^save$/i });
 }
-// Slug lives in the collapsed "Advanced" section; open it before querying.
+// Slug lives in the "Advanced" section. It's collapsed by default in create
+// mode but opens automatically in edit mode when a slug already exists, so only
+// toggle it when the Slug field isn't already visible.
 function openAdvanced() {
-  fireEvent.click(screen.getByRole("button", { name: /slug/i }));
+  if (!screen.queryByLabelText("Slug")) {
+    fireEvent.click(screen.getByRole("button", { name: /slug/i }));
+  }
 }
 
 // Fills the required English name + address so a create/edit submit passes.
@@ -231,9 +234,7 @@ describe("GuesthouseForm", () => {
 
     fireEvent.click(saveButton());
 
-    await waitFor(() =>
-      expect(screen.getByText("lowercase kebab-case slug")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("lowercase kebab-case slug")).toBeInTheDocument());
     expect(createMutateAsync).not.toHaveBeenCalled();
   });
 
