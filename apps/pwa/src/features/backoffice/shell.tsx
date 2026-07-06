@@ -6,6 +6,7 @@ import { TopAppBar } from "@/components/top-app-bar";
 import { LocaleSwitcher } from "./locale-switcher";
 import { AdminBottomTabBar } from "./admin-bottom-tab-bar";
 import { AccountFooter, NavGroupList, NAV_GROUPS, type NavCounts } from "./nav";
+import { useUnreadChatCount } from "./chat/use-chat-unread";
 
 // Desktop rail (≥lg): brand · grouped nav (icons + labels + active state +
 // count-badge slots) · footer (account/sign-out + locale). Pure CSS `hidden
@@ -22,10 +23,7 @@ function AdminRail({ counts, className }: { counts: NavCounts; className?: strin
       <div className="flex h-16 items-center px-4">
         <BrandLockup />
       </div>
-      <nav
-        aria-label={t("shell.nav.aria", "Admin")}
-        className="flex-1 overflow-y-auto px-3 py-2"
-      >
+      <nav aria-label={t("shell.nav.aria", "Admin")} className="flex-1 overflow-y-auto px-3 py-2">
         <NavGroupList groups={NAV_GROUPS} counts={counts} />
       </nav>
       <div className="mt-auto flex flex-col gap-3 border-t border-border p-3">
@@ -40,8 +38,10 @@ function AdminRail({ counts, className }: { counts: NavCounts; className?: strin
 // app bar + full-width content + bottom tab bar. Content column is `min-w-0` so
 // dense tables shrink instead of forcing horizontal overflow.
 export function BackofficeShell({ children }: { children?: React.ReactNode }) {
-  // Slot-ready counts; no cheap attention-semantic source exists yet (see nav.tsx).
-  const counts: NavCounts = {};
+  // Chat unread is the one attention-semantic source wired so far; the heuristic
+  // is FE-only and inert without an owner session (see use-chat-unread.ts), so a
+  // 0 count renders no badge.
+  const counts: NavCounts = { chat: useUnreadChatCount() };
 
   return (
     <div className="flex min-h-svh flex-col bg-background lg:flex-row">

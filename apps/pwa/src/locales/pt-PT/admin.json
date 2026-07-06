@@ -285,7 +285,19 @@
     "history_error": "Erro ao carregar mensagens.",
     "select_thread": "Seleccione uma conversa para ver as mensagens.",
     "placeholder": "Escreva uma resposta…",
-    "send": "Enviar"
+    "send": "Enviar",
+    "back": "Voltar",
+    "search_placeholder": "Procurar conversas",
+    "no_matches": "Nenhuma conversa corresponde à sua procura.",
+    "you": "Eu",
+    "quick_reply": {
+      "wifi_label": "Wi-Fi",
+      "wifi": "A palavra-passe do Wi-Fi é …",
+      "checkin_label": "Check-in",
+      "checkin": "O check-in é a partir das 15h00. O código do cofre da chave é …",
+      "recommendations_label": "Recomendações",
+      "recommendations": "Alguns locais que talvez goste de conhecer: …"
+    }
   },
   "beta": {
     "loading": "A carregar métricas…",
