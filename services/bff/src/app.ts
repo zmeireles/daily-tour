@@ -16,6 +16,7 @@ import mediaDisplayRoute from "./routes/media-display.js";
 import adminPlacesRoute from "./routes/admin-places.js";
 import adminProfileRoute from "./routes/admin-profile.js";
 import adminReservationsRoute from "./routes/admin-reservations.js";
+import adminTranslateRoute from "./routes/admin-translate.js";
 import authRefreshRoute from "./routes/auth-refresh.js";
 import chatHistoryRoute from "./routes/chat-history.js";
 import chatWsRoute from "./routes/chat-ws.js";
@@ -107,6 +108,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(adminProfileRoute);
   await app.register(adminGuesthousesRoute);
   await app.register(adminReservationsRoute);
+  await app.register(adminTranslateRoute);
   await app.register(adminChatRoute);
   await app.register(tourPlansRoute);
   await app.register(telemetryRoute);

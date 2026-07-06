@@ -110,6 +110,11 @@ services:
       # Built from SERVICE_DB_PASSWORD_BFF so rotated envs (qual) authenticate; the
       # dev placeholder keeps dev byte-for-byte (config.ts has the same default).
       ANALYTICS_DATABASE_URL: postgres://bff:${SERVICE_DB_PASSWORD_BFF:-change-me-please-bff}@dt_postgres:5432/dailytour
+      # T-8.3.5 translate helper: BFF calls Anthropic for owner-facing PT-PT/ES
+      # translation. Blank in dev/CI — the route returns 503 when the key is
+      # unset (mirrors planner-svc / chat-hub posture).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
     healthcheck:
       # node:22-alpine ships BusyBox wget at /usr/bin/wget; -q --spider works.
       # Use 127.0.0.1 explicitly — container /etc/hosts resolves "localhost" to
