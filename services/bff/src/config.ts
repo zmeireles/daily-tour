@@ -49,6 +49,10 @@ const ConfigSchema = z.object({
   ANALYTICS_DATABASE_URL: z
     .string()
     .default("postgres://bff:change-me-please-bff@dt_postgres:5432/dailytour"),
+  // Anthropic API key for the /v1/admin/translate endpoint. Optional — the
+  // route returns 503 when unset (dev/CI posture, mirrors planner-svc).
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().default("claude-opus-4-8"),
 });
 
 export type BffConfig = z.infer<typeof ConfigSchema>;
