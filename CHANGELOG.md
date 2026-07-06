@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-008 Slice 4 (chat) + guesthouse fields + first qual deploy of the backoffice redesign (2026-07-06)
+
+- **Chat experience redesigned (#345)** — the owner chat inbox now shows **real guest names** (joined from reservations) with colored-initials avatars, property, and relative timestamps instead of opaque `aaa001…` IDs; message bubbles with sender + time, a sticky composer, and **Quick Reply template chips**; a mobile single-pane master→detail push (list → thread → back); an unread indicator (dot/bold + a Messages nav badge) computed client-side; and a search bar.
+- **Guesthouse `status` + `rooms` fields (#344)** — full-stack: migration `0007` (`status active|archived` with a CHECK + nullable `rooms`), catalog-svc + shared-types + the shared `StatusBadge` (new `guesthouse` kind); the guesthouse card shows a status badge + "N quartos" and the form gets a status select + rooms input. Closes the field gap descoped from Slice 2.
+- **First qual deploy of the redesigned backoffice** — Slices 0–2 + 4 + the guesthouse fields deployed to qual (main `12cc6d5`); catalog-svc auto-migrated the new columns. **Browser-UAT verified the F&F-beta guest app is not regressed** (redeem → home → discover → place-detail, 0 JS errors) and `/admin` redirects to Authentik SSO. All merges Fable-gated.
+
 ### Added — Plan-008 Slice 2: backoffice list reflow + plain language (2026-07-05)
 
 Owner backoffice **Slice 2** merged (#337–#341) — the admin lists are now mobile-first, plainly-worded, and localized pt/en/es; this also clears the last of the 390px table overflow:
