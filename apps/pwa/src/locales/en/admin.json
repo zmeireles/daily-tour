@@ -365,5 +365,18 @@
       "hosts_pick": "Pick",
       "hidden": "Hidden"
     }
+  },
+  "translate": {
+    "field": "Translate this field",
+    "all": "Translate all",
+    "auto_badge": "Auto-translated",
+    "out_of_sync": "Source changed — translate again",
+    "overwrite_title": "Replace existing text?",
+    "overwrite_body": "This field already has text. Translating will replace it.",
+    "overwrite_confirm": "Replace",
+    "overwrite_cancel": "Cancel",
+    "toast_done": "Translation complete",
+    "toast_fail": "Couldn't translate — please enter manually",
+    "undo": "Undo"
   }
 }
