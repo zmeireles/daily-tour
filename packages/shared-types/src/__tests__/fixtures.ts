@@ -51,6 +51,8 @@ export const validGuesthouse: Guesthouse = {
   address: "Rua das Furnas 12, Furnas, São Miguel",
   geom: { lat: 37.775, lng: -25.311 },
   media: [UUID_C],
+  status: "active",
+  rooms: 4,
   hidden_place_ids: [],
   created_at: NOW,
   updated_at: NOW,

@@ -18,6 +18,8 @@ const CreateGuesthouseBodySchema = z.object({
   geom_lat: z.number().min(-90).max(90),
   geom_lng: z.number().min(-180).max(180),
   media: z.array(z.string().uuid()).default([]),
+  status: z.enum(["active", "archived"]).default("active"),
+  rooms: z.number().int().positive().nullable().optional(),
 });
 
 const UpdateGuesthouseBodySchema = CreateGuesthouseBodySchema.partial();
@@ -62,6 +64,8 @@ function formatGuesthouse(row: Guesthouse) {
     geom_lat: row.geomLat,
     geom_lng: row.geomLng,
     media: row.media,
+    status: row.status,
+    rooms: row.rooms,
     hidden_place_ids: row.hiddenPlaceIds,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
@@ -154,6 +158,8 @@ export function guesthousesRoutes(app: FastifyInstance): void {
           geomLat: body.geom_lat,
           geomLng: body.geom_lng,
           media: body.media,
+          status: body.status,
+          rooms: body.rooms ?? null,
         })
         .returning();
       if (!created) return reply.code(500).send({ error: "insert_failed" });
@@ -189,6 +195,8 @@ export function guesthousesRoutes(app: FastifyInstance): void {
     if (updates.geom_lat !== undefined) patch.geomLat = updates.geom_lat;
     if (updates.geom_lng !== undefined) patch.geomLng = updates.geom_lng;
     if (updates.media !== undefined) patch.media = updates.media;
+    if (updates.status !== undefined) patch.status = updates.status;
+    if (updates.rooms !== undefined) patch.rooms = updates.rooms;
 
     try {
       const [updated] = await db

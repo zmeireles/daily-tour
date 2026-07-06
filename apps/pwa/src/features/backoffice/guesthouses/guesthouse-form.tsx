@@ -23,6 +23,13 @@ const FormSchema = z.object({
   address: z.string().min(1, "Required"),
   geom_lat: z.coerce.number().min(-90).max(90),
   geom_lng: z.coerce.number().min(-180).max(180),
+  status: z.enum(["active", "archived"]),
+  // Optional: a blank input coerces to undefined rather than 0 (Number("") === 0
+  // would otherwise fail .positive()); rooms is nullable at the API.
+  rooms: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.coerce.number().int().positive().optional(),
+  ),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -62,8 +69,10 @@ export function GuesthouseForm({ initialData, id }: Props) {
           address: initialData.address,
           geom_lat: initialData.geom_lat,
           geom_lng: initialData.geom_lng,
+          status: initialData.status === "archived" ? "archived" : "active",
+          rooms: initialData.rooms ?? undefined,
         }
-      : { geom_lat: 37.75, geom_lng: -25.67 },
+      : { geom_lat: 37.75, geom_lng: -25.67, status: "active" },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -74,6 +83,8 @@ export function GuesthouseForm({ initialData, id }: Props) {
       geom_lat: values.geom_lat,
       geom_lng: values.geom_lng,
       media: mediaAssets.map((a) => a.assetId),
+      status: values.status,
+      rooms: values.rooms ?? null,
     };
     if (isEdit) {
       await updateMutation.mutateAsync(body);
@@ -217,6 +228,34 @@ export function GuesthouseForm({ initialData, id }: Props) {
               )}
             </label>
           </div>
+        </fieldset>
+
+        {/* Status & rooms */}
+        <fieldset className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("guesthouses.form.status", "Status")}</span>
+            <select
+              {...register("status")}
+              className="rounded-md border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="active">{t("status.guesthouse.active", "Active")}</option>
+              <option value="archived">{t("status.guesthouse.archived", "Archived")}</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t("guesthouses.form.rooms", "Rooms")}</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="1"
+              step="1"
+              {...register("rooms")}
+              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {errors.rooms && (
+              <span className="text-xs text-destructive">{errors.rooms.message}</span>
+            )}
+          </label>
         </fieldset>
 
         {/* Hero photo (media[0]) */}

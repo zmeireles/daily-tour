@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UuidSchema, IsoDateTimeSchema, GeomSchema, SlugSchema } from "./common.js";
+import { GuesthouseStatusSchema } from "./enums.js";
 import { I18nTextSchema } from "./i18n.js";
 
 export const GuesthouseSchema = z
@@ -11,6 +12,10 @@ export const GuesthouseSchema = z
     address: z.string(),
     geom: GeomSchema,
     media: z.array(z.string().uuid()),
+    // Lifecycle status — active guesthouses are shown; archived are retired.
+    status: GuesthouseStatusSchema,
+    // Number of rooms (nº de quartos). Null when unknown.
+    rooms: z.number().int().positive().nullable(),
     // Plan-006 6.A: global place_ids this guesthouse hides from its guests (opt-out scoping).
     hidden_place_ids: z.array(z.string().uuid()),
     created_at: IsoDateTimeSchema,
