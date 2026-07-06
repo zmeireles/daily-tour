@@ -6,6 +6,7 @@ import { TopAppBar } from "@/components/top-app-bar";
 import { LocaleSwitcher } from "./locale-switcher";
 import { AdminBottomTabBar } from "./admin-bottom-tab-bar";
 import { AccountFooter, NavGroupList, NAV_GROUPS, type NavCounts } from "./nav";
+import { useUnreadChatCount } from "./chat/use-chat-unread";
 
 // Desktop rail (≥lg): brand · grouped nav (icons + labels + active state +
 // count-badge slots) · footer (account/sign-out + locale). Pure CSS `hidden
