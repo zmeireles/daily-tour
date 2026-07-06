@@ -9,23 +9,12 @@ import {
   type FieldTranslation,
   LOCALE_SUFFIX,
 } from "@/lib/i18n/use-field-translation";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,7 +87,7 @@ export function TranslatableField({
   }
 
   function onGlobeClick() {
-    const current = getValues(fieldName);
+    const current: unknown = getValues(fieldName);
     if (typeof current === "string" && current.trim()) {
       // Non-empty target: suggest, don't silently overwrite.
       setConfirmOpen(true);
@@ -109,7 +98,7 @@ export function TranslatableField({
 
   async function onConfirmOverwrite() {
     setConfirmOpen(false);
-    const prior = getValues(fieldName);
+    const prior: unknown = getValues(fieldName);
     const ok = await translation.translateField(namePrefix, [locale], kind);
     if (!ok) return;
     // Offer a one-tap undo restoring the value we just replaced.
@@ -117,7 +106,7 @@ export function TranslatableField({
       action: {
         label: t("translate.undo"),
         onClick: () => {
-          setValue(fieldName, prior ?? "", { shouldDirty: true });
+          setValue(fieldName, typeof prior === "string" ? prior : "", { shouldDirty: true });
           translation._notifyEdit(namePrefix, locale);
         },
       },
@@ -217,13 +206,11 @@ export function TranslatableField({
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t("translate.overwrite_title")}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t("translate.overwrite_body")}
-                  </AlertDialogDescription>
+                  <AlertDialogDescription>{t("translate.overwrite_body")}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t("translate.overwrite_cancel")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={onConfirmOverwrite}>
+                  <AlertDialogAction onClick={() => void onConfirmOverwrite()}>
                     {t("translate.overwrite_confirm")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
