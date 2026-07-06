@@ -110,6 +110,9 @@ export function useFieldTranslation({
       if (!entry) return;
       for (const { locale, text } of entry.values) {
         const tl = locale as ContentLocale;
+        // Defence-in-depth: only write locales we actually requested — never let
+        // an unexpected locale (e.g. the source) clobber an owner-authored field.
+        if (!targetLocales.includes(tl)) continue;
         setValue(`${namePrefix}_${LOCALE_SUFFIX[tl]}`, text, { shouldDirty: true });
         snapshotRef.current[`${namePrefix}:${tl}`] = sourceText;
         patch(namePrefix, tl, { translating: false, autoTranslated: true, outOfSync: false });
@@ -159,8 +162,15 @@ export function useFieldTranslation({
   );
 
   const translateAll = useCallback(
-    async (fields: Array<{ namePrefix: string; kind?: "prose" | "proper_name" }>): Promise<void> => {
+    async (
+      fields: Array<{ namePrefix: string; kind?: "prose" | "proper_name" }>,
+    ): Promise<void> => {
+      if (!jwt) {
+        toast.error(t("translate.toast_fail"));
+        return;
+      }
       const targetLocales = ALL_LOCALES.filter((l) => l !== sourceLocale);
+      let anyFailed = false;
 
       for (const { namePrefix, kind = "prose" } of fields) {
         const sourceText = getValues(`${namePrefix}_${LOCALE_SUFFIX[sourceLocale]}`);
@@ -183,13 +193,15 @@ export function useFieldTranslation({
           });
           applyResult(namePrefix, emptyTargets, result, sourceText);
         } catch {
+          anyFailed = true;
           for (const locale of emptyTargets) {
             patch(namePrefix, locale, { translating: false });
           }
         }
       }
+      if (anyFailed) toast.error(t("translate.toast_fail"));
     },
-    [getValues, sourceLocale, patch, mutation, applyResult],
+    [jwt, getValues, sourceLocale, patch, mutation, applyResult, t],
   );
 
   const status = useCallback(
@@ -198,7 +210,7 @@ export function useFieldTranslation({
       const currentSource = getValues(`${namePrefix}_${LOCALE_SUFFIX[sourceLocale]}`);
       const snapshotSource = snapshotRef.current[`${namePrefix}:${locale}`];
       const outOfSync =
-        !!(s?.autoTranslated) && snapshotSource !== undefined && currentSource !== snapshotSource;
+        !!s?.autoTranslated && snapshotSource !== undefined && currentSource !== snapshotSource;
 
       return {
         translating: s?.translating ?? false,
