@@ -117,13 +117,32 @@
       "hero": "Foto principal",
       "hero_alt": "Imagem do alojamento",
       "advanced": "Avançado",
+      "slug_hint": "Gerado automaticamente a partir do nome. Deixe em branco para o derivar.",
       "status": "Estado",
       "rooms": "Quartos",
       "save": "Guardar",
+      "saving": "A guardar…",
       "cancel": "Cancelar",
+      "sections": {
+        "identity": "Identidade",
+        "location": "Localização",
+        "status": "Estado",
+        "media": "Multimédia"
+      },
+      "media": {
+        "upload_hint": "Arraste imagens ou clique para seleccionar",
+        "hint": "JPG, PNG ou WebP · até 5 MB cada"
+      },
+      "unsaved": {
+        "title": "Descartar alterações não guardadas?",
+        "body": "Tem alterações por guardar. Se sair agora, serão perdidas.",
+        "stay": "Ficar",
+        "leave": "Sair"
+      },
       "tabs": {
         "en": "Inglês",
-        "pt_PT": "Português"
+        "pt_PT": "Português",
+        "es": "Espanhol"
       }
     }
   },

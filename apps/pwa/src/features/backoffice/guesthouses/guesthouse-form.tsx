@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useBlocker } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,19 +7,78 @@ import { z } from "zod";
 import { ChevronDown } from "lucide-react";
 import { useCreateGuesthouse, useUpdateGuesthouse, type GuesthouseRow } from "./use-guesthouses";
 import { MediaUploader, type UploadedAsset } from "@/features/backoffice/places/media-uploader";
+import { StatusBadge } from "@/features/backoffice/status";
+import {
+  CONTENT_LOCALES,
+  type ContentLocale,
+  contentLocaleTabKey,
+  zodContentFields,
+  buildI18nText,
+  i18nTextToFields,
+} from "@/features/backoffice/shared/form-locale-config";
+import {
+  useFieldTranslation,
+  type UseFieldTranslationOptions,
+} from "@/lib/i18n/use-field-translation";
+import { TranslatableField, TranslateAllButton } from "@/components/ui/translatable-field";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// Guesthouse media is an array of media-svc asset UUIDs; resolve each to the
-// same-origin display route so the editor shows + preserves existing media.
-function toUploadedAssets(media: string[] | undefined): UploadedAsset[] {
-  return (media ?? []).map((id) => ({ assetId: id, previewUrl: `/v1/media/${id}`, name: id }));
+// Hosts author in Portuguese; the machine-translate helper fills en/es from PT.
+const SOURCE_LOCALE: ContentLocale = "pt-PT";
+
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+// Derive a kebab-case slug from a display name: strip diacritics, lowercase,
+// collapse non-alphanumerics to single hyphens. Used when the owner leaves the
+// (advanced) slug blank so create still satisfies catalog-svc's required slug.
+function slugify(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
+// zodContentFields returns an index-signature shape; assert the concrete keys so
+// noUncheckedIndexedAccess doesn't taint each access with `| undefined`.
+type ContentTriple<P extends string> = Record<`${P}_en` | `${P}_pt` | `${P}_es`, z.ZodString>;
+const nameFields = zodContentFields("name") as ContentTriple<"name">;
+
 const FormSchema = z.object({
-  name_en: z.string().min(1, "Required"),
-  name_pt: z.string().default(""),
-  slug: z.string().regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, "lowercase kebab-case slug"),
+  // Name reuses the shared en/pt/es defs; en stays required (min 1).
+  name_en: nameFields.name_en.min(1, "Required"),
+  name_pt: nameFields.name_pt,
+  name_es: nameFields.name_es,
+  // Slug is optional in the form (auto-generated from the name on submit); when
+  // the owner does type one it must be kebab-case. Blank is allowed.
+  slug: z
+    .string()
+    .trim()
+    .default("")
+    .refine((v) => v === "" || SLUG_RE.test(v), { message: "lowercase kebab-case slug" }),
   address: z.string().min(1, "Required"),
   geom_lat: z.coerce.number().min(-90).max(90),
   geom_lng: z.coerce.number().min(-180).max(180),
@@ -39,255 +98,382 @@ interface Props {
   id?: string;
 }
 
-const TABS = ["en", "pt-PT"] as const;
-type Tab = (typeof TABS)[number];
+// Native <select> styled to match the shared Input (radix Select is portal-based
+// and doesn't toggle under jsdom); keeps the status control testable + localizable.
+const selectClassName =
+  "flex min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
+// Guesthouse media is an array of media-svc asset UUIDs; resolve each to the
+// same-origin display route so the editor shows + preserves existing media.
+function toUploadedAssets(media: string[] | undefined): UploadedAsset[] {
+  return (media ?? []).map((id) => ({ assetId: id, previewUrl: `/v1/media/${id}`, name: id }));
+}
 
 export function GuesthouseForm({ initialData, id }: Props) {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>("en");
+  const [activeLocale, setActiveLocale] = useState<ContentLocale>(SOURCE_LOCALE);
+  const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>(() =>
+    toUploadedAssets(initialData?.media),
+  );
 
   const createMutation = useCreateGuesthouse();
   const updateMutation = useUpdateGuesthouse(id ?? "");
   const isEdit = !!id;
-  const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>(() =>
-    toUploadedAssets(initialData?.media),
-  );
-  const hero = mediaAssets[0];
+
+  const nameDefaults = i18nTextToFields(initialData?.name, "name");
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      name_en: nameDefaults.name_en,
+      name_pt: nameDefaults.name_pt,
+      name_es: nameDefaults.name_es,
+      slug: initialData?.slug ?? "",
+      address: initialData?.address ?? "",
+      geom_lat: initialData?.geom_lat ?? 37.75,
+      geom_lng: initialData?.geom_lng ?? -25.67,
+      status: initialData?.status === "archived" ? "archived" : "active",
+      rooms: initialData?.rooms ?? undefined,
+    },
+  });
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: initialData
-      ? {
-          name_en: initialData.name["en"] ?? "",
-          name_pt: initialData.name["pt-PT"] ?? "",
-          slug: initialData.slug,
-          address: initialData.address,
-          geom_lat: initialData.geom_lat,
-          geom_lng: initialData.geom_lng,
-          status: initialData.status === "archived" ? "archived" : "active",
-          rooms: initialData.rooms ?? undefined,
-        }
-      : { geom_lat: 37.75, geom_lng: -25.67, status: "active" },
+    formState: { isSubmitting, isDirty },
+  } = form;
+
+  const translation = useFieldTranslation({
+    setValue: form.setValue as UseFieldTranslationOptions["setValue"],
+    getValues: form.getValues,
+    sourceLocale: SOURCE_LOCALE,
   });
 
-  const onSubmit = handleSubmit(async (values) => {
-    const body = {
-      name: { en: values.name_en, "pt-PT": values.name_pt },
-      slug: values.slug,
-      address: values.address,
-      geom_lat: values.geom_lat,
-      geom_lng: values.geom_lng,
-      media: mediaAssets.map((a) => a.assetId),
-      status: values.status,
-      rooms: values.rooms ?? null,
+  // Unsaved-changes guard: block in-app navigation while the form is dirty and
+  // not mid-save, and warn on browser unload (refresh / tab close).
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && !isSubmitting && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
     };
-    if (isEdit) {
-      await updateMutation.mutateAsync(body);
-    } else {
-      await createMutation.mutateAsync(body);
-    }
-    void navigate("/admin/guesthouses");
-  });
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      // Auto-generate the slug from the name when the owner left it blank so the
+      // create still satisfies catalog-svc's required kebab-case slug.
+      const slug =
+        values.slug.trim() || slugify(values.name_en || values.name_pt || values.name_es);
+
+      const body = {
+        name: buildI18nText(
+          { name_en: values.name_en, name_pt: values.name_pt, name_es: values.name_es },
+          "name",
+        ),
+        slug,
+        address: values.address,
+        geom_lat: values.geom_lat,
+        geom_lng: values.geom_lng,
+        media: mediaAssets.map((a) => a.assetId),
+        status: values.status,
+        rooms: values.rooms ?? null,
+      };
+      if (isEdit) {
+        await updateMutation.mutateAsync(body);
+      } else {
+        await createMutation.mutateAsync(body);
+      }
+      void navigate("/admin/guesthouses");
+    },
+    (errors) => {
+      // Surface a required-field error even if the offending locale tab is hidden.
+      if (errors.name_en) setActiveLocale("en");
+    },
+  );
 
   const mutationError = isEdit ? updateMutation.error : createMutation.error;
+  const heading = isEdit
+    ? t("guesthouses.edit", "Edit Guesthouse")
+    : t("guesthouses.new", "New Guesthouse");
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          {isEdit
-            ? t("guesthouses.edit", "Edit Guesthouse")
-            : t("guesthouses.new", "New Guesthouse")}
-        </h1>
-        <Button variant="outline" size="sm" onClick={() => void navigate("/admin/guesthouses")}>
-          {t("guesthouses.form.cancel", "Cancel")}
-        </Button>
+    <Form {...form}>
+      <div className="mx-auto flex max-w-2xl flex-col gap-6">
+        <h1 className="text-xl font-semibold">{heading}</h1>
+
+        {mutationError && (
+          <p className="text-sm text-destructive" role="alert">
+            {mutationError instanceof Error ? mutationError.message : "Save failed"}
+          </p>
+        )}
+
+        <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-6">
+          {/* Identidade — localized name across en/pt-PT/es */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("guesthouses.form.sections.identity", "Identity")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div role="tablist" className="flex gap-1 border-b">
+                {CONTENT_LOCALES.map((loc) => (
+                  <button
+                    key={loc}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeLocale === loc}
+                    onClick={() => setActiveLocale(loc)}
+                    className={`-mb-px px-4 py-2 text-sm font-medium transition-colors ${
+                      activeLocale === loc
+                        ? "border-b-2 border-primary text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t(`guesthouses.form.tabs.${contentLocaleTabKey(loc)}`)}
+                  </button>
+                ))}
+              </div>
+
+              <TranslatableField
+                namePrefix="name"
+                locale={activeLocale}
+                sourceLocale={SOURCE_LOCALE}
+                label={t("guesthouses.form.name", "Name")}
+                required={activeLocale === "en"}
+                kind="proper_name"
+                maxLength={120}
+                translation={translation}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Localização — address + raw lat/lng (map picker is Slice 5) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("guesthouses.form.sections.location", "Location")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("guesthouses.form.address", "Address")}
+                      <span className="ml-0.5 text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "guesthouses.form.map_placeholder",
+                  "Map picker deferred to Phase 2 — use numeric inputs for now.",
+                )}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="geom_lat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("guesthouses.form.latitude", "Latitude")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.000001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="geom_lng"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("guesthouses.form.longitude", "Longitude")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.000001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Estado — lifecycle status (with live badge) + room count */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("guesthouses.form.sections.status", "Status")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("guesthouses.form.status", "Status")}</FormLabel>
+                    <div className="flex items-center gap-3">
+                      <FormControl>
+                        <select {...field} className={selectClassName}>
+                          <option value="active">
+                            {t("status.guesthouse.active", "Active")}
+                          </option>
+                          <option value="archived">
+                            {t("status.guesthouse.archived", "Archived")}
+                          </option>
+                        </select>
+                      </FormControl>
+                      <StatusBadge kind="guesthouse" value={field.value} />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rooms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("guesthouses.form.rooms", "Rooms")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min="1"
+                        step="1"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Multimédia — dropzone + thumbnail preview grid (from MediaUploader) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("guesthouses.form.sections.media", "Media")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              <MediaUploader
+                label={t(
+                  "guesthouses.form.media.upload_hint",
+                  "Drag & drop images or click to select",
+                )}
+                initialAssets={mediaAssets}
+                onUploaded={setMediaAssets}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("guesthouses.form.media.hint", "JPG, PNG or WebP · up to 5 MB each")}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Avançado — slug (auto-generated; editable), collapsed by default */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("guesthouses.form.advanced", "Advanced")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Collapsible defaultOpen={!!initialData?.slug}>
+                <CollapsibleTrigger className="flex w-full items-center justify-between gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  <span>{t("guesthouses.form.slug", "Slug")}</span>
+                  <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("guesthouses.form.slug", "Slug")}</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="my-guesthouse" className="font-mono" />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          {t(
+                            "guesthouses.form.slug_hint",
+                            "Auto-generated from the name. Leave blank to derive it.",
+                          )}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            </CardContent>
+          </Card>
+
+          {/* Sticky save bar — pins to the content column (safe-area padding
+              clears the home bar); Translate-all fills en/es from the PT name */}
+          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t bg-background/95 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <TranslateAllButton
+              translation={translation}
+              fields={[{ namePrefix: "name", kind: "proper_name" }]}
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="touch"
+                onClick={() => void navigate("/admin/guesthouses")}
+              >
+                {t("guesthouses.form.cancel", "Cancel")}
+              </Button>
+              <Button type="submit" size="touch" disabled={isSubmitting}>
+                {isSubmitting
+                  ? t("guesthouses.form.saving", "Saving…")
+                  : t("guesthouses.form.save", "Save")}
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
 
-      {mutationError && (
-        <p className="text-sm text-destructive" role="alert">
-          {mutationError instanceof Error ? mutationError.message : "Save failed"}
-        </p>
-      )}
-
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-5">
-        {/* i18n name tabs */}
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-1 border-b">
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-medium -mb-px transition-colors ${
-                  activeTab === tab
-                    ? "border-b-2 border-primary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab === "en"
-                  ? t("guesthouses.form.tabs.en", "English")
-                  : t("guesthouses.form.tabs.pt_PT", "Portuguese")}
-              </button>
-            ))}
-          </div>
-          <div className={activeTab === "en" ? "" : "hidden"}>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{t("guesthouses.form.name", "Name")} (EN)</span>
-              <input
-                {...register("name_en")}
-                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {errors.name_en && (
-                <span className="text-xs text-destructive">{errors.name_en.message}</span>
+      <AlertDialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => {
+          if (!open) blocker.reset?.();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("guesthouses.form.unsaved.title", "Discard unsaved changes?")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "guesthouses.form.unsaved.body",
+                "You have unsaved changes. If you leave now, they'll be lost.",
               )}
-            </label>
-          </div>
-          <div className={activeTab === "pt-PT" ? "" : "hidden"}>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{t("guesthouses.form.name", "Name")} (PT)</span>
-              <input
-                {...register("name_pt")}
-                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </label>
-          </div>
-        </div>
-
-        {/* Slug — hidden under "Advanced" collapsible */}
-        <Collapsible defaultOpen={!!initialData?.slug}>
-          <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
-            {t("guesthouses.form.advanced", "Advanced")}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{t("guesthouses.form.slug", "Slug")}</span>
-              <input
-                {...register("slug")}
-                placeholder="my-guesthouse"
-                className="rounded-md border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {errors.slug && (
-                <span className="text-xs text-destructive">{errors.slug.message}</span>
-              )}
-            </label>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Location */}
-        <fieldset className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{t("guesthouses.form.address", "Address")}</span>
-            <input
-              {...register("address")}
-              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {errors.address && (
-              <span className="text-xs text-destructive">{errors.address.message}</span>
-            )}
-          </label>
-          <p className="text-xs text-muted-foreground">
-            {t(
-              "guesthouses.form.map_placeholder",
-              "Map picker deferred to Phase 2 — use numeric inputs for now.",
-            )}
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">
-                {t("guesthouses.form.latitude", "Latitude")}
-              </span>
-              <input
-                type="number"
-                step="0.000001"
-                {...register("geom_lat")}
-                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {errors.geom_lat && (
-                <span className="text-xs text-destructive">{errors.geom_lat.message}</span>
-              )}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium">
-                {t("guesthouses.form.longitude", "Longitude")}
-              </span>
-              <input
-                type="number"
-                step="0.000001"
-                {...register("geom_lng")}
-                className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {errors.geom_lng && (
-                <span className="text-xs text-destructive">{errors.geom_lng.message}</span>
-              )}
-            </label>
-          </div>
-        </fieldset>
-
-        {/* Status & rooms */}
-        <fieldset className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{t("guesthouses.form.status", "Status")}</span>
-            <select
-              {...register("status")}
-              className="rounded-md border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="active">{t("status.guesthouse.active", "Active")}</option>
-              <option value="archived">{t("status.guesthouse.archived", "Archived")}</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{t("guesthouses.form.rooms", "Rooms")}</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min="1"
-              step="1"
-              {...register("rooms")}
-              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {errors.rooms && (
-              <span className="text-xs text-destructive">{errors.rooms.message}</span>
-            )}
-          </label>
-        </fieldset>
-
-        {/* Hero photo (media[0]) */}
-        <fieldset className="flex flex-col gap-2">
-          <span className="text-sm font-medium">{t("guesthouses.form.hero", "Hero photo")}</span>
-          {hero && (
-            <img
-              src={hero.previewUrl}
-              alt={t("guesthouses.form.hero_alt", "Guesthouse hero")}
-              className="aspect-video w-full max-w-md rounded-md border object-cover"
-            />
-          )}
-          <MediaUploader
-            label={t("places.form.media.upload_hint", "Drag & drop a photo or click to select")}
-            initialAssets={mediaAssets}
-            onUploaded={setMediaAssets}
-          />
-        </fieldset>
-
-        <div className="flex gap-3 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving…" : t("guesthouses.form.save", "Save")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void navigate("/admin/guesthouses")}
-          >
-            {t("guesthouses.form.cancel", "Cancel")}
-          </Button>
-        </div>
-      </form>
-    </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>
+              {t("guesthouses.form.unsaved.stay", "Stay")}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>
+              {t("guesthouses.form.unsaved.leave", "Leave")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Form>
   );
 }
