@@ -1,4 +1,35 @@
-# Session Handoff — … → 07-05 (🎉 Plan-008 Slices 1 + 2 SHIPPED — owner backoffice now responsive + card-reflowed + plain-language, all subscription-blocking work done; Fable-5 review gate adopted) → next: pick Slice 3/4/5 or deploy+UAT (user) / beta invites still unsent (user)
+# Session Handoff — … → 07-06 (Plan-008 Slice 4 chat + guesthouse status/rooms SHIPPED + the backoffice redesign DEPLOYED to qual & UAT-passed; only Slice 3 remains) → next: Slice 3 forms+translate (FRESH session) / beta invites still unsent (user)
+
+> **UPDATE 2026-07-06 (LATEST — user directed 3 tasks: Slice 4 chat + guesthouse backend follow-up + deploy — all DONE. The full backoffice redesign (Slices 0–2 + 4) is now LIVE on qual (main `12cc6d5`) and UAT-passed (guest F&F-beta NOT regressed). Clean close: 0 open PRs, no agents/monitors, tree clean, dt-tests empty. ▶ RESUME HERE: **Slice 3 (forms + translate helper)** — the ONLY remaining slice; detailed brief below. Beta invites STILL unsent (user action).)**
+>
+> ### Shipped this session
+>
+> - **Slice 4 chat (#345):** inbox redesign — real guest names (joined from reservations by `guest_id`), colored-initials avatars, message bubbles + Quick Reply chips, mobile single-pane push, an FE-only unread heuristic (per-guest local last-viewed `last_ts`) + Messages nav badge, search. Built by a cs-agent (redesign) + an **Opus continuation** (the first agent skipped the test + i18n — recurring under-delivery; verify by diff-scope).
+> - **Guesthouse status+rooms (#344):** full-stack — migration `0007` (`status active|archived` + CHECK, `rooms` int), catalog-svc + shared-types + `StatusBadge` `guesthouse` kind + list/form. BFF unchanged (proxy). Closes the T-8.2.2 descope.
+> - **FIRST qual deploy of the redesign:** main `12cc6d5` → publish-images → `deploy-qa.yml -f image_tag=12cc6d5e…` (FULL SHA) → catalog-svc **auto-migrated** `0007` on boot. **Browser-UAT PASS 6/6** — guest F&F-beta app NOT regressed; `/admin` redirects to Authentik SSO. Full owner-feature UAT deferred (needs the akadmin password — human).
+> - All merges **Fable-gated** — it caught #345's 🔴 (the new `useUnreadChatCount()` in `shell.tsx` broke `admin-route.test`+`a11y.test`, which render `BackofficeShell` without a QueryClient — fixed by stubbing the hook there) + a 🟡 (owner's own bubbles used a 2nd-person pronoun → 1st-person "Yo"/"Eu").
+>
+> ### ▶ FIRST TASK NEXT SESSION — Plan-008 Slice 3 (form excellence + Helper A translate)
+>
+> The ONLY remaining slice (`T-8.3.1–T-8.3.6`, beta-desirable, deps: Slices 0,1 ✅). Design: proposal §7a + §6.5 + §8.3/8.4/8.6/8.9. Order:
+>
+> 1. **T-8.3.4 (blocker — do FIRST):** add **`es`** to the zod `FormSchema`, the `TABS` const, and the body builders (name/description maps) for **place-form + guesthouse-form + profile** — from ONE config array (DRY). A translate button with no `es` field to write into is a silent no-op.
+> 2. **T-8.3.5 backend:** new **`POST /v1/admin/translate`** in the BFF — Claude via `ANTHROPIC_API_KEY` (present); `{source_locale, target_locales[], fields}`; output constrained to **European-Portuguese pré-AO** (per `ptpt-excellence` — generic `pt` drifts to PT-BR, a trust-killer) + a **do-not-translate list** (proper nouns, "Calheta", POI/business names — translate `description`/`bio`, NOT `name`); owner-auth-gated + rate-limited (mirror T-3.C.3).
+> 3. **T-8.3.6 UX:** `TranslatableField` + `useFieldTranslation` (EN/PT/ES `Tabs`) — per-field globe + "Traduzir tudo" (only-empty); **suggest-not-overwrite** (AlertDialog confirm to replace non-empty + undo); in-flight shimmer; "Auto-translated" badge clearing on edit; **never block Save on MT failure**. Shared by all 3 forms.
+> 4. **T-8.3.1–8.3.3:** refactor the 3 forms onto `form.tsx` (sectioned Cards, sticky save bar `pb-[env(safe-area-inset-bottom)]`, dirty-state guard, media preview grid, char counters, ≥44px controls); opening-hours redesign (§8.4: per-day toggle, 24h, copy-to-all); profile re-scope (§8.9: Bio per-locale only, PT default tab, drop "WhatsApp (Cloud API)" jargon, brand-styled switches).
+>
+> - Already in place: `Collapsible` (`components/ui/collapsible.tsx`), the guesthouse status/rooms fields, the shared `StatusBadge`, `form.tsx` (RHF+zod from Slice 0), the `es` locale registered + parity. **Recurring gotcha:** any hook added to `BackofficeShell` needs the shell-rendering test suites (`admin-route.test`, `a11y.test`) to provide/stub a QueryClient.
+>
+> ### Deferred / notes
+>
+> - **Owner-feature UAT on qual** (chat + guesthouse interaction) needs the **akadmin** Authentik password (human). Code is Fable-gated + unit-tested; a live owner walk-through is the remaining confidence step.
+> - **F&F beta invites STILL unsent** (2 Gmail drafts José+Miguel + 4 WhatsApp, `temp/invite-batch-2026-06-29.md`).
+> - Incidental (browser-uat): a `make qual-token` guest token redeemed **3× despite "single-use"** — possibly a grace window; verify if unexpected.
+> - **Slice 5** (map picker + polish, post-beta) is the last slice after Slice 3.
+>
+> ### State (07-06)
+>
+> main **`12cc6d5`** (Slice 4 #345 + gh-field #344 + this closeout); **0 open PRs**; local branches = `main` + 2 merged s702 leftovers (`docs/closeout-0703`, `docs/s702-post-cycle` — deletable, not this session's). Tree clean (only untracked `e2e/`, which now also holds `uat-qual-deploy-12cc6d5.e2e.mjs`). **qual DEPLOYED to `12cc6d5`** — redesigned backoffice live + guesthouse migration applied; guest beta app healthy. No cs-agents / monitors. dt-tests `review` empty. Memory updated: [[project-subscription-backoffice]], [[feedback-fable-review-gate]], `MEMORY.md`.
 
 > **UPDATE 2026-07-05 (LATEST — big autonomous run: Plan-008 Slices 1 AND 2 driven end-to-end; all subscription-blocking backoffice work DONE. The Fable-5 review gate (user directive) caught real bugs at every step. Clean close: main `8b4074c`, 0 open PRs, no agents/monitors, tree clean, dt-tests `review` empty. ▶ RESUME HERE: the "what next" decision below — I asked the user (Slice 3/4/5 or pause/deploy) and got no answer; the F&F beta invites are STILL unsent (user action).)**
 >

@@ -1,6 +1,6 @@
 # Plan-008 — Owner Backoffice Redesign — TODO
 
-Status: **EXECUTING** — Slice 0 merged 2026-07-03 (see [`EXECUTION.md`](./EXECUTION.md)); Slice 1 unblocked. Full slice detail + acceptance criteria in [`README.md`](./README.md). Design source of truth: [`docs/design/backoffice-redesign/proposal-001.md`](../../design/backoffice-redesign/proposal-001.md). Task IDs `T-8.<phase>.<task>` (middle digit = proposal phase 0–5).
+Status: **EXECUTING** — Slices 0–2 (subscription-blocking) + Slice 4 (chat) **DONE + deployed to qual** (2026-07-06, main `12cc6d5`); the guesthouse `status`/`rooms` backend follow-up also merged (#344). **Slice 3 (forms + translate helper) is the only remaining slice** — deferred to a fresh session (needs a new `POST /v1/admin/translate` BFF endpoint + an `es` data-model add). Full detail + acceptance criteria in [`EXECUTION.md`](./EXECUTION.md) + [`README.md`](./README.md). Design source of truth: [`docs/design/backoffice-redesign/proposal-001.md`](../../design/backoffice-redesign/proposal-001.md). Task IDs `T-8.<phase>.<task>` (middle digit = proposal phase 0–5).
 
 ## Priority tier
 
@@ -22,7 +22,7 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 | 1     | Responsive shell + states          | subscription-blocking | L    | ☑ 2026-07-05 (#331–#335)      |
 | 2     | List reflow + plain language       | subscription-blocking | L    | ☑ 2026-07-05 (#337–#341)      |
 | 3     | Form excellence + translate helper | beta-desirable        | L    | ☐                             |
-| 4     | Chat experience                    | beta-desirable        | M    | ☐                             |
+| 4     | Chat experience                    | beta-desirable        | M    | ☑ 2026-07-06 (#345)           |
 | 5     | Map picker + polish                | post-beta             | M    | ☐                             |
 
 ---
@@ -61,10 +61,10 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 
 ## Slice 4 — Chat experience · beta-desirable · deps: Slices 0,1
 
-- [ ] **T-8.4.1** — Two-pane at `lg+`; **single-pane master→detail push on mobile** (list→tap→thread→back); strengthen pane borders. _(§4.3, §8.8)_ — **AC:** mobile single-pane push; desktop two-pane; back returns to list.
-- [ ] **T-8.4.2** — Redesign conversation rows: colored-initials avatar, guest display name (bold), property + last-message preview, relative timestamp, unread dot/bold; **replace opaque `aaa00001…`/`smoke-…` IDs.** _(§8.8)_ — **AC:** rows show real name + property + preview + relative time; no raw IDs.
-- [ ] **T-8.4.3** — Real detail pane: message bubbles (sender+timestamp), sticky reply composer, **Quick Reply template chips** (wifi/check-in/recomendações); thread header with guest+property+booking. _(§8.8)_ — **AC:** bubbles render; composer sticky; quick-reply inserts template; header shows booking context.
-- [ ] **T-8.4.4** — Unread-count badge on Messages nav item (rail + bottom tab); search/filter bar; skeleton(`thread`)/empty/error states. _(§8.8)_ — **AC:** unread badge in both shells; search filters list; thread skeleton on load.
+- [x] **T-8.4.1** — Two-pane at `lg+`; **single-pane master→detail push on mobile** (list→tap→thread→back); strengthen pane borders. _(§4.3, §8.8)_ — **AC:** mobile single-pane push; desktop two-pane; back returns to list.
+- [x] **T-8.4.2** — Redesign conversation rows: colored-initials avatar, guest display name (bold), property + last-message preview, relative timestamp, unread dot/bold; **replace opaque `aaa00001…`/`smoke-…` IDs.** _(§8.8)_ — **AC:** rows show real name + property + preview + relative time; no raw IDs.
+- [x] **T-8.4.3** — Real detail pane: message bubbles (sender+timestamp), sticky reply composer, **Quick Reply template chips** (wifi/check-in/recomendações); thread header with guest+property+booking. _(§8.8)_ — **AC:** bubbles render; composer sticky; quick-reply inserts template; header shows booking context.
+- [x] **T-8.4.4** — Unread-count badge on Messages nav item (rail + bottom tab); search/filter bar; skeleton(`thread`)/empty/error states. _(§8.8)_ — **AC:** unread badge in both shells; search filters list; thread skeleton on load.
 
 ## Slice 5 — Helper B (map picker) + polish · post-beta · deps: Slices 0,3
 
