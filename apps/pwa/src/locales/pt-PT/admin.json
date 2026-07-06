@@ -193,14 +193,28 @@
       "status": "Estado",
       "is_hosts_pick": "Escolha do Anfitrião",
       "save": "Guardar",
+      "saving": "A guardar…",
       "cancel": "Cancelar",
+      "sections": {
+        "identity": "Identidade",
+        "location": "Localização",
+        "visibility": "Estado e visibilidade"
+      },
       "tabs": {
         "en": "Inglês",
-        "pt_PT": "Português"
+        "pt_PT": "Português",
+        "es": "Espanhol"
+      },
+      "unsaved": {
+        "title": "Descartar alterações não guardadas?",
+        "body": "Tem alterações por guardar. Se sair agora, serão perdidas.",
+        "stay": "Ficar",
+        "leave": "Sair"
       },
       "media": {
         "title": "Media",
-        "upload_hint": "Arraste imagens ou clique para seleccionar"
+        "upload_hint": "Arraste imagens ou clique para seleccionar",
+        "hint": "JPG, PNG ou WebP · até 5 MB cada"
       },
       "contacts": {
         "title": "Contactos",
@@ -210,7 +224,12 @@
       },
       "hours": {
         "title": "Horário",
-        "hint": "Deixe um dia em branco se estiver fechado. Preencha ambas as horas para guardar.",
+        "hint": "Active um dia para definir o horário; deixe fechado para o ocultar.",
+        "state_open": "Aberto",
+        "state_closed": "Fechado",
+        "open_24h": "Aberto 24h",
+        "copy_to_all": "Copiar para todos os dias",
+        "toggle_day": "Alternar horário de {{day}}",
         "open_for": "Hora de abertura de {{day}}",
         "close_for": "Hora de fecho de {{day}}",
         "days": {

@@ -193,14 +193,28 @@
       "status": "Status",
       "is_hosts_pick": "Host's Pick",
       "save": "Save",
+      "saving": "Saving…",
       "cancel": "Cancel",
+      "sections": {
+        "identity": "Identity",
+        "location": "Location",
+        "visibility": "Status & visibility"
+      },
       "tabs": {
         "en": "English",
-        "pt_PT": "Portuguese"
+        "pt_PT": "Portuguese",
+        "es": "Spanish"
+      },
+      "unsaved": {
+        "title": "Discard unsaved changes?",
+        "body": "You have unsaved changes. If you leave now, they'll be lost.",
+        "stay": "Stay",
+        "leave": "Leave"
       },
       "media": {
         "title": "Media",
-        "upload_hint": "Drag & drop images or click to select"
+        "upload_hint": "Drag & drop images or click to select",
+        "hint": "JPG, PNG or WebP · up to 5 MB each"
       },
       "contacts": {
         "title": "Contacts",
@@ -210,7 +224,12 @@
       },
       "hours": {
         "title": "Opening hours",
-        "hint": "Leave a day blank if closed. Fill both times to save it.",
+        "hint": "Switch a day open to set its hours; leave it closed to hide it.",
+        "state_open": "Open",
+        "state_closed": "Closed",
+        "open_24h": "Open 24h",
+        "copy_to_all": "Copy to all days",
+        "toggle_day": "Toggle hours for {{day}}",
         "open_for": "{{day}} opening time",
         "close_for": "{{day}} closing time",
         "days": {
