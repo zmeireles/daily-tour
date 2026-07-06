@@ -98,6 +98,29 @@ interface TranslateResponse {
   }[];
 }
 
+// Structured outputs guarantees the JSON *shape* but not that the model honoured
+// the request. Verify every requested field key is echoed exactly once and each
+// entry covers exactly the requested target locales — otherwise wrong/missing
+// content would ship silently into the owner's form.
+function matchesRequest(
+  result: TranslateResponse,
+  fields: { key: string }[],
+  targetLocales: readonly string[],
+): boolean {
+  if (!Array.isArray(result?.translations)) return false;
+  const expectedKeys = new Set(fields.map((f) => f.key));
+  const targetSet = new Set(targetLocales);
+  const seen = new Set<string>();
+  for (const entry of result.translations) {
+    if (!entry || !expectedKeys.has(entry.key) || seen.has(entry.key)) return false;
+    seen.add(entry.key);
+    const locales = new Set<string>((entry.values ?? []).map((v) => v.locale));
+    if (locales.size !== targetSet.size) return false;
+    for (const l of targetSet) if (!locales.has(l)) return false;
+  }
+  return seen.size === expectedKeys.size;
+}
+
 // POST /v1/admin/translate — owner-only LLM translation helper. The owner guard
 // is applied by the global onRoute hook (see plugins/auth.ts) via `auth: "owner"`.
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -129,7 +152,10 @@ const adminTranslateRoute: FastifyPluginAsync = async (fastify: FastifyInstance)
       try {
         const msg = await client.messages.create({
           model: config.ANTHROPIC_MODEL,
-          max_tokens: 2048,
+          // Must cover the validated input envelope translated into up to two
+          // locales; 2048 truncates large-but-valid requests (→ parse error).
+          // 16k is the SDK-safe non-streaming ceiling.
+          max_tokens: 16_000,
           // Opus 4.8: no temperature/top_p/top_k, no thinking config. `effort`
           // + structured outputs replace them; runs without thinking (fast).
           output_config: {
@@ -145,6 +171,13 @@ const adminTranslateRoute: FastifyPluginAsync = async (fastify: FastifyInstance)
           ],
         });
 
+        // A truncated response (hit the output cap) yields invalid JSON; surface
+        // it distinctly rather than as a confusing parse failure.
+        if (msg.stop_reason === "max_tokens") {
+          fastify.log.error({ stop_reason: msg.stop_reason }, "[admin-translate] output truncated");
+          return reply.code(502).send({ error: "translation_truncated" });
+        }
+
         let jsonText = "";
         for (const block of msg.content) {
           if (block.type === "text") {
@@ -153,6 +186,12 @@ const adminTranslateRoute: FastifyPluginAsync = async (fastify: FastifyInstance)
           }
         }
         const result = JSON.parse(jsonText) as TranslateResponse;
+
+        if (!matchesRequest(result, fields, target_locales)) {
+          fastify.log.error({ result }, "[admin-translate] response contract mismatch");
+          return reply.code(502).send({ error: "translation_failed" });
+        }
+
         return reply.code(200).send(result);
       } catch (err) {
         // RateLimitError is a subclass of APIError — check it first.

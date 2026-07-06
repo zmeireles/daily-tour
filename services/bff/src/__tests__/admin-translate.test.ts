@@ -198,11 +198,11 @@ describe("BFF admin-translate route", () => {
 
     // Assert the exact Anthropic call shape: model comes from config; NO
     // temperature/top_p/top_k, NO thinking config (Opus 4.8 would 400);
-    // effort:low + structured outputs; max_tokens 2048.
+    // effort:low + structured outputs; max_tokens sized for the input envelope.
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const callArg = mockCreate.mock.calls[0][0] as Record<string, unknown>;
     expect(callArg.model).toBe("test-opus-model");
-    expect(callArg.max_tokens).toBe(2048);
+    expect(callArg.max_tokens).toBe(16_000);
     expect(callArg).not.toHaveProperty("temperature");
     expect(callArg).not.toHaveProperty("top_p");
     expect(callArg).not.toHaveProperty("top_k");
@@ -235,6 +235,32 @@ describe("BFF admin-translate route", () => {
     const jwt = await ownerJwt();
     mockCreate.mockResolvedValue({ content: [{ type: "text", text: "not json {{{" }] });
     const res = await postTranslate(jwt);
+    expect(res.statusCode).toBe(502);
+    expect(res.json()).toMatchObject({ error: "translation_failed" });
+  });
+
+  it("502 translation_truncated when the model hits the output cap", async () => {
+    const jwt = await ownerJwt();
+    mockCreate.mockResolvedValue({
+      stop_reason: "max_tokens",
+      content: [{ type: "text", text: "{" }],
+    });
+    const res = await postTranslate(jwt);
+    expect(res.statusCode).toBe(502);
+    expect(res.json()).toMatchObject({ error: "translation_truncated" });
+  });
+
+  it("502 when the response violates the request contract (missing a requested target locale)", async () => {
+    const jwt = await ownerJwt();
+    // Asked for pt-PT + es; model returns only pt-PT.
+    mockCreate.mockResolvedValue(
+      okResponse([{ key: "bio", values: [{ locale: "pt-PT", text: "olá" }] }]),
+    );
+    const res = await postTranslate(jwt, {
+      source_locale: "en",
+      target_locales: ["pt-PT", "es"],
+      fields: [{ key: "bio", text: "hi", kind: "prose" }],
+    });
     expect(res.statusCode).toBe(502);
     expect(res.json()).toMatchObject({ error: "translation_failed" });
   });
