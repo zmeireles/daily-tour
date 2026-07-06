@@ -21,7 +21,7 @@ No `npx shadcn add` (hand-roll over `radix-ui`) · never edit `styles/tokens.css
 | 0     | Foundation & two cleanups          | subscription-blocking | M    | ☑ 2026-07-03 (#325 #326 #327) |
 | 1     | Responsive shell + states          | subscription-blocking | L    | ☑ 2026-07-05 (#331–#335)      |
 | 2     | List reflow + plain language       | subscription-blocking | L    | ☑ 2026-07-05 (#337–#341)      |
-| 3     | Form excellence + translate helper | beta-desirable        | L    | ☐                             |
+| 3     | Form excellence + translate helper | beta-desirable        | L    | ☑ 2026-07-06 (#347–#352)      |
 | 4     | Chat experience                    | beta-desirable        | M    | ☑ 2026-07-06 (#345)           |
 | 5     | Map picker + polish                | post-beta             | M    | ☐                             |
 
