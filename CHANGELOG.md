@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-008 Slice 3: form excellence + EN/PT/ES auto-translate (2026-07-06)
+
+Owner backoffice **Slice 3** merged (#347–#352, every merge Fable-gated) — the three admin forms are redesigned, gain a first-class **Spanish** content locale, and get an in-form machine-translation helper:
+
+- **`es` content locale, DRY (#347)** — a shared `form-locale-config` (`CONTENT_LOCALES`, `buildI18nText`/`i18nTextToFields`) makes Spanish a first-class editable locale across all three forms (no shared-types change needed — the locale schema already accepted `es`); the mobile bottom tab bar is suppressed on form routes.
+- **Translate endpoint (#348)** — `POST /v1/admin/translate` (owner-only, rate-limited) machine-translates form content across EN/PT/ES via Claude, constrained to **European Portuguese (pré-Acordo Ortográfico)** with a do-not-translate list for proper nouns; degrades gracefully (503) when unconfigured.
+- **`TranslatableField` helper (#349)** — a per-field globe + "Traduzir tudo" bulk action with suggest-not-overwrite (confirm + undo), in-flight/auto-translated/out-of-sync state, and a hard guarantee it **never blocks Save** on a translation failure.
+- **Place form (#350)** — refactored onto shared form primitives with sectioned cards, a sticky save bar, a dirty-state guard, media previews, the ES tab + translate, and an **opening-hours redesign** (per-day open/closed, 24h, copy-to-all-days).
+- **Profile form (#351)** — re-scoped so only the Bio is per-locale (EN/PT/ES) while phone/email/photo/contact options live in one shared section; **Portuguese is the default tab**; the "WhatsApp (Cloud API)" jargon is replaced with plain language; brand switches + avatar preview + inline validation.
+- **Guesthouse form (#352)** — same redesign; name-only translation (guesthouses have no description/contacts fields) with `status`/`rooms`/media preserved and the technical slug tucked into an "Advanced" section.
+
 ### Added — Plan-008 Slice 4 (chat) + guesthouse fields + first qual deploy of the backoffice redesign (2026-07-06)
 
 - **Chat experience redesigned (#345)** — the owner chat inbox now shows **real guest names** (joined from reservations) with colored-initials avatars, property, and relative timestamps instead of opaque `aaa001…` IDs; message bubbles with sender + time, a sticky composer, and **Quick Reply template chips**; a mobile single-pane master→detail push (list → thread → back); an unread indicator (dot/bold + a Messages nav badge) computed client-side; and a search bar.

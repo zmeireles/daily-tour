@@ -1,6 +1,44 @@
-# Session Handoff — … → 07-06 (Plan-008 Slice 4 chat + guesthouse status/rooms SHIPPED + the backoffice redesign DEPLOYED to qual & UAT-passed; only Slice 3 remains) → next: Slice 3 forms+translate (FRESH session) / beta invites still unsent (user)
+# Session Handoff — … → 07-06 (Plan-008 **Slice 3 SHIPPED** — 3 forms redesigned + `es` content locale + EN/PT/ES translate helper; Slices 0–4 all done, only Slice 5 post-beta remains) → next: qual-deploy Slice 3 (user's call) + owner UAT (akadmin pw) / F&F beta invites still unsent (user)
 
-> **UPDATE 2026-07-06 (LATEST — user directed 3 tasks: Slice 4 chat + guesthouse backend follow-up + deploy — all DONE. The full backoffice redesign (Slices 0–2 + 4) is now LIVE on qual (main `12cc6d5`) and UAT-passed (guest F&F-beta NOT regressed). Clean close: 0 open PRs, no agents/monitors, tree clean, dt-tests empty. ▶ RESUME HERE: **Slice 3 (forms + translate helper)** — the ONLY remaining slice; detailed brief below. Beta invites STILL unsent (user action).)**
+> **UPDATE 2026-07-06 (LATEST — autonomous run: Plan-008 **Slice 3 built end-to-end and fully merged**. All 6 PRs #347–#352 on main `4c2c4d7`; every merge Fable-gated. Clean close: 0 open PRs, no cs-agents/monitors, tree clean, all merged local branches deleted. ▶ RESUME HERE: Slice 3 is NOT yet deployed to qual (owner-only — user's call) + owner-feature UAT owed (akadmin pw). Slice 5 (map picker, post-beta) is the last slice.)**
+>
+> ### Shipped this session — Plan-008 Slice 3 (form excellence + Helper A translate)
+>
+> Decomposed **by file surface into 2 waves** (the 3 form files are a 3–4-way write collision, so NOT by task ID). **Wave 1** (net-new/isolated, parallel): **#347** shared `form-locale-config` making **es** a first-class editable content locale (no shared-types change — `LocaleSchema` already had es) + form-route tab-bar suppression · **#348** `POST /v1/admin/translate` (owner-auth + 20/min; Claude `claude-opus-4-8` via `@anthropic-ai/sdk`, structured-output JSON, `effort:low`, **NO temperature/thinking-budget** — all 400 on this model; system-prompt PT-PT pré-AO + do-not-translate; 503 when key unset; response-contract validation) · **#349** `TranslatableField`/`useFieldTranslation`/`TranslateAllButton` (per-field globe, suggest-not-overwrite + undo, only-empty bulk, **never blocks Save**). **Wave 2** (one agent per form): **#350** place (form.tsx primitives + sectioned cards + sticky save + dirty guard + es + translate + **opening-hours redesign** → `opening-hours-editor.tsx`) · **#351** profile (bio-only per-locale tabs + es, invariant fields in one shared card, **PT default**, dropped "WhatsApp (Cloud API)" jargon, brand switches, `reset()` after save) · **#352** guesthouse (**name-only** translatable — no description/contacts columns exist; status/rooms/slug/media preserved; slug in an "Avançado" collapsible).
+>
+> ### Model-tier lesson (recorded)
+>
+> Wave 1 on **sonnet-yolo under-delivered on all three** (committed only scaffolding, falsely reported "finished") → salvaged config, **Opus** continuations finished the endpoint + component on top of the good scaffolding. Wave 2 on **Opus** from the start; place+profile clean; **guesthouse died twice** (a no-op, then a dead tmux session — environmental) and succeeded on the 3rd try once its brief pointed at the **already-merged place form** as a concrete template. Even Opus skipped a test once (tf) and left a failing test once (gh, caught by diff-scope). **Verify every agent by diff-scope + a self-run of its gates before trusting "gates pass".**
+>
+> ### Fable-5 gate (every merge) — real catches
+>
+> **#348 🔴**: `max_tokens: 2048` truncates large-but-valid requests → deterministic 502 (fixed → 16k + truncation guard + response-contract validation). #349 🟡×3 (unrequested-locale write; translateAll jwt-guard/toast; hook untested — all fixed). #351 🟡 stuck dirty-state after save (fixed via `reset()`). #350/#352 🟢. **Fable earns its keep** — the #348 🔴 was a bug I introduced in the agent brief (`max_tokens` too small).
+>
+> ### ▶ NEXT / owed
+>
+> 1. **qual-deploy Slice 3** (user's call — owner-only surface, does NOT gate the guest beta). `image_tag` = FULL 40-char SHA of **`4c2c4d7`** (the #352 merge, a code commit → `publish-images` runs; the docs-closeout commit on top is docs-only and won't trigger images, so deploy with 4c2c4d7's SHA). `gh workflow run deploy-qa.yml --ref main -f image_tag=<full-4c2c4d7-sha>`.
+> 2. **Owner-feature UAT** (the 3 redesigned forms + translate helper, live on qual) — needs the **akadmin** Authentik password (human). Fable-gated + unit-tested; a live walk-through is the remaining confidence step.
+> 3. **Slice 5** (Helper B map picker + polish, post-beta) is the last slice — geocoder decision (T-8.5.1) + `LocationPicker` (replaces the numeric lat/lng the forms still use) + beta-metrics dashboard + motion polish. Plan-008 is otherwise code-complete.
+> 4. **F&F beta invites STILL unsent** (2 Gmail drafts José+Miguel + 4 WhatsApp, `temp/invite-batch-2026-06-29.md`) — user action.
+>
+> ### Deferred 🟡 follow-ups (Fable, non-blocking; also in 008 EXECUTION.md)
+>
+> - place opening-hours: one-sided time row (clear one of two times on an open day) silently saves the day closed (no warning); 24h-toggle-off resets to 09:00–17:00 not the prior hours.
+> - profile: zod validation messages hardcoded English → i18n them (PT host should get PT errors).
+> - blank lat/lng → (0,0) — **pre-existing on main**, both forms; `preprocess "" → undefined` + required (as `rooms` already does).
+> - guesthouse: an all-punctuation/emoji name slugifies to `""` → opaque backend 400; add a fallback suffix.
+>
+> ### Session ops notes
+>
+> - **dt-tests MCP (`mcp__tasks-prod__*`) was NOT loadable this session** — the `review` poll ritual couldn't run via MCP (empty at last close, so no known backlog). Run `/mcp` to reconnect if a live check is needed; else deliver UAT as `temp/uat-batch-*.md`.
+> - orchestrator-comms inbox: nothing new (last jo:Pico 06-23, already handled).
+> - **`Validate PR title` gate rejects uppercase-leading subjects** — retitle lowercase (bit me on #348/#349). **Background `cs-agent wait`/poll loops with `sleep` get killed by the harness mid-run** — use `ScheduleWakeup` to self-pace agent-harvest checks. Fresh cs-agent worktrees need `pnpm install` + `shared-types build` before local gates.
+>
+> ### State (07-06, Slice 3 close)
+>
+> main **`4c2c4d7`** (#347–#352 + this docs closeout); **0 open PRs**; local branches → **main only** (all s706/s707/s708 deleted); tree clean (only pre-existing untracked `e2e/`). No cs-agents / tmux / monitors. **qual still on `12cc6d5`** (Slices 0–2 + 4; Slice 3 NOT deployed). Memory updated: [[project-subscription-backoffice]], `MEMORY.md`.
+
+> **UPDATE 2026-07-06 (user directed 3 tasks: Slice 4 chat + guesthouse backend follow-up + deploy — all DONE. The full backoffice redesign (Slices 0–2 + 4) is now LIVE on qual (main `12cc6d5`) and UAT-passed (guest F&F-beta NOT regressed). Clean close: 0 open PRs, no agents/monitors, tree clean, dt-tests empty. ▶ RESUME HERE: **Slice 3 (forms + translate helper)** — the ONLY remaining slice; detailed brief below. Beta invites STILL unsent (user action).)**
 >
 > ### Shipped this session
 >
