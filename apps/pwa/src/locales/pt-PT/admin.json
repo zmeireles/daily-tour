@@ -64,22 +64,36 @@
     "form": {
       "loading": "A carregar…",
       "load_error": "Erro ao carregar perfil.",
+      "subtitle_new": "Defina o perfil que os hóspedes vão ver.",
+      "subtitle_edit": "Actualize a forma como os hóspedes o vêem e contactam.",
       "bio": "Bio",
+      "bio_hint": "Escreva em português e use o globo para traduzir para inglês e espanhol.",
+      "bio_placeholder": "Apresente-se aos hóspedes em 2-3 frases…",
       "phone": "Telefone",
       "email": "Email",
       "photo": "Foto",
       "photo_alt": "Avatar do anfitrião",
+      "photo_hint": "Tocar para escolher da câmara ou galeria",
+      "common_section": "Comum a todos os idiomas",
       "contact_options": "Opções de contacto",
       "call_enabled": "Permitir chamadas",
+      "call_enabled_help": "Os hóspedes podem ligar para o seu número.",
       "dm_in_app": "Mensagens na app",
+      "dm_in_app_help": "Os hóspedes falam consigo dentro da aplicação.",
       "dm_telegram": "Telegram",
+      "dm_telegram_help": "Os hóspedes são encaminhados para o seu Telegram.",
       "dm_whatsapp_link": "WhatsApp (link)",
-      "dm_whatsapp_cloud": "WhatsApp (Cloud API)",
+      "dm_whatsapp_link_help": "Abre uma conversa de WhatsApp consigo.",
+      "dm_whatsapp_cloud": "WhatsApp Business",
+      "dm_whatsapp_cloud_help": "As respostas chegam à sua caixa do WhatsApp Business.",
       "save": "Guardar",
+      "saving": "A guardar…",
       "saved": "Guardado.",
+      "unsaved": "Alterações por guardar",
       "tabs": {
         "en": "Inglês",
-        "pt_PT": "Português"
+        "pt_PT": "Português",
+        "es": "Espanhol"
       }
     }
   },
