@@ -131,13 +131,32 @@
       "hero": "Hero photo",
       "hero_alt": "Guesthouse hero",
       "advanced": "Advanced",
+      "slug_hint": "Auto-generated from the name. Leave blank to derive it.",
       "status": "Status",
       "rooms": "Rooms",
       "save": "Save",
+      "saving": "Saving…",
       "cancel": "Cancel",
+      "sections": {
+        "identity": "Identity",
+        "location": "Location",
+        "status": "Status",
+        "media": "Media"
+      },
+      "media": {
+        "upload_hint": "Drag & drop images or click to select",
+        "hint": "JPG, PNG or WebP · up to 5 MB each"
+      },
+      "unsaved": {
+        "title": "Discard unsaved changes?",
+        "body": "You have unsaved changes. If you leave now, they'll be lost.",
+        "stay": "Stay",
+        "leave": "Leave"
+      },
       "tabs": {
         "en": "English",
-        "pt_PT": "Portuguese"
+        "pt_PT": "Portuguese",
+        "es": "Spanish"
       }
     }
   },
