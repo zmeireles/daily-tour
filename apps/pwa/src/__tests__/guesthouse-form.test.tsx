@@ -30,6 +30,8 @@ const MOCK_GH = {
   geom_lat: 37.77,
   geom_lng: -25.32,
   media: [],
+  status: "active",
+  rooms: 4,
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
 };
@@ -81,6 +83,8 @@ describe("GuesthouseForm", () => {
     expect(screen.getByLabelText("Address")).toHaveValue("Furnas, São Miguel");
     expect(screen.getByLabelText("Latitude")).toHaveValue(37.77);
     expect(screen.getByLabelText("Longitude")).toHaveValue(-25.32);
+    expect(screen.getByLabelText("Status")).toHaveValue("active");
+    expect(screen.getByLabelText("Rooms")).toHaveValue(4);
   });
 
   it("switching to the PT-PT tab reveals name_pt and hides the EN content", () => {
@@ -148,6 +152,8 @@ describe("GuesthouseForm", () => {
         geom_lat: 38.5,
         geom_lng: -25.1,
         media: [],
+        status: "active",
+        rooms: null,
       });
     });
   });
@@ -167,9 +173,26 @@ describe("GuesthouseForm", () => {
         geom_lat: 37.77,
         geom_lng: -25.32,
         media: [],
+        status: "active",
+        rooms: 4,
       });
     });
     expect(createMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("submits status and rooms changes in the update body", async () => {
+    render(<GuesthouseForm id={MOCK_GH.id} initialData={MOCK_GH} />);
+
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "archived" } });
+    fireEvent.change(screen.getByLabelText("Rooms"), { target: { value: "8" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(updateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ status: "archived", rooms: 8 }),
+      );
+    });
   });
 
   it("navigates to /admin/guesthouses after a successful create", async () => {

@@ -94,6 +94,9 @@
       "name": "Nome",
       "slug": "Slug",
       "address": "Morada",
+      "status": "Estado",
+      "rooms_count_one": "{{count}} quarto",
+      "rooms_count_other": "{{count}} quartos",
       "last_updated": "Última actualização",
       "updated_at": "Actualizado {{date}}",
       "new": "Novo alojamento",
@@ -114,6 +117,8 @@
       "hero": "Foto principal",
       "hero_alt": "Imagem do alojamento",
       "advanced": "Avançado",
+      "status": "Estado",
+      "rooms": "Quartos",
       "save": "Guardar",
       "cancel": "Cancelar",
       "tabs": {
@@ -339,6 +344,10 @@
       "published": "Publicado",
       "owner_approved": "A aguardar revisão",
       "draft": "Rascunho",
+      "archived": "Arquivado"
+    },
+    "guesthouse": {
+      "active": "Activo",
       "archived": "Arquivado"
     },
     "reservation": {

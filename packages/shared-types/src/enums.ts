@@ -15,6 +15,9 @@ export type DeliveryState = z.infer<typeof DeliveryStateSchema>;
 export const PlaceStatusSchema = z.enum(["draft", "owner_approved", "published", "archived"]);
 export type PlaceStatus = z.infer<typeof PlaceStatusSchema>;
 
+export const GuesthouseStatusSchema = z.enum(["active", "archived"]);
+export type GuesthouseStatus = z.infer<typeof GuesthouseStatusSchema>;
+
 export const ReservationStatusSchema = z.enum([
   "confirmed",
   "checked_in",

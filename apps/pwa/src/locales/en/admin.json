@@ -94,6 +94,9 @@
       "name": "Name",
       "slug": "Slug",
       "address": "Address",
+      "status": "Status",
+      "rooms_count_one": "{{count}} room",
+      "rooms_count_other": "{{count}} rooms",
       "last_updated": "Last updated",
       "updated_at": "Updated {{date}}",
       "new": "New guesthouse",
@@ -114,6 +117,8 @@
       "hero": "Hero photo",
       "hero_alt": "Guesthouse hero",
       "advanced": "Advanced",
+      "status": "Status",
+      "rooms": "Rooms",
       "save": "Save",
       "cancel": "Cancel",
       "tabs": {
@@ -339,6 +344,10 @@
       "published": "Live",
       "owner_approved": "Awaiting review",
       "draft": "Draft",
+      "archived": "Archived"
+    },
+    "guesthouse": {
+      "active": "Active",
       "archived": "Archived"
     },
     "reservation": {

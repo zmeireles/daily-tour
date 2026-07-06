@@ -94,6 +94,9 @@
       "name": "Nombre",
       "slug": "Slug",
       "address": "Dirección",
+      "status": "Estado",
+      "rooms_count_one": "{{count}} habitación",
+      "rooms_count_other": "{{count}} habitaciones",
       "last_updated": "Última actualización",
       "updated_at": "Actualizado {{date}}",
       "new": "Nuevo alojamiento",
@@ -114,6 +117,8 @@
       "hero": "Foto principal",
       "hero_alt": "Imagen del alojamiento",
       "advanced": "Avanzado",
+      "status": "Estado",
+      "rooms": "Habitaciones",
       "save": "Guardar",
       "cancel": "Cancelar",
       "tabs": {
@@ -339,6 +344,10 @@
       "published": "Publicado",
       "owner_approved": "Pendiente de revisión",
       "draft": "Borrador",
+      "archived": "Archivado"
+    },
+    "guesthouse": {
+      "active": "Activo",
       "archived": "Archivado"
     },
     "reservation": {

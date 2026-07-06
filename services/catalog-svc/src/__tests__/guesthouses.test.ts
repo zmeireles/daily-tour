@@ -22,6 +22,7 @@ const VALID_BODY = {
   geom_lat: 37.82,
   geom_lng: -25.51,
   media: [],
+  rooms: 4,
 };
 
 describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
@@ -49,10 +50,17 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
       payload: VALID_BODY,
     });
     expect(create.statusCode).toBe(201);
-    const { id } = create.json<{ id: string }>();
+    const created = create.json<{ id: string; status: string; rooms: number | null }>();
+    const { id } = created;
+    // status defaults to "active"; rooms round-trips the create payload.
+    expect(created.status).toBe("active");
+    expect(created.rooms).toBe(4);
 
     const get = await app.inject({ method: "GET", url: `/v1/guesthouses/${id}` });
     expect(get.statusCode).toBe(200);
+    const fetched = get.json<{ status: string; rooms: number | null }>();
+    expect(fetched.status).toBe("active");
+    expect(fetched.rooms).toBe(4);
 
     const bySlug = await app.inject({
       method: "GET",
@@ -78,10 +86,13 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     const patch = await app.inject({
       method: "PATCH",
       url: `/v1/guesthouses/${id}`,
-      payload: { address: "Updated address" },
+      payload: { address: "Updated address", status: "archived", rooms: 6 },
     });
     expect(patch.statusCode).toBe(200);
-    expect(patch.json<{ address: string }>().address).toBe("Updated address");
+    const patched = patch.json<{ address: string; status: string; rooms: number | null }>();
+    expect(patched.address).toBe("Updated address");
+    expect(patched.status).toBe("archived");
+    expect(patched.rooms).toBe(6);
 
     const patch404 = await app.inject({
       method: "PATCH",

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { VariantProps } from "class-variance-authority";
-import type { PlaceStatus, ReservationStatus } from "@daily-tour/shared-types";
+import type { PlaceStatus, ReservationStatus, GuesthouseStatus } from "@daily-tour/shared-types";
 
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import type { TokenState } from "./reservations/use-reservations";
@@ -30,6 +30,11 @@ const placeStatus = {
   archived: { labelKey: "status.place.archived", variant: "secondary" },
 } satisfies Record<PlaceStatus, StatusMeta>;
 
+const guesthouseStatus = {
+  active: { labelKey: "status.guesthouse.active", variant: "success" },
+  archived: { labelKey: "status.guesthouse.archived", variant: "secondary" },
+} satisfies Record<GuesthouseStatus, StatusMeta>;
+
 const reservationStatus = {
   confirmed: { labelKey: "status.reservation.confirmed", variant: "default" },
   checked_in: { labelKey: "status.reservation.checked_in", variant: "info" },
@@ -50,6 +55,7 @@ const placeFlag = {
 
 export const STATUS_MAP = {
   place: placeStatus,
+  guesthouse: guesthouseStatus,
   reservation: reservationStatus,
   token: tokenState,
   flag: placeFlag,
