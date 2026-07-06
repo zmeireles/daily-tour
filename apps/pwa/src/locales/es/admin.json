@@ -280,7 +280,19 @@
     "history_error": "No se pudieron cargar los mensajes.",
     "select_thread": "Seleccione una conversación para ver los mensajes.",
     "placeholder": "Escriba una respuesta…",
-    "send": "Enviar"
+    "send": "Enviar",
+    "back": "Volver",
+    "search_placeholder": "Buscar conversaciones",
+    "no_matches": "Ninguna conversación coincide con su búsqueda.",
+    "you": "Usted",
+    "quick_reply": {
+      "wifi_label": "Wi-Fi",
+      "wifi": "La contraseña del Wi-Fi es …",
+      "checkin_label": "Check-in",
+      "checkin": "La entrada es a partir de las 15:00. El código de la caja de seguridad de la llave es …",
+      "recommendations_label": "Recomendaciones",
+      "recommendations": "Algunos lugares que quizá le guste conocer: …"
+    }
   },
   "beta": {
     "loading": "Cargando métricas…",

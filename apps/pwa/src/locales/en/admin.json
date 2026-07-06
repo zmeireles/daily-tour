@@ -280,7 +280,19 @@
     "history_error": "Failed to load messages.",
     "select_thread": "Select a conversation to view messages.",
     "placeholder": "Type a reply…",
-    "send": "Send"
+    "send": "Send",
+    "back": "Back",
+    "search_placeholder": "Search conversations",
+    "no_matches": "No conversations match your search.",
+    "you": "You",
+    "quick_reply": {
+      "wifi_label": "Wi-Fi",
+      "wifi": "The Wi-Fi password is …",
+      "checkin_label": "Check-in",
+      "checkin": "Check-in is from 3 PM. The key-safe code is …",
+      "recommendations_label": "Recommendations",
+      "recommendations": "A few local favourites you might enjoy: …"
+    }
   },
   "beta": {
     "loading": "Loading metrics…",
