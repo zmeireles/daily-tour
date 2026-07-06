@@ -18,6 +18,7 @@
     "clean": "rm -rf dist node_modules .turbo coverage"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "@daily-tour/shared-otel": "workspace:*",
     "@daily-tour/shared-sentry": "workspace:*",
     "@daily-tour/shared-types": "workspace:*",
