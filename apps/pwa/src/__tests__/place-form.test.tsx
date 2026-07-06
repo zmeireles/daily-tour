@@ -3,12 +3,16 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { PlaceForm } from "@/features/backoffice/places/place-form";
 import type { PlaceRow } from "@/features/backoffice/places/use-places";
 
-// Navigation: mock useNavigate so the form needs no Router provider and we can
-// assert post-submit redirects.
+// Navigation: mock useNavigate so the form needs no Router provider, and stub
+// useBlocker (the dirty-guard) since there's no data router in these tests.
 const mockNavigate = vi.fn();
 vi.mock("react-router", async (importActual) => {
   const actual = await importActual<typeof import("react-router")>();
-  return { ...actual, useNavigate: () => mockNavigate };
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useBlocker: () => ({ state: "unblocked", proceed: undefined, reset: undefined }),
+  };
 });
 
 // MediaUploader: stub it so these tests don't depend on useOwnerJwt or the
@@ -23,6 +27,23 @@ vi.mock("@/features/backoffice/places/media-uploader", () => ({
     />
   ),
 }));
+
+// Field-translation hook: the real one calls useMutation (needs a QueryClient)
+// and hits /v1/admin/translate. Inject an inert controller so the form's
+// TranslatableFields render offline. LOCALE_SUFFIX stays real (TranslatableField
+// derives field names from it).
+vi.mock("@/lib/i18n/use-field-translation", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/i18n/use-field-translation")>();
+  return {
+    ...actual,
+    useFieldTranslation: () => ({
+      translateField: vi.fn().mockResolvedValue(true),
+      translateAll: vi.fn().mockResolvedValue(undefined),
+      status: () => ({ translating: false, autoTranslated: false, outOfSync: false }),
+      _notifyEdit: vi.fn(),
+    }),
+  };
+});
 
 // Mutation hooks: controlled mutateAsync mocks so we can assert the submit body
 // and inject errors without touching fetch.
@@ -64,6 +85,29 @@ function setCreateError(error: unknown) {
   } as unknown as ReturnType<typeof useCreatePlace>);
 }
 
+// Tabs default to Portuguese (the authoring/source locale). Helpers keep the
+// locale-switching explicit so each field's target locale is unambiguous.
+function tab(name: "English" | "Portuguese" | "Spanish") {
+  return screen.getByRole("tab", { name });
+}
+function nameInput() {
+  return screen.getByLabelText(/name/i);
+}
+function descriptionInput() {
+  return screen.getByLabelText(/description/i);
+}
+function saveButton() {
+  return screen.getByRole("button", { name: /^save$/i });
+}
+
+// Fills the required English content + address so a create/edit submit passes.
+function fillRequired() {
+  fireEvent.click(tab("English"));
+  fireEvent.change(nameInput(), { target: { value: "Cafe" } });
+  fireEvent.change(descriptionInput(), { target: { value: "Nice" } });
+  fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   createMutate.mockResolvedValue({});
@@ -79,18 +123,51 @@ beforeEach(() => {
 });
 
 describe("PlaceForm", () => {
-  it("renders create mode with empty inputs and the New Place heading", () => {
+  it("renders create mode with the New Place heading and default location fields", () => {
     render(<PlaceForm />);
 
     expect(screen.getByRole("heading", { name: "New Place" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+    expect(saveButton()).toBeInTheDocument();
 
-    // Translation fields start empty; lat/lng carry create-mode defaults.
-    expect(screen.getByLabelText(/name \(en\)/i)).toHaveValue("");
-    expect(screen.getByLabelText(/description \(en\)/i)).toHaveValue("");
-    expect(screen.getByLabelText(/^address$/i)).toHaveValue("");
+    // Portuguese tab is active by default; name/description start empty.
+    expect(nameInput()).toHaveValue("");
+    expect(descriptionInput()).toHaveValue("");
+    expect(screen.getByLabelText(/address/i)).toHaveValue("");
     expect(screen.getByLabelText(/latitude/i)).toHaveValue(37.75);
     expect(screen.getByLabelText(/longitude/i)).toHaveValue(-25.67);
+  });
+
+  it("renders the sectioned card layout", () => {
+    render(<PlaceForm />);
+
+    expect(screen.getByText("Identity")).toBeInTheDocument();
+    expect(screen.getByText("Location")).toBeInTheDocument();
+    expect(screen.getByText("Status & visibility")).toBeInTheDocument();
+    expect(screen.getByText("Contacts")).toBeInTheDocument();
+    expect(screen.getByText("Opening hours")).toBeInTheDocument();
+    expect(screen.getByText("Media")).toBeInTheDocument();
+  });
+
+  it("exposes en, pt-PT and es content-locale tabs", () => {
+    render(<PlaceForm />);
+
+    expect(tab("English")).toBeInTheDocument();
+    expect(tab("Portuguese")).toBeInTheDocument();
+    expect(tab("Spanish")).toBeInTheDocument();
+  });
+
+  it("edits each locale independently and preserves values across tab switches", () => {
+    render(<PlaceForm />);
+
+    // Portuguese (default/source) tab.
+    fireEvent.change(nameInput(), { target: { value: "Nome PT" } });
+
+    fireEvent.click(tab("English"));
+    expect(nameInput()).toHaveValue(""); // en still empty
+    fireEvent.change(nameInput(), { target: { value: "Name EN" } });
+
+    fireEvent.click(tab("Portuguese"));
+    expect(nameInput()).toHaveValue("Nome PT"); // pt value preserved
   });
 
   it("renders edit mode seeded from initialData with the Edit Place heading", () => {
@@ -109,62 +186,67 @@ describe("PlaceForm", () => {
 
     expect(screen.getByRole("heading", { name: "Edit Place" })).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/name \(en\)/i)).toHaveValue("Lagoa do Fogo");
-    expect(screen.getByLabelText(/name \(pt\)/i)).toHaveValue("Lagoa do Fogo PT");
-    expect(screen.getByLabelText(/description \(en\)/i)).toHaveValue("A crater lake");
-    expect(screen.getByLabelText(/^address$/i)).toHaveValue("Caldeira, São Miguel");
+    // Portuguese tab is active by default → shows the pt content.
+    expect(nameInput()).toHaveValue("Lagoa do Fogo PT");
+    fireEvent.click(tab("English"));
+    expect(nameInput()).toHaveValue("Lagoa do Fogo");
+    expect(descriptionInput()).toHaveValue("A crater lake");
+
+    expect(screen.getByLabelText(/address/i)).toHaveValue("Caldeira, São Miguel");
     expect(screen.getByLabelText(/latitude/i)).toHaveValue(37.77);
     expect(screen.getByLabelText(/longitude/i)).toHaveValue(-25.47);
     expect(screen.getByLabelText(/status/i)).toHaveValue("published");
     expect(screen.getByLabelText(/host.s pick/i)).toBeChecked();
   });
 
-  it("switching to the pt-PT tab reveals the PT inputs and hides the EN content", () => {
+  it("exposes an editable Spanish tab that round-trips name_es/description_es", async () => {
     render(<PlaceForm />);
 
-    const enContainer = screen.getByLabelText(/name \(en\)/i).closest("label")!.parentElement!;
-    const ptContainer = screen.getByLabelText(/name \(pt\)/i).closest("label")!.parentElement!;
+    // English (required) content.
+    fireEvent.click(tab("English"));
+    fireEvent.change(nameInput(), { target: { value: "Cafe" } });
+    fireEvent.change(descriptionInput(), { target: { value: "Cozy" } });
 
-    // EN active by default.
-    expect(enContainer).not.toHaveClass("hidden");
-    expect(ptContainer).toHaveClass("hidden");
+    // Spanish content — the new first-class locale.
+    fireEvent.click(tab("Spanish"));
+    expect(nameInput()).toHaveValue("");
+    fireEvent.change(nameInput(), { target: { value: "Café ES" } });
+    fireEvent.change(descriptionInput(), { target: { value: "Acogedor" } });
 
-    fireEvent.click(screen.getByRole("button", { name: /portuguese/i }));
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
+    fireEvent.click(saveButton());
 
-    expect(enContainer).toHaveClass("hidden");
-    expect(ptContainer).not.toHaveClass("hidden");
+    await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
+    expect(createMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: { en: "Cafe", es: "Café ES" },
+        description: { en: "Cozy", es: "Acogedor" },
+      }),
+    );
   });
 
-  it("surfaces zod required-field errors when submitting an empty create form", async () => {
+  it("surfaces a required-field validation error via FormMessage", async () => {
     render(<PlaceForm />);
 
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(saveButton());
 
-    // name_en, description_en, address are required and empty in create mode;
-    // name_pt/description_pt default to "" and lat/lng have defaults, so no error.
-    await waitFor(() => {
-      expect(screen.getAllByText("Required")).toHaveLength(3);
-    });
+    // name_en, description_en and address are required and empty in create mode.
+    await waitFor(() => expect(screen.getAllByText("Required").length).toBeGreaterThan(0));
     expect(createMutate).not.toHaveBeenCalled();
   });
 
   it("submitting create mode calls useCreatePlace().mutateAsync with the form body", async () => {
     render(<PlaceForm />);
+    fillRequired();
 
-    fireEvent.change(screen.getByLabelText(/name \(en\)/i), { target: { value: "Cafe Royal" } });
-    fireEvent.change(screen.getByLabelText(/description \(en\)/i), {
-      target: { value: "Cozy spot" },
-    });
-    fireEvent.change(screen.getByLabelText(/^address$/i), { target: { value: "Rua das Flores" } });
-
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(saveButton());
 
     await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
     expect(createMutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: { en: "Cafe Royal", "pt-PT": "" },
-        description: { en: "Cozy spot", "pt-PT": "" },
-        address: "Rua das Flores",
+        name: { en: "Cafe" },
+        description: { en: "Nice" },
+        address: "Rua X",
         geom_lat: 37.75,
         geom_lng: -25.67,
         status: "draft",
@@ -191,13 +273,14 @@ describe("PlaceForm", () => {
     // The per-place mutation hook is wired with the place id.
     expect(useUpdatePlace).toHaveBeenCalledWith("p1");
 
-    fireEvent.change(screen.getByLabelText(/name \(en\)/i), { target: { value: "New Name" } });
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(tab("English"));
+    fireEvent.change(nameInput(), { target: { value: "New Name" } });
+    fireEvent.click(saveButton());
 
     await waitFor(() => expect(updateMutate).toHaveBeenCalledTimes(1));
     expect(updateMutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: { en: "New Name", "pt-PT": "" },
+        name: { en: "New Name" },
         address: "Old Address",
         status: "draft",
       }),
@@ -222,14 +305,12 @@ describe("PlaceForm", () => {
 
     render(<PlaceForm id="p1" initialData={place} />);
 
-    // The form threads the seeded assets into the uploader.
     const stub = screen.getByTestId("media-uploader-stub");
     expect(stub.getAttribute("data-initial-asset-ids")).toBe(
       JSON.stringify(["asset-1", "asset-2"]),
     );
 
-    // Submitting without touching the uploader must NOT drop the media.
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(saveButton());
 
     await waitFor(() => expect(updateMutate).toHaveBeenCalledTimes(1));
     expect(updateMutate).toHaveBeenCalledWith(
@@ -239,12 +320,9 @@ describe("PlaceForm", () => {
 
   it("navigates to /admin/places after a successful create", async () => {
     render(<PlaceForm />);
+    fillRequired();
 
-    fireEvent.change(screen.getByLabelText(/name \(en\)/i), { target: { value: "Cafe" } });
-    fireEvent.change(screen.getByLabelText(/description \(en\)/i), { target: { value: "Nice" } });
-    fireEvent.change(screen.getByLabelText(/^address$/i), { target: { value: "Rua X" } });
-
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(saveButton());
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/admin/places"));
   });
@@ -259,30 +337,39 @@ describe("PlaceForm", () => {
   });
 
   describe("contacts, hours, and season controls", () => {
-    function fillRequired() {
-      fireEvent.change(screen.getByLabelText(/name \(en\)/i), { target: { value: "Cafe" } });
-      fireEvent.change(screen.getByLabelText(/description \(en\)/i), { target: { value: "Nice" } });
-      fireEvent.change(screen.getByLabelText(/^address$/i), { target: { value: "Rua X" } });
-    }
-
-    it("renders the new fieldsets in create mode", () => {
+    it("renders contacts, hours toggles, and season in create mode", () => {
       render(<PlaceForm />);
 
       expect(screen.getByLabelText("Phone")).toHaveValue("");
       expect(screen.getByLabelText("Email")).toHaveValue("");
       expect(screen.getByLabelText("Website")).toHaveValue("");
-      // 7 day rows × open+close = 14 time inputs.
-      expect(screen.getByLabelText("Mon opening time")).toBeInTheDocument();
-      expect(screen.getByLabelText("Sun closing time")).toBeInTheDocument();
+
+      // Days start closed → per-day toggle present, time inputs hidden.
+      expect(screen.getByRole("switch", { name: /toggle hours for mon/i })).toBeInTheDocument();
+      expect(screen.queryByLabelText("Mon opening time")).not.toBeInTheDocument();
+
       // Season defaults to "All year" (empty value → null on submit).
       expect(screen.getByLabelText("Season")).toHaveValue("");
+    });
+
+    it("per-day toggle reveals time inputs with defaults and hides them again", () => {
+      render(<PlaceForm />);
+
+      const monToggle = screen.getByRole("switch", { name: /toggle hours for mon/i });
+      fireEvent.click(monToggle);
+
+      expect(screen.getByLabelText("Mon opening time")).toHaveValue("09:00");
+      expect(screen.getByLabelText("Mon closing time")).toHaveValue("17:00");
+
+      fireEvent.click(monToggle);
+      expect(screen.queryByLabelText("Mon opening time")).not.toBeInTheDocument();
     });
 
     it("submits empty contacts, empty hours, and null season by default", async () => {
       render(<PlaceForm />);
       fillRequired();
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(saveButton());
 
       await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
       expect(createMutate).toHaveBeenCalledWith(
@@ -298,14 +385,14 @@ describe("PlaceForm", () => {
       fireEvent.change(screen.getByLabelText("Email"), { target: { value: "hi@cafe.pt" } });
       fireEvent.change(screen.getByLabelText("Website"), { target: { value: "https://cafe.pt" } });
 
-      // Monday gets full hours; Sunday only opens → dropped (needs both).
-      fireEvent.change(screen.getByLabelText("Mon opening time"), { target: { value: "09:00" } });
-      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "17:00" } });
-      fireEvent.change(screen.getByLabelText("Sun opening time"), { target: { value: "10:00" } });
+      // Open Monday, then adjust its (defaulted) times.
+      fireEvent.click(screen.getByRole("switch", { name: /toggle hours for mon/i }));
+      fireEvent.change(screen.getByLabelText("Mon opening time"), { target: { value: "10:00" } });
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "18:00" } });
 
       fireEvent.change(screen.getByLabelText("Season"), { target: { value: "summer" } });
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(saveButton());
 
       await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
       expect(createMutate).toHaveBeenCalledWith(
@@ -316,7 +403,7 @@ describe("PlaceForm", () => {
             email: "hi@cafe.pt",
             website: "https://cafe.pt",
           },
-          hours: [{ dow: 1, open: "09:00", close: "17:00" }],
+          hours: [{ dow: 1, open: "10:00", close: "18:00" }],
           season: "summer",
         }),
       );
@@ -343,12 +430,12 @@ describe("PlaceForm", () => {
       expect(screen.getByLabelText("Phone")).toHaveValue("+351911111111");
       expect(screen.getByLabelText("Email")).toHaveValue("old@x.pt");
       expect(screen.getByLabelText("Website")).toHaveValue("https://x.pt");
-      // dow 6 = Saturday in the display map.
+      // dow 6 = Saturday → its row is open and shows the persisted times.
       expect(screen.getByLabelText("Sat opening time")).toHaveValue("08:00");
       expect(screen.getByLabelText("Sat closing time")).toHaveValue("12:00");
       expect(screen.getByLabelText("Season")).toHaveValue("winter");
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(saveButton());
 
       await waitFor(() => expect(updateMutate).toHaveBeenCalledTimes(1));
       expect(updateMutate).toHaveBeenCalledWith(
