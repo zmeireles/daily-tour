@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/brand-lockup";
@@ -42,6 +42,10 @@ export function BackofficeShell({ children }: { children?: React.ReactNode }) {
   // is FE-only and inert without an owner session (see use-chat-unread.ts), so a
   // 0 count renders no badge.
   const counts: NavCounts = { chat: useUnreadChatCount() };
+  const { pathname } = useLocation();
+  // Form routes carry a sticky Save bar — suppress the mobile tab bar there.
+  const isFormRoute =
+    /\/admin\/(places|guesthouses)\/(new|[^/]+)$/.test(pathname) || pathname === "/admin/profile";
 
   return (
     <div className="flex min-h-svh flex-col bg-background lg:flex-row">
@@ -50,7 +54,7 @@ export function BackofficeShell({ children }: { children?: React.ReactNode }) {
       <main className="min-w-0 flex-1 p-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] lg:p-6 lg:pb-6">
         {children ?? <Outlet />}
       </main>
-      <AdminBottomTabBar counts={counts} className="lg:hidden" />
+      {!isFormRoute && <AdminBottomTabBar counts={counts} className="lg:hidden" />}
     </div>
   );
 }
