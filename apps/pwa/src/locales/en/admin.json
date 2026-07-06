@@ -64,22 +64,36 @@
     "form": {
       "loading": "Loading…",
       "load_error": "Failed to load profile.",
+      "subtitle_new": "Set up the profile guests will see.",
+      "subtitle_edit": "Update how guests see and reach you.",
       "bio": "Bio",
+      "bio_hint": "Write in Portuguese, then use the globe to translate into English and Spanish.",
+      "bio_placeholder": "Introduce yourself to guests in 2–3 sentences…",
       "phone": "Phone",
       "email": "Email",
       "photo": "Photo",
       "photo_alt": "Owner avatar",
+      "photo_hint": "Tap to choose from your camera or gallery",
+      "common_section": "Common to all languages",
       "contact_options": "Contact options",
       "call_enabled": "Allow calls",
+      "call_enabled_help": "Guests can call your phone number.",
       "dm_in_app": "In-app messages",
+      "dm_in_app_help": "Guests message you inside the app.",
       "dm_telegram": "Telegram",
+      "dm_telegram_help": "Guests are handed off to your Telegram.",
       "dm_whatsapp_link": "WhatsApp (link)",
-      "dm_whatsapp_cloud": "WhatsApp (Cloud API)",
+      "dm_whatsapp_link_help": "Opens a WhatsApp chat with you.",
+      "dm_whatsapp_cloud": "WhatsApp Business",
+      "dm_whatsapp_cloud_help": "Replies arrive in your WhatsApp Business inbox.",
       "save": "Save",
+      "saving": "Saving…",
       "saved": "Saved.",
+      "unsaved": "Unsaved changes",
       "tabs": {
         "en": "English",
-        "pt_PT": "Portuguese"
+        "pt_PT": "Portuguese",
+        "es": "Spanish"
       }
     }
   },
