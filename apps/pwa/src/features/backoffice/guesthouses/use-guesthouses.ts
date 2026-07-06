@@ -12,6 +12,9 @@ export interface GuesthouseRow {
   geom_lat: number;
   geom_lng: number;
   media: string[];
+  // Lifecycle status (active | archived); rooms = nº de quartos, null when unknown.
+  status: string;
+  rooms: number | null;
   // Plan-006 6.A: global places this guesthouse hides from its guests (opt-out scoping).
   hidden_place_ids: string[];
   created_at: string;

@@ -49,29 +49,42 @@ export const wishTable = catalogSchema.table(
   ],
 );
 
-export const guesthouseTable = catalogSchema.table("guesthouse", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  // no FK — cross-service join would be needed; bare UUID suffices
-  ownerId: uuid("owner_id").notNull(),
-  name: jsonb("name").notNull().$type<Record<string, string>>(),
-  slug: varchar("slug", { length: 100 }).notNull().unique(),
-  address: text("address").notNull(),
-  geomLat: doublePrecision("geom_lat").notNull(),
-  geomLng: doublePrecision("geom_lng").notNull(),
-  media: jsonb("media")
-    .notNull()
-    .default(sql`'[]'::jsonb`)
-    .$type<string[]>(),
-  // Plan-006 6.A: opt-out scoping. Global places (place.guesthouse_scope = all)
-  // that this guesthouse's owner has hidden from their guests. The effective
-  // visible set = {all} minus hidden_place_ids, plus places scoped to this gh.
-  hiddenPlaceIds: uuid("hidden_place_ids")
-    .array()
-    .notNull()
-    .default(sql`'{}'::uuid[]`),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
-});
+export const guesthouseTable = catalogSchema.table(
+  "guesthouse",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // no FK — cross-service join would be needed; bare UUID suffices
+    ownerId: uuid("owner_id").notNull(),
+    name: jsonb("name").notNull().$type<Record<string, string>>(),
+    slug: varchar("slug", { length: 100 }).notNull().unique(),
+    address: text("address").notNull(),
+    geomLat: doublePrecision("geom_lat").notNull(),
+    geomLng: doublePrecision("geom_lng").notNull(),
+    media: jsonb("media")
+      .notNull()
+      .default(sql`'[]'::jsonb`)
+      .$type<string[]>(),
+    // Plan-006 6.A: opt-out scoping. Global places (place.guesthouse_scope = all)
+    // that this guesthouse's owner has hidden from their guests. The effective
+    // visible set = {all} minus hidden_place_ids, plus places scoped to this gh.
+    hiddenPlaceIds: uuid("hidden_place_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
+    // Lifecycle status. 2-value (active|archived) — lets an owner archive an
+    // old guesthouse. Mirrors place.status but simpler.
+    status: text("status").notNull().default("active"),
+    // Number of rooms (nº de quartos). Nullable — not always known.
+    rooms: integer("rooms"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [check("guesthouse_status_check", sql`${t.status} IN ('active','archived')`)],
+);
 
 export const ownerProfileTable = catalogSchema.table("owner_profile", {
   // PK is owner_id (mirrors OwnerProfileSchema.owner_id — no separate id field)

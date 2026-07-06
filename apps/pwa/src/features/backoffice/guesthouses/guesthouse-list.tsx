@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { useGuesthouses } from "./use-guesthouses";
+import { StatusBadge } from "@/features/backoffice/status";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
@@ -90,6 +91,9 @@ export function GuesthouseList() {
                     {t("guesthouses.list.address", "Address")}
                   </th>
                   <th className="px-4 py-2 text-left font-medium">
+                    {t("guesthouses.list.status", "Status")}
+                  </th>
+                  <th className="px-4 py-2 text-left font-medium">
                     {t("guesthouses.list.last_updated", "Last updated")}
                   </th>
                   <th className="px-4 py-2 text-right font-medium">
@@ -108,6 +112,16 @@ export function GuesthouseList() {
                       <td className="px-4 py-3 font-medium">{name}</td>
                       <td className="px-4 py-3 text-muted-foreground truncate max-w-xs">
                         {gh.address}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col items-start gap-1">
+                          <StatusBadge kind="guesthouse" value={gh.status} />
+                          {gh.rooms != null && (
+                            <span className="text-xs text-muted-foreground">
+                              {t("guesthouses.list.rooms_count", { count: gh.rooms })}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
                         {fmt.format(new Date(gh.updated_at))}
@@ -138,6 +152,14 @@ export function GuesthouseList() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm truncate">{name}</h3>
                     <p className="text-xs text-muted-foreground truncate">{gh.address}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <StatusBadge kind="guesthouse" value={gh.status} />
+                      {gh.rooms != null && (
+                        <span className="text-xs text-muted-foreground">
+                          {t("guesthouses.list.rooms_count", { count: gh.rooms })}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {t("guesthouses.list.updated_at", "Updated {{date}}", {
                         date: fmt.format(new Date(gh.updated_at)),

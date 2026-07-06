@@ -14,6 +14,8 @@ const MOCK_GH = {
   geom_lat: 37.77,
   geom_lng: -25.32,
   media: [],
+  status: "active",
+  rooms: 4,
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
 };
@@ -69,6 +71,9 @@ describe("admin guesthouses route", () => {
     expect(screen.queryByText("casa-das-furnas")).toBeNull();
     // Address visible in the list
     expect(screen.getAllByText("Furnas, São Miguel").length).toBeGreaterThan(0);
+    // Status badge (Active) + rooms count ("4 rooms") render in the list
+    expect(screen.getAllByText("Active").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("4 rooms").length).toBeGreaterThan(0);
   });
 
   it("renders empty state when list has no guesthouses", async () => {
