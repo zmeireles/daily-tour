@@ -101,6 +101,7 @@ export function ProfileForm({ initialData }: Props) {
     setValue,
     getValues,
     watch,
+    reset,
     formState: { isDirty, isSubmitting },
   } = form;
 
@@ -134,6 +135,9 @@ export function ProfileForm({ initialData }: Props) {
       },
       email: values.email || undefined,
     });
+    // Clear the dirty state so the "unsaved changes" bar doesn't linger next to
+    // the "Saved." banner after a successful upsert.
+    reset(values);
   });
 
   const contactSwitches: Array<{ name: ContactSwitchName; label: string; help: string }> = [
