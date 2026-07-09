@@ -43,6 +43,7 @@ export function listRoutes(app: FastifyInstance): void {
         partySize: reservationTable.partySize,
         locale: reservationTable.locale,
         status: reservationTable.status,
+        createdAt: reservationTable.createdAt,
         activeGrants: sql<number>`cast(count(*) filter (where ${tokenGrantTable.revokedAt} is null and ${tokenGrantTable.expiresAt} > now()) as int)`,
         totalGrants: sql<number>`cast(count(${tokenGrantTable.jti}) as int)`,
       })
@@ -63,6 +64,7 @@ export function listRoutes(app: FastifyInstance): void {
       party_size: r.partySize,
       locale: r.locale,
       status: r.status,
+      created_at: r.createdAt,
       token_state: deriveTokenState(r.activeGrants, r.totalGrants),
     }));
 

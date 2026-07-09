@@ -352,19 +352,29 @@
     }
   },
   "beta": {
+    "title": "Métricas beta",
+    "subtitle": "Solo huéspedes beta",
     "loading": "Cargando métricas…",
-    "error": "Error al cargar las métricas beta.",
     "error_title": "Error al cargar métricas",
-    "title": "Panel Beta",
-    "window": "Últimos 30 días · solo huéspedes beta",
-    "total_guests": "Huéspedes",
-    "completion_rate": "Finalización",
-    "avg_rating": "Valoración media",
-    "funnel_started": "Iniciados",
-    "funnel_completed": "Completados",
-    "funnel_title": "Embudo de abandono",
-    "top_places": "Top 5 lugares con más interacciones",
-    "no_places": "Aún no hay datos."
+    "error": "No se pudieron cargar las métricas beta.",
+    "empty_title": "Aún no hay actividad beta",
+    "empty_description": "Las métricas aparecerán aquí a medida que los huéspedes beta usen sus itinerarios.",
+    "range": {
+      "label": "Intervalo de fechas",
+      "7d": "7 días",
+      "30d": "30 días",
+      "90d": "90 días"
+    },
+    "kpi": {
+      "reservations": "Reservas",
+      "views": "Visualizaciones",
+      "conversion": "Conversión",
+      "messages": "Mensajes"
+    },
+    "delta": {
+      "none": "—"
+    },
+    "noData": "sin datos"
   },
   "empty_states": {
     "reservations": {
