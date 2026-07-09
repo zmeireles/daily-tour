@@ -115,6 +115,10 @@ services:
       # unset (mirrors planner-svc / chat-hub posture).
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      # T-8.5.1 map picker: BFF proxies Geoapify geocoding (key hidden
+      # server-side). Blank in dev/CI — both /v1/admin/geocode routes return 503
+      # when unset and the picker degrades to numeric lat/lng inputs.
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
     healthcheck:
       # node:22-alpine ships BusyBox wget at /usr/bin/wget; -q --spider works.
       # Use 127.0.0.1 explicitly — container /etc/hosts resolves "localhost" to
