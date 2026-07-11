@@ -7,6 +7,7 @@ import { z } from "zod";
 import { ChevronDown } from "lucide-react";
 import { useCreateGuesthouse, useUpdateGuesthouse, type GuesthouseRow } from "./use-guesthouses";
 import { MediaUploader, type UploadedAsset } from "@/features/backoffice/places/media-uploader";
+import { LocationPicker } from "@/features/backoffice/location-picker";
 import { StatusBadge } from "@/features/backoffice/status";
 import {
   CONTENT_LOCALES,
@@ -253,7 +254,8 @@ export function GuesthouseForm({ initialData, id }: Props) {
             </CardContent>
           </Card>
 
-          {/* Localização — address + raw lat/lng (map picker is Slice 5) */}
+          {/* Localização — address + assisted map picker; raw lat/lng behind a
+              collapsible (they stay the RHF/zod source of truth) */}
           <Card>
             <CardHeader>
               <CardTitle>{t("guesthouses.form.sections.location", "Location")}</CardTitle>
@@ -275,40 +277,50 @@ export function GuesthouseForm({ initialData, id }: Props) {
                   </FormItem>
                 )}
               />
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  "guesthouses.form.map_placeholder",
-                  "Map picker deferred to Phase 2 — use numeric inputs for now.",
-                )}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="geom_lat"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("guesthouses.form.latitude", "Latitude")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.000001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="geom_lng"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("guesthouses.form.longitude", "Longitude")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.000001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <LocationPicker
+                lat={Number(form.watch("geom_lat"))}
+                lng={Number(form.watch("geom_lng"))}
+                onConfirm={({ lat, lng }) => {
+                  form.setValue("geom_lat", lat, { shouldDirty: true });
+                  form.setValue("geom_lng", lng, { shouldDirty: true });
+                }}
+              />
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="flex w-full items-center justify-between gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  <span>{t("location.manual_toggle", "Enter coordinates manually")}</span>
+                  <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="geom_lat"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("guesthouses.form.latitude", "Latitude")}</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.000001" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="geom_lng"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("guesthouses.form.longitude", "Longitude")}</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.000001" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
 
@@ -327,9 +339,7 @@ export function GuesthouseForm({ initialData, id }: Props) {
                     <div className="flex items-center gap-3">
                       <FormControl>
                         <select {...field} className={selectClassName}>
-                          <option value="active">
-                            {t("status.guesthouse.active", "Active")}
-                          </option>
+                          <option value="active">{t("status.guesthouse.active", "Active")}</option>
                           <option value="archived">
                             {t("status.guesthouse.archived", "Archived")}
                           </option>

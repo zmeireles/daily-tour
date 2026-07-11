@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { ChevronDown } from "lucide-react";
 import { useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import { MediaUploader, type UploadedAsset } from "./media-uploader";
 import { OpeningHoursEditor, hoursToRows, rowsToHours } from "./opening-hours-editor";
+import { LocationPicker } from "@/features/backoffice/location-picker";
 import {
   CONTENT_LOCALES,
   type ContentLocale,
@@ -31,6 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -278,7 +281,8 @@ export function PlaceForm({ initialData, id }: Props) {
             </CardContent>
           </Card>
 
-          {/* Localização — address + raw lat/lng (map picker is Slice 5) */}
+          {/* Localização — address + assisted map picker; raw lat/lng behind a
+              collapsible (they stay the RHF/zod source of truth) */}
           <Card>
             <CardHeader>
               <CardTitle>{t("places.form.sections.location", "Location")}</CardTitle>
@@ -300,34 +304,50 @@ export function PlaceForm({ initialData, id }: Props) {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="geom_lat"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("places.form.latitude", "Latitude")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.000001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="geom_lng"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("places.form.longitude", "Longitude")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.000001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <LocationPicker
+                lat={Number(form.watch("geom_lat"))}
+                lng={Number(form.watch("geom_lng"))}
+                onConfirm={({ lat, lng }) => {
+                  form.setValue("geom_lat", lat, { shouldDirty: true });
+                  form.setValue("geom_lng", lng, { shouldDirty: true });
+                }}
+              />
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="flex w-full items-center justify-between gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  <span>{t("location.manual_toggle", "Enter coordinates manually")}</span>
+                  <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="geom_lat"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("places.form.latitude", "Latitude")}</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.000001" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="geom_lng"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("places.form.longitude", "Longitude")}</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.000001" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
 
