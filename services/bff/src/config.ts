@@ -52,6 +52,10 @@ const ConfigSchema = z.object({
   // Anthropic API key for the /v1/admin/translate endpoint. Optional — the
   // route returns 503 when unset (dev/CI posture, mirrors planner-svc).
   ANTHROPIC_API_KEY: z.string().optional(),
+  // Geoapify API key for the /v1/admin/geocode proxy (Plan-008 Slice 5).
+  // Optional — the route returns 503 when unset (dev/CI posture); the map
+  // picker degrades to numeric lat/lng inputs.
+  GEOAPIFY_API_KEY: z.string().optional(),
   // Compose passes `${ANTHROPIC_MODEL:-}`, which resolves to "" when the host
   // var is unset. Map "" → undefined so the default applies rather than an
   // empty model id (which would 400 the Anthropic call).

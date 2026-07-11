@@ -233,6 +233,8 @@ EMBEDDING_API_BASE_URL=https://api.openai.com/v1
 # ─────────────────────────────────────────────────────────────────────────
 # Provider-issued — planner-svc short-circuits to None while blank.
 ANTHROPIC_API_KEY=__SET_MANUALLY__
+# Provider-issued (Geoapify) — bff /v1/admin/geocode returns 503 while blank.
+GEOAPIFY_API_KEY=__SET_MANUALLY__
 
 # ─────────────────────────────────────────────────────────────────────────
 # Telegram (T-4.2.0) — chat-hub Telegram driver
@@ -362,6 +364,7 @@ fi
 # ── summary ───────────────────────────────────────────────────────────────────
 MANUAL_KEYS=(
   ANTHROPIC_API_KEY
+  GEOAPIFY_API_KEY
   EMBEDDING_API_KEY
   TELEGRAM_BOT_TOKEN
   WHATSAPP_PHONE_NUMBER_ID
