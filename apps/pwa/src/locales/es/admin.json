@@ -428,6 +428,20 @@
       "hidden": "Oculto"
     }
   },
+  "location": {
+    "set_on_map": "Definir la ubicación en el mapa",
+    "manual_toggle": "Introducir coordenadas manualmente",
+    "sheet_title": "Definir la ubicación",
+    "sheet_description": "Mueve el mapa para colocar el marcador o busca una dirección.",
+    "search_placeholder": "Buscar una dirección o un lugar",
+    "search_label": "Buscar una dirección",
+    "no_results": "Sin resultados",
+    "use_my_location": "Usar mi ubicación",
+    "geolocation_denied": "No se pudo obtener tu ubicación — busca o introduce las coordenadas.",
+    "unavailable": "La búsqueda en el mapa no está disponible ahora mismo — introduce las coordenadas abajo.",
+    "confirm": "Confirmar la ubicación",
+    "map_label": "Mapa"
+  },
   "translate": {
     "field": "Traducir este campo",
     "all": "Traducir todo",

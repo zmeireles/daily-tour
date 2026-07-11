@@ -428,6 +428,20 @@
       "hidden": "Hidden"
     }
   },
+  "location": {
+    "set_on_map": "Set location on map",
+    "manual_toggle": "Enter coordinates manually",
+    "sheet_title": "Set location",
+    "sheet_description": "Move the map to place the pin, or search for an address.",
+    "search_placeholder": "Search for an address or place",
+    "search_label": "Search for an address",
+    "no_results": "No results",
+    "use_my_location": "Use my location",
+    "geolocation_denied": "Couldn't get your location — search or enter coordinates instead.",
+    "unavailable": "Map search is unavailable right now — enter the coordinates below.",
+    "confirm": "Confirm location",
+    "map_label": "Map"
+  },
   "translate": {
     "field": "Translate this field",
     "all": "Translate all",
