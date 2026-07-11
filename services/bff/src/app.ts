@@ -10,6 +10,7 @@ import mediaSvcPlugin from "./plugins/media-client.js";
 import ownerAuthPlugin from "./plugins/owner-auth.js";
 import adminBetaMetricsRoute from "./routes/admin-beta-metrics.js";
 import adminChatRoute from "./routes/admin-chat.js";
+import adminGeocodeRoute from "./routes/admin-geocode.js";
 import adminGuesthousesRoute from "./routes/admin-guesthouses.js";
 import adminMediaRoute from "./routes/admin-media.js";
 import mediaDisplayRoute from "./routes/media-display.js";
@@ -109,6 +110,7 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(adminGuesthousesRoute);
   await app.register(adminReservationsRoute);
   await app.register(adminTranslateRoute);
+  await app.register(adminGeocodeRoute);
   await app.register(adminChatRoute);
   await app.register(tourPlansRoute);
   await app.register(telemetryRoute);
