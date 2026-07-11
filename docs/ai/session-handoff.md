@@ -1,6 +1,35 @@
-# Session Handoff — … → 07-06 (Plan-008 **Slice 3 SHIPPED** — 3 forms redesigned + `es` content locale + EN/PT/ES translate helper; Slices 0–4 all done, only Slice 5 post-beta remains) → next: qual-deploy Slice 3 (user's call) + owner UAT (akadmin pw) / F&F beta invites still unsent (user)
+# Session Handoff — … → 07-11 (Plan-008 **CODE-COMPLETE** — Slice 5 shipped: geocode proxy + real beta metrics + LocationPicker + motion/theme; all 6 slices done. Slice 3 also deployed to qual this session.) → next: **deploy Slice 5 to qual** (owner-only, user's call; needs `GEOAPIFY_API_KEY`) + owner-feature UAT (akadmin pw now recoverable) + Slice-5 follow-ups / F&F beta invites still unsent (user)
 
-> **UPDATE 2026-07-06 (LATEST — autonomous run: Plan-008 **Slice 3 built end-to-end and fully merged**. All 6 PRs #347–#352 on main `4c2c4d7`; every merge Fable-gated. Clean close: 0 open PRs, no cs-agents/monitors, tree clean, all merged local branches deleted. ▶ RESUME HERE: Slice 3 is NOT yet deployed to qual (owner-only — user's call) + owner-feature UAT owed (akadmin pw). Slice 5 (map picker, post-beta) is the last slice.)**
+> **UPDATE 2026-07-11 (LATEST — big autonomous run: **Plan-008 Slice 5 built end-to-end and fully merged → Plan-008 is CODE-COMPLETE (all 6 slices)**. Also deployed Slice 3 to qual + repopulated the akadmin password. Clean close: main `4f62245` (code) + docs PR #359; 0 code PRs open; no agents/tmux/monitors; branches = main only; dt-tests `review` empty. ▶ RESUME HERE: the deploy + UAT + follow-up decisions below — all owner's-call, nothing blocking.)**
+>
+> ### Shipped this session
+>
+> - **Slice 3 → qual (early in session):** `deploy-qa.yml -f image_tag=4c2c4d7…` (full SHA of #352), run `29030202720` green; **browser-UAT 9/9 PASS** — guest F&F-beta NOT regressed, `/admin` gates to SSO. qual now has the redesigned forms + translate helper.
+> - **Plan-008 Slice 5 (the last slice) — #355–#358, all merged, main `4f62245`:** **#355** BFF geocode proxy (**geocoder = Geoapify**, user's call vs self-host Photon; `POST /v1/admin/geocode` + `/reverse`, PT+Azores bias, key hidden, 503→numeric fallback, TTL cache). **#356** beta-metrics real dashboard (views + reservations-from-token-svc + conversion real; messages honest `available:false`; graceful degradation; added `created_at` to token-svc `/v1/reservations`). **#357** `LocationPicker` (MapLibre in a bottom `Sheet` — repo has no Drawer/Dialog/Command primitive, so hand-rolled combobox + Sheet; fixed pin, geolocation, reverse-geocode >50 m, raw lat/lng in a `Collapsible`, dynamic-imports maplibre). **#358** calm motion (`motion` v12, reduced-motion-gated: FAB/tab/opacity-only page transition via FrozenOutlet) + light/dark/system theme toggle (`use-theme.ts`, in-memory + best-effort localStorage, no FOUC) in rail + top bar.
+> - **Docs (#359):** EXECUTION Wave 6 + TODO code-complete + CHANGELOG Slice 5.
+>
+> ### Fable-5 gate — caught a 🔴 on EVERY Slice-5 PR (CI + all tests missed each)
+>
+> **#355 🔴** `GEOAPIFY_API_KEY` never wired into the bff compose env → silent 503-forever in every deployed env. **#356 🔴** three KPIs (reservas/conversão/mensagens) had no data producer → permanent 0s contradicting the Reservations tab (fixed → real token-svc reservations; user picked "wire reservations for real"). **#357 🔴** Confirm-during-`flyTo` read the mid-animation camera centre → silent wrong-coordinate write, invisible to the teleporting mock. **#358 🔴** page-transition wrapped a live `<Outlet/>` → new page played the OLD exit + double-mounted routes (Fable **empirically confirmed** with a probe). Every 🔴 + assorted 🟡 fixed before merge; I re-ran every gate myself (agents don't self-verify reliably).
+>
+> ### ▶ NEXT / owed (all owner's-call, non-blocking)
+>
+> 1. **Deploy Slice 5 to qual** (owner-only surface). `image_tag` = full SHA of **`4f62245`** (#358 merge; the #359 docs commit won't build images). **For a LIVE map picker, set `GEOAPIFY_API_KEY` in `/opt/daily-tour/.env.qual`** first (free key at geoapify.com) — else the picker degrades to numeric inputs (still functional). `ssh root@77.37.86.126`.
+> 2. **Owner-feature UAT** of Slices 3–5 (forms + translate + dashboard + picker + theme) — needs **akadmin** login. Password = `AUTHENTIK_BOOTSTRAP_PASSWORD` on the qual box; **repopulated into `temp/qual-uat-secrets.env` this session** (`temp/qual-uat-secrets.env`'s `AKADMIN_PASSWORD` had been empty; the real value lives on the box). Read via `! grep AKADMIN_PASSWORD temp/qual-uat-secrets.env`.
+> 3. **Slice-5 follow-ups** (non-blocking, in EXECUTION.md): chat-message producer for the `messages` KPI; conversion-numerator beta/status filtering + the >100% story (+ replace the O(N) reservation-list fetch with a token-svc count endpoint at scale); blank-coord→(0,0) guard (same family as the deferred Slice-3 item).
+> 4. **F&F beta invites STILL unsent** (user): 4 WhatsApp in `temp/invite-batch-2026-06-29.md` (José+Miguel emails already sent 07-02).
+>
+> ### Session ops notes / gotchas (recorded to memory)
+>
+> - **cs-agent's "closer" auto-committed T-8.5.1 + T-8.5.4** with a generic message, node_modules absent, gates NOT self-run → always re-run gates + fix the message + diff-scope. A **backgrounded `cs-agent launch` left T-8.5.4 untracked by cs-agent state** (worktree + tmux existed, `status` didn't list it) → harvested via git directly. **ALWAYS `nvm use 22`** before gates: the shell default is **Node 25**, under which any test touching bare `localStorage` fails (Node 25 webstorage shadows jsdom) — spurious, not a regression. Worktree gates need **all** `packages/*` built (shared-types AND shared-otel/shared-sentry). [[project-pwa-local-test-env]] updated.
+> - The `AskUserQuestion` decisions this session: geocoder = **Geoapify**; #356 metrics = **"wire reservations for real" (Option A)**; and standing **"auto-drive to code-complete"** authorization for the rest of Slice 5 (merges done under that).
+> - dt-tests `review` poll empty at session-start (MCP reconnected mid-session), after Slice-3 deploy, and at plan close-out. orchestrator-comms inbox: nothing new (last jo:Pico 06-23).
+>
+> ### State (07-11 close)
+>
+> main **`4f62245`** (all Slice-5 code) + docs PR **#359** (armed, merging on green); **0 code PRs open**; local branches → main only (all s709 + fable worktrees/tmux cleaned; cs-agent state cleared); tree clean (only pre-existing untracked `e2e/`, which also holds `uat-qual-deploy-4c2c4d7.e2e.mjs`). No cs-agents / tmux / monitors / Fable agents (all 4 shut down). **qual: Slices 0–4 (`12cc6d5`) + Slice 3 (`4c2c4d7`) deployed; Slice 5 NOT deployed.** Memory updated: [[project-subscription-backoffice]] (Plan-008 code-complete), [[project-pwa-local-test-env]] (Node-22 gotcha), `MEMORY.md`.
+
+> **UPDATE 2026-07-06 (autonomous run: Plan-008 **Slice 3 built end-to-end and fully merged**. All 6 PRs #347–#352 on main `4c2c4d7`; every merge Fable-gated. Clean close: 0 open PRs, no cs-agents/monitors, tree clean, all merged local branches deleted. ▶ RESUME HERE: Slice 3 is NOT yet deployed to qual (owner-only — user's call) + owner-feature UAT owed (akadmin pw). Slice 5 (map picker, post-beta) is the last slice.)**
 >
 > ### Shipped this session — Plan-008 Slice 3 (form excellence + Helper A translate)
 >
