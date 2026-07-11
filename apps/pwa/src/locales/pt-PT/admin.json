@@ -454,5 +454,11 @@
     "toast_done": "Tradução concluída",
     "toast_fail": "Não foi possível traduzir — introduza manualmente",
     "undo": "Anular"
+  },
+  "theme": {
+    "switch": "Mudar tema (actualmente {{mode}})",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Escuro"
   }
 }

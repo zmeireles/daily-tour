@@ -1,12 +1,15 @@
-import { Outlet, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/brand-lockup";
 import { TopAppBar } from "@/components/top-app-bar";
 import { LocaleSwitcher } from "./locale-switcher";
+import { ThemeToggle } from "./theme-toggle";
+import { PageTransition } from "./page-transition";
 import { AdminBottomTabBar } from "./admin-bottom-tab-bar";
 import { AccountFooter, NavGroupList, NAV_GROUPS, type NavCounts } from "./nav";
 import { useUnreadChatCount } from "./chat/use-chat-unread";
+import { useTheme } from "@/lib/theme/use-theme";
 
 // Desktop rail (≥lg): brand · grouped nav (icons + labels + active state +
 // count-badge slots) · footer (account/sign-out + locale). Pure CSS `hidden
@@ -28,7 +31,10 @@ function AdminRail({ counts, className }: { counts: NavCounts; className?: strin
       </nav>
       <div className="mt-auto flex flex-col gap-3 border-t border-border p-3">
         <AccountFooter />
-        <LocaleSwitcher />
+        <div className="flex items-center justify-between gap-2">
+          <LocaleSwitcher />
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );
@@ -42,6 +48,9 @@ export function BackofficeShell({ children }: { children?: React.ReactNode }) {
   // is FE-only and inert without an owner session (see use-chat-unread.ts), so a
   // 0 count renders no badge.
   const counts: NavCounts = { chat: useUnreadChatCount() };
+  // Apply + keep the owner's persisted light/dark/system preference in sync for
+  // the whole backoffice, independent of the guest-side day/night auto-theme.
+  useTheme();
   const { pathname } = useLocation();
   // Form routes carry a sticky Save bar — suppress the mobile tab bar there.
   const isFormRoute =
@@ -52,7 +61,7 @@ export function BackofficeShell({ children }: { children?: React.ReactNode }) {
       <AdminRail counts={counts} className="hidden lg:flex" />
       <TopAppBar counts={counts} className="lg:hidden" />
       <main className="min-w-0 flex-1 p-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] lg:p-6 lg:pb-6">
-        {children ?? <Outlet />}
+        <PageTransition>{children}</PageTransition>
       </main>
       {!isFormRoute && <AdminBottomTabBar counts={counts} className="lg:hidden" />}
     </div>

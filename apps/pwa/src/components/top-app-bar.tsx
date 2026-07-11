@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "@/features/backoffice/locale-switcher";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/features/backoffice/theme-toggle";
 import {
   AccountFooter,
   NavGroupList,
@@ -32,6 +33,8 @@ export function TopAppBar({ counts, className }: { counts: NavCounts; className?
       <span className="flex-1 truncate font-display text-lg leading-none text-primary">
         {title}
       </span>
+
+      <ThemeToggle size="icon-touch" />
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>

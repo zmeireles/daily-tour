@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Plus } from "lucide-react";
 import { useGuesthouses } from "./use-guesthouses";
+import { Fab } from "@/features/backoffice/fab";
 import { StatusBadge } from "@/features/backoffice/status";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -179,14 +179,7 @@ export function GuesthouseList() {
       )}
 
       {/* Mobile FAB */}
-      <Link
-        to="/admin/guesthouses/new"
-        aria-label={t("guesthouses.list.new", "New guesthouse")}
-        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden"
-        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <Plus className="h-6 w-6" />
-      </Link>
+      <Fab to="/admin/guesthouses/new" label={t("guesthouses.list.new", "New guesthouse")} />
     </div>
   );
 }

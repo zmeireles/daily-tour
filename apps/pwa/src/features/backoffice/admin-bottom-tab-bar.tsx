@@ -1,6 +1,7 @@
 import * as React from "react";
 import { NavLink, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "motion/react";
 import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LocaleSwitcher } from "@/features/backoffice/locale-switcher";
@@ -27,18 +28,33 @@ function tabClasses(isActive: boolean) {
   );
 }
 
-function TabIcon({ item, count, isActive }: { item: NavItem; count?: number; isActive: boolean }) {
+function TabIcon({
+  item,
+  count,
+  isActive,
+  reduce,
+}: {
+  item: NavItem;
+  count?: number;
+  isActive: boolean;
+  reduce: boolean;
+}) {
   const { icon: Icon } = item;
   return (
-    <span
-      className={cn(
-        "relative flex h-8 w-12 items-center justify-center rounded-full",
-        isActive && "bg-nav-active-bg",
+    <span className="relative flex h-8 w-12 items-center justify-center rounded-full">
+      {/* Shared-layout active pill: slides from the previous tab to this one on
+          navigation (a calm indicator move — a tween, never a spring bounce).
+          Snaps instantly under prefers-reduced-motion. */}
+      {isActive && (
+        <motion.span
+          layoutId="admin-tab-active-pill"
+          className="absolute inset-0 rounded-full bg-nav-active-bg"
+          transition={reduce ? { duration: 0 } : { duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
+        />
       )}
-    >
-      <Icon size={20} aria-hidden="true" />
+      <Icon size={20} aria-hidden="true" className="relative z-10" />
       {item.badge && (
-        <NavCountBadge count={count} className="absolute -top-1 -right-0.5 border-card" />
+        <NavCountBadge count={count} className="absolute -top-1 -right-0.5 z-10 border-card" />
       )}
     </span>
   );
@@ -53,6 +69,7 @@ export function AdminBottomTabBar({
 }) {
   const { t } = useTranslation("admin");
   const { pathname } = useLocation();
+  const reduce = useReducedMotion() ?? false;
   const [moreOpen, setMoreOpen] = React.useState(false);
   const moreActive = MORE_ITEMS.some((i) => pathname.startsWith(i.to));
 
@@ -74,6 +91,7 @@ export function AdminBottomTabBar({
                     item={item}
                     count={item.badge ? counts[item.badge] : undefined}
                     isActive={isActive}
+                    reduce={reduce}
                   />
                   <span className="text-[11px] leading-none">{t(`shell.nav.${item.key}`)}</span>
                 </>
