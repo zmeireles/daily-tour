@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, ChevronsUpDown, MoreVertical, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, MoreVertical, Search } from "lucide-react";
+import { Fab } from "@/features/backoffice/fab";
 import type { PlaceStatus } from "@daily-tour/shared-types";
 import { usePlaces, useArchivePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import {
@@ -587,14 +588,7 @@ export function PlaceList() {
       )}
 
       {/* Mobile create affordance. */}
-      <Link
-        to="/admin/places/new"
-        aria-label={t("places.list.new", "New place")}
-        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden"
-        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <Plus className="h-6 w-6" />
-      </Link>
+      <Fab to="/admin/places/new" label={t("places.list.new", "New place")} />
     </div>
   );
 }

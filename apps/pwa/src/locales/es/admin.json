@@ -454,5 +454,11 @@
     "toast_done": "Traducción completada",
     "toast_fail": "No se pudo traducir — introdúcelo manualmente",
     "undo": "Deshacer"
+  },
+  "theme": {
+    "switch": "Cambiar tema (actualmente {{mode}})",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Oscuro"
   }
 }
