@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Plan-008 Slice 5: assisted map picker + real beta metrics + motion & theme (2026-07-11)
+
+Owner backoffice **Slice 5** merged (#355–#358, every merge Fable-gated) — **Plan-008 is now code-complete** (all 6 slices done):
+
+- **Assisted map picker (#357)** — a shared `LocationPicker` lets a non-technical host drop a pin on a map instead of hand-typing coordinates. A MapLibre map (reusing the existing map stack, no second engine) opens in a bottom sheet with an accessible address-search combobox, a fixed centre pin, a "use my location" button, and reverse-geocoding as the pin moves; it writes into the form's lat/lng, which are demoted into an "enter coordinates manually" section. Degrades to the numeric inputs when geocoding is unconfigured.
+- **Geocoding proxy (#355)** — a new owner-only `POST /v1/admin/geocode` (+ reverse) proxies **Geoapify** with the API key kept server-side, biased to Portugal + the Azores, cached and rate-limited. Returns 503 (picker falls back to numeric input) when unconfigured.
+- **Real beta-metrics dashboard (#356)** — the beta screen now shows branded KPI cards (reservations / views / conversion / messages) with **trend deltas** vs the previous period and a 7d/30d/90d range. Reservations + conversion are counted from **real** reservation data; the messages KPI honestly shows "no data yet" (rather than a misleading 0) until a producer exists, and a metrics-source outage degrades one card instead of blanking the dashboard.
+- **Calm motion + light/dark/system theme (#358)** — tasteful, single-shot motion on the drawer, bottom-tab indicator, add-button, and page transitions, all disabled under `prefers-reduced-motion`; and a **theme toggle** (light / dark / follow-system, persisted) in both the desktop rail and the mobile top bar.
+
 ### Added — Plan-008 Slice 3: form excellence + EN/PT/ES auto-translate (2026-07-06)
 
 Owner backoffice **Slice 3** merged (#347–#352, every merge Fable-gated) — the three admin forms are redesigned, gain a first-class **Spanish** content locale, and get an in-form machine-translation helper:
