@@ -9,6 +9,7 @@ import { useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import { MediaUploader, type UploadedAsset } from "./media-uploader";
 import { OpeningHoursEditor, hoursToRows, rowsToHours } from "./opening-hours-editor";
 import { LocationPicker } from "@/features/backoffice/location-picker";
+import { toCoordinate, coordinateField } from "@/lib/map/center";
 import {
   CONTENT_LOCALES,
   type ContentLocale,
@@ -66,8 +67,10 @@ const FormSchema = z.object({
   description_pt: descriptionFields.description_pt,
   description_es: descriptionFields.description_es,
   address: z.string().min(1, "Required"),
-  geom_lat: z.coerce.number().min(-90).max(90),
-  geom_lng: z.coerce.number().min(-180).max(180),
+  // Required lat/lng; a blank/whitespace/non-numeric input is a validation error
+  // rather than a silently-saved 0 (see coordinateField).
+  geom_lat: coordinateField(-90, 90),
+  geom_lng: coordinateField(-180, 180),
   status: z.enum(["draft", "owner_approved", "published", "archived"]),
   is_hosts_pick: z.boolean().default(false),
   contact_phone: z.string().default(""),
@@ -107,6 +110,9 @@ export function PlaceForm({ initialData, id }: Props) {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
   const [activeLocale, setActiveLocale] = useState<ContentLocale>(SOURCE_LOCALE);
+  // Coordinates section stays open by default; the invalid-submit handler forces
+  // it open so a blank-coord "Required" error is never hidden by a collapse.
+  const [coordsOpen, setCoordsOpen] = useState(true);
   const [mediaAssets, setMediaAssets] = useState<UploadedAsset[]>(() =>
     toUploadedAssets(initialData?.media),
   );
@@ -214,6 +220,8 @@ export function PlaceForm({ initialData, id }: Props) {
     (errors) => {
       // Surface a required-field error even if the offending locale tab is hidden.
       if (errors.name_en ?? errors.description_en) setActiveLocale("en");
+      // …or if the coordinates collapsible is closed (its FormMessage unmounts).
+      if (errors.geom_lat ?? errors.geom_lng) setCoordsOpen(true);
     },
   );
 
@@ -305,14 +313,14 @@ export function PlaceForm({ initialData, id }: Props) {
                 )}
               />
               <LocationPicker
-                lat={Number(form.watch("geom_lat"))}
-                lng={Number(form.watch("geom_lng"))}
+                lat={toCoordinate(form.watch("geom_lat"))}
+                lng={toCoordinate(form.watch("geom_lng"))}
                 onConfirm={({ lat, lng }) => {
                   form.setValue("geom_lat", lat, { shouldDirty: true });
                   form.setValue("geom_lng", lng, { shouldDirty: true });
                 }}
               />
-              <Collapsible defaultOpen>
+              <Collapsible open={coordsOpen} onOpenChange={setCoordsOpen}>
                 <CollapsibleTrigger className="flex w-full items-center justify-between gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                   <span>{t("location.manual_toggle", "Enter coordinates manually")}</span>
                   <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
