@@ -35,11 +35,34 @@ function fakePool(rows: ViewRow[]): { pool: Pool; query: ReturnType<typeof vi.fn
 // timestamps are relative to real time so the current/previous window bucketing
 // exercises for real.
 const fetchMock = vi.fn();
-function reservationsOk(items: { created_at: string }[]) {
+function reservationsOk(items: { created_at: string; status?: string }[]) {
   return { ok: true, json: () => Promise.resolve({ data: items }) };
+}
+function messagesOk(current: number, previous: number) {
+  return { ok: true, json: () => Promise.resolve({ current, previous }) };
 }
 function daysAgoISO(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();
+}
+
+// Reservations (token-svc) and messages (chat-hub) both go over fetch now —
+// route by URL so each can be stubbed / failed independently.
+function routeFetch(opts: {
+  reservations?: unknown;
+  messages?: unknown;
+  reservationsReject?: boolean;
+  messagesReject?: boolean;
+}): void {
+  fetchMock.mockImplementation((url: unknown) => {
+    if (String(url).includes("/v1/messages/count")) {
+      return opts.messagesReject
+        ? Promise.reject(new Error("chat-hub down"))
+        : Promise.resolve(opts.messages ?? messagesOk(0, 0));
+    }
+    return opts.reservationsReject
+      ? Promise.reject(new Error("token-svc down"))
+      : Promise.resolve(opts.reservations ?? reservationsOk([]));
+  });
 }
 
 describe("getBetaMetrics (analytics-db)", () => {
@@ -91,13 +114,74 @@ describe("getBetaMetrics (analytics-db)", () => {
     });
   });
 
-  it("marks messages unavailable (no producer yet) — not a fabricated 0", async () => {
+  it("reports the messages KPI from chat-hub counts (value + previous + deltaPct)", async () => {
     const { pool } = fakePool([]);
     setAnalyticsPoolForTest(pool);
+    routeFetch({ messages: messagesOk(12, 8) });
 
     const metrics = await getBetaMetrics({ rangeDays: 30 });
 
-    expect(metrics.messages).toEqual({ value: 0, previous: 0, deltaPct: null, available: false });
+    expect(metrics.messages).toEqual({ value: 12, previous: 8, deltaPct: 50, available: true });
+  });
+
+  it("marks messages unavailable when chat-hub is down — views/reservations intact", async () => {
+    const { pool } = fakePool([
+      { period: "current", cnt: "10" },
+      { period: "previous", cnt: "10" },
+    ]);
+    setAnalyticsPoolForTest(pool);
+    routeFetch({
+      reservations: reservationsOk([{ created_at: daysAgoISO(1) }]),
+      messagesReject: true,
+    });
+
+    const metrics = await getBetaMetrics({ rangeDays: 7 });
+
+    // A chat-hub outage marks only messages unavailable — never blanks the rest.
+    expect(metrics.messages.available).toBe(false);
+    expect(metrics.views.available).toBe(true);
+    expect(metrics.reservations).toMatchObject({ value: 1, available: true });
+  });
+
+  it("marks messages unavailable on a malformed chat-hub body (not a fabricated 0)", async () => {
+    const { pool } = fakePool([]);
+    setAnalyticsPoolForTest(pool);
+    routeFetch({ messages: { ok: true, json: () => Promise.resolve({}) } });
+
+    const metrics = await getBetaMetrics({ rangeDays: 30 });
+
+    expect(metrics.messages.available).toBe(false);
+  });
+
+  it("marks messages unavailable on a null-valued chat-hub body (Number(null)===0 guard)", async () => {
+    const { pool } = fakePool([]);
+    setAnalyticsPoolForTest(pool);
+    routeFetch({
+      messages: { ok: true, json: () => Promise.resolve({ current: null, previous: null }) },
+    });
+
+    const metrics = await getBetaMetrics({ rangeDays: 30 });
+
+    // null would coerce to a finite 0 under Number(); the typeof guard rejects it
+    // so the tile shows "sem dados", not a fabricated 0.
+    expect(metrics.messages.available).toBe(false);
+  });
+
+  it("excludes cancelled reservations from the count", async () => {
+    const { pool } = fakePool([{ period: "current", cnt: "100" }]);
+    setAnalyticsPoolForTest(pool);
+    routeFetch({
+      reservations: reservationsOk([
+        { created_at: daysAgoISO(1), status: "confirmed" },
+        { created_at: daysAgoISO(2), status: "cancelled" }, // excluded
+        { created_at: daysAgoISO(3), status: "checked_in" },
+      ]),
+    });
+
+    const metrics = await getBetaMetrics({ rangeDays: 7 });
+
+    // 2 counted (confirmed + checked_in); the cancelled row is dropped.
+    expect(metrics.reservations.value).toBe(2);
   });
 
   it("returns deltaPct null when the previous period is 0 (no divide-by-zero)", async () => {

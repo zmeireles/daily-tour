@@ -1,5 +1,6 @@
 import pg from "pg";
 import { loadConfig } from "../config.js";
+import { getMessageCount } from "./chat-client.js";
 
 const { Pool } = pg;
 
@@ -60,10 +61,10 @@ export async function insertGuestFeedback(opts: {
 // immediately-preceding equal-length period, and the % change between them.
 // `deltaPct` is null when `previous` is 0 — there is no meaningful "% change
 // from zero", so the UI shows "—" rather than a fabricated ∞/100%.
-// `available` is false when the KPI has no real data source yet (currently
-// `messages`, and `reservations`/`conversion` if token-svc is unreachable) — the
-// UI then shows "sem dados" rather than a misleading 0 that contradicts other
-// tabs.
+// `available` is false when the KPI's data source is unreachable
+// (`reservations`/`conversion` on a token-svc outage, `messages` on a chat-hub
+// outage) — the UI then shows "sem dados" rather than a misleading 0 that
+// contradicts other tabs.
 export interface MetricDelta {
   value: number;
   previous: number;
@@ -75,19 +76,22 @@ export interface BetaMetrics {
   range_days: number;
   reservations: MetricDelta;
   views: MetricDelta;
-  // A ratio in [0, 1] (reservations / views) — the frontend renders it as a %.
+  // reservations / views, rendered as a % by the frontend. NOT clamped to
+  // [0, 1]: a booking can precede the guest opening their tour, so conversion
+  // may legitimately read >100% (see `ratio`). Unavailable when views is 0.
   conversion: MetricDelta;
   messages: MetricDelta;
 }
 
 // Only `tour.started` (guest telemetry, view count) has a real producer in
-// analytics.tour_event. Reservations come from token-svc (real, counted below);
-// messages have no producer yet (follow-up), so that KPI reports unavailable
+// analytics.tour_event. Reservations come from token-svc and messages from
+// chat-hub (both counted below); each degrades to "unavailable" on an outage
 // rather than a fabricated 0.
 const VIEWS_EVENT_TYPE = "tour.started";
 
 const DEFAULT_RANGE_DAYS = 30;
 const TOKEN_SVC_TIMEOUT_MS = 5_000;
+const CHAT_HUB_TIMEOUT_MS = 5_000;
 
 // reservations / views, guarded against divide-by-zero, rounded to 4 dp so the
 // derived percentage is stable. NOT clamped to [0,1]: reservations can exceed
@@ -135,13 +139,17 @@ async function fetchViewCounts(rangeDays: number): Promise<{ cur: number; prev: 
 
 interface ReservationListItem {
   created_at?: string | null;
+  status?: string | null;
 }
 
-// Count real reservations (by booking time) from token-svc, bucketed into the
-// current and previous windows. Single-owner v1 lists all reservations, so we
-// count client-side; a token-svc count endpoint should replace this at scale
-// (follow-up). Returns null on any outage/parse failure so the caller can mark
-// the KPI unavailable WITHOUT blanking the other tiles.
+// Count real (non-cancelled) reservations (by booking time) from token-svc,
+// bucketed into the current and previous windows. Single-owner v1 lists all
+// reservations, so we count + filter client-side; a token-svc count endpoint
+// with status/date filters should replace this at scale (follow-up). Counts are
+// NOT beta-scoped — the reservation row has no beta discriminator yet, so
+// beta-filtering is deferred (needs a token-svc schema column). Returns null on
+// any outage/parse failure so the caller can mark the KPI unavailable WITHOUT
+// blanking the other tiles.
 async function fetchReservationCounts(
   rangeDays: number,
 ): Promise<{ cur: number; prev: number } | null> {
@@ -159,6 +167,9 @@ async function fetchReservationCounts(
     let cur = 0;
     let prev = 0;
     for (const r of rows) {
+      // A cancelled reservation is not a conversion; excluding it also keeps the
+      // numerator honest against the beta-only view count (which never inflates).
+      if (r.status === "cancelled") continue;
       const ts = r.created_at ? Date.parse(r.created_at) : NaN;
       if (Number.isNaN(ts)) continue;
       if (ts >= curStart) cur += 1;
@@ -170,19 +181,52 @@ async function fetchReservationCounts(
   }
 }
 
+// Count guest (inbound) chat messages in the current + previous windows via
+// chat-hub's count endpoint. Returns null on any outage/parse failure so the caller can mark the
+// messages KPI unavailable WITHOUT blanking the other tiles (mirrors
+// fetchReservationCounts). A malformed (non-numeric) body is treated as an
+// outage rather than a fabricated 0.
+async function fetchMessageCounts(
+  rangeDays: number,
+): Promise<{ cur: number; prev: number } | null> {
+  try {
+    const { current, previous } = await getMessageCount(
+      rangeDays,
+      AbortSignal.timeout(CHAT_HUB_TIMEOUT_MS),
+    );
+    // Body values are untrusted JSON despite the typed client: reject anything
+    // non-numeric or non-finite (Number(null) === 0, JSON Infinity) as an
+    // outage rather than surfacing a fabricated "available" 0.
+    const cur: unknown = current;
+    const prev: unknown = previous;
+    if (typeof cur !== "number" || !Number.isFinite(cur)) return null;
+    if (typeof prev !== "number" || !Number.isFinite(prev)) return null;
+    return { cur, prev };
+  } catch {
+    return null;
+  }
+}
+
 // Beta KPIs for the owner dashboard, over a `rangeDays` window plus the equal
 // window immediately before it (for trend deltas). Views come from
 // analytics.tour_event; reservations from token-svc (real booking counts);
-// conversion is reservations/views. Messages have no producer yet → unavailable.
-// A token-svc outage marks reservations + conversion unavailable but still
-// returns views (no single failure blanks the whole dashboard).
+// conversion is reservations/views; messages from chat-hub. Each remote source
+// degrades independently — a token-svc outage marks reservations + conversion
+// unavailable, a chat-hub outage marks messages unavailable, and views still
+// return either way (no single failure blanks the whole dashboard).
 export async function getBetaMetrics(opts: { rangeDays?: number } = {}): Promise<BetaMetrics> {
   const rangeDays = opts.rangeDays ?? DEFAULT_RANGE_DAYS;
 
-  const [views, reservationCounts] = await Promise.all([
+  const [views, reservationCounts, messageCounts] = await Promise.all([
     fetchViewCounts(rangeDays),
     fetchReservationCounts(rangeDays),
+    fetchMessageCounts(rangeDays),
   ]);
+
+  // Messages are independent of token-svc: a reservations outage must not blank
+  // a real messages count, and vice-versa.
+  const messages =
+    messageCounts === null ? UNAVAILABLE : toDelta(messageCounts.cur, messageCounts.prev);
 
   if (reservationCounts === null) {
     return {
@@ -190,7 +234,7 @@ export async function getBetaMetrics(opts: { rangeDays?: number } = {}): Promise
       reservations: UNAVAILABLE,
       views: toDelta(views.cur, views.prev),
       conversion: UNAVAILABLE,
-      messages: UNAVAILABLE,
+      messages,
     };
   }
 
@@ -207,6 +251,6 @@ export async function getBetaMetrics(opts: { rangeDays?: number } = {}): Promise
     reservations: toDelta(reservationCounts.cur, reservationCounts.prev),
     views: toDelta(views.cur, views.prev),
     conversion,
-    messages: UNAVAILABLE,
+    messages,
   };
 }

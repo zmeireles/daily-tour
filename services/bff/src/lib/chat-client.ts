@@ -83,3 +83,26 @@ export async function listChatThreads(): Promise<ChatThread[]> {
   }
   return (await res.json()) as ChatThread[];
 }
+
+export interface MessageCountResponse {
+  current: number;
+  previous: number;
+}
+
+/**
+ * Guest (inbound) chat messages in the current `rangeDays` window and the equal
+ * window before it — powers the owner dashboard's "messages" KPI as a measure of
+ * guest demand (host replies are excluded server-side). Accepts an optional
+ * AbortSignal so the metrics caller can bound the wait and degrade gracefully.
+ */
+export async function getMessageCount(
+  rangeDays: number,
+  signal?: AbortSignal,
+): Promise<MessageCountResponse> {
+  const { CHAT_HUB_URL } = loadConfig();
+  const res = await fetch(`${CHAT_HUB_URL}/v1/messages/count?range_days=${rangeDays}`, { signal });
+  if (!res.ok) {
+    throw new ChatHubError(res.status, `chat-hub ${res.status}`);
+  }
+  return (await res.json()) as MessageCountResponse;
+}

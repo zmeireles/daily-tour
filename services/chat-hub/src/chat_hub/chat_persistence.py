@@ -29,6 +29,7 @@ from .db import session_scope
 from .drivers import InboundCallback, InboundMessage
 from .models import MessageRow
 from .repository.messages import (
+    count_messages_windowed,
     get_or_create_thread,
     insert_message,
     list_messages_for_guest,
@@ -41,6 +42,7 @@ SessionScopeFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 HistoryProvider = Callable[[UUID], Awaitable[list[dict[str, object]]]]
 HostReplySender = Callable[[UUID, str], Awaitable[dict[str, object]]]
 ThreadListProvider = Callable[[], Awaitable[list[dict[str, object]]]]
+MessageCountProvider = Callable[[int], Awaitable[dict[str, int]]]
 
 
 class SupportsSendJson(Protocol):
@@ -176,6 +178,17 @@ def get_thread_list_provider() -> ThreadListProvider:
     return default_thread_list_provider
 
 
+async def default_message_count_provider(range_days: int) -> dict[str, int]:
+    async with session_scope() as session:
+        current, previous = await count_messages_windowed(session, range_days=range_days)
+    return {"current": current, "previous": previous}
+
+
+def get_message_count_provider() -> MessageCountProvider:
+    """FastAPI dependency — overridden in tests to avoid a live DB."""
+    return default_message_count_provider
+
+
 def get_host_reply_sender() -> HostReplySender:
     """FastAPI dependency — built on the same in-app driver singleton the WS
     endpoint registers sockets on, so a reply reaches a live guest socket.
@@ -188,13 +201,16 @@ def get_host_reply_sender() -> HostReplySender:
 __all__ = [
     "HistoryProvider",
     "HostReplySender",
+    "MessageCountProvider",
     "ThreadListProvider",
     "build_host_reply_sender",
     "build_in_app_persister",
     "default_history_provider",
+    "default_message_count_provider",
     "default_thread_list_provider",
     "get_history_provider",
     "get_host_reply_sender",
+    "get_message_count_provider",
     "get_thread_list_provider",
     "message_to_dict",
     "parse_guest_id",
