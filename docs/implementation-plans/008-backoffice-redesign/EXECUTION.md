@@ -139,12 +139,27 @@ Wave-by-wave record. Plan: [`README.md`](./README.md) · tasks: [`TODO.md`](./TO
 
 ## Follow-ups surfaced this slice (Slice 5) — non-blocking
 
-- **chat-message producer** (#356): the `messages` KPI is honestly `available:false` until a producer emits per-message analytics (or the BFF counts from chat-hub). Highest-value follow-up.
-- **conversion numerator semantics** (#356, Fable 🟡): reservations counted from token-svc include cancelled/demo rows and aren't beta-filtered, while views are beta-only; conversion can read >100% (legit in this product — bookings precede tour-opens). Decide beta/status filtering + the >100% presentation. Also: the full-reservation-list fetch is O(N) — replace with a token-svc count endpoint at scale.
-- **blank-coord guard** (#357, Fable 🟢): clearing a manual coord input reads `Number("")===0` → picker opens at (0, −25.67); same family as the deferred Slice-3 blank-lat/lng item — fold into that fix.
-- Carried from Slice 3: opening-hours one-sided-time / 24h-reset; profile zod i18n; guesthouse empty-slug 400.
+- **chat-message producer** (#356): the `messages` KPI was honestly `available:false` until a producer existed. **✅ RESOLVED in #364** — chat-hub `GET /v1/messages/count` counts inbound (guest) messages; the BFF renders the KPI (Wave 7).
+- **conversion numerator semantics** (#356, Fable 🟡): reservations counted from token-svc included cancelled/demo rows and weren't beta-filtered. **✅ PARTLY RESOLVED in #364** — cancelled reservations now excluded; conversion kept unclamped (>100% legit, documented). **Still deferred:** beta-scoping (needs a token-svc schema discriminator column) + the O(N) list fetch → a token-svc count endpoint at scale.
+- **blank-coord guard** (#357, Fable 🟢): clearing a manual coord input read `Number("")===0` → picker opened at (0, −25.67). **✅ RESOLVED in #363** — shared `coordinateField` makes blank/whitespace/non-numeric a "Required" error; `toCoordinate` recenters the picker. Folded in the deferred Slice-3 blank-lat/lng item.
+- Carried from Slice 3 (**still open**): opening-hours one-sided-time / 24h-reset; profile zod i18n; guesthouse empty-slug 400.
 
-## Deploy + owner UAT (owed)
+## Deploy + owner UAT ✅
 
-- **Slice 5 NOT yet deployed to qual** (owner-only surface; user's call). `image_tag` = full SHA of **`4f62245`** (#358 merge). For the **map picker to work live**, `GEOAPIFY_API_KEY` must be set in `/opt/daily-tour/.env.qual` (else the picker degrades to numeric inputs — still functional).
-- **Owner-feature UAT** of all Slice 3–5 owner surfaces (forms + translate + dashboard + picker + theme) still owed — needs the **akadmin** password (now recoverable from `AUTHENTIK_BOOTSTRAP_PASSWORD` on the box; captured in `temp/qual-uat-secrets.env`).
+- **Slice 5 deployed to qual 2026-07-11** (`deploy-qa.yml -f image_tag=4f62245…`, guest-regression browser-UAT 9/9). Slice-5 follow-ups + Geoapify go-live **deployed 2026-07-20** (main `b88541d`, run `29733412603` — see Wave 7).
+- **Owner-feature UAT DONE** — Slices 3–5 owner surfaces **25/25 PASS** (2026-07-11, `e2e/uat-owner-slices-3-5.e2e.mjs`, akadmin OIDC) + the live geocode map picker **7/7 PASS** (2026-07-20, after `GEOAPIFY_API_KEY` set).
+
+## Wave 7 — Slice-5 follow-ups resolved + Geoapify go-live (2026-07-19 → 07-20) ✅
+
+Three Slice-5 follow-ups (above) landed as two Fable-gated PRs, both merged + **deployed to qual** (main `b88541d`, `deploy-qa.yml` run `29733412603` ✅).
+
+| PR                                                       | Content                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#363](https://github.com/zmeireles/daily-tour/pull/363) | **blank-coord guard** (`fix(pwa)`) — a shared `coordinateField` zod validator makes a blank/whitespace/non-numeric lat/lng a "Required" error instead of a silently-saved `0`; `toCoordinate` recenters the picker to São Miguel instead of `(0, −25.67)`; the coordinates `Collapsible` is controlled + auto-opens on a blank-coord error so the message can't be hidden. Folds in the deferred Slice-3 blank-lat/lng item (both forms). |
+| [#364](https://github.com/zmeireles/daily-tour/pull/364) | **real messages KPI + exclude cancelled** (`feat(bff)`) — chat-hub `GET /v1/messages/count?range_days=N` counts **inbound (guest) messages only** (host replies excluded → guest demand); the BFF renders the KPI, degrading to "sem dados" on outage/malformed/null (a `Number(null)===0` guard). Cancelled reservations excluded from the conversion numerator; conversion stays unclamped.                                             |
+
+**Geoapify go-live (T-8.5.1 completion)**: `GEOAPIFY_API_KEY` added to `/opt/daily-tour/.env.qual` and `dt_bff` **recreated** — ⚠️ a `restart` does NOT re-substitute `${GEOAPIFY_API_KEY}`; must `docker compose -p dt-qual --env-file .env.qual -f <all 9 overlays> up -d --no-deps --force-recreate bff`, pinning `IMAGE_TAG` to the running image (shell-passed at deploy, not in `.env.qual`). Browser-UAT **7/7**: `POST /v1/admin/geocode` → 200 with real Azores results.
+
+**Fable-5 gate (both PRs)**: no live 🔴 — Fable executed the messages window query against a real Postgres 15 (correct bucketing + half-open boundaries) and verified the zod path end-to-end. Fixed pre-merge: whitespace→0 side-door + collapsed-section-hidden error (#363); `Number(null)===0` hardening + a repository SQL-shape test (#364).
+
+**Basemap "blank canvas" — false alarm (not a bug)**: the LocationPicker map was reported blank in earlier UAT screenshots. Diagnosed as a **headless-Chrome/Playwright artifact** — 21/21 OSM tiles load `200 image/png` and `canvas.toDataURL()` shows the full rendered map; the headless env's SwiftShader (software WebGL) framebuffer isn't captured by CDP's screenshot compositor. Real GPU browsers render fine; no app fix. (NB `buildStyle` only ever renders the OSM raster layer — the `pmtilesUrl` arg adds an unused source.)

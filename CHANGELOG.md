@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added / Fixed — Plan-008 Slice-5 follow-ups + map picker go-live on qual (2026-07-20)
+
+Three Slice-5 follow-ups shipped (#363, #364 — both Fable-gated) and the owner's assisted map picker went live on qual:
+
+- **Real "messages" metric (#364)** — the beta-metrics dashboard's messages card now shows real counts (with a trend vs the previous period) of **inbound guest messages**, replacing the "no data yet" placeholder; the host's own replies are excluded so the number reflects guest demand. It degrades to "no data" on a chat-service outage rather than showing a misleading 0.
+- **Truer conversion (#364)** — cancelled reservations no longer count toward the conversion rate.
+- **Coordinate-entry safety (#363)** — clearing a place or guesthouse latitude/longitude now shows a "required" error instead of silently saving `0, 0`, and the map picker recenters to São Miguel (instead of the Gulf of Guinea) when a coordinate is left blank.
+- **Live map geocoding on qual** — the assisted map picker's address search is now live (Geoapify configured); typing a place name returns real Azores suggestions and drops the pin.
+
 ### Added — Plan-008 Slice 5: assisted map picker + real beta metrics + motion & theme (2026-07-11)
 
 Owner backoffice **Slice 5** merged (#355–#358, every merge Fable-gated) — **Plan-008 is now code-complete** (all 6 slices done):
