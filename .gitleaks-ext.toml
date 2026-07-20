@@ -1,0 +1,45 @@
+# ============================================================================
+# Daily Tour — Class-B gitleaks EXTENSION (allowlists ONLY; chains after central).
+# ----------------------------------------------------------------------------
+# Rules (incl. the daily-tour `dt_` reservation-token rule) live in the central
+# single-source config; this file holds ONLY project-specific FP allowlists.
+# SoT Fase 1 P0 gitleaks centralization.
+#
+# ⚠ The former whole-tree `docs/.*` and whole `.github/workflows/.*` waivers were
+# NARROWED to value-scoped allowlists (below) so a future real secret added to
+# those paths is NOT silently masked (the INC-016 anti-pattern).
+# ============================================================================
+
+title = "daily-tour-ext"
+
+[extend]
+# gitleaks does NOT expand ~ / $HOME in [extend].path — ABSOLUTE path required.
+path = "/home/jmeireles/.claude/config/gitleaks.toml"
+
+[allowlist]
+description = "Daily Tour project FPs (paths for generated/placeholder files; value-scoped doc + CI test literals)"
+regexTarget = "match"
+paths = [
+  # Generated / lockfile / snapshot noise.
+  "pnpm-lock.yaml",
+  ".*\\.snap$",
+  # Placeholder-only template (real values sourced from ~/.secrets).
+  "\\.mcp\\.json\\.template$",
+  # Pre-hashed placeholder credentials, rotated per infra/README.md.
+  "infra/rabbitmq/definitions\\.json$",
+  "infra/traefik/dashboard-users$",
+  "infra/authentik/blueprints/.*\\.yaml$",
+]
+regexes = [
+  # Doc/template placeholders like <YOUR_API_KEY_HERE>.
+  '''<[A-Z_]+>''',
+  # NARROWED from `docs/.*`: a dev-stack multi-use reservation REDEEM token for
+  # TEST reservation ccc…002 (docs/ai/session-handoff.md), used for browser-uat.
+  # Dev-only test data flagged by generic-api-key entropy — not a production
+  # credential. Value-scoped so it can NOT mask a future secret in that doc.
+  '''YI3yn18QsI4jGxF6yxGswb7v4BXLC-Ik''',
+  # NARROWED from `.github/workflows/.*`: CI-only literal test secrets in
+  # load-test.yml — never used outside the runner. Value-scoped, not whole-file.
+  '''ci-test-jwt-signing-key''',
+  '''ci_pg_pass''',
+]
