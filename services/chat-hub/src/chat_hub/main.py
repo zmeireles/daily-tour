@@ -14,7 +14,13 @@ from .db import dispose_engine
 from .drivers.in_app import mount_in_app_driver
 from .drivers.telegram import mount_telegram_driver
 from .drivers.whatsapp import build_wa_me_url, mount_whatsapp_driver
-from .routes import draft_router, health_router, history_router, reply_router
+from .routes import (
+    draft_router,
+    health_router,
+    history_router,
+    messages_router,
+    reply_router,
+)
 from .version import __version__
 
 logger = logging.getLogger(__name__)
@@ -41,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(draft_router)
     app.include_router(history_router)
+    app.include_router(messages_router)
     app.include_router(reply_router)
     in_app_driver = mount_in_app_driver(app)
     # Persist every inbound guest frame + ack it back (T-4.0.1). Without this

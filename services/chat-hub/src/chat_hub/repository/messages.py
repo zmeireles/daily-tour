@@ -12,10 +12,10 @@ assigned, but the route/handler calls `commit()`.
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import ChatThreadRow, MessageRow
@@ -78,4 +78,47 @@ async def list_messages_for_guest(
     return list(result.scalars().all())
 
 
-__all__ = ["get_or_create_thread", "insert_message", "list_messages_for_guest"]
+async def count_messages_windowed(
+    session: AsyncSession, *, range_days: int
+) -> tuple[int, int]:
+    """Count guest (inbound) messages in the current `range_days` window and the
+    equal window immediately before it, in one grouped scan. Returns
+    ``(current, previous)``.
+
+    Powers the owner dashboard's "messages" KPI as a measure of guest demand, so
+    the platform's own outbound (host) replies are excluded — a host answering
+    must not inflate the tile. There is no beta discriminator on ``chat.message``;
+    during the F&F beta all inbound traffic is beta traffic.
+    """
+    now = datetime.now(UTC)
+    cur_start = now - timedelta(days=range_days)
+    prev_start = now - timedelta(days=range_days * 2)
+    period = case(
+        (MessageRow.created_at >= cur_start, "current"),
+        else_="previous",
+    ).label("period")
+    stmt = (
+        select(period, func.count().label("cnt"))
+        .where(
+            MessageRow.created_at >= prev_start,
+            MessageRow.direction == "inbound",
+        )
+        .group_by(period)
+    )
+    result = await session.execute(stmt)
+    current = 0
+    previous = 0
+    for row in result:
+        if row.period == "current":
+            current = int(row.cnt)
+        else:
+            previous = int(row.cnt)
+    return current, previous
+
+
+__all__ = [
+    "count_messages_windowed",
+    "get_or_create_thread",
+    "insert_message",
+    "list_messages_for_guest",
+]
