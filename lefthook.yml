@@ -25,7 +25,7 @@ pre-commit:
           echo "[lefthook] Install gitleaks to enable local secret scanning (see lefthook.yml header)."
           exit 0
         fi
-        gitleaks protect --staged --redact -v --config .gitleaks.toml
+        gitleaks protect --staged --redact -v --config .gitleaks-ext.toml
       fail_text: |
         Secret scan failed. If gitleaks is not installed, install it (see lefthook.yml header).
         If a real secret was detected, remove it from the staged files before committing.
