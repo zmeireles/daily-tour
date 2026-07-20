@@ -1,4 +1,36 @@
-# Session Handoff — … → 07-11 (Plan-008 **CODE-COMPLETE** — Slice 5 shipped: geocode proxy + real beta metrics + LocationPicker + motion/theme; all 6 slices done. Slices 3 AND 5 both deployed to qual this session; guest-regression UAT 9/9 + **owner-feature UAT 25/25 PASS** (Fable fixes live-verified).) → next: **add `GEOAPIFY_API_KEY`** to make the qual map picker live (bff restart, no redeploy) + Slice-5 follow-ups / F&F beta invites still unsent (user)
+# Session Handoff — … → 07-20 (**Plan-008 fully CLOSED** — Slice-5 follow-ups resolved + Geoapify map picker LIVE on qual; nothing owed on 008. Reconstructed 07-20 after a TUI crash — no work lost.) · prior: 07-11 (Plan-008 **CODE-COMPLETE**
+
+> **UPDATE 2026-07-20 (session `s719`, 07-19 → 07-20 — **Plan-008 is now fully closed**: the three Slice-5 follow-ups landed, Geoapify went live on qual, gitleaks centralized. The TUI **crashed ~14:30Z, AFTER the closeout PR #366 merged — nothing was lost** (verified 07-20 17:1x: tree clean, no stashes, 0 open PRs, local branches = main only, no cs-agents/tmux/monitors, main == origin/main `a16f5c8`). This block is the reconstructed handoff. ▶ RESUME HERE: Plan-008 owes nothing — pick the next initiative (options + backlog below).)**
+>
+> ### Shipped this session (all merged; main `a16f5c8`)
+>
+> - **#365 `chore(security)` — gitleaks centralized** (SoT Fase 1 P0). The `dt_` rule moves to the central single-source config; daily-tour keeps an **allowlists-only** extension. **Narrowed two whole-file waivers** that masked future secrets (INC-016 anti-pattern): `docs/.*` → value-scoped to a dev reservation redeem token, `.github/workflows/.*` → value-scoped to load-test.yml CI literals. Verified: the 3 FPs clear, a NEW secret in `docs/` is now BLOCKED, `dt_` still fires via central.
+> - **#363 `fix(pwa)` — blank-coord guard** (the last Slice-5 🟢 + the carried Slice-3 item, both forms): a shared `coordinateField` zod validator makes blank/whitespace/non-numeric lat/lng a **"Required" error** instead of a silently-saved `0`; `toCoordinate` recenters the picker to São Miguel instead of `(0, −25.67)`; the coordinates `Collapsible` is controlled and **auto-opens on error** so the message can't hide.
+> - **#364 `feat(bff)` — real messages KPI + exclude cancelled**: chat-hub `GET /v1/messages/count?range_days=N` counts **inbound (guest) messages only** (host replies excluded → guest demand); the BFF renders the KPI, degrading to "sem dados" on outage/malformed/null (a `Number(null)===0` guard). Cancelled reservations excluded from the conversion numerator; conversion stays **unclamped** (>100% is legit, documented).
+> - **Geoapify GO-LIVE on qual** (completes T-8.5.1): `GEOAPIFY_API_KEY` added to `/opt/daily-tour/.env.qual`. **⚠️ GOTCHA: `docker compose restart` does NOT re-substitute `${GEOAPIFY_API_KEY}`** — you must `docker compose -p dt-qual --env-file .env.qual -f <all 9 overlays> up -d --no-deps --force-recreate bff`, **pinning `IMAGE_TAG` to the running image** (it's shell-passed at deploy, not stored in `.env.qual`). (The 07-11 handoff's "restart, no redeploy" line was wrong — recreate, not restart.)
+> - **Deployed to qual**: main `b88541d` via `deploy-qa.yml` run `29733412603` ✅. **Browser-UAT 7/7** on the live geocode picker — `POST /v1/admin/geocode` → 200 with real Azores results (spec `e2e/uat-geocode-live.e2e.mjs`, shots `temp/geocode-live-uat/`).
+> - **#366 `docs(plan-008)` — closeout**: EXECUTION Wave 7, TODO status header, CHANGELOG Unreleased. Docs-only (`Deploy qual` correctly skipped).
+>
+> ### Basemap "blank canvas" — FALSE ALARM (no app bug)
+>
+> The LocationPicker map read as a flat cream canvas in earlier UAT screenshots. Diagnosed with a purpose-built probe (`e2e/diag-map-tiles.mjs`, read-only): **21/21 OSM tiles load `200 image/png`** and `canvas.toDataURL()` shows the fully rendered map — the headless env's **SwiftShader (software WebGL) framebuffer simply isn't captured by CDP's screenshot compositor**. Real GPU browsers render fine. Keep the probe: any future "blank map" screenshot should be re-checked this way before it's treated as a defect. (NB `buildStyle` only ever renders the OSM raster layer — the `pmtilesUrl` arg adds an unused source.)
+>
+> ### Fable-5 gate (both PRs) — no live 🔴, real pre-merge catches
+>
+> Fable executed the messages window query against a **real Postgres 15** (correct bucketing + half-open boundaries) and verified the zod path end-to-end. Fixed pre-merge: whitespace→0 side-door + collapsed-section-hidden error (#363); `Number(null)===0` hardening + a repository SQL-shape test (#364).
+>
+> ### ▶ NEXT — Plan-008 owes nothing; pick an initiative
+>
+> 1. **Choose the next arc.** Plan-003 (Real-User Readiness) is the live plan; **Plan-004 = prod cutover** (3.E, deferred out of 003) is the natural next big one. No plan is mid-flight.
+> 2. **F&F beta invites STILL unsent** (user action, unchanged since 07-02): 4 WhatsApp blocks in `temp/invite-batch-2026-06-29.md` (Pedro Amaral · Rui-fr · Pedro Albergaria · Célia-es). José + Miguel emails went out 07-02.
+> 3. **Still-open follow-ups** (non-blocking, all in 008 `EXECUTION.md`): reservations **beta-scoping** (needs a token-svc schema discriminator column) · the **O(N) reservation-list fetch → a token-svc count endpoint** at scale · carried Slice-3 items: opening-hours one-sided-time / 24h-reset, profile zod messages hardcoded English, guesthouse all-punctuation name → empty slug → opaque 400.
+> 4. **Chronic backlog** (untouched): issue **#328** (BFF limiter JWT-decodes rejected requests) · **#161** `/admin/profile` empty state · ~13 stale merged remote branches incl. this session's 3 `*s719*` (prune on request) · stray `~/.claude-squad/worktrees/jmeireles/boa-design2` (confirm → delete).
+>
+> ### State (07-20 close, post-crash verification)
+>
+> main **`a16f5c8`** == origin/main; **0 open PRs**; local branches **main only**; tree clean (only the perennial untracked `e2e/`, now also holding `uat-geocode-live.e2e.mjs` + `diag-map-tiles.mjs`). No cs-agents / tmux / monitors / background jobs (cs-agent state lists only long-finished historical entries). **qual = `b88541d`** (Slice-5 follow-ups + live Geoapify picker); `a16f5c8` on top is docs-only, so qual is current. dt-tests `review` queue **empty**; orchestrator-comms inbox — nothing new (last jo:Pico 06-23, handled).
+
+# (prior) Session Handoff — … → 07-11 (Plan-008 **CODE-COMPLETE** — Slice 5 shipped: geocode proxy + real beta metrics + LocationPicker + motion/theme; all 6 slices done. Slices 3 AND 5 both deployed to qual this session; guest-regression UAT 9/9 + **owner-feature UAT 25/25 PASS** (Fable fixes live-verified).) → next: **add `GEOAPIFY_API_KEY`** to make the qual map picker live (bff restart, no redeploy) + Slice-5 follow-ups / F&F beta invites still unsent (user)
 
 > **UPDATE 2026-07-11 (LATEST — big autonomous run: **Plan-008 Slice 5 built end-to-end and fully merged → Plan-008 is CODE-COMPLETE (all 6 slices)**. Also deployed Slice 3 to qual + repopulated the akadmin password. Clean close: main `4f62245` (code) + docs PR #359; 0 code PRs open; no agents/tmux/monitors; branches = main only; dt-tests `review` empty. ▶ RESUME HERE: the deploy + UAT + follow-up decisions below — all owner's-call, nothing blocking.)**
 >
