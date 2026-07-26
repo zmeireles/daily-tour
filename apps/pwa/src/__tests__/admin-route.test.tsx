@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor, within } from "@testing-library/react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { useOwnerSessionStore } from "@/store/owner-session";
 import AdminRoute from "@/routes/admin";
 import AdminCallbackRoute from "@/routes/admin.callback";
