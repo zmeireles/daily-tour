@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import i18n from "@/lib/i18n";
 import { useSessionStore } from "@/store/session";
 import IndexRoute from "@/routes/index";
