@@ -64,6 +64,27 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Slug for the create body, never empty.
+ *
+ * slugify() strips everything outside [a-z0-9], so a name with no Latin characters
+ * at all — "Ξενώνας", or an all-punctuation name — reduces to "", which catalog-svc
+ * rejects with an opaque 400. Fall back to a generated slug so the save succeeds;
+ * it stays editable under "Avançado" if the owner wants a nicer URL.
+ */
+function slugForSave(explicit: string, ...nameCandidates: string[]): string {
+  // Slugify every candidate and take the first that yields something, rather than
+  // slugifying only the first non-empty NAME: with name_en "Ξενώνας" and name_pt
+  // "Casa Azul", the latter is a perfectly good slug and should win over a
+  // generated one.
+  const chosen = explicit.trim() || nameCandidates.map(slugify).find(Boolean);
+  if (chosen) return chosen;
+  // Math.random().toString(36) drops trailing zeros, so the slice can come back
+  // short — or empty for an exact 0, which would build "guesthouse-" and fail the
+  // slug regex on a trailing hyphen. Pad to a fixed width.
+  return `guesthouse-${Math.random().toString(36).slice(2, 8).padEnd(6, "0")}`;
+}
+
 // zodContentFields returns an index-signature shape; assert the concrete keys so
 // noUncheckedIndexedAccess doesn't taint each access with `| undefined`.
 type ContentTriple<P extends string> = Record<`${P}_en` | `${P}_pt` | `${P}_es`, z.ZodString>;
@@ -176,8 +197,7 @@ export function GuesthouseForm({ initialData, id }: Props) {
     async (values) => {
       // Auto-generate the slug from the name when the owner left it blank so the
       // create still satisfies catalog-svc's required kebab-case slug.
-      const slug =
-        values.slug.trim() || slugify(values.name_en || values.name_pt || values.name_es);
+      const slug = slugForSave(values.slug, values.name_en, values.name_pt, values.name_es);
 
       const body = {
         name: buildI18nText(

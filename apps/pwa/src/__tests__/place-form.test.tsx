@@ -492,6 +492,93 @@ describe("PlaceForm", () => {
       expect(screen.queryByLabelText("Mon opening time")).not.toBeInTheDocument();
     });
 
+    // A half-filled day used to be dropped by rowsToHours, so the day silently
+    // persisted as CLOSED and the time the owner typed was lost with no warning.
+    it("blocks save on a half-filled day instead of silently saving it closed", async () => {
+      render(<PlaceForm />);
+      fillRequired();
+
+      fireEvent.click(screen.getByRole("switch", { name: /toggle hours for mon/i }));
+      // Clear the closing time, leaving the day open with only an opening time.
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "" } });
+
+      fireEvent.click(saveButton());
+
+      expect(
+        await screen.findByText(/both opening and closing times are required/i),
+      ).toBeInTheDocument();
+      expect(createMutate).not.toHaveBeenCalled();
+    });
+
+    it("saves a fully-filled day and clears the half-filled error once completed", async () => {
+      render(<PlaceForm />);
+      fillRequired();
+
+      fireEvent.click(screen.getByRole("switch", { name: /toggle hours for mon/i }));
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "" } });
+      fireEvent.click(saveButton());
+      await screen.findByText(/both opening and closing times are required/i);
+
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "18:30" } });
+      fireEvent.click(saveButton());
+
+      await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
+      expect(createMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ hours: [{ dow: 1, open: "09:00", close: "18:30" }] }),
+      );
+    });
+
+    // Turning 24h off used to reset the row to the 09:00–17:00 default, discarding
+    // whatever the owner had before they tried it.
+    it("restores the previous hours when the 24h toggle is switched back off", () => {
+      render(<PlaceForm />);
+
+      fireEvent.click(screen.getByRole("switch", { name: /toggle hours for mon/i }));
+      fireEvent.change(screen.getByLabelText("Mon opening time"), { target: { value: "07:15" } });
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "23:00" } });
+
+      const h24 = screen.getByRole("switch", { name: /open 24h — mon/i });
+      fireEvent.click(h24);
+      expect(screen.getByLabelText("Mon opening time")).toHaveValue("00:00");
+      expect(screen.getByLabelText("Mon closing time")).toHaveValue("23:59");
+
+      fireEvent.click(h24);
+      expect(screen.getByLabelText("Mon opening time")).toHaveValue("07:15");
+      expect(screen.getByLabelText("Mon closing time")).toHaveValue("23:00");
+    });
+
+    it("restores a half-filled row through the 24h round-trip rather than defaulting", () => {
+      render(<PlaceForm />);
+
+      fireEvent.click(screen.getByRole("switch", { name: /toggle hours for mon/i }));
+      fireEvent.change(screen.getByLabelText("Mon opening time"), { target: { value: "08:00" } });
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "" } });
+
+      const h24 = screen.getByRole("switch", { name: /open 24h — mon/i });
+      fireEvent.click(h24);
+      fireEvent.click(h24);
+
+      // The typed half survives; the still-missing half re-raises the prompt,
+      // which is better than quietly replacing 08:00 with the 09:00 default.
+      expect(screen.getByLabelText("Mon opening time")).toHaveValue("08:00");
+      expect(screen.getByLabelText("Mon closing time")).toHaveValue("");
+    });
+
+    it("falls back to the default hours when a day was already 24h on load", () => {
+      render(
+        <PlaceForm
+          id="p1"
+          initialData={makePlace({ hours: [{ dow: 1, open: "00:00", close: "23:59" }] })}
+        />,
+      );
+
+      // Nothing was stashed (the 24h state came from the server), so the default
+      // is the honest fallback — a blank row would read as "closed".
+      fireEvent.click(screen.getByRole("switch", { name: /open 24h — mon/i }));
+      expect(screen.getByLabelText("Mon opening time")).toHaveValue("09:00");
+      expect(screen.getByLabelText("Mon closing time")).toHaveValue("17:00");
+    });
+
     it("submits empty contacts, empty hours, and null season by default", async () => {
       render(<PlaceForm />);
       fillRequired();

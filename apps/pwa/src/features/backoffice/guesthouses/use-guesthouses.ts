@@ -56,6 +56,33 @@ export function useGuesthouse(id: string) {
   });
 }
 
+/**
+ * Build an error that carries the server's explanation.
+ *
+ * catalog-svc answers a rejected write with `{error, details}`, and throwing a bare
+ * `create guesthouse 400` discarded all of it — a specific slug-validation failure
+ * reached the owner as an opaque status with nothing to act on.
+ */
+async function requestError(res: Response, action: string): Promise<Error> {
+  let detail = "";
+  try {
+    const body = (await res.json()) as { error?: string; details?: unknown };
+    detail = [
+      body.error,
+      typeof body.details === "string"
+        ? body.details
+        : body.details
+          ? JSON.stringify(body.details)
+          : "",
+    ]
+      .filter(Boolean)
+      .join(" — ");
+  } catch {
+    // Non-JSON body (gateway error page, empty 502): the status is all we have.
+  }
+  return new Error(detail ? `${action} (${res.status}): ${detail}` : `${action} ${res.status}`);
+}
+
 export function useCreateGuesthouse() {
   const jwt = useOwnerJwt();
   const qc = useQueryClient();
@@ -66,7 +93,7 @@ export function useCreateGuesthouse() {
         headers: { ...authHeader(jwt!), "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`create guesthouse ${res.status}`);
+      if (!res.ok) throw await requestError(res, "create guesthouse");
       return res.json() as unknown;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: GUESTHOUSES_KEY }),
@@ -83,7 +110,7 @@ export function useUpdateGuesthouse(id: string) {
         headers: { ...authHeader(jwt!), "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`update guesthouse ${res.status}`);
+      if (!res.ok) throw await requestError(res, "update guesthouse");
       return res.json() as unknown;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: GUESTHOUSES_KEY }),
