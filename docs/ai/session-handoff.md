@@ -1,6 +1,58 @@
-# Session Handoff — … → 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding; Lanes 1–3 run on qual; ▶ next: build the S6b action-picker + 3-bug fix batch, Fable-gated; qr-bell VPS co-tenancy incoming) · 07-20 (**Plan-008 fully CLOSED** — Slice-5 follow-ups resolved + Geoapify map picker LIVE on qual; nothing owed on 008. Reconstructed 07-20 after a TUI crash — no work lost.) · prior: 07-11 (Plan-008 **CODE-COMPLETE**
+# Session Handoff — … → 07-27 (**s726 — everything the 07-25 handoff owed is SHIPPED**: audit gate unblocked, S6b action-picker + 3-bug batch merged; 4 PRs, every merge Fable-gated; qual deploy fired at close. ▶ next: verify deploy, run UATs #30/#31, remediate the 4 untagged places, Lane-3 Phase 2.) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding; Lanes 1–3 run on qual) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-07-25 (LATEST — session began as a TUI-crash recovery of s719 (done, PR #367), then PIVOTED F&F beta validation to owner-as-every-persona solo dogfooding + ran Lanes 1–3 of live testing on qual; also handled a qr-bell VPS co-tenancy request incl. decommissioning island-chronicles (data preserved). **No code shipped — all testing + one infra teardown.** main unchanged at the #367 commit. ▶ RESUME HERE: build the S6b action-picker feature + the 3-bug fix batch (both Fable-gated), finish Lane-3 Phase 2, reconcile the dt-tests board — details below.)**
+> **UPDATE 2026-07-27 (LATEST — session `s726`. Cleared the blocking audit gate, then shipped BOTH items the last handoff owed: the S6b action-picker feature and the 3-bug fix batch. **4 PRs merged (#368, #369, #370, #372), 1 issue filed (#371), every merge Fable-gated.** Also fixed a shared-Traefik cert for qr-bell and reconciled the dt-tests board. main `d7eeaf7`; **qual DEPLOYED + verified** at closeout. Session closed early for token budget, not because work stalled.)**
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION (user's explicit instruction)
+>
+> On the user's "resume", **before other work**: check and enable the **comms / tasks-prod / telegram MCP servers**, and **alert the user on any failure** (you cannot self-reconnect an MCP — ask them to run `/mcp`).
+>
+> 1. **`mcp__tasks-prod__comm_inbox`** — last processed seq = **271** (my own send). Pull `after_seq=271`.
+> 2. **Re-arm the A2A wake bridge** (NOT running — stopped at closeout). It is a `run_in_background` job, and daily-tour has **no local script** — use codecomedy-platform's with daily-tour's env:
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    ⚠️ **Gotcha that bit me this session:** `pgrep -f comm-watch\.mjs` showed 5 live bridges so I skipped arming — but all 5 were **codecomedy-platform's**. Check the _path/env_, not the count. Three qb:Aldraba messages sat unread until the user asked directly.
+> 3. **Telegram MCP** — verify it is loaded; alert if not.
+> 4. **dt-tests `review` poll** (`e03901a6-b656-4f38-a768-b98d4fa081cc`) — empty at close.
+>
+> ### ▶ THEN — the work queue
+>
+> 1. **Browser-UAT the guest surface** — **react-router v8 shipped in this batch** (see below), so a guest-regression pass is the one thing the deploy smoke did not cover. ✅ The deploy itself is DONE: `deploy-qa.yml` run `30237957209` **success**, `image_tag=d7eeaf71d2dd03f1f006c1e68fb7248481e9bd21`; verified live — guest `/` 200, `api/health` 200, `dt_catalog_svc` + `dt_bff` both on the `d7eeaf71…` tag, and **`/v1/admin/actions` → 401 (owner-gated, not 404)** proving the new taxonomy endpoint shipped.
+> 2. **Run UATs #30 + #31** on dt-tests — **already unblocked** (deploy-verified comment posted on both). **#30 step 7 is load-bearing** — the owner form can look perfect while the bug persists, because the defect was invisibility _downstream_ in guest discovery.
+> 3. **Remediate the 4 untagged places on qual.** Created before the picker existed, 0 action tags, invisible to guests until edited. The form now requires a category, so opening + saving each fixes them. **Deliberately not automated** — guessing categories for real places is the owner's call; ask the user.
+> 4. **Lane-3 Phase 2** — reservation revoke/agenda (mint a throwaway reservation) + survey-capture E2E (n8n form → `beta.survey_responses`). The last thing owed from the 07-25 lane model.
+> 5. **Issue #371** — the dev-dependency graph is **ungated** (`pnpm audit --prod` skips it) and holds 16 high + 1 **critical** (`vitest` <3.2.6 via `@vitest/coverage-v8@2.1.9`). Clearing it is a 2.x→3.x runner bump across all 11 suites. Carries a real policy question for the user: gate dev at `high` too, or review periodically? Gating would have caught it — but that is exactly the failure mode this session spent hours unblocking.
+>
+> ### Shipped (all merged; main `d7eeaf7`)
+>
+> - **#368 `fix(deps)` — the audit gate was blocking every push.** `pnpm audit --prod --audit-level=high` (lefthook pre-push **and** a required CI check) went red repo-wide: **14 high**. The 07-25 handoff diagnosed one family; it was four. **9 genuinely fixed** (sharp 0.35.3, react-router 8.3.0 ×2, + overrides: shell-quote `>=1.9.0` — the existing override sat _below_ the patched version — fast-uri `>=3.1.4 <4`, find-my-way `>=9.7.0 <10` (a real runtime fix: HTTP/2 DDoS in fastify's router), postcss, propagator-jaeger). **4 rescoped, NOT patched**: `packages/shared-config` declared eslint/typescript-eslint/prettier as prod `dependencies`, so eslint's whole transitive graph was audited as runtime code → moved to `devDependencies`. Those 4 resolve to _identical versions_ before and after — keep that distinction precise in any security record.
+> - **#369 `docs`** — the 07-25 handoff commit, unpushable until the gate cleared.
+> - **#370 `feat(places)` — the S6b action picker.** Closes the verified 🔴: owner-created places were invisible to guests (0 `place_action_wish` rows; all action-scoped discovery INNER JOINs it). **The handoff's plan needed correcting** — `wish_id` is NOT NULL ("at least one explicit wish per action tag"), so the planned six-button picker could never have written a valid row; it is **two-level** (action → ≥1 wish). Also needed a **new `GET /v1/actions`** taxonomy endpoint (none existed; only per-place hydration), served from the DB so a seed change can't desync the picker from the slugs the write path validates. Required on create; on PATCH `actions` **replaces** the tag set but is untouched when omitted.
+> - **#372 `fix(backoffice)` — the 3-bug batch.** Two were silent data loss: a half-filled opening-hours day saved as **CLOSED** (dropping the typed time, no warning), and 24h toggle-off reset to a hardcoded 09:00–17:00, discarding prior hours. Third: unslugifiable guesthouse name → opaque 400. **Broader than filed** — reported as an emoji quirk, but `slugify()` keeps only `[a-z0-9]`, so _any_ fully non-Latin name ("Ξενώνας") fails identically. Both guesthouse write hooks also discarded the server's `{error, details}`; they now surface it.
+> - **#371 filed** — ungated dev graph (queue item 5).
+>
+> ### Fable-5 gate — 3 reviews, no 🔴, two catches worth keeping
+>
+> - **#368:** my PR body claimed "14 fixed". Wrong — 9 fixed, 4 rescoped. Corrected before merge. **A security record must not overstate what was patched.**
+> - **#370:** six new picker strings were in **no** locale file, so the pt-PT console would render _"Pick at least one option for **Comer**"_ — English sentence, PT label interpolated. **`check:i18n` cannot catch this**: it diffs en↔pt-PT, so a key missing from _both_ is invisible. It passed while six user-visible strings had zero translations. Habit: add en+pt-PT+es together. A `t()`-callsite scan would close the hole properly.
+> - **#372:** `Math.random().toString(36)` drops trailing zeros → for an exact `0` the slug suffix is **empty**, building `guesthouse-` whose trailing hyphen fails the slug regex (reproduced). Padded to fixed width.
+> - Fable also **empirically proved** (not code-read) what I couldn't rule out by reading: transaction rollback in both directions via a forced-failure trigger (no orphan place on create failure; scalar update rolled back on PATCH failure), that PATCH cannot strip a place to zero tags, that the edit-prefill chain cannot silently wipe tags, and that the hours error renders for _every_ offending day.
+>
+> ### ⚠️ react-router v8 — shipped, and one non-obvious trap
+>
+> User chose migrating over waiving the RSC-CSRF advisory. The app is a pure client SPA so every v8 breaking change lands on unused surfaces — **but v8 moves the DOM `RouterProvider` to the `react-router/dom` entry** (root exports a non-DOM one). 16 import sites moved. That entry re-imports from the **bare** `react-router` specifier, and vitest externalized one entry to Node (`dist/production`) while inlining the other via vite (`dist/development`) → **two module instances, two React contexts, 77 tests failing** with `Cannot destructure property 'basename'`. Fixed with `test.server.deps.inline: ["react-router", "react-router/dom"]` in `apps/pwa/vitest.config.ts`. **Test-env only** — Fable confirmed the built bundle contains react-router's invariant strings exactly once. **Do not "clean up" that inline block.**
+>
+> ### qr-bell co-tenancy — cert fixed (cross-project)
+>
+> `qrb-qual.codecomedy.dev` was serving a cached **staging** cert from our shared Traefik. **A plain `docker restart dt_traefik` did NOT fix it** — the staging cert was persisted in `acme.json` under the `letsencrypt-staging` resolver, and Traefik aggregates all resolvers into one SNI-keyed store, so it reloaded the stale cert and never called ACME. Fix: filter that domain out of `acme.json` (dry-run to a temp file first; both ACME account keys preserved; `cat >` keeps inode + `600 root:root`), then restart → real LE cert, `/api/health` 200 on a trusted curl. Backup: `/opt/daily-tour/infra/traefik/acme/acme.json.bak-20260727-004541`. daily-tour unaffected (4 hosts re-verified, 23 `dt_` containers Up). Also answered Aldraba's open question: **the image-prune cron is `docker image prune -f` — dangling-only**, deliberately narrowed during plan-007, so their `:sha` rollback tags survive.
+>
+> ### dt-tests board reconciled
+>
+> **#25, #26, #27, #28 closed** with evidence comments. On **#25**: it was at risk of being closed as _obsolete_ — that would be wrong. Slice-2 reflows `/admin/places` to cards **below `md` only**; the desktop table keeps pagination + sorting, so the original criteria still describe the live surface. **#30** (action picker) and **#31** (the 3 fixes) filed, both `blocked-on-deploy`. **#22** left deferred-until-prod.
+>
+> ### State (07-27 close)
+>
+> main **`d7eeaf7`** == origin/main · **0 open PRs** · local branches **main only** · tree clean (only the perennial untracked `e2e/`) · **no live subagents** (all 3 Fable gates shut down) · **A2A bridge STOPPED** (re-arm per FIRST ACTIONS) · `Publish images` green for `d7eeaf7` · **qual = `d7eeaf7`, deploy verified.** Memory updated: [[project-ff-testing-pivot]], [[project-subscription-backoffice]], `MEMORY.md`.
+
+> **UPDATE 2026-07-25 (session began as a TUI-crash recovery of s719 (done, PR #367), then PIVOTED F&F beta validation to owner-as-every-persona solo dogfooding + ran Lanes 1–3 of live testing on qual; also handled a qr-bell VPS co-tenancy request incl. decommissioning island-chronicles (data preserved). **No code shipped — all testing + one infra teardown.** main unchanged at the #367 commit. ▶ RESUME HERE: build the S6b action-picker feature + the 3-bug fix batch (both Fable-gated), finish Lane-3 Phase 2, reconcile the dt-tests board — details below.)**
 >
 > ### The pivot (headline)
 >
