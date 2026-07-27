@@ -18,6 +18,18 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     return reply.code(200).send(await res.json());
   });
 
+  // The action/wish taxonomy backing the place form's action picker. Reference data,
+  // owner-gated like the rest of /v1/admin.
+  fastify.get("/v1/admin/actions", { config: { auth: "owner" } }, async (_req, reply) => {
+    const { CATALOG_SVC_URL } = loadConfig();
+    const res = await fetch(`${CATALOG_SVC_URL}/v1/actions`);
+    if (!res.ok) {
+      fastify.log.error({ status: res.status }, "[admin-places] catalog-svc actions error");
+      return reply.code(502).send({ error: "catalog_unavailable" });
+    }
+    return reply.code(200).send(await res.json());
+  });
+
   fastify.post("/v1/admin/places", { config: { auth: "owner" } }, async (req, reply) => {
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/places`, {
@@ -35,9 +47,7 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
       return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
     }
     const { CATALOG_SVC_URL } = loadConfig();
-    const res = await fetch(
-      `${CATALOG_SVC_URL}/v1/places/${parsed.data.id}?include_archived=true`,
-    );
+    const res = await fetch(`${CATALOG_SVC_URL}/v1/places/${parsed.data.id}?include_archived=true`);
     if (!res.ok) {
       return reply.code(res.status === 404 ? 404 : 502).send({ error: "catalog_error" });
     }

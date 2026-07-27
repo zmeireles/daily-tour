@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, ne, and, lt, or, sql, type SQL } from "drizzle-orm";
+import { eq, ne, and, lt, or, sql, inArray, asc, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, type Db } from "../db/client.js";
 import {
@@ -45,7 +45,21 @@ const HoursSchema = z
   )
   .default([]);
 
+// Action tagging. Discovery reaches a place only through place_action_wish, and that
+// join carries a NOT NULL wish_id — an action with no wish cannot be represented at
+// all. Required on create (min 1 action, min 1 wish each): a place with no rows is
+// invisible to every guest surface, which is exactly the defect this closes.
+const PlaceActionsSchema = z
+  .array(
+    z.object({
+      action_slug: z.string().min(1).max(64),
+      wish_slugs: z.array(z.string().min(1).max(64)).min(1),
+    }),
+  )
+  .min(1);
+
 const CreatePlaceBodySchema = z.object({
+  actions: PlaceActionsSchema,
   guesthouse_scope: GuesthouseScopeSchema,
   name: I18nSchema,
   description: I18nSchema,
@@ -90,6 +104,77 @@ const GetQuerySchema = z.object({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+type PlaceActionsInput = z.infer<typeof PlaceActionsSchema>;
+type ActionWishPair = { actionId: string; wishId: string };
+
+/**
+ * Resolve {action_slug, wish_slugs[]} pairs into concrete place_action_wish rows.
+ *
+ * Wish slugs are unique only *within* an action ("sea-view" exists under both Eat and
+ * Drink), so each wish is looked up against its own action rather than globally.
+ * Returns the offending slugs instead of throwing so the caller can reject the whole
+ * request — a partially-applied tag set would silently under-expose the place. Resolves
+ * ahead of any write so an unknown slug never leaves an untagged place behind.
+ */
+async function resolveActionWishPairs(
+  db: Db,
+  actions: PlaceActionsInput,
+): Promise<{ pairs: ActionWishPair[] } | { unknown: string[] }> {
+  const rows = await db
+    .select({
+      actionId: actionTable.id,
+      actionSlug: actionTable.slug,
+      wishId: wishTable.id,
+      wishSlug: wishTable.slug,
+    })
+    .from(actionTable)
+    .leftJoin(wishTable, eq(wishTable.actionId, actionTable.id))
+    .where(
+      inArray(
+        actionTable.slug,
+        actions.map((a) => a.action_slug),
+      ),
+    );
+
+  const byAction = new Map<string, { id: string; wishes: Map<string, string> }>();
+  for (const row of rows) {
+    let entry = byAction.get(row.actionSlug);
+    if (!entry) {
+      entry = { id: row.actionId, wishes: new Map() };
+      byAction.set(row.actionSlug, entry);
+    }
+    // leftJoin yields a null wish row for an action that has no wishes seeded.
+    if (row.wishSlug !== null && row.wishId !== null) entry.wishes.set(row.wishSlug, row.wishId);
+  }
+
+  const unknown: string[] = [];
+  // Set-dedupe: the composite PK (place, action, wish) rejects duplicates, and a
+  // client repeating a pair should not turn into a 409.
+  const seen = new Set<string>();
+  const resolved: ActionWishPair[] = [];
+
+  for (const action of actions) {
+    const entry = byAction.get(action.action_slug);
+    if (!entry) {
+      unknown.push(`action:${action.action_slug}`);
+      continue;
+    }
+    for (const wishSlug of action.wish_slugs) {
+      const wishId = entry.wishes.get(wishSlug);
+      if (!wishId) {
+        unknown.push(`wish:${action.action_slug}/${wishSlug}`);
+        continue;
+      }
+      const key = `${entry.id}:${wishId}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      resolved.push({ actionId: entry.id, wishId });
+    }
+  }
+
+  return unknown.length > 0 ? { unknown } : { pairs: resolved };
+}
+
 // Keyset cursor on createdAt (immutable) — NOT updatedAt. Ordering by updatedAt
 // would reshuffle the list on every PATCH (e.g. a host's-pick toggle bumps
 // updated_at and jumps the row to the top). createdAt is set once at insert.
@@ -110,6 +195,29 @@ function decodeCursor(cursor: string): { createdAt: string; id: string } | null 
 
 // Media for a single place, in display (sort_order) order. Kept separate from
 // formatPlace so list/POST/PATCH responses don't trigger a per-row media query.
+/**
+ * A place's action tags, shaped exactly like the write contract so the owner form can
+ * round-trip read → edit → save without a translation layer. Single-place read only —
+ * deliberately not folded into the list query, which would make it N+1.
+ */
+async function fetchPlaceActions(db: Db, placeId: string): Promise<PlaceActionsInput> {
+  const rows = await db
+    .select({ actionSlug: actionTable.slug, wishSlug: wishTable.slug })
+    .from(placeActionWishTable)
+    .innerJoin(actionTable, eq(placeActionWishTable.actionId, actionTable.id))
+    .innerJoin(wishTable, eq(placeActionWishTable.wishId, wishTable.id))
+    .where(eq(placeActionWishTable.placeId, placeId))
+    .orderBy(asc(actionTable.sortOrder), asc(wishTable.sortOrder));
+
+  const byAction = new Map<string, string[]>();
+  for (const row of rows) {
+    const wishes = byAction.get(row.actionSlug);
+    if (wishes) wishes.push(row.wishSlug);
+    else byAction.set(row.actionSlug, [row.wishSlug]);
+  }
+  return [...byAction.entries()].map(([action_slug, wish_slugs]) => ({ action_slug, wish_slugs }));
+}
+
 async function fetchPlaceMedia(db: Db, placeId: string) {
   const rows = await db
     .select({
@@ -241,8 +349,11 @@ export function placesRoutes(app: FastifyInstance): void {
       return reply.code(404).send({ error: "place_not_found" });
     }
 
-    const media = await fetchPlaceMedia(db, row.id);
-    return { ...formatPlace(row), media };
+    const [media, actions] = await Promise.all([
+      fetchPlaceMedia(db, row.id),
+      fetchPlaceActions(db, row.id),
+    ]);
+    return { ...formatPlace(row), media, actions };
   });
 
   // GET /v1/places/:id/hydrated — place + media + actions + wishes (joined).
@@ -372,6 +483,54 @@ export function placesRoutes(app: FastifyInstance): void {
     };
   });
 
+  // GET /v1/actions — the whole action/wish taxonomy (reference data: 6 actions,
+  // ~6 wishes each). The owner place form needs it to render its picker; serving it
+  // from the DB keeps the picker honest, since hardcoding slugs client-side would
+  // desync from the seed and surface only as failed writes.
+  app.get("/v1/actions", async () => {
+    const db = getDb();
+    const rows = await db
+      .select({
+        actionSlug: actionTable.slug,
+        actionI18n: actionTable.i18n,
+        actionIcon: actionTable.icon,
+        wishSlug: wishTable.slug,
+        wishI18n: wishTable.i18n,
+      })
+      .from(actionTable)
+      .leftJoin(wishTable, eq(wishTable.actionId, actionTable.id))
+      // Display order is authored in the seed (sort_order), not by the client.
+      .orderBy(asc(actionTable.sortOrder), asc(wishTable.sortOrder));
+
+    type ActionOut = {
+      slug: string;
+      label_i18n: Record<string, string>;
+      icon: string;
+      wishes: { slug: string; label_i18n: Record<string, string> }[];
+    };
+
+    const byAction = new Map<string, ActionOut>();
+    for (const row of rows) {
+      let entry = byAction.get(row.actionSlug);
+      if (!entry) {
+        entry = {
+          slug: row.actionSlug,
+          label_i18n: row.actionI18n,
+          icon: row.actionIcon,
+          wishes: [],
+        };
+        byAction.set(row.actionSlug, entry);
+      }
+      // An action with no seeded wishes still appears, with an empty wish list — the
+      // form can then disable it rather than offer an unsatisfiable choice.
+      if (row.wishSlug !== null) {
+        entry.wishes.push({ slug: row.wishSlug, label_i18n: row.wishI18n! });
+      }
+    }
+
+    return { data: [...byAction.values()] };
+  });
+
   // POST /v1/places
   app.post("/v1/places", async (req, reply) => {
     const parsed = CreatePlaceBodySchema.safeParse(req.body);
@@ -386,25 +545,43 @@ export function placesRoutes(app: FastifyInstance): void {
     }
 
     const db = getDb();
+
+    // Resolve the action/wish slugs before writing anything: an unknown slug must not
+    // leave behind an untagged (i.e. undiscoverable) place.
+    const resolved = await resolveActionWishPairs(db, body.actions);
+    if ("unknown" in resolved) {
+      return reply.code(422).send({ error: "unknown_action_or_wish", details: resolved.unknown });
+    }
+
     try {
-      const [created] = await db
-        .insert(placeTable)
-        .values({
-          guesthouseScope: body.guesthouse_scope,
-          name: body.name,
-          description: body.description,
-          geomLat: body.geom_lat,
-          geomLng: body.geom_lng,
-          address: body.address,
-          contacts: body.contacts,
-          hours: body.hours,
-          season: body.season ?? null,
-          status: body.status,
-          isHostsPick: body.is_hosts_pick,
-          sourceKind: body.source_kind,
-          sourceRef: body.source_ref,
-        })
-        .returning();
+      const created = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(placeTable)
+          .values({
+            guesthouseScope: body.guesthouse_scope,
+            name: body.name,
+            description: body.description,
+            geomLat: body.geom_lat,
+            geomLng: body.geom_lng,
+            address: body.address,
+            contacts: body.contacts,
+            hours: body.hours,
+            season: body.season ?? null,
+            status: body.status,
+            isHostsPick: body.is_hosts_pick,
+            sourceKind: body.source_kind,
+            sourceRef: body.source_ref,
+          })
+          .returning();
+
+        if (!row) return null;
+
+        await tx
+          .insert(placeActionWishTable)
+          .values(resolved.pairs.map((p) => ({ placeId: row.id, ...p })));
+
+        return row;
+      });
 
       if (!created) {
         return reply.code(500).send({ error: "insert_failed" });
@@ -470,11 +647,35 @@ export function placesRoutes(app: FastifyInstance): void {
     if (updates.is_hosts_pick !== undefined) patch.isHostsPick = updates.is_hosts_pick;
     if (updates.source_ref !== undefined) patch.sourceRef = updates.source_ref;
 
-    const [updated] = await db
-      .update(placeTable)
-      .set(patch)
-      .where(eq(placeTable.id, paramsParsed.data.id))
-      .returning();
+    // `actions` is omitted on most PATCHes (a pick toggle, a status flip) and must be
+    // left alone then. When present it REPLACES the whole tag set — the zod min(1)
+    // still applies, so a place can never be patched down to zero tags and vanish
+    // from discovery.
+    let resolvedPairs: ActionWishPair[] | null = null;
+    if (updates.actions !== undefined) {
+      const resolved = await resolveActionWishPairs(db, updates.actions);
+      if ("unknown" in resolved) {
+        return reply.code(422).send({ error: "unknown_action_or_wish", details: resolved.unknown });
+      }
+      resolvedPairs = resolved.pairs;
+    }
+
+    const updated = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(placeTable)
+        .set(patch)
+        .where(eq(placeTable.id, paramsParsed.data.id))
+        .returning();
+
+      if (row && resolvedPairs) {
+        await tx.delete(placeActionWishTable).where(eq(placeActionWishTable.placeId, row.id));
+        await tx
+          .insert(placeActionWishTable)
+          .values(resolvedPairs.map((p) => ({ placeId: row.id, ...p })));
+      }
+
+      return row;
+    });
 
     return formatPlace(updated!);
   });

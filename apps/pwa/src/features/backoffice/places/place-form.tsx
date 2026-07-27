@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronDown } from "lucide-react";
-import { useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
+import { useActionTaxonomy, useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
+import { ActionPicker } from "./action-picker";
 import { MediaUploader, type UploadedAsset } from "./media-uploader";
 import { OpeningHoursEditor, hoursToRows, rowsToHours } from "./opening-hours-editor";
 import { LocationPicker } from "@/features/backoffice/location-picker";
@@ -81,6 +82,18 @@ const FormSchema = z.object({
   hours: z.array(z.object({ open: z.string().default(""), close: z.string().default("") })),
   // "" maps to null (year-round) on submit; "summer"/"winter" pass through.
   season: z.enum(["", "summer", "winter"]).default(""),
+  // Action tags. Required, and every chosen action needs ≥1 wish — mirrors the
+  // catalog-svc contract exactly. Without a tag the place is invisible to guests
+  // (action-scoped discovery INNER JOINs place_action_wish), which is the whole
+  // reason this field exists, so it blocks Save rather than warning.
+  actions: z
+    .array(
+      z.object({
+        action_slug: z.string(),
+        wish_slugs: z.array(z.string()).min(1, "Pick at least one option"),
+      }),
+    )
+    .min(1, "Pick at least one category"),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -117,6 +130,7 @@ export function PlaceForm({ initialData, id }: Props) {
     toUploadedAssets(initialData?.media),
   );
 
+  const taxonomyQuery = useActionTaxonomy();
   const createMutation = useCreatePlace();
   const updateMutation = useUpdatePlace(id ?? "");
   const isEdit = !!id;
@@ -143,6 +157,7 @@ export function PlaceForm({ initialData, id }: Props) {
       contact_website: initialData?.contacts?.website ?? "",
       hours: hoursToRows(initialData?.hours),
       season: initialData?.season ?? "",
+      actions: initialData?.actions ?? [],
     },
   });
 
@@ -209,6 +224,7 @@ export function PlaceForm({ initialData, id }: Props) {
         guesthouse_scope: { all: true },
         source_kind: "manual",
         media: mediaAssets.map((a) => a.assetId),
+        actions: values.actions,
       };
       if (isEdit) {
         await updateMutation.mutateAsync(body);
@@ -224,6 +240,13 @@ export function PlaceForm({ initialData, id }: Props) {
       if (errors.geom_lat ?? errors.geom_lng) setCoordsOpen(true);
     },
   );
+
+  const selectedActions = form.watch("actions");
+  // The array-level message (min 1 category) lives on `.root`/the array itself; a
+  // per-action "needs a wish" surfaces inline in the picker, so only the array-level
+  // one is rendered here.
+  const actionsError =
+    form.formState.errors.actions?.message ?? form.formState.errors.actions?.root?.message;
 
   const mutationError = isEdit ? updateMutation.error : createMutation.error;
   const heading = isEdit ? t("places.edit", "Edit Place") : t("places.new", "New Place");
@@ -286,6 +309,47 @@ export function PlaceForm({ initialData, id }: Props) {
                 kind="prose"
                 translation={translation}
               />
+            </CardContent>
+          </Card>
+
+          {/* Descoberta — action + wish tags. Without these the place is invisible
+              to guests, so this sits high in the form, not buried at the bottom. */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("places.form.sections.discovery", "How guests find this")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {taxonomyQuery.isPending ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("places.form.actions.loading", "Loading categories…")}
+                </p>
+              ) : taxonomyQuery.isError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {t(
+                    "places.form.actions.loadError",
+                    "Could not load categories. Reload the page to try again.",
+                  )}
+                </p>
+              ) : (
+                <ActionPicker
+                  taxonomy={taxonomyQuery.data ?? []}
+                  value={selectedActions}
+                  locale={activeLocale}
+                  onChange={(next) =>
+                    form.setValue("actions", next, {
+                      shouldDirty: true,
+                      // Re-validate as they go so the Save-blocking error clears the
+                      // moment the selection becomes valid.
+                      shouldValidate: true,
+                    })
+                  }
+                />
+              )}
+              {actionsError && (
+                <p className="mt-3 text-sm text-destructive" role="alert">
+                  {actionsError}
+                </p>
+              )}
             </CardContent>
           </Card>
 

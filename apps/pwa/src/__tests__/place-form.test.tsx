@@ -50,9 +50,28 @@ vi.mock("@/lib/i18n/use-field-translation", async (importActual) => {
 vi.mock("@/features/backoffice/places/use-places", () => ({
   useCreatePlace: vi.fn(),
   useUpdatePlace: vi.fn(),
+  useActionTaxonomy: vi.fn(),
 }));
 
-const { useCreatePlace, useUpdatePlace } = await import("@/features/backoffice/places/use-places");
+const { useCreatePlace, useUpdatePlace, useActionTaxonomy } =
+  await import("@/features/backoffice/places/use-places");
+
+// The action picker's taxonomy. Two actions with one wish each is enough to drive
+// select/deselect and the "action without a wish" invalid state.
+const TAXONOMY = [
+  {
+    slug: "eat",
+    icon: "utensils",
+    label_i18n: { en: "Eat", "pt-PT": "Comer" },
+    wishes: [{ slug: "sea-view", label_i18n: { en: "Sea view", "pt-PT": "Vista para o mar" } }],
+  },
+  {
+    slug: "drink",
+    icon: "wine",
+    label_i18n: { en: "Drink", "pt-PT": "Beber" },
+    wishes: [{ slug: "cafe", label_i18n: { en: "Café", "pt-PT": "Café" } }],
+  },
+];
 
 const mockUseCreatePlace = vi.mocked(useCreatePlace);
 const mockUseUpdatePlace = vi.mocked(useUpdatePlace);
@@ -74,6 +93,9 @@ function makePlace(over: Partial<PlaceRow>): PlaceRow {
     source_ref: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    // A real persisted place always carries at least one tag; the edit form
+    // pre-fills the picker from it.
+    actions: [{ action_slug: "eat", wish_slugs: ["sea-view"] }],
     ...over,
   };
 }
@@ -100,16 +122,34 @@ function saveButton() {
   return screen.getByRole("button", { name: /^save$/i });
 }
 
+// Picks Eat → Sea view, tolerating an already-selected state so it can be called
+// on an edit form whose initialData already carries tags. Labels follow the active
+// content-locale tab, so call this after the English switch in fillRequired.
+function pickCategory() {
+  const action = screen.getByRole("button", { name: "Eat" });
+  if (action.getAttribute("aria-pressed") !== "true") fireEvent.click(action);
+  const wish = screen.getByRole("button", { name: "Sea view" });
+  if (wish.getAttribute("aria-pressed") !== "true") fireEvent.click(wish);
+}
+
 // Fills the required English content + address so a create/edit submit passes.
+// At least one action+wish is required too — a place with no tag never reaches a
+// guest, so the form refuses to save one.
 function fillRequired() {
   fireEvent.click(tab("English"));
   fireEvent.change(nameInput(), { target: { value: "Cafe" } });
   fireEvent.change(descriptionInput(), { target: { value: "Nice" } });
   fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
+  pickCategory();
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(useActionTaxonomy).mockReturnValue({
+    data: TAXONOMY,
+    isPending: false,
+    isError: false,
+  } as unknown as ReturnType<typeof useActionTaxonomy>);
   createMutate.mockResolvedValue({});
   updateMutate.mockResolvedValue({});
   mockUseCreatePlace.mockReturnValue({
@@ -214,6 +254,9 @@ describe("PlaceForm", () => {
     fireEvent.change(descriptionInput(), { target: { value: "Acogedor" } });
 
     fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
+    // Seeded taxonomy labels are en + pt-PT only, so the picker falls back to the
+    // English label under the Spanish tab.
+    pickCategory();
     fireEvent.click(saveButton());
 
     await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
@@ -233,6 +276,90 @@ describe("PlaceForm", () => {
     // name_en, description_en and address are required and empty in create mode.
     await waitFor(() => expect(screen.getAllByText("Required").length).toBeGreaterThan(0));
     expect(createMutate).not.toHaveBeenCalled();
+  });
+
+  // S6b: owner-created places used to save with zero action tags, which made them
+  // invisible to every guest surface (action-scoped discovery INNER JOINs
+  // place_action_wish). The picker is required precisely to make that unreachable.
+  describe("action picker", () => {
+    it("blocks save when no category is picked, and does not call the mutation", async () => {
+      render(<PlaceForm />);
+      fireEvent.click(tab("English"));
+      fireEvent.change(nameInput(), { target: { value: "Cafe" } });
+      fireEvent.change(descriptionInput(), { target: { value: "Nice" } });
+      fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
+
+      fireEvent.click(saveButton());
+
+      expect(await screen.findByText(/pick at least one category/i)).toBeInTheDocument();
+      expect(createMutate).not.toHaveBeenCalled();
+    });
+
+    it("blocks save when an action is picked but carries no wish", async () => {
+      render(<PlaceForm />);
+      fireEvent.click(tab("English"));
+      fireEvent.change(nameInput(), { target: { value: "Cafe" } });
+      fireEvent.change(descriptionInput(), { target: { value: "Nice" } });
+      fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
+      fireEvent.click(screen.getByRole("button", { name: "Eat" }));
+
+      // The incomplete state is flagged inline as soon as the action is selected.
+      expect(screen.getByText(/pick at least one option for eat/i)).toBeInTheDocument();
+
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(createMutate).not.toHaveBeenCalled());
+    });
+
+    it("sends the picked action+wish pairs in the create body", async () => {
+      render(<PlaceForm />);
+      fillRequired();
+      // A second action, to prove multi-select round-trips.
+      fireEvent.click(screen.getByRole("button", { name: "Drink" }));
+      fireEvent.click(screen.getByRole("button", { name: "Café" }));
+
+      fireEvent.click(saveButton());
+
+      await waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
+      expect(createMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actions: [
+            { action_slug: "eat", wish_slugs: ["sea-view"] },
+            { action_slug: "drink", wish_slugs: ["cafe"] },
+          ],
+        }),
+      );
+    });
+
+    it("pre-fills the picker from an existing place's tags on edit", () => {
+      render(<PlaceForm id="p1" initialData={makePlace({})} />);
+      fireEvent.click(tab("English"));
+
+      expect(screen.getByRole("button", { name: "Eat" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Sea view" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: "Drink" })).toHaveAttribute(
+        "aria-pressed",
+        "false",
+      );
+    });
+
+    it("deselecting an action drops it and its wishes from the body", async () => {
+      render(<PlaceForm id="p1" initialData={makePlace({ name: { en: "P" } })} />);
+      fillRequired();
+      fireEvent.click(screen.getByRole("button", { name: "Drink" }));
+      fireEvent.click(screen.getByRole("button", { name: "Café" }));
+      // Now drop Eat again — Drink/Café must survive alone.
+      fireEvent.click(screen.getByRole("button", { name: "Eat" }));
+
+      fireEvent.click(saveButton());
+
+      await waitFor(() => expect(updateMutate).toHaveBeenCalledTimes(1));
+      expect(updateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ actions: [{ action_slug: "drink", wish_slugs: ["cafe"] }] }),
+      );
+    });
   });
 
   it("submitting create mode calls useCreatePlace().mutateAsync with the form body", async () => {

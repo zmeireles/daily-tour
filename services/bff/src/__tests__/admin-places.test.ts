@@ -81,11 +81,14 @@ describe("BFF admin-places routes", () => {
       payload: { sub: "owner-1", aud: "staff" },
     });
     const catalogResponse = { data: [MOCK_PLACE], nextCursor: null };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(catalogResponse),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(catalogResponse),
+      }),
+    );
 
     const res = await app.inject({
       method: "GET",
@@ -101,11 +104,14 @@ describe("BFF admin-places routes", () => {
       privateKey: keypair.privateKey,
       payload: { sub: "owner-1", aud: "staff" },
     });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-      json: () => Promise.resolve(MOCK_PLACE),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve(MOCK_PLACE),
+      }),
+    );
 
     const res = await app.inject({
       method: "POST",
@@ -126,16 +132,80 @@ describe("BFF admin-places routes", () => {
     expect(res.json()).toMatchObject({ id: MOCK_PLACE.id });
   });
 
+  it("GET /v1/admin/actions — no auth → 401", async () => {
+    const res = await app.inject({ method: "GET", url: "/v1/admin/actions" });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("GET /v1/admin/actions — valid owner JWT → proxies the taxonomy from catalog-svc", async () => {
+    const jwt = await signOwnerJwt({
+      privateKey: keypair.privateKey,
+      payload: { sub: "owner-1", aud: "staff" },
+    });
+    const taxonomy = {
+      data: [
+        {
+          slug: "eat",
+          icon: "utensils",
+          label_i18n: { en: "Eat", "pt-PT": "Comer" },
+          wishes: [{ slug: "sea-view", label_i18n: { en: "Sea view" } }],
+        },
+      ],
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(taxonomy),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/admin/actions",
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject(taxonomy);
+    expect(fetchMock).toHaveBeenCalledWith("http://catalog.test/v1/actions");
+  });
+
+  it("GET /v1/admin/actions — catalog-svc down → 502 rather than an empty picker", async () => {
+    const jwt = await signOwnerJwt({
+      privateKey: keypair.privateKey,
+      payload: { sub: "owner-1", aud: "staff" },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({}),
+      }),
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/admin/actions",
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+    expect(res.statusCode).toBe(502);
+    expect(res.json()).toMatchObject({ error: "catalog_unavailable" });
+  });
+
   it("DELETE /v1/admin/places/:id — valid owner JWT → proxies archive to catalog-svc, returns 204", async () => {
     const jwt = await signOwnerJwt({
       privateKey: keypair.privateKey,
       payload: { sub: "owner-1", aud: "staff" },
     });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      status: 204,
-      json: () => Promise.resolve(null),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 204,
+        json: () => Promise.resolve(null),
+      }),
+    );
 
     const res = await app.inject({
       method: "DELETE",
