@@ -73,9 +73,16 @@ function slugify(input: string): string {
  * it stays editable under "Avançado" if the owner wants a nicer URL.
  */
 function slugForSave(explicit: string, ...nameCandidates: string[]): string {
-  const chosen = explicit.trim() || slugify(nameCandidates.find(Boolean) ?? "");
+  // Slugify every candidate and take the first that yields something, rather than
+  // slugifying only the first non-empty NAME: with name_en "Ξενώνας" and name_pt
+  // "Casa Azul", the latter is a perfectly good slug and should win over a
+  // generated one.
+  const chosen = explicit.trim() || nameCandidates.map(slugify).find(Boolean);
   if (chosen) return chosen;
-  return `guesthouse-${Math.random().toString(36).slice(2, 8)}`;
+  // Math.random().toString(36) drops trailing zeros, so the slice can come back
+  // short — or empty for an exact 0, which would build "guesthouse-" and fail the
+  // slug regex on a trailing hyphen. Pad to a fixed width.
+  return `guesthouse-${Math.random().toString(36).slice(2, 8).padEnd(6, "0")}`;
 }
 
 // zodContentFields returns an index-signature shape; assert the concrete keys so

@@ -103,8 +103,11 @@ export function OpeningHoursEditor() {
   function toggle24h(i: number, on: boolean) {
     if (on) {
       const current = rows?.[i];
-      // Only stash real hours — a half-filled or blank row is not worth restoring.
-      if (current?.open && current.close) preH24.current.set(i, { ...current });
+      // Stash anything the owner actually typed, including a half-filled row.
+      // Restoring a partial re-surfaces the "both times required" prompt, which
+      // beats replacing their input with the 09:00–17:00 default — discarding
+      // typed input silently is the very thing this editor was fixed for.
+      if (current?.open || current?.close) preH24.current.set(i, { ...current });
       setRow(i, H24_OPEN, H24_CLOSE);
       return;
     }

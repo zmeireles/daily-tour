@@ -273,7 +273,23 @@ describe("GuesthouseForm", () => {
 
     await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
     const body = createMutateAsync.mock.calls[0]![0] as { slug: string };
-    expect(body.slug).toMatch(/^guesthouse-[a-z0-9]{1,6}$/);
+    expect(body.slug).toMatch(/^guesthouse-[a-z0-9]{6}$/);
+  });
+
+  it("prefers a slugifiable name from another locale over a generated slug", async () => {
+    render(<GuesthouseForm />);
+    // en is required, so a non-Latin en name with a usable pt name is a realistic
+    // pairing — the pt one should win rather than falling back to a random slug.
+    fireEvent.click(tab("English"));
+    fireEvent.change(nameInput(), { target: { value: "Ξενώνας" } });
+    fireEvent.click(tab("Portuguese"));
+    fireEvent.change(nameInput(), { target: { value: "Casa Azul" } });
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Furnas" } });
+
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
+    expect(createMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ slug: "casa-azul" }));
   });
 
   it("uses an explicit slug verbatim when the owner types one", async () => {

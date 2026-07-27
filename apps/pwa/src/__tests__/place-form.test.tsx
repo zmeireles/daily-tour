@@ -547,6 +547,23 @@ describe("PlaceForm", () => {
       expect(screen.getByLabelText("Mon closing time")).toHaveValue("23:00");
     });
 
+    it("restores a half-filled row through the 24h round-trip rather than defaulting", () => {
+      render(<PlaceForm />);
+
+      fireEvent.click(screen.getByRole("switch", { name: /toggle hours for mon/i }));
+      fireEvent.change(screen.getByLabelText("Mon opening time"), { target: { value: "08:00" } });
+      fireEvent.change(screen.getByLabelText("Mon closing time"), { target: { value: "" } });
+
+      const h24 = screen.getByRole("switch", { name: /open 24h — mon/i });
+      fireEvent.click(h24);
+      fireEvent.click(h24);
+
+      // The typed half survives; the still-missing half re-raises the prompt,
+      // which is better than quietly replacing 08:00 with the 09:00 default.
+      expect(screen.getByLabelText("Mon opening time")).toHaveValue("08:00");
+      expect(screen.getByLabelText("Mon closing time")).toHaveValue("");
+    });
+
     it("falls back to the default hours when a day was already 24h on load", () => {
       render(
         <PlaceForm
