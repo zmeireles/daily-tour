@@ -10,9 +10,10 @@ Listens on `:8081`.
 | ------ | ------------------------------ | ----------------------------------------------------------------------------------------------- |
 | GET    | `/health`                      | Liveness probe (no rate-limit).                                                                 |
 | GET    | `/v1/places`                   | List with cursor pagination + filters (`?status`, `?guesthouse_scope_id`, `?include_archived`). |
-| GET    | `/v1/places/:id`               | Get by id; 404 if archived unless `?include_archived=true`.                                     |
-| POST   | `/v1/places`                   | Create. Validates body against zod; 409 on dup-key.                                             |
-| PATCH  | `/v1/places/:id`               | Partial update; 404 if archived.                                                                |
+| GET    | `/v1/places/:id`               | Get by id (incl. `media` + `actions`); 404 if archived unless `?include_archived=true`.         |
+| POST   | `/v1/places`                   | Create. **`actions` required** (≥1 action, ≥1 wish each); 422 on unknown slug; 409 on dup-key.  |
+| PATCH  | `/v1/places/:id`               | Partial update; `actions` (if sent) **replaces** the tag set; 404 if archived.                  |
+| GET    | `/v1/actions`                  | Action/wish taxonomy (reference data) backing the owner form's action picker.                   |
 | DELETE | `/v1/places/:id`               | **Soft-delete** (`status='archived'`). Idempotent: 204 even if already archived.                |
 | GET    | `/v1/guesthouses`              | List with cursor + `?slug=` filter.                                                             |
 | GET    | `/v1/guesthouses/:id`          | Get by id.                                                                                      |

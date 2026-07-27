@@ -70,11 +70,16 @@ export function ActionPicker({ taxonomy, value, onChange, locale, disabled }: Pr
       <div className="flex flex-wrap gap-2">
         {taxonomy.map((action) => {
           const selected = !!selectedFor(action.slug);
+          // An action with no wishes can never satisfy the ≥1-wish rule, so
+          // selecting it would block Save with a per-item error that has nowhere
+          // to render. Unreachable with the current seed (every action has 6
+          // wishes), but cheap insurance against a silent dead end.
+          const unusable = action.wishes.length === 0;
           return (
             <button
               key={action.slug}
               type="button"
-              disabled={disabled}
+              disabled={disabled || (unusable && !selected)}
               aria-pressed={selected}
               onClick={() => toggleAction(action.slug)}
               className={cn(
