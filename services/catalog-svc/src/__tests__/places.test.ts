@@ -16,6 +16,7 @@ const { closePool } = await import("../db/client.js");
 const { resetConfigCache } = await import("../config.js");
 
 const VALID_BODY = {
+  actions: [{ action_slug: "eat", wish_slugs: ["sea-view"] }],
   guesthouse_scope: { all: true as const },
   name: { en: "Test Place", "pt-PT": "Lugar de Teste" },
   description: { en: "A place", "pt-PT": "Um lugar" },
@@ -44,8 +45,6 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   afterAll(async () => {
     await app.close();
-    await closePool();
-    await stopTestPostgres(ctx);
   });
 
   it("create + get + list happy path", async () => {
@@ -245,11 +244,6 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     const { id: placeId } = create.json<{ id: string }>();
 
     await ctx.pool.query(
-      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
-      [placeId, actionId, wishId],
-    );
-
-    await ctx.pool.query(
       `INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort_order)
        VALUES ($1, $2, 'image', 'https://example.com/img.jpg', '{"en":"A place"}'::jsonb,
                '{"author":"Jane Doe","license":"CC BY-SA 4.0","source_url":"https://example.com/file"}'::jsonb, 0)`,
@@ -307,11 +301,6 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(create.statusCode).toBe(201);
     const { id: placeId } = create.json<{ id: string }>();
 
-    await ctx.pool.query(
-      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
-      [placeId, actionId, wishId],
-    );
-
     const res = await app.inject({
       method: "GET",
       url: "/v1/places-by-action?action_slug=eat",
@@ -342,10 +331,6 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
       payload: VALID_BODY,
     });
     const { id: placeWithMedia } = createWithMedia.json<{ id: string }>();
-    await ctx.pool.query(
-      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
-      [placeWithMedia, actionId, wishId],
-    );
     // A video (excluded by kind filter) at sort_order 0, plus two images; the
     // lowest-sort_order image (sort_order 1) is the expected hero.
     await ctx.pool.query(
@@ -363,10 +348,6 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
       payload: VALID_BODY,
     });
     const { id: placeNoMedia } = createNoMedia.json<{ id: string }>();
-    await ctx.pool.query(
-      `INSERT INTO catalog.place_action_wish (place_id, action_id, wish_id) VALUES ($1, $2, $3)`,
-      [placeNoMedia, actionId, wishId],
-    );
 
     const res = await app.inject({
       method: "GET",
@@ -378,4 +359,181 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(byId.get(placeWithMedia)).toBe("https://example.com/first.jpg");
     expect(byId.get(placeNoMedia)).toBeNull();
   });
+});
+
+describe("place action tagging (S6b)", () => {
+  let app: Awaited<ReturnType<typeof createApp>>;
+
+  beforeAll(async () => {
+    resetConfigCache();
+    app = await createApp();
+    await seedReferenceData(ctx.pool);
+  });
+
+  beforeEach(async () => {
+    await truncateAll(ctx.pool);
+    await seedReferenceData(ctx.pool);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  // The defect this closes: owner-created places carried zero place_action_wish rows,
+  // and every action-scoped discovery query INNER JOINs that table — so the place was
+  // invisible to guests while looking perfectly fine in the owner console.
+  it("a created place is immediately reachable by action-scoped discovery", async () => {
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    expect(create.statusCode).toBe(201);
+    const { id } = create.json<{ id: string }>();
+
+    const byAction = await app.inject({
+      method: "GET",
+      url: "/v1/places-by-action?action_slug=eat",
+    });
+    expect(byAction.statusCode).toBe(200);
+    const items = byAction.json<{ items: { id: string; wishes: string[] }[] }>().items;
+    const found = items.find((i) => i.id === id);
+    expect(found).toBeDefined();
+    expect(found!.wishes).toContain("sea-view");
+  });
+
+  it("hydrated view exposes the action + wish written at create time", async () => {
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const { id } = create.json<{ id: string }>();
+
+    const res = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      actions: { slug: string }[];
+      wishes: { slug: string; action_slug: string }[];
+    }>();
+    expect(body.actions.map((a) => a.slug)).toEqual(["eat"]);
+    expect(body.wishes).toEqual([
+      expect.objectContaining({ slug: "sea-view", action_slug: "eat" }),
+    ]);
+  });
+
+  it("400s when actions is missing, empty, or an action carries no wish", async () => {
+    const noActions: Record<string, unknown> = { ...VALID_BODY };
+    delete noActions.actions;
+    for (const payload of [
+      noActions,
+      { ...VALID_BODY, actions: [] },
+      { ...VALID_BODY, actions: [{ action_slug: "eat", wish_slugs: [] }] },
+    ]) {
+      const res = await app.inject({ method: "POST", url: "/v1/places", payload });
+      expect(res.statusCode).toBe(400);
+      expect(res.json<{ error: string }>().error).toBe("validation_failed");
+    }
+  });
+
+  it("422s on an unknown action or wish slug, and writes nothing", async () => {
+    for (const actions of [
+      [{ action_slug: "teleport", wish_slugs: ["sea-view"] }],
+      [{ action_slug: "eat", wish_slugs: ["moon-view"] }],
+    ]) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/v1/places",
+        payload: { ...VALID_BODY, actions },
+      });
+      expect(res.statusCode).toBe(422);
+      expect(res.json<{ error: string }>().error).toBe("unknown_action_or_wish");
+    }
+
+    // The rejected creates must not have left orphan places behind.
+    const list = await app.inject({ method: "GET", url: "/v1/places" });
+    expect(list.json<{ data: unknown[] }>().data).toHaveLength(0);
+  });
+
+  it("de-duplicates a repeated action+wish pair instead of 409ing on the composite PK", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: {
+        ...VALID_BODY,
+        actions: [
+          { action_slug: "eat", wish_slugs: ["sea-view", "sea-view"] },
+          { action_slug: "eat", wish_slugs: ["sea-view"] },
+        ],
+      },
+    });
+    expect(res.statusCode).toBe(201);
+
+    const { id } = res.json<{ id: string }>();
+    const hydrated = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    expect(hydrated.json<{ wishes: unknown[] }>().wishes).toHaveLength(1);
+  });
+
+  it("PATCH replaces the tag set, and leaves it alone when actions is omitted", async () => {
+    // A second action+wish to move the place to.
+    const drinkId = "33333333-3333-4333-8333-333333333333";
+    await ctx.pool.query(
+      `INSERT INTO catalog.action (id, slug, i18n, sort_order, icon)
+       VALUES ($1, 'drink', '{"en":"Drink"}'::jsonb, 1, 'wine')`,
+      [drinkId],
+    );
+    await ctx.pool.query(
+      `INSERT INTO catalog.wish (id, action_id, slug, i18n, sort_order)
+       VALUES ($1, $2, 'cafe', '{"en":"Café"}'::jsonb, 0)`,
+      ["44444444-4444-4444-8444-444444444444", drinkId],
+    );
+
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const { id } = create.json<{ id: string }>();
+
+    // An unrelated PATCH must not disturb the tags.
+    await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { address: "Somewhere else" },
+    });
+    let hydrated = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    expect(hydrated.json<{ actions: { slug: string }[] }>().actions.map((a) => a.slug)).toEqual([
+      "eat",
+    ]);
+
+    // Supplying actions replaces the set wholesale.
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { actions: [{ action_slug: "drink", wish_slugs: ["cafe"] }] },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    hydrated = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    const body = hydrated.json<{
+      actions: { slug: string }[];
+      wishes: { slug: string }[];
+    }>();
+    expect(body.actions.map((a) => a.slug)).toEqual(["drink"]);
+    expect(body.wishes.map((w) => w.slug)).toEqual(["cafe"]);
+  });
+
+  it("GET /v1/actions returns the taxonomy with wishes nested under their action", async () => {
+    const res = await app.inject({ method: "GET", url: "/v1/actions" });
+    expect(res.statusCode).toBe(200);
+    const { data } = res.json<{
+      data: {
+        slug: string;
+        icon: string;
+        label_i18n: Record<string, string>;
+        wishes: { slug: string; label_i18n: Record<string, string> }[];
+      }[];
+    }>();
+
+    const eat = data.find((a) => a.slug === "eat");
+    expect(eat).toBeDefined();
+    expect(eat!.icon).toBe("utensils");
+    expect(eat!.label_i18n["pt-PT"]).toBe("Comer");
+    expect(eat!.wishes).toEqual([expect.objectContaining({ slug: "sea-view" })]);
+  });
+});
+
+// Container + pool teardown is file-level: both describes share one Postgres, so
+// neither may tear it down in its own afterAll (the second suite would find it gone).
+afterAll(async () => {
+  await closePool();
+  await stopTestPostgres(ctx);
 });

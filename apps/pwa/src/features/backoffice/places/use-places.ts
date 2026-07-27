@@ -29,6 +29,20 @@ export interface PlaceHoursEntry {
   close: string;
 }
 
+/** A place's action tags — same shape read and written, so the form round-trips. */
+export interface PlaceActionTag {
+  action_slug: string;
+  wish_slugs: string[];
+}
+
+/** One action of the taxonomy, with the wishes selectable under it. */
+export interface ActionTaxonomyEntry {
+  slug: string;
+  icon: string;
+  label_i18n: Record<string, string>;
+  wishes: { slug: string; label_i18n: Record<string, string> }[];
+}
+
 export interface PlaceRow {
   id: string;
   name: Record<string, string>;
@@ -49,6 +63,8 @@ export interface PlaceRow {
   contacts?: PlaceContacts;
   hours?: PlaceHoursEntry[];
   season?: "summer" | "winter" | null;
+  // Action tags, single-place GET only. Drives the form's action picker on edit.
+  actions?: PlaceActionTag[];
 }
 
 interface PlacesResponse {
@@ -84,6 +100,26 @@ export function usePlace(id: string) {
       const res = await fetch(`/v1/admin/places/${id}`, { headers: authHeader(jwt!) });
       if (!res.ok) throw new Error(`place fetch ${res.status}`);
       return res.json() as Promise<PlaceRow>;
+    },
+  });
+}
+
+/**
+ * The action/wish taxonomy backing the form's picker. Served from the DB rather than
+ * hardcoded so a seed change can't silently desync the picker from the slugs the
+ * write path validates against. Reference data — cached for the session.
+ */
+export function useActionTaxonomy() {
+  const jwt = useOwnerJwt();
+  return useQuery<ActionTaxonomyEntry[]>({
+    queryKey: ["admin", "actions"],
+    enabled: !!jwt,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await fetch("/v1/admin/actions", { headers: authHeader(jwt!) });
+      if (!res.ok) throw new Error(`actions fetch ${res.status}`);
+      const body = (await res.json()) as { data: ActionTaxonomyEntry[] };
+      return body.data;
     },
   });
 }

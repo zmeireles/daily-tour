@@ -217,7 +217,8 @@
       "sections": {
         "identity": "Identity",
         "location": "Location",
-        "visibility": "Status & visibility"
+        "visibility": "Status & visibility",
+        "discovery": "How guests find this"
       },
       "tabs": {
         "en": "English",
@@ -266,6 +267,13 @@
         "all_year": "All year",
         "summer": "Summer only",
         "winter": "Winter only"
+      },
+      "actions": {
+        "help": "Choose how guests will find this place, then at least one detail for each.",
+        "noWishes": "No options available for this category yet.",
+        "needWish": "Pick at least one option for {{action}}.",
+        "loading": "Loading categories…",
+        "loadError": "Could not load categories. Reload the page to try again."
       }
     },
     "archive": {

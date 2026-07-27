@@ -90,16 +90,27 @@ export async function truncateAll(pool: pg.Pool): Promise<void> {
   );
 }
 
-// Insert one reference action for FK-satisfying tests (place_action_wish etc).
-export async function seedReferenceData(pool: pg.Pool): Promise<{ actionId: string }> {
+// Insert one reference action + wish for FK-satisfying tests (place_action_wish etc).
+// A wish is required, not optional garnish: creating a place now demands at least one
+// action+wish pair, and place_action_wish.wish_id is NOT NULL.
+export async function seedReferenceData(
+  pool: pg.Pool,
+): Promise<{ actionId: string; wishId: string }> {
   const actionId = "11111111-1111-4111-8111-111111111111";
+  const wishId = "22222222-2222-4222-8222-222222222222";
   await pool.query(
     `INSERT INTO catalog.action (id, slug, i18n, sort_order, icon)
      VALUES ($1, 'eat', '{"en":"Eat","pt-PT":"Comer"}'::jsonb, 0, 'utensils')
      ON CONFLICT DO NOTHING`,
     [actionId],
   );
-  return { actionId };
+  await pool.query(
+    `INSERT INTO catalog.wish (id, action_id, slug, i18n, sort_order)
+     VALUES ($1, $2, 'sea-view', '{"en":"Sea view","pt-PT":"Vista para o mar"}'::jsonb, 0)
+     ON CONFLICT DO NOTHING`,
+    [wishId, actionId],
+  );
+  return { actionId, wishId };
 }
 
 export function setTestEnv(databaseUrl: string): void {

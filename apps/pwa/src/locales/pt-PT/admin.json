@@ -217,7 +217,8 @@
       "sections": {
         "identity": "Identidade",
         "location": "Localização",
-        "visibility": "Estado e visibilidade"
+        "visibility": "Estado e visibilidade",
+        "discovery": "Como os hóspedes encontram este local"
       },
       "tabs": {
         "en": "Inglês",
@@ -266,6 +267,13 @@
         "all_year": "Todo o ano",
         "summer": "Apenas verão",
         "winter": "Apenas inverno"
+      },
+      "actions": {
+        "help": "Escolha como os hóspedes vão encontrar este local e, para cada categoria, pelo menos um detalhe.",
+        "noWishes": "Ainda não há opções disponíveis para esta categoria.",
+        "needWish": "Escolha pelo menos uma opção em {{action}}.",
+        "loading": "A carregar categorias…",
+        "loadError": "Não foi possível carregar as categorias. Recarregue a página para tentar novamente."
       }
     },
     "archive": {
