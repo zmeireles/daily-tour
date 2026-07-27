@@ -260,7 +260,8 @@
           "fri": "Sex",
           "sat": "Sáb",
           "sun": "Dom"
-        }
+        },
+        "both_times_required": "Indique a hora de abertura e a hora de fecho."
       },
       "season": {
         "title": "Época",

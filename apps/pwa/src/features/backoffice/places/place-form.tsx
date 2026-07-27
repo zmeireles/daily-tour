@@ -8,7 +8,12 @@ import { ChevronDown } from "lucide-react";
 import { useActionTaxonomy, useCreatePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import { ActionPicker } from "./action-picker";
 import { MediaUploader, type UploadedAsset } from "./media-uploader";
-import { OpeningHoursEditor, hoursToRows, rowsToHours } from "./opening-hours-editor";
+import {
+  OpeningHoursEditor,
+  hoursRowsSchema,
+  hoursToRows,
+  rowsToHours,
+} from "./opening-hours-editor";
 import { LocationPicker } from "@/features/backoffice/location-picker";
 import { toCoordinate, coordinateField } from "@/lib/map/center";
 import {
@@ -78,8 +83,9 @@ const FormSchema = z.object({
   contact_email: z.string().default(""),
   contact_website: z.string().default(""),
   // One row per DAY_ROWS entry (display order), kept as free-text HH:MM. Only
-  // rows with both open+close set are emitted to the API's hours[] on submit.
-  hours: z.array(z.object({ open: z.string().default(""), close: z.string().default("") })),
+  // rows with both open+close set are emitted to the API's hours[] on submit,
+  // and a half-filled row is rejected rather than silently dropped.
+  hours: hoursRowsSchema,
   // "" maps to null (year-round) on submit; "summer"/"winter" pass through.
   season: z.enum(["", "summer", "winter"]).default(""),
   // Action tags. Required, and every chosen action needs ≥1 wish — mirrors the

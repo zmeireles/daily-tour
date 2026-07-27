@@ -260,7 +260,8 @@
           "fri": "Fri",
           "sat": "Sat",
           "sun": "Sun"
-        }
+        },
+        "both_times_required": "Both opening and closing times are required"
       },
       "season": {
         "title": "Season",

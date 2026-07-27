@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import { Copy } from "lucide-react";
 import type { PlaceHoursEntry } from "./use-places";
 import { Input } from "@/components/ui/input";
@@ -42,6 +44,10 @@ export function hoursToRows(hours?: PlaceHoursEntry[]): HoursRow[] {
 
 // Emit only days where both open and close are filled, mapping each display-row
 // index back to its dow integer. Preserves the exact shape the API expects.
+//
+// The half-filled case is rejected by hoursRowsSchema before submit ever reaches
+// here — otherwise this filter drops the row and the day silently persists as
+// closed, losing what the owner typed.
 export function rowsToHours(rows: HoursRow[]): PlaceHoursEntry[] {
   return DAY_ROWS.map((day, i) => ({
     dow: day.dow,
@@ -50,18 +56,63 @@ export function rowsToHours(rows: HoursRow[]): PlaceHoursEntry[] {
   })).filter((h) => h.open !== "" && h.close !== "");
 }
 
+/**
+ * Form schema for the 7 day rows. A day is either closed (both blank) or open
+ * (both filled); a half-filled row is a validation error rather than a silent
+ * drop. The issue is attached to whichever input is empty so the message lands
+ * on the field the owner still has to fill.
+ */
+export const hoursRowsSchema = z
+  .array(z.object({ open: z.string().default(""), close: z.string().default("") }))
+  .superRefine((rows, ctx) => {
+    rows.forEach((row, i) => {
+      const open = (row.open ?? "").trim();
+      const close = (row.close ?? "").trim();
+      if ((open === "") === (close === "")) return; // both blank or both filled
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [i, open === "" ? "open" : "close"],
+        message: "Both opening and closing times are required",
+      });
+    });
+  });
+
 // The editor reads/writes the shared form's `hours` array via context, so the
 // parent owns the field and its persisted shape stays untouched.
 type HoursForm = { hours: HoursRow[] };
 
 export function OpeningHoursEditor() {
   const { t } = useTranslation("admin");
-  const { control, register, setValue } = useFormContext<HoursForm>();
+  const {
+    control,
+    register,
+    setValue,
+    formState: { errors },
+  } = useFormContext<HoursForm>();
   const rows = useWatch({ control, name: "hours" });
 
+  // Hours stashed when a day is switched to 24h, so switching back restores what
+  // the owner had rather than clobbering it with the 09:00–17:00 default.
+  const preH24 = useRef<Map<number, HoursRow>>(new Map());
+
   function setRow(i: number, open: string, close: string) {
-    setValue(`hours.${i}.open`, open, { shouldDirty: true });
-    setValue(`hours.${i}.close`, close, { shouldDirty: true });
+    setValue(`hours.${i}.open`, open, { shouldDirty: true, shouldValidate: true });
+    setValue(`hours.${i}.close`, close, { shouldDirty: true, shouldValidate: true });
+  }
+
+  function toggle24h(i: number, on: boolean) {
+    if (on) {
+      const current = rows?.[i];
+      // Only stash real hours — a half-filled or blank row is not worth restoring.
+      if (current?.open && current.close) preH24.current.set(i, { ...current });
+      setRow(i, H24_OPEN, H24_CLOSE);
+      return;
+    }
+    // A day persisted as 24h has nothing stashed on first load, so fall back to
+    // the defaults rather than leaving the row blank (which would read as closed).
+    const restored = preH24.current.get(i);
+    preH24.current.delete(i);
+    setRow(i, restored?.open ?? DEFAULT_OPEN, restored?.close ?? DEFAULT_CLOSE);
   }
 
   function copyToAll(i: number) {
@@ -79,6 +130,9 @@ export function OpeningHoursEditor() {
           const row = rows?.[i] ?? { open: "", close: "" };
           const isClosed = row.open === "" && row.close === "";
           const is24h = row.open === H24_OPEN && row.close === H24_CLOSE;
+          // Either side of the pair can carry the issue; one message per row.
+          const rowError =
+            errors.hours?.[i]?.open?.message ?? errors.hours?.[i]?.close?.message ?? null;
           return (
             <li key={day.key} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start">
               <div className="flex items-center justify-between gap-3 sm:w-44 sm:pt-2.5">
@@ -118,16 +172,17 @@ export function OpeningHoursEditor() {
                       disabled={is24h}
                     />
                   </div>
+                  {rowError && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {t("places.form.hours.both_times_required")}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <div className="flex items-center gap-2">
                       <Switch
                         aria-label={`${t("places.form.hours.open_24h")} — ${dayLabel}`}
                         checked={is24h}
-                        onCheckedChange={(on) =>
-                          on
-                            ? setRow(i, H24_OPEN, H24_CLOSE)
-                            : setRow(i, DEFAULT_OPEN, DEFAULT_CLOSE)
-                        }
+                        onCheckedChange={(on) => toggle24h(i, on)}
                       />
                       <span className="text-xs text-muted-foreground">
                         {t("places.form.hours.open_24h")}

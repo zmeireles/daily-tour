@@ -260,6 +260,22 @@ describe("GuesthouseForm", () => {
     expect(updateMutateAsync).not.toHaveBeenCalled();
   });
 
+  // slugify() keeps only [a-z0-9], so a name with no Latin characters at all —
+  // all-punctuation, or e.g. "Ξενώνας" — reduced to "" and catalog-svc answered
+  // with an opaque 400 the owner could do nothing with.
+  it("falls back to a generated slug when the name yields no slug characters", async () => {
+    render(<GuesthouseForm />);
+    fireEvent.click(tab("English"));
+    fireEvent.change(nameInput(), { target: { value: "!!!😀!!!" } });
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Furnas" } });
+
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
+    const body = createMutateAsync.mock.calls[0]![0] as { slug: string };
+    expect(body.slug).toMatch(/^guesthouse-[a-z0-9]{1,6}$/);
+  });
+
   it("uses an explicit slug verbatim when the owner types one", async () => {
     render(<GuesthouseForm />);
     fillRequired();
