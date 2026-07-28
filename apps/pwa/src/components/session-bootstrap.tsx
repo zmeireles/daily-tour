@@ -61,9 +61,7 @@ export function SessionBootstrap({ children }: Props) {
         aria-busy="true"
         data-testid="session-bootstrap-loading"
       >
-        <p className="text-muted-foreground">
-          {t("auth.bootstrapping", "Restoring your session…")}
-        </p>
+        <p className="text-muted-foreground">{t("auth.bootstrapping")}</p>
       </main>
     );
   }

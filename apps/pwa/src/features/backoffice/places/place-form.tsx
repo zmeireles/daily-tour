@@ -99,7 +99,7 @@ const FormSchema = z.object({
         wish_slugs: z.array(z.string()).min(1, "Pick at least one option"),
       }),
     )
-    .min(1, "Pick at least one category"),
+    .min(1, "places.form.actions.required"),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -126,7 +126,7 @@ function toUploadedAssets(media: PlaceRow["media"]): UploadedAsset[] {
 }
 
 export function PlaceForm({ initialData, id }: Props) {
-  const { t } = useTranslation("admin");
+  const { t, i18n } = useTranslation("admin");
   const navigate = useNavigate();
   const [activeLocale, setActiveLocale] = useState<ContentLocale>(SOURCE_LOCALE);
   // Coordinates section stays open by default; the invalid-submit handler forces
@@ -340,7 +340,10 @@ export function PlaceForm({ initialData, id }: Props) {
                 <ActionPicker
                   taxonomy={taxonomyQuery.data ?? []}
                   value={selectedActions}
-                  locale={activeLocale}
+                  // Console chrome, not content: the category labels follow the UI
+                  // language, so switching the content tab to Inglês to write the
+                  // English name no longer relabels the picker to English too.
+                  locale={i18n.language}
                   onChange={(next) =>
                     form.setValue("actions", next, {
                       shouldDirty: true,
@@ -353,7 +356,7 @@ export function PlaceForm({ initialData, id }: Props) {
               )}
               {actionsError && (
                 <p className="mt-3 text-sm text-destructive" role="alert">
-                  {actionsError}
+                  {t(actionsError)}
                 </p>
               )}
             </CardContent>

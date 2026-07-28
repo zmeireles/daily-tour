@@ -1,6 +1,7 @@
 {
   "auth": {
     "exchanging": "Logging you in…",
+    "bootstrapping": "Restoring your session…",
     "token_expired": "Your link has expired. Ask your host for a new one.",
     "exchange_failed": "Something went wrong. Try again."
   },

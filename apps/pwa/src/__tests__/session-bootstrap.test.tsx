@@ -46,6 +46,12 @@ describe("SessionBootstrap", () => {
 
     // Loading state is visible while the refresh is in flight.
     expect(screen.getByTestId("session-bootstrap-loading")).toBeInTheDocument();
+    // #381: auth.bootstrapping existed in no locale file, so this rendered its
+    // English positional default for every guest. Pin the resolved string —
+    // a missing key would surface the raw key here instead.
+    expect(screen.getByTestId("session-bootstrap-loading")).toHaveTextContent(
+      "Restoring your session…",
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId("children")).toBeInTheDocument();
