@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import i18n from "@/lib/i18n";
 import { PlaceForm } from "@/features/backoffice/places/place-form";
 import type { PlaceRow } from "@/features/backoffice/places/use-places";
 
@@ -123,8 +124,9 @@ function saveButton() {
 }
 
 // Picks Eat → Sea view, tolerating an already-selected state so it can be called
-// on an edit form whose initialData already carries tags. Labels follow the active
-// content-locale tab, so call this after the English switch in fillRequired.
+// on an edit form whose initialData already carries tags. Picker labels follow the
+// UI language (English under jsdom), not the content tab — see the pt-PT block at
+// the end of this file.
 function pickCategory() {
   const action = screen.getByRole("button", { name: "Eat" });
   if (action.getAttribute("aria-pressed") !== "true") fireEvent.click(action);
@@ -254,8 +256,8 @@ describe("PlaceForm", () => {
     fireEvent.change(descriptionInput(), { target: { value: "Acogedor" } });
 
     fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Rua X" } });
-    // Seeded taxonomy labels are en + pt-PT only, so the picker falls back to the
-    // English label under the Spanish tab.
+    // Picker labels track the UI language, which is English here, so they stay
+    // English regardless of which content tab is active.
     pickCategory();
     fireEvent.click(saveButton());
 
@@ -664,6 +666,47 @@ describe("PlaceForm", () => {
           season: "winter",
         }),
       );
+    });
+  });
+
+  // #381 regression guards. The console renders in Portuguese for a real owner,
+  // and two strings there are UI chrome that must follow i18n.language rather
+  // than the active content tab: the picker's category labels (which used to
+  // flip to English the moment the owner switched to the Inglês tab to write the
+  // required English name) and the min(1) message that blocks Save (which was a
+  // hardcoded English literal in the zod schema). check:i18n cannot see either
+  // problem — it only diffs en↔pt-PT key sets — so these are the only guard.
+  // Kept last in the file deliberately: they switch the global i18n language,
+  // and declaration order is execution order in vitest.
+  describe("pt-PT console (UI language, not the content tab)", () => {
+    beforeEach(async () => {
+      await i18n.changeLanguage("pt-PT");
+    });
+
+    afterEach(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    it("picker labels stay Portuguese when the content tab flips to Inglês", () => {
+      render(<PlaceForm />);
+
+      expect(screen.getByRole("button", { name: "Comer" })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("tab", { name: "Inglês" }));
+
+      expect(screen.getByRole("button", { name: "Comer" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Eat" })).not.toBeInTheDocument();
+    });
+
+    it("save with no category shows the Portuguese min(1) message", async () => {
+      render(<PlaceForm />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+      expect(await screen.findByText("Escolha pelo menos uma categoria")).toBeInTheDocument();
+      // Neither the raw key nor the English fallback may leak through.
+      expect(screen.queryByText("places.form.actions.required")).not.toBeInTheDocument();
+      expect(screen.queryByText("Pick at least one category")).not.toBeInTheDocument();
     });
   });
 });

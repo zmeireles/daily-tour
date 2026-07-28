@@ -271,7 +271,7 @@
       },
       "actions": {
         "help": "Elija cómo encontrarán los huéspedes este lugar y, para cada categoría, al menos un detalle.",
-        "required": "Elige al menos una categoría",
+        "required": "Elija al menos una categoría",
         "noWishes": "Todavía no hay opciones disponibles para esta categoría.",
         "needWish": "Elija al menos una opción en {{action}}.",
         "loading": "Cargando categorías…",
