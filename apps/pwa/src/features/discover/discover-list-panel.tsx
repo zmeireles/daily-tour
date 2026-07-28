@@ -49,13 +49,9 @@ export function DiscoverListPanel({
   return (
     <div className="flex flex-col gap-stack p-4">
       <Overline size="sm" className="px-1">
-        {t("nearby.title", { defaultValue: "Por perto" })} · {places.length}
+        {t("map.nearby")} · {places.length}
       </Overline>
-      <ol
-        ref={listRef}
-        aria-label={t("nearby.title", { defaultValue: "Por perto" })}
-        className="flex flex-col gap-3"
-      >
+      <ol ref={listRef} aria-label={t("map.nearby")} className="flex flex-col gap-3">
         {places.map((p) => (
           <li
             key={p.id}

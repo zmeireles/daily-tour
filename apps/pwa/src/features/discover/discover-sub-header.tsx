@@ -35,7 +35,7 @@ export function DiscoverSubHeader({
         />
       </div>
       <span className="text-sm text-on-surface-variant">
-        {count} {t("nearby.title", { defaultValue: "Por perto" })}
+        {count} {t("map.nearby")}
       </span>
     </div>
   );
