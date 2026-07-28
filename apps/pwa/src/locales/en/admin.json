@@ -271,6 +271,7 @@
       },
       "actions": {
         "help": "Choose how guests will find this place, then at least one detail for each.",
+        "required": "Pick at least one category",
         "noWishes": "No options available for this category yet.",
         "needWish": "Pick at least one option for {{action}}.",
         "loading": "Loading categories…",

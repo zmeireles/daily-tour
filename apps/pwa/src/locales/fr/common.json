@@ -1,6 +1,7 @@
 {
   "auth": {
     "exchanging": "Connexion en cours…",
+    "bootstrapping": "Restauration de votre session…",
     "token_expired": "Votre lien a expiré. Demandez-en un nouveau à votre hôte.",
     "exchange_failed": "Une erreur est survenue. Veuillez réessayer."
   },

@@ -1,6 +1,7 @@
 {
   "auth": {
     "exchanging": "A iniciar sessão…",
+    "bootstrapping": "A restaurar a sua sessão…",
     "token_expired": "O seu link expirou. Peça ao seu anfitrião um novo.",
     "exchange_failed": "Algo correu mal. Tente novamente."
   },
