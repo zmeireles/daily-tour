@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed — the app spoke the wrong language in four places (2026-07-28)
+
+Four strings rendered in the wrong language because their translation key was never wired up. Each shipped green: the key checker compares the English and Portuguese files against **each other**, so a key missing from _every_ language is invisible to it (#377, #381 — both Fable-gated).
+
+- **Portuguese leaked into the English, French and Spanish guest app (#377)** — the "Nearby" label on the discover screen read **"Por perto"** in every language. Present since 2026-06-18.
+- **Every non-English guest saw English while their session loaded (#381)** — the boot screen's "Restoring your session…" had no translation and sat on the path of every single guest.
+- **The category picker changed language mid-form (#381)** — a Portuguese owner who switched to the **Inglês** tab to write the required English name watched the six category buttons flip to _Eat · Drink · See_. The picker's labels are part of the console, not the content, and now follow the console's language.
+- **The "pick a category" warning was English in the Portuguese console (#381)** — the message that blocks saving a place is now translated. The Spanish version also had its politeness register corrected to match its neighbours.
+
+Each fix is now covered by a test that was **verified to fail** against its own bug before being kept.
+
+### Verified — the routing upgrade did not break the guest app (2026-07-28)
+
+The react-router v8 upgrade shipped in the previous release was put through a full guest-surface regression on qual: **87 of 89 checks passed, none failed**, on both desktop and phone viewports — including opening every screen directly by URL, the guest invite link, browser back/forward, refreshing mid-screen, and unknown addresses. The two unchecked items need a saved tour plan, which would have meant creating real data.
+
 ### Added / Fixed — Plan-008 Slice-5 follow-ups + map picker go-live on qual (2026-07-20)
 
 Three Slice-5 follow-ups shipped (#363, #364 — both Fable-gated) and the owner's assisted map picker went live on qual:
