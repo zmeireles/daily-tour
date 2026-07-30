@@ -119,7 +119,9 @@ Delivered as a link in a WhatsApp/email message sent 1 hour before check-out.
 | Français | <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey-fr> |
 | Español  | <https://n8n.qual.stay.portugalodyssey.pt/form/dt-beta-survey-es> |
 
-Responses for all four land in the n8n **Executions** history (one workflow per language — "DT Beta — Post-Stay Survey" plus (PT)/(FR)/(ES)) — the owner views/exports them in the n8n editor (`https://n8n.qual.stay.portugalodyssey.pt`; owner login). Add a Google-Sheet/DB export node later if a tabular view is wanted.
+Responses for all four land in the n8n **Executions** history (one workflow per language — "DT Beta — Post-Stay Survey" plus (PT)/(FR)/(ES)) — the owner views them in the n8n editor (`https://n8n.qual.stay.portugalodyssey.pt`; owner login).
+
+They **also** land in the `beta.survey_responses` table: the DB write node exists and works (verified end-to-end 2026-07-30 — a submitted form produced a row with the answers keyed by question text, plus `lang` and `submitted_at`). Note the two read paths are **independent**: `make survey-export` reads the n8n **Executions** via its REST API, _not_ the table. Either is fine; they just have different retention.
 
 | #   | Question                                                                  | Format                                            |
 | --- | ------------------------------------------------------------------------- | ------------------------------------------------- |
