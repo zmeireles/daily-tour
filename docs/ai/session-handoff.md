@@ -1,4 +1,95 @@
-# Session Handoff — … → 07-27 (**s726 — everything the 07-25 handoff owed is SHIPPED**: audit gate unblocked, S6b action-picker + 3-bug batch merged; 4 PRs, every merge Fable-gated; qual deploy fired at close. ▶ next: verify deploy, run UATs #30/#31, remediate the 4 untagged places, Lane-3 Phase 2.) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding; Lanes 1–3 run on qual) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 07-28 (**s728 — react-router v8 cleared on the guest surface, UAT #30 PASSED, and 7 real bugs found that nobody was looking for.** 3 PRs merged, 6 issues filed, every merge Fable-gated. ▶ next: #380 consent mis-tap, then the three owner decisions — #379, #383, #371.) · 07-27 (s726 — audit gate unblocked, action picker + 3-bug batch shipped) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-07-28 (LATEST — session `s728`. Verified the shipped react-router v8 major on the guest surface, ran UAT #30 to a PASS, and cleaned up an i18n defect class that had shipped green four times. **3 PRs merged (#374, #377, #381), 6 issues filed (#375–#376, #378–#380, #382–#383), every merge Fable-gated.** main `b226da7`; 0 open PRs; branches = main only.)**
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> Same startup ritual as always — **check the MCPs and alert the user on any failure** (you cannot self-reconnect; ask them to run `/mcp`).
+>
+> 1. **`mcp__tasks-prod__comm_inbox`** — last processed seq = **272** (qb:Aldraba's cert-fix closing ack, already acked). Pull `after_seq=272`.
+> 2. **`comm_whoami` FIRST** — confirm the handle is `dt:Furnas` / home project `DAILY-TOUR`. This is cheap and catches a wrong-token session, which looks completely normal from the inside.
+> 3. **Re-arm the A2A wake bridge** (stopped at closeout). daily-tour has no local script — use codecomedy-platform's with daily-tour's env:
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    ⚠️ **The gotcha bit again this session**: `pgrep -f comm-watch` showed **10** live bridges and **none** were daily-tour's (qr-bell, joraa-project, eventos-judo, codecomedy). **Check the env/path, never the count.**
+> 4. **dt-tests `review` poll** (`e03901a6-b656-4f38-a768-b98d4fa081cc`) — empty at close.
+>
+> ### ▶ THE QUEUE
+>
+> **Owner decisions (blocking — nothing moves without them):**
+>
+> 1. **#379 — extend `check:i18n` to scan `t()` callsites.** Making it fail CI is a **gate change** → always-escalate. This one guard would have caught **all four** i18n leaks (#370's six picker strings, #375, #378, and the dead `feedback.*`). A working prototype exists from the #377 review.
+> 2. **#383 — `pt-BR`/`de`/bare-`pt` guests get a wholly English UI.** The PWA half is a 2-line i18next config change (`supportedLngs` + `nonExplicitSupportedLngs: true`). The **token-svc half is a schema decision**: its CHECK constraint accepts six locales the app only serves four of. Narrowing it is a migration — needs the owner's call and a check for existing rows.
+> 3. **#371 — dev-dependency graph is ungated** (16 high + 1 critical `vitest` <3.2.6). Policy question, unchanged from s726: gate dev at `high`, or review periodically?
+>
+> **Ready to build (no decision needed):**
+>
+> 4. **#380 — consent banner covers place cards at 390px. Do this first.** Upgraded to low-to-**medium** mid-session: a thumb aiming at a card's lower portion hits the banner's own Recusar/Aceitar button and **silently records a GDPR consent choice**, which then persists. Only 2 of 6 tap points on a card work on a first visit. It is the first thing a guest sees on a phone, and it is the only open item touching consent.
+> 5. **#382** — guest home has 36px horizontal overflow at 390px; `LocaleSwitcher` is `flex gap-1` with four full-word buttons, no wrap, and the **Español** button is clipped off-screen.
+> 6. **#376** — archiving a place is a one-way door (`places.ts:620` 404s any PATCH on an archived row). Carries an open product question: terminal by design, or should there be a restore path? The UI gives no signal either way.
+>
+> **Human, when they have time:** **UAT #31** (https://tasks.codecomedy.dev/p/dt-tests/r/31) — card corrected this session, see below.
+>
+> ### Shipped (all merged; main `b226da7`)
+>
+> - **#374 `docs` — recovered a stranded handoff.** The s726 handoff commit had been written but **never pushed** — it sat on a local `docs/s726-closeout` branch while that session's own state block claimed "branches = main only". Worth knowing the failure mode: a handoff that says the tree is clean can itself be the uncommitted work.
+> - **#377 `fix(pwa)` — discover leaked Portuguese into en/fr/es.** Three call sites requested `nearby.title`, a key in **no** locale file, so the hardcoded PT `defaultValue` won in every language. Real key is `map.nearby`, already translated everywhere. **Pre-existing since #272 (06-18), not a v8 regression.**
+> - **#381 `fix(pwa)` — three more of the same class**, plus proven guards. (a) `auth.bootstrapping` existed in no locale file and `SessionBootstrap` wraps **all** routes → every non-en guest saw English on the boot screen. (b) The action picker labelled itself with the **content** locale, so a PT owner switching to the Inglês tab watched the six categories flip to English. (c) The Save-blocking `min(1)` message was a hardcoded English literal, observed live in the PT console.
+>
+> ### react-router v8 — CLEARED on the guest surface
+>
+> The one thing s726's deploy smoke did not cover. **87/89 scenarios PASSED, 0 FAIL, 2 NOT-TESTED** (both `/tour/:planId` with a real plan — creating one is a mutation).
+>
+> Probes that mattered, all on desktop **and** mobile: hard-navigation by typed URL to every guest route (cold router mount — the thing v8 actually changed), `/r/<token>` by direct URL, back ×3 / forward ×3, F5 on a deep route, back-after-F5, unknown route, and redirect-chain assertions (`redirectLeaks: []`). The dual-module worry was settled **at runtime, not from the build**: of the loaded chunks, exactly **one** carries react-router's invariant strings. Zero occurrences of `basename` / `Cannot destructure` / duplicate-context signatures across all 48 scenarios.
+>
+> Spec `e2e/uat-rrv8-router.e2e.mjs`, evidence `temp/rrv8-guest-regression/` (40 shots + `evidence.json`).
+>
+> ### UAT #30 — PASS
+>
+> Step 7 (the load-bearing one) confirmed at **two independent levels**: visible in the guest UI _and_ `discoverAPI[eat:FOUND …]` with the other five actions correctly absent — on desktop and mobile. Corroborated at the data layer: the two-level picker wrote exactly one `place_action_wish` row, `(eat, sea-view)`. The 🔴 is closed. Card commented with full evidence; place `ZZ-UAT30 Miradouro de Teste` archived and DB-verified.
+>
+> ### ⚠️ "Remediate the 4 untagged places" was a PHANTOM — do not re-inherit it
+>
+> The s726 handoff carried this as a live task. It isn't. Full `catalog.place` audit (47 rows, unfiltered):
+>
+> | source | status    | places | untagged | avg tags |
+> | ------ | --------- | ------ | -------- | -------- |
+> | manual | archived  | 4      | **4**    | 0.00     |
+> | manual | published | 43     | **0**    | 1.79     |
+>
+> The four untagged rows are the **`ZZ-LANE3` disposables** from 2026-07-24, already archived by that test's own cleanup. The 07-25 finding "4 owner places = 0 actions" was measuring throwaway test data; two handoffs propagated it into "4 real places needing owner remediation" without anyone re-checking. **No guest-visibility damage exists on qual.** The picker's value is prospective — it stops the _next_ real place being born invisible.
+>
+> ### The i18n defect class — four occurrences, all shipped green
+>
+> `check:i18n` diffs the **en↔pt-PT key sets**. A key requested from code that exists in **no** locale file is structurally invisible to it — it passed before _and_ after every fix this session. Occurrences: #370's six picker strings · #375 · #378 · the (unmounted) `feedback.*`.
+>
+> The test suite is blind for a separate reason worth remembering: the discover tests mock react-i18next as **`t: (k, o) => o?.defaultValue ?? k`** — the mock **returns the defaultValue**, which was the exact thing broken. 495 passing tests could never have caught #375 no matter how many assertions were added.
+>
+> **#379 is the systemic fix.** Until it lands, add en+pt-PT+es together and assume neither the linter nor the suite will tell you otherwise.
+>
+> ### The lesson worth carrying — a verification that cannot fail
+>
+> Hit **twice**, by different mechanisms, and both produced a clean-looking negative:
+>
+> - A cleanup query keyed on `name->>'pt'` in a schema that stores **`pt-PT`** — returns zero rows for _every_ row in the table. "0 rows" reads as "nothing left behind". It would have reported success with a published test place still live. (My brief was wrong; the agent caught it during recon.)
+> - A `.catch(() => {})` around a Playwright click. A genuine actionability timeout was swallowed, the spec fell through to a URL assertion, and a **blocked click looked exactly like the app refusing to navigate** — costing a full cycle chasing a mobile bug that did not exist.
+>
+> Applied to the #381 guards: each was verified to go **red** against its own defect before being kept. Anchor cleanup checks on something structurally guaranteed (row id, `created_at`), never a text field you assume is populated. Recorded in memory as [[feedback-verification-that-cannot-fail]].
+>
+> ### dt-tests cards corrected (matters before the human runs #31)
+>
+> - **"Cleanup: kebab → Arquivar" does not exist** in this build. Correct path: open for editing → **Estado = Arquivado** → Guardar. Both cards fixed, and both now warn that **archiving is irreversible** (#376) and ask for a `ZZ-` prefix on throwaways.
+> - **UAT #30 step 2 had a false-PASS trap**, now fixed: `name_en`/`description_en` are `min(1)`, so filling only Portuguese gets the save refused for _that_ reason — the tester would see a refusal, tick the step, and have proved nothing about categories. The card now says fill **both** tabs.
+> - Both cards flag the two cosmetic defects (#381's, now fixed) so a tester doesn't fail a step over them.
+>
+> ### Agent-delivery gotcha (cost real time three times)
+>
+> **Subagents went idle without sending their report** — three of five did it. Their findings were complete but sat in `temp/*/log.txt`. Brief every agent explicitly that plain text output is invisible and the report must go via SendMessage, and **check `temp/<agent>/` before assuming an idle agent produced nothing**.
+>
+> Also: an agent's self-exculpating explanation is worth verifying. `uat30-picker` attributed a mobile failure to its own selector and claimed `a[href*="/p/"]` navigates fine — but **that selector matches zero elements anywhere in the app** (every place navigation is programmatic `navigate()`; `PlaceCard` is a `div` + `role="button"`). Independent triage reached the same verdict via the real cause and found #380 on the way.
+>
+> ### State (07-28 close)
+>
+> main **`b226da7`** == origin/main · **0 open PRs** · local branches **main only** · tree clean (only the perennial untracked `e2e/`, now also holding `uat-rrv8-router.e2e.mjs` + `uat30-action-picker.e2e.mjs`) · **all subagents shut down** · **A2A bridge STOPPED** (re-arm per FIRST ACTIONS) · dt-tests `review` **empty**, #30 PASSED, #31 awaiting the human, #22 deferred-until-prod · **qual = `d7eeaf7`** — ⚠️ **#377 and #381 are merged but NOT deployed**; qual still shows the Portuguese leak and the boot-screen English. Memory: NEW [[feedback-verification-that-cannot-fail]], [[feedback-uat-map-tile-console-noise]].
 
 > **UPDATE 2026-07-27 (LATEST — session `s726`. Cleared the blocking audit gate, then shipped BOTH items the last handoff owed: the S6b action-picker feature and the 3-bug fix batch. **4 PRs merged (#368, #369, #370, #372), 1 issue filed (#371), every merge Fable-gated.** Also fixed a shared-Traefik cert for qr-bell and reconciled the dt-tests board. main `d7eeaf7`; **qual DEPLOYED + verified** at closeout. Session closed early for token budget, not because work stalled.)**
 >
