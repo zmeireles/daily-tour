@@ -1,4 +1,4 @@
-# Session Handoff — … → 07-28 (**s728 — react-router v8 cleared on the guest surface, UAT #30 PASSED, and 7 real bugs found that nobody was looking for.** 3 PRs merged, 6 issues filed, every merge Fable-gated. ▶ next: #380 consent mis-tap, then the three owner decisions — #379, #383, #371.) · 07-27 (s726 — audit gate unblocked, action picker + 3-bug batch shipped) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 07-28 (**s728 — react-router v8 cleared on the guest surface, UAT #30 PASSED, and 7 real bugs found that nobody was looking for.** 3 PRs merged, 6 issues filed, every merge Fable-gated. ▶ next: #380 consent mis-tap, then the three owner decisions — #379, #383, #371. **Lane-3 Phase 2 DONE — the 07-25 lane model owes nothing.**) · 07-27 (s726 — audit gate unblocked, action picker + 3-bug batch shipped) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding) · 07-20 (**Plan-008 fully CLOSED**)
 
 > **UPDATE 2026-07-28 (LATEST — session `s728`. Verified the shipped react-router v8 major on the guest surface, ran UAT #30 to a PASS, and cleaned up an i18n defect class that had shipped green four times. **3 PRs merged (#374, #377, #381), 6 issues filed (#375–#376, #378–#380, #382–#383), every merge Fable-gated.** main `b226da7`; 0 open PRs; branches = main only.)**
 >
@@ -28,6 +28,28 @@
 > 6. **#376** — archiving a place is a one-way door (`places.ts:620` 404s any PATCH on an archived row). Carries an open product question: terminal by design, or should there be a restore path? The UI gives no signal either way.
 >
 > **Human, when they have time:** **UAT #31** (https://tasks.codecomedy.dev/p/dt-tests/r/31) — card corrected this session, see below.
+>
+> **One click owed from the owner:** n8n **execution id `14`** on workflow "DT Beta — Post-Stay Survey" (EN), 2026-07-30T14:30:46Z, is a synthetic Lane-3 submission (`ZZ-LANE3B automated test, ignore`). It stays in Executions and **will keep appearing in `make survey-export`**. The DB row was deleted; this one was deliberately left rather than firing a DELETE at the automation platform unasked. Remove it before any real survey analysis.
+>
+> ### ✅ Lane-3 Phase 2 — DONE. The 07-25 three-lane model owes nothing.
+>
+> **8/8 scenarios PASS, no app bugs.** Both objectives closed.
+>
+> **A — reservation revoke.** Minted a throwaway reservation, issued a guest link, redeemed it successfully, then revoked. What revoke actually does, observed rather than assumed: **the grant row is updated (`revoked_at` set), the reservation row is not touched at all** (`status` stays `confirmed`, `updated_at` unchanged). Revoke is **token-scoped, never reservation-scoped**. The confirm flow is a proper `AlertDialog` stating the consequence ("Their guest link will stop working immediately"), revoke affordance has 0px overflow at 390px, and the state survives a fresh login + reload.
+>
+> ⚠️ **The revoked-link refusal is a `302`, not a `401`** — the agent first logged a FAIL on that, then corrected itself. `services/bff/src/routes/token-exchange.ts:45` deliberately degrades expired/invalid tokens to `/?reason=expired` per **FR-AC-05**, with token-svc returning 401 upstream. The guest sees "Your link has expired. Ask your host for a new one." **Anything asserting 401 on that path is asserting the wrong contract.**
+>
+> **B — survey capture. The table IS wired; my going-in hypothesis was wrong.** `beta.survey_responses` was at 0 rows because nobody had ever submitted, **not** because the sink was missing. A submitted form produced a row (`lang='EN'`, answers keyed by full question text). `docs/beta/beta-program-2026.md:122` — which said a DB node "could be added later" and was what made this ambiguous — has been corrected.
+>
+> **Note the two read paths are independent:** `make survey-export` reads the n8n **Executions** via REST, _not_ the DB table. Both work; they have different retention.
+>
+> **The 8 real reservations were verified untouched three times** (baseline / post-revoke / post-cleanup), identical each time. Cleanup verified on three independent anchors — by row id, by `created_at`, and by totals returning to the exact baseline.
+>
+> **Not covered, honestly:** the pt/fr/es survey forms (only en submitted) · whether an **unreloaded** guest tab keeps working inside the 1h JWT window after revoke (the reload path dies; the in-flight window is by design — 60s revocation cache marker — and was not measured) · re-issuing a link after revoke · revoking a reservation holding multiple active grants · reservation status transitions.
+>
+> **Also worth knowing:** the owner console renders in **English** in a fresh headless context (Chrome is `en-US` and the i18n detector follows it), not Portuguese. Not a bug, but briefs that assume PT selectors will mislead.
+>
+> Specs (kept, not committed): `e2e/uat-lane3b-{revoke,revoked-link,persist-check,survey}.e2e.mjs`. Evidence `temp/lane3-phase2/`.
 >
 > ### Shipped (all merged; main `b226da7`)
 >
