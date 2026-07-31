@@ -1,4 +1,4 @@
-# Session Handoff — … → 07-28 (**s728 — react-router v8 cleared on the guest surface, UAT #30 PASSED, and 7 real bugs found that nobody was looking for.** 3 PRs merged, 6 issues filed, every merge Fable-gated. ▶ next: #380 consent mis-tap, then the three owner decisions — #379, #383, #371. **Lane-3 Phase 2 DONE — the 07-25 lane model owes nothing.**) · 07-27 (s726 — audit gate unblocked, action picker + 3-bug batch shipped) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 07-28 (**s728 — react-router v8 cleared on the guest surface, UAT #30 PASSED, and 7 real bugs found that nobody was looking for.** 3 PRs merged, 6 issues filed, every merge Fable-gated. ▶ next: #380 consent mis-tap, then the three owner decisions — #379, #383, #371. **Lane-3 Phase 2 DONE; qual deployed + verified on `b226da7`.**) · 07-27 (s726 — audit gate unblocked, action picker + 3-bug batch shipped) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding) · 07-20 (**Plan-008 fully CLOSED**)
 
 > **UPDATE 2026-07-28 (LATEST — session `s728`. Verified the shipped react-router v8 major on the guest surface, ran UAT #30 to a PASS, and cleaned up an i18n defect class that had shipped green four times. **3 PRs merged (#374, #377, #381), 6 issues filed (#375–#376, #378–#380, #382–#383), every merge Fable-gated.** main `b226da7`; 0 open PRs; branches = main only.)**
 >
@@ -29,7 +29,7 @@
 >
 > **Human, when they have time:** **UAT #31** (https://tasks.codecomedy.dev/p/dt-tests/r/31) — card corrected this session, see below.
 >
-> **One click owed from the owner:** n8n **execution id `14`** on workflow "DT Beta — Post-Stay Survey" (EN), 2026-07-30T14:30:46Z, is a synthetic Lane-3 submission (`ZZ-LANE3B automated test, ignore`). It stays in Executions and **will keep appearing in `make survey-export`**. The DB row was deleted; this one was deliberately left rather than firing a DELETE at the automation platform unasked. Remove it before any real survey analysis.
+> **✅ Synthetic survey data cleared (2026-07-31).** n8n execution `14` (the `ZZ-LANE3B` Lane-3 submission) is deleted, on the user's explicit go-ahead — verified by content, not status code: `GET /rest/executions/14` returns `200 {}` with no marker. ⚠️ **n8n's REST API answers `200` with an empty body for a missing execution, and `DELETE /rest/executions/:id` 404s** (wrong route — the working one is `POST /rest/executions/delete` with `{ids:[…]}`, which returns a bare `200 {}` whether or not it did anything). Check the body, never the status. `make survey-export` was rate-limited (429) by the repeated logins right after — re-run it to confirm from the export side.
 >
 > ### ✅ Lane-3 Phase 2 — DONE. The 07-25 three-lane model owes nothing.
 >
@@ -111,7 +111,13 @@
 >
 > ### State (07-28 close)
 >
-> main **`b226da7`** == origin/main · **0 open PRs** · local branches **main only** · tree clean (only the perennial untracked `e2e/`, now also holding `uat-rrv8-router.e2e.mjs` + `uat30-action-picker.e2e.mjs`) · **all subagents shut down** · **A2A bridge STOPPED** (re-arm per FIRST ACTIONS) · dt-tests `review` **empty**, #30 PASSED, #31 awaiting the human, #22 deferred-until-prod · **qual = `d7eeaf7`** — ⚠️ **#377 and #381 are merged but NOT deployed**; qual still shows the Portuguese leak and the boot-screen English. Memory: NEW [[feedback-verification-that-cannot-fail]], [[feedback-uat-map-tile-console-noise]].
+> main **`ea852fd`** == origin/main · **0 open PRs** · local branches **main only** · tree clean (only the perennial untracked `e2e/`, now also holding `uat-rrv8-router.e2e.mjs`, `uat30-action-picker.e2e.mjs` and the four `uat-lane3b-*.e2e.mjs`) · **all subagents shut down** · **A2A bridge STOPPED** (re-arm per FIRST ACTIONS) · dt-tests `review` **empty**, #30 PASSED, #31 awaiting the human, #22 deferred-until-prod.
+>
+> **✅ qual = `b226da7`, DEPLOYED AND VERIFIED 2026-07-31** (`deploy-qa.yml` run `30645618309` success, `image_tag=b226da72283781f91a50106dfc0fb3e036de8760`). `dt_pwa_static` / `dt_bff` / `dt_catalog_svc` all on that tag; guest `/` and `api/health` 200. **Verified in the served bundle, not just by container restart**: the discover route chunk carries `map.nearby=1, nearby.title=0`, and `auth.bootstrapping` + "A restaurar a sua sessão…" + "Escolha pelo menos uma categoria" are all present. main is `ea852fd` (docs-only on top), so **qual is current**.
+>
+> ⚠️ **Verifying a fix in the served bundle — the trap I fell into.** Chunk filenames contain dots and `$` (route files like `_authed.a.$action.tsx` → `_authed.a.$action-CLupmahA.js`). A regex of `[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8}\.js` truncates them, every fetch 404s, and grepping the empty bodies reports "the key is gone from all 64 chunks" — which reads exactly like a successful fix. **Assert HTTP 200 per chunk before believing any grep result.** Working regex: `[A-Za-z0-9_$.-]+-[A-Za-z0-9_-]{8}\.js`.
+>
+> Memory: NEW [[feedback-verification-that-cannot-fail]], [[feedback-uat-map-tile-console-noise]]; updated [[project-ff-testing-pivot]].
 
 > **UPDATE 2026-07-27 (LATEST — session `s726`. Cleared the blocking audit gate, then shipped BOTH items the last handoff owed: the S6b action-picker feature and the 3-bug fix batch. **4 PRs merged (#368, #369, #370, #372), 1 issue filed (#371), every merge Fable-gated.** Also fixed a shared-Traefik cert for qr-bell and reconciled the dt-tests board. main `d7eeaf7`; **qual DEPLOYED + verified** at closeout. Session closed early for token budget, not because work stalled.)**
 >
