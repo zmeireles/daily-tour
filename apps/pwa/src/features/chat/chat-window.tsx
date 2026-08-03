@@ -51,7 +51,13 @@ export function ChatWindow({ messages, status, onSend }: ChatWindowProps) {
   const sendDisabled = inputDisabled || draft.trim().length === 0;
 
   return (
-    <div className="flex flex-col h-full bg-surface">
+    // Bottom inset: the composer is the last row of a full-height column, so a
+    // bottom-pinned banner sits right on top of the Send button. Measured on a
+    // 390px phone: unreachable on a guest's first visit without this.
+    <div
+      className="flex flex-col h-full bg-surface"
+      style={{ paddingBottom: "var(--bottom-inset, 0px)" }}
+    >
       <div
         className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2"
         aria-live="polite"

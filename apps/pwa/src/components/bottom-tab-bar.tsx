@@ -45,9 +45,12 @@ export function BottomTabBar({ active = "explore", className }: BottomTabBarProp
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-30 border-t border-outline-variant bg-surface pb-[env(safe-area-inset-bottom)]",
+        "fixed inset-x-0 z-30 border-t border-outline-variant bg-surface pb-[env(safe-area-inset-bottom)]",
         className,
       )}
+      // Sits above any bottom-pinned banner rather than under it — the consent
+      // banner is z-50 and was covering all four tabs on a phone.
+      style={{ bottom: "var(--bottom-inset, 0px)" }}
       aria-label="Primary"
     >
       <ul className="flex items-stretch">

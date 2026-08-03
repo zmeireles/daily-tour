@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useConsentStore } from "@/lib/consent/use-consent";
+import { usePublishBottomInset } from "@/lib/layout/bottom-inset";
 
 // Shown only to undecided users (analytics === "unset"). GDPR requires the
 // decline path to be as easy as accept, so both are equally-prominent buttons
@@ -8,12 +10,19 @@ export function ConsentBanner() {
   const { t } = useTranslation("common");
   const analytics = useConsentStore((s) => s.analytics);
   const setAnalytics = useConsentStore((s) => s.setAnalytics);
+  const ref = useRef<HTMLDivElement>(null);
+  const onAdmin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+  const visible = !onAdmin && analytics === "unset";
+  // Reserve our height so the tab bar and discover sheet lift clear of us.
+  // Without this the banner covers primary navigation and the chat Send button
+  // on a phone, and a thumb aimed at a place card lands on Accept/Decline.
+  usePublishBottomInset(ref, visible);
 
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) return null;
-  if (analytics !== "unset") return null;
+  if (!visible) return null;
 
   return (
     <div
+      ref={ref}
       role="region"
       aria-label={t("consent.title")}
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant bg-surface-container px-4 py-4 shadow-lg"
