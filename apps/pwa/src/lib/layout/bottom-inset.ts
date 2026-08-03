@@ -34,10 +34,14 @@ export function usePublishBottomInset(ref: RefObject<HTMLElement | null>, active
   useLayoutEffect(() => {
     const el = ref.current;
     const root = document.documentElement;
-    if (!active || !el) {
-      root.style.removeProperty(BOTTOM_INSET_VAR);
-      return;
-    }
+    // Deliberately does NOT clear on the inactive path: an inactive instance
+    // must not wipe a value another banner is publishing. All three banners are
+    // permanently mounted, so once a second one is wired, an offline banner
+    // flipping true→false would otherwise clear consent's inset — and consent's
+    // effect would never re-run to restore it, silently bringing the overlap
+    // back. The active→false transition is already covered by this effect's own
+    // cleanup below.
+    if (!active || !el) return;
 
     const publish = () => {
       root.style.setProperty(BOTTOM_INSET_VAR, `${Math.ceil(el.getBoundingClientRect().height)}px`);

@@ -117,8 +117,13 @@ export default function PlaceDetailRoute() {
   const mobile = (
     <>
       {/* pb-28 (not pb-24) so the bottom PlaceMap clears the fixed BottomTabBar +
-          its safe-area inset at tablet width (placedetail-map-tabbar-overlap). */}
-      <main className="min-h-svh w-full bg-surface pb-28">
+          its safe-area inset at tablet width (placedetail-map-tabbar-overlap).
+          The inset stacks on top: when a bottom banner is up the tab bar lifts
+          by its height, so the band to clear grows by the same amount. */}
+      <main
+        className="min-h-svh w-full bg-surface pb-28"
+        style={{ paddingBottom: "calc(7rem + var(--bottom-inset, 0px))" }}
+      >
         <Hero
           imageUrl={firstImageUrl}
           title={nameResult.text}

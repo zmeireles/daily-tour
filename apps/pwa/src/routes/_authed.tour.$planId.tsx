@@ -131,8 +131,13 @@ export default function TourPlanRoute() {
         ? t("tour.editorial.subline", { count: stops.length, hours: spanHours })
         : t("tour.editorial.subline_no_hours", { count: stops.length });
 
+    // pb-24 clears the fixed BottomTabBar; the inset stacks on top of it, since
+    // a bottom banner lifts that bar by its own height.
     const mobile = (
-      <main className="min-h-svh bg-surface px-4 pt-6 pb-24 max-w-lg mx-auto">
+      <main
+        className="min-h-svh bg-surface px-4 pt-6 pb-24 max-w-lg mx-auto"
+        style={{ paddingBottom: "calc(6rem + var(--bottom-inset, 0px))" }}
+      >
         {/* Editorial header */}
         <header className="mb-10">
           <Overline size="sm" className="text-[var(--sun-400)]">
