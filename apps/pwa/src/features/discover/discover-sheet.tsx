@@ -91,10 +91,12 @@ export function DiscoverSheet({
       initial={false}
       transition={{ type: "spring", damping: 30, stiffness: 280 }}
       className={cn(
-        "absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-2xl",
+        "absolute inset-x-0 z-30 flex flex-col rounded-t-2xl",
         "bg-surface-container-low shadow-[0_-10px_40px_rgba(0,0,0,0.25)]",
       )}
-      style={{ height: expanded ? "85%" : "45%" }}
+      // Lift clear of any bottom-pinned banner (consent is z-50 and was
+      // covering the peek ribbon's titles and action chips).
+      style={{ height: expanded ? "85%" : "45%", bottom: "var(--bottom-inset, 0px)" }}
     >
       {/* Drag handle — also an accessible toggle for keyboard users. */}
       <button

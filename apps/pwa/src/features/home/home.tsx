@@ -12,7 +12,12 @@ import { SupportFooter } from "@/components/support-footer";
 // switch between this and HomeDesktop. Unchanged below the breakpoint.
 export function Home() {
   return (
-    <div className="min-h-svh bg-background flex flex-col">
+    // Bottom inset stacks on top of the footer's own pb-28 (which clears the
+    // tab bar): with a banner up the tab bar lifts, so content needs both.
+    <div
+      className="min-h-svh bg-background flex flex-col"
+      style={{ paddingBottom: "var(--bottom-inset, 0px)" }}
+    >
       <BrandAppBar right={<LocaleSwitcher />} />
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
         <main className="flex flex-1 flex-col">
