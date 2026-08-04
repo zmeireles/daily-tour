@@ -83,6 +83,21 @@ void i18n
     ns: ["common", "public", "home", "place", "discover", "admin", "legal"],
     defaultNS: "common",
     fallbackLng: "en",
+    // The four locales actually present in `resources` above — de/ exists on
+    // disk but is never imported, so a German browser correctly gets English.
+    //
+    // This one line is what routes region-less and other-region Portuguese to
+    // the bundle we ship: `pt` and `pt-BR` both resolve to **pt-PT**. Without
+    // it they fell straight through to an all-English UI with the pt-PT bundle
+    // sitting unused a few bytes away — silently, because it reads as a
+    // language preference rather than a failure. A browser reporting
+    // ["pt","pt-PT"] is entirely ordinary. (#383)
+    //
+    // ⚠️ Do NOT reach for `nonExplicitSupportedLngs` here. It resolves a tag to
+    // its BASE language (pt-PT -> pt), and since no `pt` bundle exists it sends
+    // **pt-PT itself** to English — breaking the primary guest locale. Measured
+    // against a real i18next instance; it looks and reads correct.
+    supportedLngs: ["en", "pt-PT", "fr", "es"],
     interpolation: { escapeValue: false },
   });
 
