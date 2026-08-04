@@ -51,7 +51,16 @@ export function countPlacesNeedingAttention(rows: PlaceRow[]): number {
 }
 
 // Localized display name for an owner property: current language first, then the
-// PT-PT / EN owner baselines, then any value present.
+// base language, then the PT-PT / EN owner baselines, then any value present.
+//
+// The base-language step is load-bearing, not defensive. Name maps are keyed by
+// the content locales (`en`, `pt-PT`, `es`), but callers pass `i18n.language`,
+// which is a browser tag — an English owner reports `en-US`, which matches no
+// key and used to fall through to the **pt-PT** baseline. Every English-browser
+// owner was reading Portuguese property names. Splitting the region makes this
+// independent of however i18next happens to normalize the tag, and matches
+// `guesthouseName` in reservation-list.tsx, which already did it.
 export function localizedName(name: Record<string, string>, lang: string): string {
-  return name[lang] ?? name["pt-PT"] ?? name["en"] ?? Object.values(name)[0] ?? "";
+  const base = lang.split("-")[0] ?? lang;
+  return name[lang] ?? name[base] ?? name["pt-PT"] ?? name["en"] ?? Object.values(name)[0] ?? "";
 }

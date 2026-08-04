@@ -8,7 +8,7 @@ import type { ReservationRow } from "@/features/backoffice/reservations/use-rese
 import type { PlaceRow } from "@/features/backoffice/places/use-places";
 import type { GuesthouseRow } from "@/features/backoffice/guesthouses/use-guesthouses";
 import type { OwnerProfile } from "@/features/backoffice/profile/use-profile";
-import { localTodayISO } from "@/features/admin-today/lib";
+import { localTodayISO, localizedName } from "@/features/admin-today/lib";
 
 vi.mock("@/features/backoffice/reservations/use-reservations", () => ({
   useReservations: vi.fn(),
@@ -162,7 +162,12 @@ beforeEach(() => {
     // Confirmed booking whose guest link hasn't been sent → counts as "pending" (a to-do).
     makeReservation({ id: "r1", checkin: TODAY, status: "confirmed", token_state: "none" }),
     // Confirmed booking with an active guest link → an "active link", not pending.
-    makeReservation({ id: "r2", checkin: "2099-01-02", status: "confirmed", token_state: "active" }),
+    makeReservation({
+      id: "r2",
+      checkin: "2099-01-02",
+      status: "confirmed",
+      token_state: "active",
+    }),
   ]);
   setPlaces([makePlace({})]);
   setThreads(3);
@@ -174,8 +179,17 @@ describe("TodayDashboard (/admin index)", () => {
   it("renders the greeting with the owner name — not a blank pane", () => {
     renderToday();
     expect(screen.getByRole("heading", { name: /Miguel/ })).toBeInTheDocument();
-    // Active property name from the first guesthouse.
-    expect(screen.getByText("Casa do Miguel")).toBeInTheDocument();
+    // Active property name from the first guesthouse, in the console's own
+    // language. jsdom reports en-US, so the English name is the correct pick.
+    //
+    // This previously asserted the PORTUGUESE name, and passed only by accident:
+    // i18n.language was the raw `en-US`, which matched no key in the name map,
+    // so localizedName fell through to its pt-PT baseline. That was the bug —
+    // every English-browser owner read Portuguese property names — and it is
+    // fixed in localizedName (base-language step) plus #383's locale
+    // negotiation. The assertion below is what correct looks like.
+    expect(screen.getByText("Miguel's House")).toBeInTheDocument();
+    expect(screen.queryByText("Casa do Miguel")).toBeNull();
   });
 
   it("renders all KPI tiles with counts derived client-side", () => {
@@ -247,5 +261,30 @@ describe("TodayDashboard (/admin index)", () => {
     renderToday();
     expect(screen.getByText("Finish setting up")).toBeInTheDocument();
     expect(screen.getByText("Add your first place")).toBeInTheDocument();
+  });
+});
+
+// Callers pass i18n.language — a browser tag like `en-US` — while name maps are
+// keyed by content locale (`en`, `pt-PT`, `es`). Without the base-language step
+// `en-US` matches nothing and falls through to the pt-PT baseline, which is how
+// every English-browser owner ended up reading Portuguese property names.
+describe("localizedName", () => {
+  const NAME = { "pt-PT": "Casa do Miguel", en: "Miguel's House", es: "Casa de Miguel" };
+
+  it.each([
+    ["en-US", "Miguel's House"], // regional tag → base language, NOT the pt baseline
+    ["en", "Miguel's House"],
+    ["pt-PT", "Casa do Miguel"], // exact key still wins
+    ["es-MX", "Casa de Miguel"],
+    ["fr", "Casa do Miguel"], // nothing for fr → documented pt-PT owner baseline
+  ])("%s picks %s", (lang, expected) => {
+    expect(localizedName(NAME, lang)).toBe(expected);
+  });
+
+  it("falls back through pt-PT, then en, then any value, then empty", () => {
+    expect(localizedName({ "pt-PT": "Só PT" }, "en-US")).toBe("Só PT");
+    expect(localizedName({ en: "Only EN" }, "fr")).toBe("Only EN");
+    expect(localizedName({ de: "Nur DE" }, "fr")).toBe("Nur DE");
+    expect(localizedName({}, "en")).toBe("");
   });
 });
