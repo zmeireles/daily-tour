@@ -88,6 +88,30 @@ for (const ns of namespaces) {
 
 // ── B. Callsite resolution ──────────────────────────────────────────────────
 
+// SHIPPED_LOCALES duplicates the import list in src/lib/i18n/index.ts, so assert
+// they agree rather than trusting the comment. The dangerous direction is
+// REMOVAL: drop a locale from the app and forget this list, and the check goes
+// silently LOOSER — keys that live only in the dropped bundle keep passing while
+// no user can reach them. Adding one is merely stricter, which is visible.
+{
+  const i18nSrc = readFileSync(join(SRC_DIR, "lib/i18n/index.ts"), "utf8");
+  const resourcesBlock = i18nSrc.slice(i18nSrc.indexOf("const resources = {"));
+  const appLocales = [...resourcesBlock.matchAll(/^\s{2}(?:"([^"]+)"|([a-zA-Z-]+)):\s*\{/gm)].map(
+    (m) => m[1] ?? m[2],
+  );
+  const missing = appLocales.filter((l) => !SHIPPED_LOCALES.includes(l));
+  const extra = SHIPPED_LOCALES.filter((l) => !appLocales.includes(l));
+  if (missing.length || extra.length) {
+    console.error(
+      `\n✗ SHIPPED_LOCALES has drifted from src/lib/i18n/index.ts.\n` +
+        (missing.length ? `  In the app but not in this script: ${missing.join(", ")}\n` : "") +
+        (extra.length ? `  In this script but not in the app: ${extra.join(", ")}\n` : "") +
+        `  Reconcile them — an unnoticed removal makes this check silently weaker.\n`,
+    );
+    failed = true;
+  }
+}
+
 // locale -> ns -> parsed bundle, shipped locales only.
 const bundles = {};
 for (const loc of SHIPPED_LOCALES) {
@@ -146,7 +170,11 @@ function assertStillUnreachable() {
     const importers = allFiles.filter((f) => {
       if (relative(SRC_DIR, f) === rel) return false;
       const src = readFileSync(f, "utf8");
-      return new RegExp(`from\\s+["'][^"']*${base}["']`).test(src);
+      // Static `from "…"`, bare side-effect `import "…"`, AND dynamic
+      // `import("…")`. The dynamic form is not an edge case here: React.lazy is
+      // precisely how someone would wire a drawer, so a check that only saw
+      // static imports would go quietly blind on the most realistic path.
+      return new RegExp(`(?:from\\s+|import\\s*\\(\\s*|import\\s+)["'][^"']*${base}["']`).test(src);
     });
     if (importers.length > 0) {
       console.error(
@@ -163,11 +191,40 @@ assertStillUnreachable();
 const unresolved = [];
 let dynamicCount = 0;
 
+const lineOf = (src, index) => src.slice(0, index).split("\n").length;
+
+/**
+ * True when the match sits on a comment line. A gate that blocks on a
+ * `// TODO: t("future.key")` is a gate someone disables.
+ *
+ * Deliberately a per-line test rather than stripping comments from the whole
+ * file first: a naive strip is not safe on TSX — the first attempt blanked a
+ * live `useTranslation("home")` line and produced four false positives against
+ * perfectly good code. For a CI gate, failing valid code is the worse error,
+ * so this trades a little precision for the guarantee that it can only ever
+ * ignore things, never invent them.
+ */
+function inComment(src, index) {
+  const start = src.lastIndexOf("\n", index) + 1;
+  const prefix = src.slice(start, index);
+  const trimmed = prefix.trimStart();
+
+  // Whole line is a comment (`// …`, a `*` continuation line, or a JSX `{/* …`).
+  if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("{/*")) return true;
+
+  // Mid-line: a `//` after code (ignoring `://` in URLs), or an unclosed `/*`
+  // opened earlier on this same line — e.g. `{count} {/* TODO: t("x") */}`.
+  if (/(^|[^:])\/\//.test(prefix)) return true;
+  const open = prefix.lastIndexOf("/*");
+  if (open !== -1 && prefix.indexOf("*/", open) === -1) return true;
+
+  return false;
+}
+
 for (const file of allFiles) {
   const rel = relative(SRC_DIR, file);
   if (UNREACHABLE_FILES.includes(rel)) continue;
   const src = readFileSync(file, "utf8");
-  const lines = src.split("\n");
 
   // Namespaces bound in this file. A bare useTranslation() binds the defaultNS.
   const bound = [];
@@ -179,43 +236,75 @@ for (const file of allFiles) {
   const keyPrefix = src.match(/keyPrefix:\s*["']([^"']+)["']/)?.[1];
   const fileNs = bound.length ? [...new Set(bound)] : ["common"];
 
-  lines.forEach((line, i) => {
-    // Template literals with interpolation cannot be resolved statically.
-    // Counted and reported rather than passed over silently — a check that
-    // quietly ignores what it cannot see reads exactly like full coverage.
-    dynamicCount += [...line.matchAll(/\bt\(\s*`[^`]*\$\{/g)].length;
+  // Renamed bindings: `const { t: tHome } = useTranslation("home")`. Without
+  // these, five live callsites were never scanned at all.
+  const aliases = [...src.matchAll(/\{\s*t:\s*([A-Za-z_$][\w$]*)/g)].map((m) => m[1]);
+  const callers = ["t", "i18n\\.t", ...aliases].join("|");
 
-    const hits = [
-      ...[...line.matchAll(/\bt\(\s*["']([^"']+)["']/g)].map((m) => ({ m, kind: "t()" })),
-      ...[...line.matchAll(/i18nKey=["']([^"']+)["']/g)].map((m) => ({ m, kind: "Trans" })),
-    ];
+  // Whole-file, not line-by-line: prettier wraps any call past 80 columns onto
+  // its own line, and a per-line regex sees none of those. 26 such callsites
+  // existed here — including one with a positional default, the exact shape of
+  // the bug this check exists to catch.
+  const CALL = new RegExp(`\\b(?:${callers})\\(\\s*`, "g");
 
-    for (const { m, kind } of hits) {
-      let key = m[1];
-      let nsCandidates = fileNs;
+  for (const call of src.matchAll(CALL)) {
+    if (inComment(src, call.index)) continue;
+    const after = src.slice(call.index + call[0].length);
 
-      if (key.includes(":")) {
-        const [ns, ...rest] = key.split(":");
-        nsCandidates = [ns];
-        key = rest.join(":");
-      } else {
-        if (keyPrefix) key = `${keyPrefix}.${key}`;
-        const nsOpt = line.slice(m.index).match(/ns:\s*["']([^"']+)["']/)?.[1];
-        if (nsOpt) nsCandidates = [nsOpt];
-      }
-
-      // i18next also falls back to the defaultNS.
-      if (nsCandidates.some((ns) => resolves(ns, key)) || resolves("common", key)) continue;
-
-      const masked = /defaultValue/.test(line.slice(m.index, m.index + 220) + (lines[i + 1] ?? ""));
-      unresolved.push(
-        `${rel}:${i + 1} [${kind} ns=${nsCandidates.join("|")}] "${key}" — ` +
-          (masked
-            ? "masked by a hardcoded default (wrong language everywhere)"
-            : "renders the raw key"),
-      );
+    // Anything not opening with a plain quoted literal is not statically
+    // readable: template literals, `t(variable)`, `t("a" + b)`. Counted as
+    // skipped rather than ignored — "we report what we cannot see" is only
+    // honest if it covers every such form, not just template literals.
+    const lit = after.match(/^(["'])([^"'\n]*)\1/);
+    if (!lit || /^\s*\+/.test(after.slice(lit[0].length))) {
+      dynamicCount++;
+      continue;
     }
-  });
+
+    let key = lit[2];
+    let nsCandidates = fileNs;
+    const window = after.slice(0, 260);
+
+    if (key.includes(":")) {
+      const [ns, ...rest] = key.split(":");
+      nsCandidates = [ns];
+      key = rest.join(":");
+    } else {
+      if (keyPrefix) key = `${keyPrefix}.${key}`;
+      const nsOpt = window.match(/ns:\s*["']([^"']+)["']/)?.[1];
+      if (nsOpt) nsCandidates = [nsOpt];
+    }
+
+    // No fallback to `common` here. The app sets defaultNS but NOT fallbackNS,
+    // and i18next does not fall back to the defaultNS for a namespace-bound
+    // `t` — so accepting a common-only key would green a callsite that renders
+    // the raw key at runtime.
+    if (nsCandidates.some((ns) => resolves(ns, key))) continue;
+
+    // This repo mostly uses i18next's POSITIONAL default (`t("k", "Text")`)
+    // rather than `{ defaultValue }`, so detect both or the diagnosis misleads.
+    const masked =
+      /^\s*,\s*(["'])/.test(window.slice(lit[0].length)) || /defaultValue/.test(window);
+    unresolved.push(
+      `${rel}:${lineOf(src, call.index)} [ns=${nsCandidates.join("|")}] "${key}" — ` +
+        (masked
+          ? "masked by a hardcoded default (wrong language everywhere)"
+          : "renders the raw key"),
+    );
+  }
+
+  for (const m of src.matchAll(/i18nKey=["']([^"']+)["']/g)) {
+    if (inComment(src, m.index)) continue;
+    let key = m[1];
+    let nsCandidates = fileNs;
+    if (key.includes(":")) {
+      const [ns, ...rest] = key.split(":");
+      nsCandidates = [ns];
+      key = rest.join(":");
+    }
+    if (nsCandidates.some((ns) => resolves(ns, key))) continue;
+    unresolved.push(`${rel}:${lineOf(src, m.index)} [Trans ns=${nsCandidates.join("|")}] "${key}"`);
+  }
 }
 
 if (unresolved.length > 0) {
