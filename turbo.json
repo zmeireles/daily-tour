@@ -1,5 +1,20 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  // Measured, not guessed — see #393. Eight packages run vitest, each with its
+  // own default worker pool (~cores-1), so turbo's default of 10 puts up to ~88
+  // workers on a 12-core dev box and far worse on a 4-core CI runner. The
+  // symptoms were infrastructure-shaped: a testcontainers Postgres killed
+  // mid-query (57P01 admin_shutdown) and tsup's temp config deleted before it
+  // could be read.
+  //
+  // Interleaved A/B, 6 pairs, to control for machine-load drift:
+  //   default (10):    2/6 runs failed   (6/12 pooled across all trials)
+  //   concurrency 2:   0/6 runs failed   (0/9 pooled)
+  // Wall-clock cost is ~4% (mean 2m13 -> 2m19): the extra parallelism was
+  // buying contention, not speed.
+  //
+  // Raising this needs new measurements, not intuition. 3 and 4 are untested.
+  "concurrency": "2",
   "ui": "tui",
   "globalDependencies": ["tsconfig.base.json", ".npmrc", ".nvmrc"],
   "globalEnv": ["NODE_ENV"],
