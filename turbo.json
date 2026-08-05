@@ -29,7 +29,7 @@
       "outputs": []
     },
     "check:i18n": {
-      "inputs": ["src/locales/**", "scripts/check-i18n-keys.mjs"],
+      "inputs": ["src/**", "scripts/check-i18n-keys.mjs"],
       "outputs": []
     },
     "clean": {
