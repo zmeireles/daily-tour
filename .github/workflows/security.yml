@@ -73,6 +73,18 @@ jobs:
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
 
+      # The dev graph is gated too (#371). It was ungated for a long time and
+      # accumulated 23 high plus one critical (vitest <3.2.6, CVSS 9.8) that
+      # nobody saw, because --prod skips it entirely. A build-and-test toolchain
+      # is code that runs on developer machines and on this runner with a
+      # checkout of the repository; "not shipped" is not "not exposed".
+      #
+      # Kept as a SEPARATE step from the prod audit on purpose: when this one
+      # goes red it must be obvious that production is unaffected, so the
+      # response can be proportionate instead of alarmed.
+      - name: Audit development dependencies
+        run: pnpm audit --audit-level=high
+
   codeql:
     name: CodeQL (JS/TS)
     runs-on: ubuntu-24.04

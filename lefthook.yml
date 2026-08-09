@@ -97,11 +97,18 @@ pre-push:
 
     audit:
       # Mirror the CI security workflow's pnpm-audit job so we catch HIGH+ CVEs
-      # in prod deps locally before they fail the PR. The CI gate stays — this is
+      # locally before they fail the PR. The CI gate stays — this is
       # belt-and-braces. Runs in parallel with typecheck for speed.
+      #
+      # Both graphs, prod first: when the pair fails you want to know
+      # immediately whether production is affected. Three newly-published
+      # advisories blocked pushes in a single session (brace-expansion,
+      # fast-uri, nanoid), so this fires more often than you would expect —
+      # that is the gate working, not the gate misbehaving.
       run: |
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
         pnpm audit --prod --audit-level=high
+        pnpm audit --audit-level=high
       fail_text: "HIGH+ vulnerability in prod dependencies. See https://github.com/advisories and bump the affected package."
 
     tests:
