@@ -105,11 +105,17 @@ pre-push:
       # advisories blocked pushes in a single session (brace-expansion,
       # fast-uri, nanoid), so this fires more often than you would expect —
       # that is the gate working, not the gate misbehaving.
+      # `|| exit 1` is load-bearing: a lefthook run-block has no `set -e`, so the
+      # block's exit code is the LAST command's only. Without it the prod line's
+      # failure is silently discarded and the verdict rides entirely on the full
+      # audit — which happens to be correct today (full ⊇ prod) but is correct by
+      # accident, and stops being correct the moment anyone reorders these lines.
+      # `set -e` is not an option here: it would abort on the nvm guard.
       run: |
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
-        pnpm audit --prod --audit-level=high
-        pnpm audit --audit-level=high
-      fail_text: "HIGH+ vulnerability in prod dependencies. See https://github.com/advisories and bump the affected package."
+        pnpm audit --prod --audit-level=high || exit 1
+        pnpm audit --audit-level=high || exit 1
+      fail_text: "HIGH+ vulnerability in dependencies. The PROD line runs first — if it passed and this still failed, the advisory is dev-only and production is unaffected. See https://github.com/advisories and bump the affected package, or add a closed-range pnpm override."
 
     tests:
       # CI runs `turbo run test --filter=...[origin/main]`. Mirror that here so

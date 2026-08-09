@@ -82,7 +82,10 @@ jobs:
       # Kept as a SEPARATE step from the prod audit on purpose: when this one
       # goes red it must be obvious that production is unaffected, so the
       # response can be proportionate instead of alarmed.
-      - name: Audit development dependencies
+      # Named for what it does: pnpm has no prod-excluding audit, so this is the
+      # FULL graph. It is legible only because the prod step runs first — if
+      # that one passed and this one fails, the advisory is dev-only.
+      - name: Audit full dependency graph (dev + prod)
         run: pnpm audit --audit-level=high
 
   codeql:
