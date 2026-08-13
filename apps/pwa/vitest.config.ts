@@ -13,6 +13,17 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Raised from vitest's 5000ms default. Under vitest 3 these suites take
+    // materially longer per test, and under any parallel load the form suites
+    // (PlaceForm, GuesthouseForm) cross the default and fail as timeouts —
+    // never as assertions. Measured: 24 failures across two runs, all of them
+    // "Test timed out in 5000ms".
+    //
+    // This is a MITIGATION, not a diagnosis. The tests did not get worse; the
+    // runner did, and the cause is not established. Trading some early-warning
+    // on genuinely-hung tests for a suite that can survive being run alongside
+    // ten other packages.
+    testTimeout: 20000,
     setupFiles: ["./src/__tests__/setup.ts"],
     // react-router v8 splits the DOM RouterProvider into the `react-router/dom`
     // entry, which re-imports RouterProvider from the bare `react-router`
