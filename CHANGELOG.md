@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed — a guest's first tap could record a consent choice, and other phone-screen damage (2026-08-03)
+
+- **The consent banner covered the app (#380).** On a phone, on a guest's very first visit, it sat on top of **all four navigation tabs** and the **Send button** in chat — so there was no working navigation and no way to message the host until the banner was dismissed. Worse, a thumb aimed at the lower half of a place card landed on **Accept/Decline** and silently recorded a GDPR consent choice the guest never intended to make. Bottom-pinned surfaces now measure the banner and lift clear of it.
+
+### Fixed — the app spoke the wrong language, in four more places (2026-08-04)
+
+- **Owners browsing in English were reading Portuguese property names (#383).** The dashboard fell back to the Portuguese name whenever the browser reported a regional tag like `en-US`, which is every English browser. English console, Portuguese content — against the documented rule that the interface never mixes languages.
+- **Guests whose browser says `pt` or `pt-BR` got an entirely English app (#383).** The Portuguese bundle was sitting unused a few bytes away. A `pt` browser was also getting **Brazilian** date and number formatting; it now gets European Portuguese.
+- The language switcher highlighted **no button at all** for an English browser — fixed as a side effect.
+
+### Added — the checks that stop these shipping again (2026-08-09)
+
+- **Missing translations now fail the build (#379).** The old check compared the English and Portuguese files _to each other_, so a phrase missing from **every** language was invisible to it — which is exactly how the four bugs above shipped green. The new check reads the app's own code and fails when a phrase has no translation anywhere. It was tested against all four historical bugs and catches each one.
+- **Test runs stopped failing at random (#393).** Roughly one in five pushes was failing for reasons that had nothing to do with the code — the machine was simply running too much at once. Capping the parallelism removed the failures **and made the suite 26% faster**; the extra parallelism was buying contention, not speed.
+- **Build-tool dependencies are now security-scanned too (#371).** They never had been, and had quietly accumulated 22 high-severity advisories plus one critical. All cleared. Production dependencies were never affected, and the new check is deliberately separate so that stays obvious.
+
 ### Fixed — the app spoke the wrong language in four places (2026-07-28)
 
 Four strings rendered in the wrong language because their translation key was never wired up. Each shipped green: the key checker compares the English and Portuguese files against **each other**, so a key missing from _every_ language is invisible to it (#377, #381 — both Fable-gated).

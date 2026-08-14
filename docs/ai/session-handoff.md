@@ -1,4 +1,58 @@
-# Session Handoff — … → 07-28 (**s728 — react-router v8 cleared on the guest surface, UAT #30 PASSED, and 7 real bugs found that nobody was looking for.** 3 PRs merged, 6 issues filed, every merge Fable-gated. ▶ next: #380 consent mis-tap, then the three owner decisions — #379, #383, #371. **Lane-3 Phase 2 DONE; qual deployed + verified on `b226da7`.**) · 07-27 (s726 — audit gate unblocked, action picker + 3-bug batch shipped) · 07-25 (F&F validation PIVOTED to owner-as-every-persona solo dogfooding) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-14 (**s728 — all three owner decisions shipped, CI stabilised, and the i18n + dependency defect classes closed with proven guards.** 9 PRs merged, 11 issues filed, 6 closed. ▶ next: **deploy `main` to qual** — it is 6 code commits ahead — then UAT #31, then pick from the 8 open issues.) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-14 (LATEST — session `s728`, long-running. The three decisions the owner made on 08-03 (#379, #383, #371) are all shipped, plus #380 and #393. **9 PRs merged, every one Fable-gated; 11 issues filed, 6 closed.** main `51677bf`; 0 open PRs; branches = main only.)**
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami` FIRST** — confirm `dt:Furnas` / `DAILY-TOUR`. Cheap, and a wrong-token session looks completely normal from the inside.
+> 2. **`comm_inbox after_seq=626`** — that is my own last send. Everything up to 626 is drained and acked.
+> 3. **Re-arm the A2A bridge** (stopped at closeout). daily-tour has no local script — use codecomedy-platform's with daily-tour's env:
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    ⚠️ **Check the env/path, never the count** — this session found 10 live `comm-watch` processes and none were daily-tour's.
+> 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — empty at close. Note the token now scopes **both** projects, which #145 made load-bearing when reads became authorized.
+>
+> ### ▶ THE QUEUE
+>
+> **Do first — qual is stale.** main is **6 code commits ahead** of qual (`d1177669`): the i18n gate, the concurrency cap, the dev-audit gate, the vitest 3 bump, and the locale CHECK migration. `image_tag` = the FULL 40-char SHA of a `publish-images` commit. **The token-svc migration `0001_narrow_locale_check` applies on boot** — it is safe (zero rows in `pt-BR`/`de`, re-measured) but it is the first schema change deployed in a while, so watch `dt_token_svc` come up.
+>
+> **Human:** **UAT #31** — https://tasks.codecomedy.dev/p/dt-tests/r/31 (card corrected: no kebab→Arquivar, archiving is irreversible, both cosmetic defects flagged so they aren't failed by mistake).
+>
+> **Open issues, my ordering:** **#380-family follow-ups** — #382 (390px overflow, Español clipped) · #376 (archiving is a one-way door — carries an open product question) · #395 (eslint globs tsup's temp config; deterministic, and #394 can only narrow that race) · #391/#392 (Intl regional loss; four fallback helpers with three orders) · #389 (dead FeedbackDrawer — delete or wire) · #328 (BFF limiter decode cost).
+>
+> ### Shipped (all merged, every one Fable-gated)
+>
+> | PR             | What                                                                     |
+> | -------------- | ------------------------------------------------------------------------ |
+> | #374           | s726 handoff, recovered from an unpushed local branch                    |
+> | #377           | discover leaked Portuguese into en/fr/es (`nearby.title` → `map.nearby`) |
+> | #381           | three more of the same class + guards proven to fail                     |
+> | #384/#385/#386 | handoff, Lane-3 Phase 2, qual deploy record                              |
+> | #387           | **#380** — consent banner covering navigation and the chat Send button   |
+> | #390           | **#379** — CI fails when a `t()` key resolves in no locale               |
+> | #394           | **#393** — turbo concurrency capped at 2                                 |
+> | #396           | **#371** — dev dependency graph gated and cleared                        |
+> | #397           | **#383** — locale CHECK narrowed to the four served locales              |
+>
+> ### The four things worth carrying forward
+>
+> **1 · A verification that cannot fail is indistinguishable from one that passed.** Hit repeatedly, by different mechanisms: a cleanup query keyed on `name->>'pt'` in a schema storing `pt-PT` (returns zero rows for _every_ row); a `.catch(() => {})` swallowing a blocked click so it read as "the app didn't navigate"; a chunk-name regex dropping dots so 64 `curl`s 404'd and grepping the empty bodies said "the key is gone"; wall-clock used as a control when variance at a fixed setting spans 1m23–2m56. **Anchor checks on something structurally guaranteed, and prove the check can go red before trusting the green.** Recorded as [[feedback-verification-that-cannot-fail]].
+>
+> **2 · Every guard added this session was verified to FAIL against its own bug** before being kept — the i18n scan against all four historical leaks, the consent inset against the stuck-var trap, the locale CHECK against a widened constraint, the audit gates against a removed override. That is now the house standard; a guard never seen failing is not a guard.
+>
+> **3 · An override floor with no ceiling is not a floor.** `>=4.3.1` on js-yaml let pnpm install **5.2.3**. Every override now closes its range. Separately: **four** newly-published advisories blocked pushes during this session (`brace-expansion`, `fast-uri`, `nanoid`, `extract-zip`) — a floor pinned to "whatever is installed today" ages into a blocker the moment the next CVE lands.
+>
+> **4 · `git stash -u` sweeps untracked files.** Dropping a stash later "because it only held a config change" destroyed two A2A use-case documents I had told a peer were in the repo. Recovered from a dangling object; the claim had been false for four days and nothing surfaced it.
+>
+> ### ⚠️ Two things NOT explained, stated as such
+>
+> - **Why vitest 3 made these suites slower.** `testTimeout: 20000` is mitigation, not diagnosis, and the trade (stability bought, early warning on hung tests sold) is written at the callsite. Measured: vitest 2 → 0/9 runs failed; vitest 3 → 4/4; with the timeout → 1/3.
+> - **#393 is closed as a monitored hypothesis, not a fix.** My interleaved A/B was **p = 0.227** — not significant. What carries it is CI: 3 flakes in 15 main pushes, and the capped runs 26% faster. **Tripwire: if a main push fails with the tsup `ENOENT` or testcontainers `57P01`/Reaper signature, reopen #393 rather than rerunning.**
+>
+> ### A2A
+>
+> Answered `cs:Barra` twice on cc-specs spec 001. My delimitation — _"only the exit gates count; one case, not four"_ — made them recount ten domains and find they had **written a strict criterion and applied a permissive one**. My cases 1–3 entered as R1/R2; case 4 (provenance) is deferred at two domains of three, and I did not contest it. My measurement that the UAT set is _"whatever someone remembered to create"_ became clause **R4.2**. Cases live in `docs/ai/use-cases/`.
+>
+> Also ran the `#144` probe `cc:Bicho` had been waiting on with **n=0**: after the owner's `/mcp`, `comm_send` with a bogus handle returns `delivery.unresolved_members`. Reported as **n=1, opportunistic observation, not a designed experiment** — I did not choose the reconnection moment.
 
 > **UPDATE 2026-07-28 (LATEST — session `s728`. Verified the shipped react-router v8 major on the guest surface, ran UAT #30 to a PASS, and cleaned up an i18n defect class that had shipped green four times. **3 PRs merged (#374, #377, #381), 6 issues filed (#375–#376, #378–#380, #382–#383), every merge Fable-gated.** main `b226da7`; 0 open PRs; branches = main only.)**
 >
