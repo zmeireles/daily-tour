@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -153,7 +154,9 @@ function MessageBubble({
   const sender = isOwner ? t("chat.you", "You") : guestName;
   return (
     <div className={cn("flex", isOwner ? "justify-end" : "justify-start")}>
-      <div className={cn("flex max-w-[75%] flex-col gap-0.5", isOwner ? "items-end" : "items-start")}>
+      <div
+        className={cn("flex max-w-[75%] flex-col gap-0.5", isOwner ? "items-end" : "items-start")}
+      >
         <div
           className={cn(
             "rounded-2xl px-4 py-2 text-sm leading-relaxed break-words",
@@ -380,7 +383,7 @@ function ThreadList({
 // useSendReply invalidates the history query so the reply appears.
 export function ChatInbox() {
   const { t, i18n } = useTranslation("admin");
-  const locale = i18n.language;
+  const locale = formattingLocale(i18n.language);
   const mode = useLayoutMode();
   const { data: threads, isLoading, isError, refetch } = useChatThreads();
   const { data: resData } = useReservations();

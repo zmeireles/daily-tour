@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router/dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useOwnerSessionStore } from "@/store/owner-session";
 import AdminGuesthousesRoute from "@/routes/admin.guesthouses";
+import i18n from "@/lib/i18n";
 
 const MOCK_GH = {
   id: "00000000-0000-0000-0000-000000000001",
@@ -111,5 +112,62 @@ describe("admin guesthouses route", () => {
     await waitFor(() => {
       expect(screen.getByText("Failed to load guesthouses.")).toBeDefined();
     });
+  });
+
+  // #391 — the wiring test. `formatting-locale.test.ts` proves the helper in
+  // isolation; this proves this SCREEN actually uses it. Reverting
+  // guesthouse-list.tsx to `i18n.language` turns this red, which the helper's
+  // own unit tests would not.
+  //
+  // MOCK_GH.created_at is 2025-01-01. en-GB renders "1 Jan 2025"; the plain
+  // `en` that supportedLngs normalizes an en-GB browser down to renders
+  // "Jan 1, 2025".
+  it("uses the owner's regional English for the created date, not US format", async () => {
+    const languages = navigator.languages;
+    Object.defineProperty(window.navigator, "languages", {
+      value: ["en-GB"],
+      configurable: true,
+    });
+    await i18n.changeLanguage("en-GB");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: [MOCK_GH], nextCursor: null }),
+      }),
+    );
+
+    const { ui } = makeRouter();
+    render(ui);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Casa das Furnas").length).toBeGreaterThan(0);
+    });
+
+    // supportedLngs normalizes en-GB -> en, which is the whole bug.
+    expect(i18n.language).toBe("en");
+
+    // Derive both renderings from the same Date the component formats, rather
+    // than hardcoding strings: the mock timestamp is UTC midnight, so the
+    // local calendar day depends on the runner's timezone.
+    const opts = { year: "numeric", month: "short", day: "numeric" } as const;
+    const shown = new Date(MOCK_GH.updated_at);
+    const british = new Intl.DateTimeFormat("en-GB", opts).format(shown);
+    const american = new Intl.DateTimeFormat("en", opts).format(shown);
+
+    // Control: if these two ever render identically the assertions below prove
+    // nothing, so fail loudly rather than pass vacuously.
+    expect(british).not.toBe(american);
+
+    expect(screen.getAllByText(british).length).toBeGreaterThan(0);
+    expect(screen.queryByText(american)).toBeNull();
+
+    Object.defineProperty(window.navigator, "languages", {
+      value: languages,
+      configurable: true,
+    });
+    await i18n.changeLanguage("en");
   });
 });
