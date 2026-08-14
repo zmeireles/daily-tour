@@ -98,7 +98,36 @@ void i18n
     // **pt-PT itself** to English — breaking the primary guest locale. Measured
     // against a real i18next instance; it looks and reads correct.
     supportedLngs: ["en", "pt-PT", "fr", "es"],
+    // `htmlTag` is deliberately absent. It is in the detector's DEFAULT order,
+    // and it defeated `supportedLngs` entirely for every non-exact tag.
+    //
+    // The detector does not stop at the first hit — it CONCATENATES every
+    // detector's result. With `index.html` hardcoding `<html lang="en">`, a
+    // browser sending `pt` produced the code list ['pt', 'en']. i18next then
+    // scans that whole list for an EXACT match before it ever tries prefix
+    // matching, so 'en' won on the exact pass and 'pt' never reached the
+    // pt -> pt-PT step. Measured live on qual: pt, pt-BR, es-MX and fr-CA all
+    // rendered English; only an exact 'pt-PT' worked.
+    //
+    // Our own static markup was never a statement about the user's
+    // preference, so it does not belong among the signals. The lang attribute
+    // is an OUTPUT of negotiation (kept in sync below), never an input.
+    detection: {
+      order: ["querystring", "cookie", "localStorage", "sessionStorage", "navigator"],
+    },
     interpolation: { escapeValue: false },
   });
+
+// Keep <html lang> matching what we actually render. It shipped permanently as
+// "en", so assistive tech announced every Portuguese, French and Spanish page
+// with English pronunciation rules. This is the attribute's correct direction
+// of travel: written from the resolved language, never read back into it.
+const syncDocumentLang = (lng?: string) => {
+  const resolved = lng ?? i18n.resolvedLanguage ?? i18n.language;
+  if (resolved) document.documentElement.lang = resolved;
+};
+
+i18n.on("languageChanged", syncDocumentLang);
+syncDocumentLang();
 
 export default i18n;
