@@ -28,7 +28,7 @@ export const guestTable = authTokensSchema.table(
       .defaultNow(),
   },
   (t) => [
-    check("guest_locale_check", sql`${t.locale} IN ('en','pt-PT','pt-BR','de','es','fr')`),
+    check("guest_locale_check", sql`${t.locale} IN ('en','pt-PT','es','fr')`),
     check("guest_display_name_non_empty", sql`char_length(${t.displayName}) > 0`),
   ],
 );
@@ -56,7 +56,7 @@ export const reservationTable = authTokensSchema.table(
   },
   (t) => [
     check("reservation_party_size_positive", sql`${t.partySize} > 0`),
-    check("reservation_locale_check", sql`${t.locale} IN ('en','pt-PT','pt-BR','de','es','fr')`),
+    check("reservation_locale_check", sql`${t.locale} IN ('en','pt-PT','es','fr')`),
     check(
       "reservation_status_check",
       sql`${t.status} IN ('confirmed','checked_in','checked_out','cancelled')`,

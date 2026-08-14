@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export const LocaleSchema = z.enum(["en", "pt-PT", "pt-BR", "de", "es", "fr"]);
+// The locales the app can actually serve — the same four imported into the
+// PWA's i18n `resources`. Narrowed from six in #383: accepting 'pt-BR' or 'de'
+// here let a reservation be created for a guest whose UI would then be entirely
+// English, silently, because it read as a language preference rather than a
+// failure.
+//
+// This list exists in three places — here, the drizzle schema, and the database
+// CHECK — and all three must move together. Widening one alone is how they
+// drifted apart in the first place.
+export const LocaleSchema = z.enum(["en", "pt-PT", "es", "fr"]);
 export type Locale = z.infer<typeof LocaleSchema>;
 
 export const ChannelSchema = z.enum(["in_app", "telegram", "whatsapp_link", "whatsapp_cloud"]);
