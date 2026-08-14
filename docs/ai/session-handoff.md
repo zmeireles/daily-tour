@@ -1,4 +1,4 @@
-# Session Handoff — … → 08-14 (**s728 — all three owner decisions shipped, CI stabilised, and the i18n + dependency defect classes closed with proven guards.** 9 PRs merged, 11 issues filed, 6 closed. ▶ next: **deploy `main` to qual** — it is 6 code commits ahead — then UAT #31, then pick from the 8 open issues.) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-14 (**s728 — all three owner decisions shipped, CI stabilised, and the i18n + dependency defect classes closed with proven guards.** 9 PRs merged, 11 issues filed, 6 closed. ▶ next: **deploy `main` to qual** — it is 5 code commits ahead — then UAT #31, then pick from the 8 open issues.) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
 
 > **UPDATE 2026-08-14 (LATEST — session `s728`, long-running. The three decisions the owner made on 08-03 (#379, #383, #371) are all shipped, plus #380 and #393. **9 PRs merged, every one Fable-gated; 11 issues filed, 6 closed.** main `51677bf`; 0 open PRs; branches = main only.)**
 >
@@ -13,7 +13,15 @@
 >
 > ### ▶ THE QUEUE
 >
-> **Do first — qual is stale.** main is **6 code commits ahead** of qual (`d1177669`): the i18n gate, the concurrency cap, the dev-audit gate, the vitest 3 bump, and the locale CHECK migration. `image_tag` = the FULL 40-char SHA of a `publish-images` commit. **The token-svc migration `0001_narrow_locale_check` applies on boot** — it is safe (zero rows in `pt-BR`/`de`, re-measured) but it is the first schema change deployed in a while, so watch `dt_token_svc` come up.
+> **Do first — qual is stale.** main is **5 code commits ahead** of qual (`d1177669`), counted rather than estimated:
+
+> |           |                                                               |
+> | --------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | `268f00b` | #388 — `pt`/`pt-BR` guests resolve to pt-PT                   |
+> | `ccf65a3` | #390 — CI fails on an unresolvable `t()` key                  |
+> | `5ebb2f5` | #394 — turbo concurrency capped                               |
+> | `ac0160d` | #396 — dev dependency graph gated (carries the vitest 3 bump) |
+> | `7ed39e0` | #397 — locale CHECK narrowed (**schema migration**)           | `image_tag` = the FULL 40-char SHA of a `publish-images` commit. **The token-svc migration `0001_narrow_locale_check` applies on boot** — it is safe (zero rows in `pt-BR`/`de`, re-measured) but it is the first schema change deployed in a while, so watch `dt_token_svc` come up. |
 >
 > **Human:** **UAT #31** — https://tasks.codecomedy.dev/p/dt-tests/r/31 (card corrected: no kebab→Arquivar, archiving is irreversible, both cosmetic defects flagged so they aren't failed by mistake).
 >
