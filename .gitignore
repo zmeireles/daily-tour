@@ -55,3 +55,10 @@ infra/observability/alertmanager.yml
 # Same intent as .env above: never committed.
 dev-environment
 dev-environment.*
+
+# tsup's transient bundled config. bundle-require writes it beside the real
+# config during a build and unlinks it on the normal path — but a killed build
+# (the OOM/contention class behind #393) leaves it on disk. eslint now ignores
+# it (#395), so nothing would flag a stray one; without this, autocommit could
+# quietly commit it.
+tsup.config.bundled_*
