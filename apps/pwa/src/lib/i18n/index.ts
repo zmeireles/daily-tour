@@ -84,6 +84,12 @@ const resources = {
 // tag to its BASE language (pt-PT -> pt), and since no `pt` bundle exists it
 // sends **pt-PT itself** to English — breaking the primary guest locale.
 // Measured against a real i18next instance; it looks and reads correct.
+//
+// ⚠️ ORDER IS LOAD-BEARING. `convertDetectedLanguage` below maps a base-only
+// tag by first match, so `pt` -> `pt-PT` only because `pt-PT` is the first
+// `pt-*` entry. APPEND new locales, never insert: putting a hypothetical
+// `pt-BR` before `pt-PT` (the alphabetical instinct) silently flips every
+// bare-`pt` and `pt-MZ` guest to Brazilian Portuguese.
 const SUPPORTED_LNGS = ["en", "pt-PT", "fr", "es"] as const;
 
 void i18n
@@ -116,6 +122,25 @@ void i18n
       // `<html lang="en">` was appended to the guest's real preferences.
       // Our static markup is not a statement about what the user wants.
       order: ["querystring", "cookie", "localStorage", "sessionStorage", "navigator"],
+
+      // ⚠️ The key is versioned because the OLD one is poisoned, and fixing
+      // the negotiation alone would not have reached the guests who hit the
+      // bug. The detector caches its result to `localStorage` and reads that
+      // cache BEFORE `navigator`. Every visit during the broken period wrote
+      // `i18nextLng=en`; since `en` is an exact `supportedLngs` member it
+      // would keep winning after the fix, and keep being re-cached — sticky
+      // forever, for exactly the population that experienced the defect.
+      //
+      // Measured: a profile holding `i18nextLng=en` still resolves `en` for a
+      // `["pt-BR","pt","en-US","en"]` browser under the corrected config;
+      // clearing storage resolves `pt-PT`. Reading a fresh key is what makes
+      // the fix reach real returning guests instead of only fresh profiles.
+      //
+      // Cost: explicit language picks made before this ships are forgotten
+      // once. That is the right trade — a cached `en` is indistinguishable
+      // from a deliberate `en`, and the mis-negotiated population is the far
+      // larger one.
+      lookupLocalStorage: "i18nextLng.v2",
 
       // ⚠️ Removing `htmlTag` is necessary but NOT sufficient, and the gap is
       // invisible to any test that feeds a single-entry language list.

@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import appI18n from "@/lib/i18n";
@@ -146,7 +146,74 @@ describe("<html lang> follows the rendered language", () => {
     ["es", "es"],
     ["en", "en"],
   ])("changing to %s sets document lang to %s", async (tag, expected) => {
+    // Park the attribute somewhere it is NOT expected to end up first. The
+    // `en` row would otherwise pass vacuously — index.html already ships
+    // lang="en", so with the sync wiring deleted that row stays green and
+    // only 3 of 4 discriminate.
+    document.documentElement.lang = "zz";
     await appI18n.changeLanguage(tag);
     expect(document.documentElement.lang).toBe(expected);
+  });
+});
+
+// The detector's localStorage cache, which the suite above deliberately
+// disables (`caches: []`) so its cases stay independent. That exclusion is
+// exactly why the poisoned-cache defect was invisible: every visit during the
+// broken period wrote `i18nextLng=en`, and the cache is read before
+// `navigator`, so the corrected negotiation would never have run for the
+// guests who actually hit the bug.
+describe("a profile poisoned by the broken period is not trusted", () => {
+  // Importing `appI18n` boots the real app instance, and it caches its own
+  // negotiated result — so localStorage already holds a value before any test
+  // here runs. Start each case from a genuinely clean profile, or the case
+  // measures the module's boot rather than what it claims to.
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  async function bootWithCaches(navigatorLanguages: string[]) {
+    Object.defineProperty(window.navigator, "languages", {
+      value: navigatorLanguages,
+      configurable: true,
+    });
+    Object.defineProperty(window.navigator, "language", {
+      value: navigatorLanguages[0],
+      configurable: true,
+    });
+    const instance = createInstance();
+    // Note: no `caches: []` override — this is what actually ships.
+    await instance.use(LanguageDetector).init({
+      resources: RESOURCES,
+      ns: ["common"],
+      defaultNS: "common",
+      fallbackLng: "en",
+      supportedLngs: shippedSupported,
+      detection: shippedDetection,
+    });
+    return instance;
+  }
+
+  it("ignores the legacy i18nextLng key", async () => {
+    // What every mis-negotiated visit left behind on a real guest's phone.
+    localStorage.setItem("i18nextLng", "en");
+    const instance = await bootWithCaches(["pt-BR", "pt", "en-US", "en"]);
+    expect(instance.resolvedLanguage).toBe("pt-PT");
+  });
+
+  it("still honours an explicit pick stored under the current key", async () => {
+    // The versioned key must not cost us persistence going forward.
+    localStorage.setItem("i18nextLng.v2", "en");
+    const instance = await bootWithCaches(["pt-PT"]);
+    expect(instance.resolvedLanguage).toBe("en");
+  });
+
+  it("caches the negotiated result under the versioned key, not the legacy one", async () => {
+    localStorage.clear();
+    await bootWithCaches(["fr-CA", "en-US", "en"]);
+    expect(localStorage.getItem("i18nextLng.v2")).toBe("fr");
+    expect(localStorage.getItem("i18nextLng")).toBeNull();
   });
 });
