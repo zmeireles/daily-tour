@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { useGuesthouses } from "./use-guesthouses";
 import { Fab } from "@/features/backoffice/fab";
 import { StatusBadge } from "@/features/backoffice/status";
@@ -44,7 +45,7 @@ export function GuesthouseList() {
 
   const guesthouses = data?.data ?? [];
 
-  const fmt = new Intl.DateTimeFormat(i18n.language, {
+  const fmt = new Intl.DateTimeFormat(formattingLocale(i18n.language), {
     year: "numeric",
     month: "short",
     day: "numeric",
