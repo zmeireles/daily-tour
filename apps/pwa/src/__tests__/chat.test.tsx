@@ -190,6 +190,69 @@ describe("Chat route", () => {
     });
   });
 
+  // #391 reached the GUEST surface too, not only the owner console. The issue
+  // is titled for guests and lists "chat timestamps"; the first cut of the fix
+  // covered four owner call sites and left these three (chat-bubble,
+  // chat-window, conversation-panel) feeding `i18n.language` to Intl.
+  //
+  // The helper's own unit tests cannot see that — they test the helper in
+  // isolation. This proves the guest chat SCREEN uses it. Reverting
+  // chat-bubble.tsx to `i18n.language` turns this red.
+  it("renders a guest's chat timestamp in their own regional English", async () => {
+    const languages = navigator.languages;
+    Object.defineProperty(window.navigator, "languages", {
+      value: ["en-GB"],
+      configurable: true,
+    });
+    await i18n.changeLanguage("en-GB");
+
+    const ts = "2026-05-31T14:30:00Z";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              messages: [{ id: "h1", direction: "inbound", body: "filed earlier", ts }],
+            }),
+            { status: 200 },
+          ),
+        ),
+      ),
+    );
+
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-bubble-me")).toHaveTextContent("filed earlier");
+    });
+
+    // supportedLngs normalizes en-GB -> en. That collapse is the whole bug.
+    expect(i18n.language).toBe("en");
+
+    // Derive both renderings from the same Date the component formats rather
+    // than hardcoding, so the runner's timezone cannot decide the result.
+    const opts = { hour: "2-digit", minute: "2-digit" } as const;
+    const d = new Date(ts);
+    const british = new Intl.DateTimeFormat("en-GB", opts).format(d);
+    const american = new Intl.DateTimeFormat("en", opts).format(d);
+
+    // Control: if these ever render identically the assertions below prove
+    // nothing, so fail loudly rather than pass vacuously.
+    expect(british).not.toBe(american);
+
+    expect(screen.getByText(british)).toBeInTheDocument();
+    expect(screen.queryByText(american)).toBeNull();
+
+    Object.defineProperty(window.navigator, "languages", {
+      value: languages,
+      configurable: true,
+    });
+  });
+
   it("ignores ack frames (no bubble — delivery receipt only)", () => {
     act(() => {
       useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);

@@ -119,7 +119,7 @@ describe("admin guesthouses route", () => {
   // guesthouse-list.tsx to `i18n.language` turns this red, which the helper's
   // own unit tests would not.
   //
-  // MOCK_GH.created_at is 2025-01-01. en-GB renders "1 Jan 2025"; the plain
+  // MOCK_GH.updated_at is 2025-01-01 — that is the field this screen renders. en-GB renders "1 Jan 2025"; the plain
   // `en` that supportedLngs normalizes an en-GB browser down to renders
   // "Jan 1, 2025".
   it("uses the owner's regional English for the created date, not US format", async () => {

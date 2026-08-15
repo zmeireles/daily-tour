@@ -33,6 +33,24 @@
 
 const baseLanguage = (tag: string): string => tag.toLowerCase().split("-")[0] ?? tag.toLowerCase();
 
+// `navigator.languages` is not guaranteed to hold well-formed tags. Firefox
+// exposes `intl.accept_languages` as free text, so a typo there ("en-", "en-a",
+// "en--GB") arrives here verbatim — and every Intl constructor THROWS a
+// RangeError on a malformed tag rather than ignoring it. That would crash the
+// components at render, which is a great deal worse than a wrong date format.
+//
+// Only the borrowed tag is checked: it is the one value on this path that comes
+// from outside the app. `uiLanguage` is i18next's resolved language, drawn from
+// our own `supportedLngs`.
+const isWellFormed = (tag: string): boolean => {
+  try {
+    new Intl.Locale(tag);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * The locale to hand `Intl`, given the resolved UI language.
  *
@@ -57,7 +75,11 @@ export function formattingLocale(
   // the UI falls back to English, and en-GB is that user's English.
   const base = baseLanguage(uiLanguage);
   const regional = preferred.find(
-    (tag) => typeof tag === "string" && tag.includes("-") && baseLanguage(tag) === base,
+    (tag) =>
+      typeof tag === "string" &&
+      tag.includes("-") &&
+      baseLanguage(tag) === base &&
+      isWellFormed(tag),
   );
 
   return regional ?? uiLanguage;

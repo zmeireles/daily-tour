@@ -71,3 +71,34 @@ describe("what Intl actually renders", () => {
     expect(fmt(locale)).not.toBe(fmt("pt-BR"));
   });
 });
+
+// `navigator.languages` is not guaranteed well-formed — Firefox exposes
+// `intl.accept_languages` as free text. Every Intl constructor THROWS on a
+// malformed tag, so an unvalidated one crashes the component at render, which
+// is far worse than a wrong date format.
+describe("a malformed browser tag cannot reach Intl", () => {
+  it.each([["en-"], ["en-a"], ["en--GB"], ["en-verylongsubtagxx"]])(
+    "falls back to the UI language for %s",
+    (bad) => {
+      expect(formattingLocale("en", [bad])).toBe("en");
+    },
+  );
+
+  it("still borrows a well-formed tag that appears after a malformed one", () => {
+    expect(formattingLocale("en", ["en-", "en-GB"])).toBe("en-GB");
+  });
+
+  it("control: the malformed tags really do throw, so the guard is not decorative", () => {
+    for (const bad of ["en-", "en-a", "en--GB", "en-verylongsubtagxx"]) {
+      expect(() => new Intl.DateTimeFormat(bad)).toThrow(RangeError);
+    }
+  });
+
+  it("whatever it returns is always usable by Intl", () => {
+    for (const bad of ["en-", "en-a", "en--GB", "zz", "", "-", "es-419"]) {
+      const locale = formattingLocale("en", [bad]);
+      expect(() => new Intl.DateTimeFormat(locale).format(new Date())).not.toThrow();
+      expect(() => new Intl.RelativeTimeFormat(locale).format(-1, "day")).not.toThrow();
+    }
+  });
+});

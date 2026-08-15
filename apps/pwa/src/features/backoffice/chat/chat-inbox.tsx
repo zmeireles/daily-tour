@@ -418,7 +418,11 @@ export function ChatInbox() {
         const reservation = resByGuest.get(thread.guest_id);
         const name = reservation?.guest_name ?? guestLabel(thread.guest_id);
         const property = reservation
-          ? guesthouseName(ghById.get(reservation.guesthouse_id), locale)
+          ? // Content language, NOT `locale`: this picks which translation of the
+            // property name to show. Handing it the formatting locale is the same
+            // conflation in reverse, and it only looks harmless today because
+            // guesthouseName falls back through the base language.
+            guesthouseName(ghById.get(reservation.guesthouse_id), i18n.language)
           : "";
         return { thread, name, property, reservation, unread: isThreadUnread(thread, lastViewed) };
       }),
