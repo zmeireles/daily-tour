@@ -75,6 +75,23 @@ const resources = {
   },
 };
 
+// The four locales actually present in `resources` above — de/ exists on disk
+// but is never imported, so a German browser correctly gets English. Named
+// once because the detector's normalization below must agree with it exactly;
+// two copies of this list drifting apart is the whole of #383.
+//
+// ⚠️ Do NOT reach for `nonExplicitSupportedLngs` to widen this. It resolves a
+// tag to its BASE language (pt-PT -> pt), and since no `pt` bundle exists it
+// sends **pt-PT itself** to English — breaking the primary guest locale.
+// Measured against a real i18next instance; it looks and reads correct.
+//
+// ⚠️ ORDER IS LOAD-BEARING. `convertDetectedLanguage` below maps a base-only
+// tag by first match, so `pt` -> `pt-PT` only because `pt-PT` is the first
+// `pt-*` entry. APPEND new locales, never insert: putting a hypothetical
+// `pt-BR` before `pt-PT` (the alphabetical instinct) silently flips every
+// bare-`pt` and `pt-MZ` guest to Brazilian Portuguese.
+const SUPPORTED_LNGS = ["en", "pt-PT", "fr", "es"] as const;
+
 void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -97,8 +114,71 @@ void i18n
     // its BASE language (pt-PT -> pt), and since no `pt` bundle exists it sends
     // **pt-PT itself** to English — breaking the primary guest locale. Measured
     // against a real i18next instance; it looks and reads correct.
-    supportedLngs: ["en", "pt-PT", "fr", "es"],
+    supportedLngs: SUPPORTED_LNGS,
+    detection: {
+      // `htmlTag` is deliberately absent from this order. It is in the
+      // detector's DEFAULT order, and since the detector CONCATENATES every
+      // detector's result rather than stopping at the first hit, our own
+      // `<html lang="en">` was appended to the guest's real preferences.
+      // Our static markup is not a statement about what the user wants.
+      order: ["querystring", "cookie", "localStorage", "sessionStorage", "navigator"],
+
+      // ⚠️ The key is versioned because the OLD one is poisoned, and fixing
+      // the negotiation alone would not have reached the guests who hit the
+      // bug. The detector caches its result to `localStorage` and reads that
+      // cache BEFORE `navigator`. Every visit during the broken period wrote
+      // `i18nextLng=en`; since `en` is an exact `supportedLngs` member it
+      // would keep winning after the fix, and keep being re-cached — sticky
+      // forever, for exactly the population that experienced the defect.
+      //
+      // Measured: a profile holding `i18nextLng=en` still resolves `en` for a
+      // `["pt-BR","pt","en-US","en"]` browser under the corrected config;
+      // clearing storage resolves `pt-PT`. Reading a fresh key is what makes
+      // the fix reach real returning guests instead of only fresh profiles.
+      //
+      // Cost: explicit language picks made before this ships are forgotten
+      // once. That is the right trade — a cached `en` is indistinguishable
+      // from a deliberate `en`, and the mis-negotiated population is the far
+      // larger one.
+      lookupLocalStorage: "i18nextLng.v2",
+
+      // ⚠️ Removing `htmlTag` is necessary but NOT sufficient, and the gap is
+      // invisible to any test that feeds a single-entry language list.
+      //
+      // i18next scans the WHOLE detected list for an EXACT `supportedLngs`
+      // member before it tries prefix matching anywhere. Real browsers send
+      // `["pt-BR","pt","en-US","en"]` — Chrome appends `en-US,en` to almost
+      // every list, and does so even when told only `pt-BR,pt`. So `en` is an
+      // exact member sitting in the list, it wins the exact pass, and the
+      // regional tags never reach the `pt-BR -> pt-PT` step. Measured in real
+      // Chrome against a built bundle: pt-BR, pt, es-MX and fr-CA all still
+      // rendered English with `htmlTag` already gone.
+      //
+      // Normalizing each entry BEFORE that scan is what actually fixes it.
+      // The guest's own ordering then decides, which is the point — a
+      // `["de","fr","en"]` browser gets French, not English.
+      convertDetectedLanguage: (lng: string) => {
+        if ((SUPPORTED_LNGS as readonly string[]).includes(lng)) return lng;
+        const base = lng.split("-")[0]?.toLowerCase() ?? "";
+        if (!base) return lng;
+        return (
+          SUPPORTED_LNGS.find((s) => s === base || s.toLowerCase().startsWith(`${base}-`)) ?? lng
+        );
+      },
+    },
     interpolation: { escapeValue: false },
   });
+
+// Keep <html lang> matching what we actually render. It shipped permanently as
+// "en", so assistive tech announced every Portuguese, French and Spanish page
+// with English pronunciation rules. This is the attribute's correct direction
+// of travel: written from the resolved language, never read back into it.
+const syncDocumentLang = (lng?: string) => {
+  const resolved = lng ?? i18n.resolvedLanguage ?? i18n.language;
+  if (resolved) document.documentElement.lang = resolved;
+};
+
+i18n.on("languageChanged", syncDocumentLang);
+syncDocumentLang();
 
 export default i18n;
