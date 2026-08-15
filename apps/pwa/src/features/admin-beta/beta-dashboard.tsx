@@ -2,6 +2,7 @@ import * as React from "react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { BarChart3, CalendarCheck, Eye, MessageSquare, Percent } from "lucide-react";
 
 import { useOwnerJwt } from "@/store/owner-session";
@@ -70,7 +71,7 @@ export function BetaDashboard() {
   const { t, i18n } = useTranslation("admin");
   const jwt = useOwnerJwt();
   const [range, setRange] = useState<Range>("30d");
-  const lang = i18n.language;
+  const lang = formattingLocale(i18n.language);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "beta-metrics", range],

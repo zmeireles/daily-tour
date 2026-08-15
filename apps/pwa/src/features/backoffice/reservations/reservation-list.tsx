@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { toast } from "sonner";
 import {
   useReservations,
@@ -76,7 +77,7 @@ function ReservationCard({
   onCopy,
 }: ReservationCardProps) {
   const { t, i18n } = useTranslation("admin");
-  const locale = i18n.language;
+  const locale = formattingLocale(i18n.language);
   const nightCount = nights(r.checkin, r.checkout);
   const tokenActive = r.token_state === "active";
 
