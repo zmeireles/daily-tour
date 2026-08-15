@@ -190,6 +190,146 @@ describe("Chat route", () => {
     });
   });
 
+  // #391 reached the GUEST surface too, not only the owner console. The issue
+  // is titled for guests and lists "chat timestamps"; the first cut of the fix
+  // covered four owner call sites and left these three (chat-bubble,
+  // chat-window, conversation-panel) feeding `i18n.language` to Intl.
+  //
+  // The helper's own unit tests cannot see that — they test the helper in
+  // isolation. This proves the guest chat SCREEN uses it. Reverting
+  // chat-bubble.tsx to `i18n.language` turns this red.
+  it("renders a guest's chat timestamp in their own regional English", async () => {
+    const languages = navigator.languages;
+    Object.defineProperty(window.navigator, "languages", {
+      value: ["en-GB"],
+      configurable: true,
+    });
+    await i18n.changeLanguage("en-GB");
+
+    const ts = "2026-05-31T14:30:00Z";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              messages: [{ id: "h1", direction: "inbound", body: "filed earlier", ts }],
+            }),
+            { status: 200 },
+          ),
+        ),
+      ),
+    );
+
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-bubble-me")).toHaveTextContent("filed earlier");
+    });
+
+    // supportedLngs normalizes en-GB -> en. That collapse is the whole bug.
+    expect(i18n.language).toBe("en");
+
+    // Derive both renderings from the same Date the component formats rather
+    // than hardcoding, so the runner's timezone cannot decide the result.
+    const opts = { hour: "2-digit", minute: "2-digit" } as const;
+    const d = new Date(ts);
+    const british = new Intl.DateTimeFormat("en-GB", opts).format(d);
+    const american = new Intl.DateTimeFormat("en", opts).format(d);
+
+    // Control: if these ever render identically the assertions below prove
+    // nothing, so fail loudly rather than pass vacuously.
+    expect(british).not.toBe(american);
+
+    expect(screen.getByText(british)).toBeInTheDocument();
+    expect(screen.queryByText(american)).toBeNull();
+
+    // The day separator is a SECOND Intl call site, in a different component
+    // (chat-window / conversation-panel, whichever ResponsiveScreen mounts).
+    // Asserting only the bubble's time leaves it unguarded: reverting the
+    // separator alone kept the whole suite green.
+    const dayOpts = { weekday: "long", day: "numeric", month: "long" } as const;
+    const dayBritish = new Intl.DateTimeFormat("en-GB", dayOpts).format(d);
+    const dayAmerican = new Intl.DateTimeFormat("en", dayOpts).format(d);
+    expect(dayBritish).not.toBe(dayAmerican);
+
+    expect(screen.getByTestId("chat-day-separator")).toHaveTextContent(dayBritish);
+
+    Object.defineProperty(window.navigator, "languages", {
+      value: languages,
+      configurable: true,
+    });
+  });
+
+  // The desktop tree mounts ConversationPanel instead of ChatWindow, and it
+  // carries its OWN copy of dayLabel. Without this, reverting that copy alone
+  // left the entire 542-test suite green — the mobile test above covers
+  // chat-window only, verified by mutating each file separately.
+  it("renders the day separator in regional English on the desktop tree too", async () => {
+    const languages = navigator.languages;
+    const realMatchMedia = window.matchMedia;
+    Object.defineProperty(window.navigator, "languages", {
+      value: ["en-GB"],
+      configurable: true,
+    });
+    // Forces useLayoutMode to report desktop (matchMedia is absent in jsdom).
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      onchange: null,
+    }));
+    await i18n.changeLanguage("en-GB");
+
+    const ts = "2026-05-31T14:30:00Z";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              messages: [{ id: "h1", direction: "inbound", body: "filed earlier", ts }],
+            }),
+            { status: 200 },
+          ),
+        ),
+      ),
+    );
+
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chat-day-separator")).toBeInTheDocument();
+    });
+
+    const dayOpts = { weekday: "long", day: "numeric", month: "long" } as const;
+    const d = new Date(ts);
+    const dayBritish = new Intl.DateTimeFormat("en-GB", dayOpts).format(d);
+    const dayAmerican = new Intl.DateTimeFormat("en", dayOpts).format(d);
+
+    // Control: identical renderings would make the assertion below vacuous.
+    expect(dayBritish).not.toBe(dayAmerican);
+
+    expect(screen.getByTestId("chat-day-separator")).toHaveTextContent(dayBritish);
+
+    window.matchMedia = realMatchMedia;
+    Object.defineProperty(window.navigator, "languages", {
+      value: languages,
+      configurable: true,
+    });
+    await i18n.changeLanguage("en");
+  });
+
   it("ignores ack frames (no bubble — delivery receipt only)", () => {
     act(() => {
       useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);

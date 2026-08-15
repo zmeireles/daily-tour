@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { cn } from "@/lib/utils";
 
 interface ChatBubbleProps {
@@ -14,7 +15,10 @@ function formatTime(ts: number, locale: string): string {
 export function ChatBubble({ body, from, ts }: ChatBubbleProps) {
   const { i18n } = useTranslation("discover");
   const isMe = from === "me";
-  const time = formatTime(ts, i18n.language);
+  // `i18n.language` is the translation bundle, not the user's time
+  // conventions: it collapses en-GB to en, which renders "02:30 PM" to a
+  // British guest instead of "14:30". Same split as the owner surfaces.
+  const time = formatTime(ts, formattingLocale(i18n.language));
 
   return (
     <div className={cn("flex flex-col gap-1", isMe ? "items-end" : "items-start")}>

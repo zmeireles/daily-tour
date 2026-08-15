@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
 import { Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { ChatBubble } from "./chat-bubble";
 import { ChatEmptyState } from "./chat-empty-state";
 import { SuggestionStrip } from "./suggested-prompts";
@@ -41,6 +42,8 @@ function dayLabel(ts: number, locale: string, today: string): string {
 // keeping all composer changes desktop-only. Reuses ChatBubble verbatim.
 export function ConversationPanel({ messages, status, onSend }: ConversationPanelProps) {
   const { t, i18n } = useTranslation("discover");
+  // Date conventions, not the translation bundle — see formatting-locale.ts.
+  const locale = formattingLocale(i18n.language);
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -90,7 +93,7 @@ export function ConversationPanel({ messages, status, onSend }: ConversationPane
               {showDay && (
                 <div className="flex justify-center py-2" data-testid="chat-day-separator">
                   <span className="rounded-full bg-surface-container px-3 py-1 text-xs font-medium text-on-surface-variant">
-                    {dayLabel(msg.ts, i18n.language, t("chat.day_today"))}
+                    {dayLabel(msg.ts, locale, t("chat.day_today"))}
                   </span>
                 </div>
               )}
