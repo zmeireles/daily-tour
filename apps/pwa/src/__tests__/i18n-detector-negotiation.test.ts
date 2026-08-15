@@ -97,6 +97,32 @@ describe("browser locale negotiation through the real LanguageDetector", () => {
     expect(instance.t("hi")).toBe("Olá");
   });
 
+  // ⚠️ THE VECTORS THAT MATTER. Everything above feeds a single-entry list —
+  // a shape no real browser produces. Chrome appends `en-US,en` to almost
+  // every list, and does so even when told only `pt-BR,pt`. Because i18next
+  // scans the WHOLE list for an exact `supportedLngs` member before trying any
+  // prefix match, that appended `en` won and the regional tag never resolved.
+  //
+  // Removing `htmlTag` alone did NOT fix these: measured in real Chrome
+  // against a built bundle, pt-BR, pt, es-MX and fr-CA all still rendered
+  // English. The single-entry suite passed the whole time. If you are adding
+  // a case here, add it in this shape, not the one above.
+  it.each([
+    [["pt-PT", "pt", "en-US", "en"], "pt-PT"],
+    [["pt-BR", "pt", "en-US", "en"], "pt-PT"],
+    [["pt", "en-US", "en"], "pt-PT"],
+    // Chrome drops the bare base from the list when it has the regional form.
+    [["es-MX", "en-US", "en"], "es"],
+    [["fr-CA", "en-US", "en"], "fr"],
+    [["en-US", "en"], "en"],
+    [["de-DE", "de", "en-US", "en"], "en"],
+    // Preference ORDER must survive normalization: this guest reads French
+    // before English, and we ship French.
+    [["de", "fr", "en"], "fr"],
+  ])("a real browser list %j resolves to %s", async (languages, expected) => {
+    expect(await negotiate(languages, "en")).toBe(expected);
+  });
+
   it("ships a detector order that excludes htmlTag", () => {
     // The direct guard on the defect. `htmlTag` reads our own static markup,
     // which is never a statement about the user's preference — and because the

@@ -75,6 +75,17 @@ const resources = {
   },
 };
 
+// The four locales actually present in `resources` above — de/ exists on disk
+// but is never imported, so a German browser correctly gets English. Named
+// once because the detector's normalization below must agree with it exactly;
+// two copies of this list drifting apart is the whole of #383.
+//
+// ⚠️ Do NOT reach for `nonExplicitSupportedLngs` to widen this. It resolves a
+// tag to its BASE language (pt-PT -> pt), and since no `pt` bundle exists it
+// sends **pt-PT itself** to English — breaking the primary guest locale.
+// Measured against a real i18next instance; it looks and reads correct.
+const SUPPORTED_LNGS = ["en", "pt-PT", "fr", "es"] as const;
+
 void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -97,23 +108,38 @@ void i18n
     // its BASE language (pt-PT -> pt), and since no `pt` bundle exists it sends
     // **pt-PT itself** to English — breaking the primary guest locale. Measured
     // against a real i18next instance; it looks and reads correct.
-    supportedLngs: ["en", "pt-PT", "fr", "es"],
-    // `htmlTag` is deliberately absent. It is in the detector's DEFAULT order,
-    // and it defeated `supportedLngs` entirely for every non-exact tag.
-    //
-    // The detector does not stop at the first hit — it CONCATENATES every
-    // detector's result. With `index.html` hardcoding `<html lang="en">`, a
-    // browser sending `pt` produced the code list ['pt', 'en']. i18next then
-    // scans that whole list for an EXACT match before it ever tries prefix
-    // matching, so 'en' won on the exact pass and 'pt' never reached the
-    // pt -> pt-PT step. Measured live on qual: pt, pt-BR, es-MX and fr-CA all
-    // rendered English; only an exact 'pt-PT' worked.
-    //
-    // Our own static markup was never a statement about the user's
-    // preference, so it does not belong among the signals. The lang attribute
-    // is an OUTPUT of negotiation (kept in sync below), never an input.
+    supportedLngs: SUPPORTED_LNGS,
     detection: {
+      // `htmlTag` is deliberately absent from this order. It is in the
+      // detector's DEFAULT order, and since the detector CONCATENATES every
+      // detector's result rather than stopping at the first hit, our own
+      // `<html lang="en">` was appended to the guest's real preferences.
+      // Our static markup is not a statement about what the user wants.
       order: ["querystring", "cookie", "localStorage", "sessionStorage", "navigator"],
+
+      // ⚠️ Removing `htmlTag` is necessary but NOT sufficient, and the gap is
+      // invisible to any test that feeds a single-entry language list.
+      //
+      // i18next scans the WHOLE detected list for an EXACT `supportedLngs`
+      // member before it tries prefix matching anywhere. Real browsers send
+      // `["pt-BR","pt","en-US","en"]` — Chrome appends `en-US,en` to almost
+      // every list, and does so even when told only `pt-BR,pt`. So `en` is an
+      // exact member sitting in the list, it wins the exact pass, and the
+      // regional tags never reach the `pt-BR -> pt-PT` step. Measured in real
+      // Chrome against a built bundle: pt-BR, pt, es-MX and fr-CA all still
+      // rendered English with `htmlTag` already gone.
+      //
+      // Normalizing each entry BEFORE that scan is what actually fixes it.
+      // The guest's own ordering then decides, which is the point — a
+      // `["de","fr","en"]` browser gets French, not English.
+      convertDetectedLanguage: (lng: string) => {
+        if ((SUPPORTED_LNGS as readonly string[]).includes(lng)) return lng;
+        const base = lng.split("-")[0]?.toLowerCase() ?? "";
+        if (!base) return lng;
+        return (
+          SUPPORTED_LNGS.find((s) => s === base || s.toLowerCase().startsWith(`${base}-`)) ?? lng
+        );
+      },
     },
     interpolation: { escapeValue: false },
   });
