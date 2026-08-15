@@ -1,4 +1,54 @@
-# Session Handoff — … → 08-14 (**s728 — all three owner decisions shipped, CI stabilised, and the i18n + dependency defect classes closed with proven guards.** 9 PRs merged, 11 issues filed, 6 closed. ▶ next: **deploy `main` to qual** — it is 5 code commits ahead — then UAT #31, then pick from the 8 open issues.) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-15 (**s731 — the locale batch shipped, deployed and verified live; the lost UAT specs recovered into version control.** ▶ next: **#405** — Español is unreachable on iPad portrait.) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-15 (LATEST — session `s731`, continuing `s730` after a workstation crash. #400/#403/#404 merged, deployed to qual as `f3a00f3` and verified live. 3 issues filed (#405–#407), 3 closed (#382/#391/#402). PR #408 open — awaiting review, NOT auto-mergeable.)**
+>
+> ### ⚠️ CORRECTION TO THE 08-14 BLOCK BELOW — do not act on its queue
+>
+> The block below opens with **"Do first — qual is stale, main is 5 code commits ahead"**. That was already done by `s730` on 08-14 at 09:43Z, and has been superseded twice since. **qual is `f3a00f3` and current.** Read this block, not that one; the older text is kept for its lessons, not its instructions.
+>
+> ### State (measured, 08-15)
+>
+> main **`f3a00f3`** == origin/main · **1 open PR (#408)** · local branch `chore/s731-track-uat-specs` · tree clean · no worktrees, no stashes, no git locks · **all three Fable gates shut down** · **A2A bridge ARMED** for daily-tour (verified by env/path, not by count) · `comm_inbox` drained, last processed seq **626** · dt-tests `review` **empty**.
+>
+> ### ▶ THE QUEUE
+>
+> 1. **#405 — Español unreachable on iPad portrait (768–834).** Same defect class as #382, different breakpoint; `DesktopTopNav` mounts the same switcher from `md`=768. Measured 191px overflow at 768 on the **authenticated** guest home. ⚠️ Half of it is still unverified since the batch — see the trap below.
+> 2. **#406 — the layout axis has no guard that can fail.** A mutation deleting `sm:hidden`/`sr-only`, which overflows _worse_ than the original bug, passes all 7 of #400's tests. `apps/pwa/e2e/*.spec.ts` is not CI-wired, so there is nowhere a layout assertion would run today.
+> 3. **#392** (four locale-fallback helpers, three orders) · **#389** (dead FeedbackDrawer) · **#376** (archiving is a one-way door — carries an open product question) · **#407** (tap targets ~halved by #400) · **#328** (BFF limiter decode cost).
+> 4. **UAT #31** still awaits the human: https://tasks.codecomedy.dev/p/dt-tests/r/31
+>
+> ### The verification asset — use it, and know its blind spot
+>
+> `e2e/locale-verify/uat-locale-two-profiles.e2e.mjs` is the post-deploy gate for locale work. It exits non-zero, carries a vacuity control, and was **proven able to fail** by running it against the broken build first (8/25). After `f3a00f3`: **24/25**.
+>
+> ⚠️ **Its green rows at 768/834 say NOTHING about #405.** It loads `/` unauthenticated — the public landing, a different component. #405 lives on the authenticated guest home and needs a redeemed token (`make qual-token`). The one failing row is #405's secondary item: the landing switcher clips "English" 7.1px off the **left** edge at 320px, byte-identical before and after the batch. Note that page overflow reads **0** on that same run — a negative `left` does not grow `scrollWidth`, so the usual check is blind to it.
+>
+> ### The lesson this session paid for four times
+>
+> **A verification that cannot fail is indistinguishable from one that passed** — again, and in new disguises:
+>
+> - #403's first commit shipped green with 8 new tests that passed **with and without** the fix, because they fed a single-entry language list, a shape no browser produces.
+> - The whole detector suite was structurally blind to the poisoned-cache defect: its helper passes `caches: []` and clears localStorage, excluding the exact mechanism that breaks in production.
+> - #404's guest guard asserted only the bubble's timestamp, so reverting **both** `dayLabel` call sites left all 542 tests green.
+> - While purging inlined tokens I printed **"(empty = clean)"** under a grep that had just returned ten lines, then a corrected pass still missed eight because it matched only double quotes. **gitleaks caught them.**
+>
+> House standard, reaffirmed: **assert, never label**; and prove a guard goes red against its own bug before trusting a green from it. Every guard in this batch was mutation-tested that way.
+>
+> ### The three defects the gates caught that I did not
+>
+> All three would have shipped. Worth the cost of the gate.
+>
+> 1. **Poisoned localStorage (#403).** The detector caches its result and reads that cache _before_ `navigator`. Every visit during the broken period wrote `i18nextLng=en`, so the fix would never have run for the guests who actually hit the bug — Miguel's phone included. Fixed with a versioned key. Confirmed live: the deployed build was _actively_ poisoning profiles, and a poisoned profile broke **pt-PT** too, the one locale that always worked.
+> 2. **Scope (#404).** The PR said `Closes #391` — an issue titled for **guests** — while fixing four owner call sites and leaving three guest ones.
+> 3. **A false attestation (#400).** Its "overflow 0 at 768" acceptance line was true of an isolated markup harness and false of the real page. Correcting it is what produced #405.
+>
+> ### UAT specs are now version-controlled (PR #408)
+>
+> The `e2e/` directory four handoffs called "perennial untracked" was found **gone**, with six specs — an 89-scenario router regression, the action-picker UAT, four `uat-lane3b-*` revoke specs, the live-geocode UAT, the map-tile probe. Never `git add`ed, so unrecoverable.
+>
+> All 41 survivors are now tracked in `e2e/`, evidence stays disposable in `temp/`, and a **pre-commit guard** fails if a `.mjs` reappears under `temp/`. ⚠️ **Nine guest tokens were inlined across 28 of those files** — never leaked only because `temp/` was ignored; all now read `process.env.RTOKEN`. See `e2e/README.md`.
+>
+> **PR #408 touches `lefthook.yml` → always-escalate. Do not auto-merge it.**
 
 > **UPDATE 2026-08-14 (LATEST — session `s728`, long-running. The three decisions the owner made on 08-03 (#379, #383, #371) are all shipped, plus #380 and #393. **9 PRs merged, every one Fable-gated; 11 issues filed, 6 closed.** main `51677bf`; 0 open PRs; branches = main only.)**
 >
