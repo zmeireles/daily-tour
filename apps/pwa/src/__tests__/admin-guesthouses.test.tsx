@@ -122,7 +122,7 @@ describe("admin guesthouses route", () => {
   // MOCK_GH.updated_at is 2025-01-01 — that is the field this screen renders. en-GB renders "1 Jan 2025"; the plain
   // `en` that supportedLngs normalizes an en-GB browser down to renders
   // "Jan 1, 2025".
-  it("uses the owner's regional English for the created date, not US format", async () => {
+  it("uses the owner's regional English for the updated date, not US format", async () => {
     const languages = navigator.languages;
     Object.defineProperty(window.navigator, "languages", {
       value: ["en-GB"],
