@@ -426,11 +426,10 @@ export function ChatInbox() {
           : "";
         return { thread, name, property, reservation, unread: isThreadUnread(thread, lastViewed) };
       }),
-    // `i18n.language` is listed in its own right: it now drives the property
-    // name, and leaning on `locale` to change with it is an implicit coupling
-    // that holds only while `formattingLocale` maps the four supported
-    // languages to four distinct values.
-    [threads, resByGuest, ghById, locale, i18n.language, lastViewed],
+    // `locale` is gone and `i18n.language` replaces it: this memo now depends
+    // on the content language only. The formatting locale is still used, but
+    // further down, where the dates are rendered.
+    [threads, resByGuest, ghById, i18n.language, lastViewed],
   );
 
   const query = search.trim().toLowerCase();
