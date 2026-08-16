@@ -1,3 +1,4 @@
+import { requestError } from "@/lib/api/request-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOwnerJwt } from "@/store/owner-session";
 
@@ -54,33 +55,6 @@ export function useGuesthouse(id: string) {
       return res.json() as Promise<GuesthouseRow>;
     },
   });
-}
-
-/**
- * Build an error that carries the server's explanation.
- *
- * catalog-svc answers a rejected write with `{error, details}`, and throwing a bare
- * `create guesthouse 400` discarded all of it — a specific slug-validation failure
- * reached the owner as an opaque status with nothing to act on.
- */
-async function requestError(res: Response, action: string): Promise<Error> {
-  let detail = "";
-  try {
-    const body = (await res.json()) as { error?: string; details?: unknown };
-    detail = [
-      body.error,
-      typeof body.details === "string"
-        ? body.details
-        : body.details
-          ? JSON.stringify(body.details)
-          : "",
-    ]
-      .filter(Boolean)
-      .join(" — ");
-  } catch {
-    // Non-JSON body (gateway error page, empty 502): the status is all we have.
-  }
-  return new Error(detail ? `${action} (${res.status}): ${detail}` : `${action} ${res.status}`);
 }
 
 export function useCreateGuesthouse() {

@@ -131,6 +131,51 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(del2.statusCode).toBe(204);
   });
 
+  // #376 — archiving used to be a one-way door. The guard blocked EVERY PATCH
+  // on an archived row, including the one that undoes the archive, so an owner
+  // who archived a place by mistake had no way back from the console: the row,
+  // its tags, its media and its coordinates all still existed and were simply
+  // unreachable through the write API.
+  it("an archived place can be restored, and the restore may carry other edits", async () => {
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const { id } = create.json<{ id: string }>();
+    expect((await app.inject({ method: "DELETE", url: `/v1/places/${id}` })).statusCode).toBe(204);
+
+    // The console's form submits every field on save, so the restore request
+    // is never status-only. A rule of "the body may change only status" would
+    // reject the very request the restore path sends.
+    const restore = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { status: "published", address: "Restaurado, Açores" },
+    });
+    expect(restore.statusCode).toBe(200);
+    expect(restore.json<{ status: string }>().status).toBe("published");
+    expect(restore.json<{ address: string }>().address).toBe("Restaurado, Açores");
+
+    // And it is genuinely back: reachable without include_archived.
+    const get = await app.inject({ method: "GET", url: `/v1/places/${id}` });
+    expect(get.statusCode).toBe(200);
+  });
+
+  it("an archived place is still read-only for edits that leave it archived", async () => {
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const { id } = create.json<{ id: string }>();
+    await app.inject({ method: "DELETE", url: `/v1/places/${id}` });
+
+    for (const payload of [
+      { address: "Uma morada nova" }, // no status at all
+      { status: "archived", address: "Outra" }, // explicitly staying archived
+    ]) {
+      const res = await app.inject({ method: "PATCH", url: `/v1/places/${id}`, payload });
+      expect(res.statusCode).toBe(409);
+      // 409 `place_archived`, NOT 404. Answering "not found" for a row that
+      // demonstrably exists left a caller unable to tell a bad id from an
+      // archived one — same illegibility as the opaque guesthouse 400 (#372).
+      expect(res.json<{ error: string }>().error).toBe("place_archived");
+    }
+  });
+
   it("404 on unknown id", async () => {
     const res = await app.inject({
       method: "GET",
