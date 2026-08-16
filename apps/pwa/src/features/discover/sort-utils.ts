@@ -1,4 +1,4 @@
-import type { I18nText, Locale } from "@daily-tour/shared-types";
+import type { I18nText } from "@daily-tour/shared-types";
 import { pickLocale } from "@daily-tour/shared-types";
 
 export type SortBy = "distance" | "rating" | "name";
@@ -57,8 +57,8 @@ export function sortPlaces(
       return copy.sort((a, b) => b.id.localeCompare(a.id));
     case "name":
       return copy.sort((a, b) => {
-        const na = pickLocale(a.name, locale as Locale);
-        const nb = pickLocale(b.name, locale as Locale);
+        const na = pickLocale(a.name, locale);
+        const nb = pickLocale(b.name, locale);
         return na.localeCompare(nb, locale);
       });
   }
