@@ -617,11 +617,32 @@ export function placesRoutes(app: FastifyInstance): void {
       .where(eq(placeTable.id, paramsParsed.data.id))
       .limit(1);
 
-    if (!existing || existing.status === "archived") {
+    if (!existing) {
       return reply.code(404).send({ error: "place_not_found" });
     }
 
     const updates = bodyParsed.data;
+
+    // An archived place stays read-only, EXCEPT for the one change that undoes
+    // the archive. Blocking every PATCH — which is what a bare
+    // `status === "archived"` guard did — also blocked
+    // `{ status: "published" }`, so an owner who archived a place by mistake
+    // had no way back from the console at all: the row, its tags, its media
+    // and its coordinates all still existed, simply unreachable through the
+    // write API (#376). The owner decided archiving should be reversible.
+    //
+    // The test is the RESULTING status, not "the body changes only status":
+    // the console's form submits every field on save, so a status-only rule
+    // would reject the very request the restore path sends.
+    //
+    // The 404 is gone from this branch on purpose. Answering "not found" for a
+    // row that demonstrably exists left a caller unable to tell a bad id from
+    // an archived one — the same illegibility as the opaque guesthouse 400
+    // fixed in #372. An archived row that is not being restored now answers
+    // 409 `place_archived`, which names the actual condition.
+    if (existing.status === "archived" && (updates.status ?? "archived") === "archived") {
+      return reply.code(409).send({ error: "place_archived" });
+    }
 
     // A host's pick must stay published: reject flipping a non-published place to a pick,
     // and reject un-publishing a pick without also clearing it. Use the *resulting* values.

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { pickLocale, type Locale } from "@daily-tour/shared-types";
+import { pickLocale } from "@daily-tour/shared-types";
 import { useThemeAuto } from "@/lib/theme/use-theme-auto";
 import { useSessionStore } from "@/store/session";
 import { GUESTHOUSE_LOCATIONS } from "@/lib/config";
@@ -59,11 +59,7 @@ function filterGroupsByName(groups: WishGroup[], query: string, locale: string):
   return groups
     .map((g) => ({
       wish: g.wish,
-      places: g.places.filter((p) =>
-        pickLocale(p.name, locale as Locale)
-          .toLowerCase()
-          .includes(q),
-      ),
+      places: g.places.filter((p) => pickLocale(p.name, locale).toLowerCase().includes(q)),
     }))
     .filter((g) => g.places.length > 0);
 }
