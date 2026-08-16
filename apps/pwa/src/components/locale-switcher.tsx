@@ -1,12 +1,26 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-// The visible label narrows to an ISO 639-1 code below `sm`. Four translated
+// The visible label narrows to an ISO 639-1 code below `lg`. Four translated
 // language *words* ("English Português Français Español") are wider than a
 // 390px phone once the brand lockup takes its share of the app bar, so the row
 // overflowed by 36px and clipped "Español" off the right edge — Spanish being
 // a shipped guest locale, unreachable without discovering a sideways scroll
 // (#382). Codes are the same in every language, so they are not translated.
+//
+// The breakpoint is `lg`, not `sm`, because this component serves BOTH the
+// mobile app bar and the desktop masthead, and the masthead is the tighter of
+// the two. `ResponsiveScreen` engages desktop at `md` (768) for Home, but the
+// masthead needs ~1004px to lay out with full words — so between 768 and 1023
+// it overflowed and put "Español", then "Français", off-screen entirely. iPad
+// portrait is 768–834, so Spanish was unreachable on an iPad even after #382
+// fixed the phone (#405).
+//
+// A dropdown was the obvious alternative and is the wrong shape here: the user
+// who needs this control is precisely the one who cannot read the current UI
+// language, and a row of codes is recognisable in any language while a button
+// labelled "Idioma" is not. Compaction keeps all four visible; a menu would
+// have hidden three of them behind a word the reader may not know.
 const LOCALES = [
   ["en", "EN"],
   ["pt-PT", "PT"],
@@ -32,13 +46,13 @@ export function LocaleSwitcher() {
           )}
           aria-pressed={i18n.language === locale}
         >
-          <span className="sm:hidden">{code}</span>
+          <span className="lg:hidden">{code}</span>
           {/* Kept in the accessible name at every width rather than swapped out:
-              below `sm` the button announces "PT Português", so the visible
+              below `lg` the button announces "PT Português", so the visible
               text is a subset of the accessible name (WCAG 2.5.3 Label in
               Name). An aria-label of "Português" over a visible "PT" would
               read fine to a screen reader and break voice control. */}
-          <span className="sr-only sm:not-sr-only">{t(`locale.${locale}`)}</span>
+          <span className="sr-only lg:not-sr-only">{t(`locale.${locale}`)}</span>
         </button>
       ))}
     </div>

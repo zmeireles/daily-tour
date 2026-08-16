@@ -12,8 +12,14 @@ export function LocaleSwitcher() {
   const { t, i18n } = useTranslation("public");
   const lang = i18n.language;
 
+  // `flex-wrap` rather than a narrower label: at 320px the four full words are
+  // wider than the viewport, and because the row is centred the overflow lands
+  // on the LEFT — "English" sat at left: -7.1px. A left overflow does not grow
+  // `scrollWidth`, so the usual `scrollWidth === clientWidth` check reports a
+  // clean 0 and sees nothing (#405). Wrapping cannot clip whatever the labels
+  // grow to, which a fixed breakpoint would not survive.
   return (
-    <div role="group" aria-label="Language" className="flex gap-1">
+    <div role="group" aria-label="Language" className="flex flex-wrap justify-center gap-1">
       {LOCALES.map(([locale, label]) => (
         <Button
           key={locale}

@@ -5,8 +5,12 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 
 // #382 — the guest switcher renders four translated language words, which
 // overflowed a 390px phone and clipped "Español" off-screen. The fix narrows
-// the *visible* label to an ISO code below `sm` while keeping the full name in
+// the *visible* label to an ISO code below `lg` while keeping the full name in
 // the accessible name.
+//
+// The breakpoint moved `sm` -> `lg` for #405: this same component serves the
+// desktop masthead, which engages at `md` (768) but needs ~1004px with full
+// words, so 768–1023 overflowed and put Español off-screen on an iPad.
 //
 // ⚠️ What these tests can and cannot prove. jsdom does no layout and loads no
 // CSS, so `sm:hidden` / `sr-only` are inert here and BOTH spans render. That
@@ -77,5 +81,27 @@ describe("Guest LocaleSwitcher (#382)", () => {
     render(<LocaleSwitcher />);
 
     expect(screen.getByRole("button", { name: /Español/ })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+// An INTENT guard, not a layout guard — be honest about which. jsdom does no
+// layout, so nothing here can measure an overflow; what it catches is the
+// specific regression of someone narrowing the breakpoint back toward `sm`,
+// which is what reintroduces #405 on tablet widths.
+//
+// The real measurement lives in `e2e/issue-405/repro-405.e2e.mjs`, which drives
+// a real browser against the authenticated home and goes red at 768/800/834/900/960
+// (measured: 204/172/138/72/12px of overflow). That spec is not CI-wired — see #406.
+describe("the compact breakpoint is lg, not sm (#405)", () => {
+  it("swaps code for full word at lg, so the desktop masthead fits at md", () => {
+    const { container } = render(<LocaleSwitcher />);
+    const first = container.querySelector("button");
+    const spans = first ? [...first.querySelectorAll("span")] : [];
+    const classes = spans.map((s) => s.className);
+
+    expect(classes).toContain("lg:hidden");
+    expect(classes).toContain("sr-only lg:not-sr-only");
+    // The bug this replaces: a `sm:` breakpoint leaves 768–1023 on full words.
+    expect(classes.join(" ")).not.toMatch(/\bsm:/);
   });
 });
