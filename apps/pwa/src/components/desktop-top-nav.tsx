@@ -74,7 +74,18 @@ export function DesktopTopNav() {
 
   return (
     <header className="sticky top-0 z-30 h-20 border-b border-outline-variant bg-surface/80 backdrop-blur">
-      <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between gap-6 px-8 xl:px-12">
+      {/* Tightened below `lg`. The masthead engages at `md` (768) but needs
+          ~1004px with full-word locale labels, so it overflowed by 204px at
+          768 and pushed Espanol and Francais off-screen (#405). Measured
+          savings: padding 32px, gaps 24px, nav item padding 48px, locale
+          codes 152px — 256px against a 236px deficit.
+
+          The `lg` band is tightened too, and that is a SEPARATE, pre-existing
+          defect found while verifying this one: at exactly 1024 the full words
+          and both stubs come back, and French — whose nav labels are wider —
+          overflowed by 49px. 1024 is the commonest laptop width. Savings at
+          lg: padding 16px, gaps 16px, nav item padding 24px. */}
+      <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between gap-3 px-4 lg:gap-4 lg:px-6 xl:gap-6 xl:px-12">
         <Link to="/" aria-label="Daily Tour" className="shrink-0">
           <BrandLockup size="masthead" />
         </Link>
@@ -87,10 +98,18 @@ export function DesktopTopNav() {
                 key={s.id}
                 to={s.to}
                 aria-current={active ? "page" : undefined}
-                className="group relative flex min-h-[44px] items-center gap-2 px-4"
+                className="group relative flex min-h-[44px] items-center gap-2 px-2 lg:px-3 xl:px-4"
               >
+                {/* Decorative below `xl`: the label already names Miguel, so
+                    the avatar repeats it. Dropping it buys 32px (24 + the gap)
+                    in both tight bands — French had 3px of margin at 768 and
+                    1px at 1024, and 3px is inside the noise BETWEEN BROWSERS
+                    (system Chrome measures ~3px wider than Playwright's
+                    Chromium on this masthead). A fix that merely reaches zero
+                    is one translation away from regressing, which is how this
+                    defect already recurred once. */}
                 {s.withAvatar && (
-                  <Avatar className="size-6">
+                  <Avatar className="hidden size-6 xl:flex">
                     <AvatarFallback className="bg-primary text-[10px] font-medium text-primary-foreground">
                       M
                     </AvatarFallback>
@@ -121,7 +140,9 @@ export function DesktopTopNav() {
 
         <div className="flex shrink-0 items-center gap-2">
           <LocaleSwitcher />
-          <span className="mx-1 h-5 w-px bg-outline-variant" aria-hidden="true" />
+          {/* Hidden with them: below `lg` both stubs collapse, so the rule
+              would separate the switcher from nothing at all. */}
+          <span className="mx-1 hidden h-5 w-px bg-outline-variant lg:block" aria-hidden="true" />
           {/* Saved collapses out below lg so the masthead doesn't crowd at md/768 */}
           <ComingSoonStub
             icon={Bookmark}
@@ -129,7 +150,18 @@ export function DesktopTopNav() {
             comingSoon={t("nav.coming_soon")}
             className="hidden lg:inline-flex"
           />
-          <ComingSoonStub icon={User} label={t("nav.profile")} comingSoon={t("nav.coming_soon")} />
+          {/* Also collapses below `lg`. French nav labels are wider than
+              Portuguese ones (item widths 104/87/124 vs 102/58/119), so the
+              compaction above — sized against pt-PT — left fr overflowing by
+              20px at 768, and this disabled stub was the element hanging off.
+              It is a coming-soon affordance, so it is the cheapest thing in the
+              row to drop where space is scarce. */}
+          <ComingSoonStub
+            icon={User}
+            label={t("nav.profile")}
+            comingSoon={t("nav.coming_soon")}
+            className="hidden lg:inline-flex"
+          />
         </div>
       </div>
     </header>
