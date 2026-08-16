@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { pickLocale } from "@daily-tour/shared-types";
 import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,12 +37,11 @@ function guestLabel(guestId: string): string {
   return guestId.length > 8 ? `${guestId.slice(0, 8)}…` : guestId;
 }
 
-// Guesthouse display name for the active locale, with graceful fallbacks. Mirrors
-// the reservation-list.tsx helper.
+// Guesthouse display name. Shares `pickLocale` with reservation-list.tsx rather
+// than repeating its body, which is what this file used to do (#392).
 function guesthouseName(gh: GuesthouseRow | undefined, locale: string): string {
   if (!gh) return "";
-  const base = locale.split("-")[0] ?? locale;
-  return gh.name[locale] ?? gh.name[base] ?? gh.name["en"] ?? Object.values(gh.name)[0] ?? "";
+  return pickLocale(gh.name, locale);
 }
 
 // Up to two initials for the avatar: first + last word.

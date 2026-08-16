@@ -1,3 +1,4 @@
+import { pickLocale } from "@daily-tour/shared-types";
 import type { ReservationRow } from "@/features/backoffice/reservations/use-reservations";
 import type { PlaceRow } from "@/features/backoffice/places/use-places";
 
@@ -61,6 +62,12 @@ export function countPlacesNeedingAttention(rows: PlaceRow[]): number {
 // independent of however i18next happens to normalize the tag, and matches
 // `guesthouseName` in reservation-list.tsx, which already did it.
 export function localizedName(name: Record<string, string>, lang: string): string {
-  const base = lang.split("-")[0] ?? lang;
-  return name[lang] ?? name[base] ?? name["pt-PT"] ?? name["en"] ?? Object.values(name)[0] ?? "";
+  // ⚠️ The ["pt-PT", "en"] chain is this screen's DELIBERATE baseline and the
+  // one place that differs from every other surface, which uses plain "en".
+  // Preserved rather than unified because it is a product decision, not a
+  // technical one: the owner console's content is Portuguese-origin, but `en`
+  // is the only locale the place form actually requires (place-form.tsx:69
+  // — `name_en.min(1)`; `name_pt` has no such rule), so pt-PT can be absent.
+  // Raised as an open question on #392 rather than silently flipped here.
+  return pickLocale(name, lang, ["pt-PT", "en"]);
 }

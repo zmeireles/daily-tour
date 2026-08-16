@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DistanceChip } from "@/components/distance-chip";
 import { cn } from "@/lib/utils";
 import { formatDistanceKm } from "@/lib/format-distance";
-import { type I18nText, pickLocale, type Locale } from "@daily-tour/shared-types";
+import { type I18nText, pickLocale } from "@daily-tour/shared-types";
 
 export type PlaceCardAction = {
   slug: string;
@@ -179,7 +179,7 @@ export function PlaceCard({
   onPress,
 }: PlaceCardProps) {
   const { i18n } = useTranslation();
-  const displayName = pickLocale(name, i18n.language as Locale);
+  const displayName = pickLocale(name, i18n.language);
   const distanceLabel = distanceKm !== undefined ? formatDistanceKm(distanceKm) : null;
 
   if (variant === "overlay") {
