@@ -152,8 +152,13 @@ jobs:
       # playwright.config.ts starts `pnpm preview` itself, which serves dist —
       # so the bundle has to exist first. This is the built artefact, not the
       # dev server: the defects being guarded are CSS-at-real-widths defects.
-      - name: Build the PWA
-        run: pnpm --filter @daily-tour/pwa build
+      # Through turbo, not `pnpm --filter`: the PWA imports @daily-tour/shared-types,
+      # and a direct filtered build skips turbo's dependency ordering, so `tsc`
+      # fails with "Cannot find module '@daily-tour/shared-types'" on a clean
+      # checkout. It passed locally only because that package's dist/ was already
+      # on disk from an earlier build — the CI runner is the honest environment.
+      - name: Build the PWA (and its workspace deps)
+        run: pnpm exec turbo run build --filter=@daily-tour/pwa
 
       - name: Run layout specs
         run: pnpm --filter @daily-tour/pwa exec playwright test e2e/layout-overflow.spec.ts
