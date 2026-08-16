@@ -80,6 +80,12 @@ async function measure(page: Page, groupLabel: "Language switcher" | "Language")
           const visibleSpan = [...b.querySelectorAll("span")].find(
             (s) => s.getBoundingClientRect().width > 1,
           );
+          // Hit-test, not just position. Without it a "fix" that HIDES the
+          // switcher below `lg` passes everything: every rect collapses to
+          // 0x0 at the origin, so nothing is off-screen and no overflow
+          // exists. Demonstrated on the sibling repro spec during review.
+          const cx = r.left + r.width / 2;
+          const cy = r.top + r.height / 2;
           return {
             label: b.innerText.trim().replace(/\s+/g, " "),
             visibleLabel: (visibleSpan?.textContent ?? "").trim(),
@@ -87,6 +93,8 @@ async function measure(page: Page, groupLabel: "Language switcher" | "Language")
             right: +r.right.toFixed(1),
             width: +r.width.toFixed(1),
             height: +r.height.toFixed(1),
+            hittable:
+              r.width > 0 && r.height > 0 && !!b.contains(document.elementFromPoint(cx, cy)),
           };
         })
       : [];
@@ -124,6 +132,14 @@ function assertNoClipping(
     clipped,
     `${where}: locale button(s) outside the viewport — a guest cannot tap their own language`,
   ).toEqual([]);
+
+  // "Reachable" means tappable, not merely un-clipped. A zero-sized or
+  // covered button satisfies every assertion above.
+  const unreachable = m.buttons.filter((b) => !b.hittable || b.width < 8);
+  expect(
+    unreachable.map((b) => b.label || "(blank)"),
+    `${where}: locale button(s) present but not tappable`,
+  ).toEqual([]);
 }
 
 // The public landing. Unauthenticated, so this half needs no session at all.
@@ -143,20 +159,28 @@ test.describe("public landing — the locale switcher never clips", () => {
 // The authenticated guest home. 768–1023 is the range where the desktop
 // masthead engages (`ResponsiveScreen` engageAt="md") but did not fit, putting
 // Français and then Español off-screen entirely — iPad portrait is 768–834.
+// ⚠️ LOCALE IS A DIMENSION, not a detail. The #405 compaction budget was
+// computed against pt-PT; French nav labels are wider (item widths 104/87/124
+// vs 102/58/119), so the first fix measured clean in Portuguese and still
+// overflowed 20px at 768 in French — and 49px at 1024, which was pre-existing.
+// A guard that tests one locale would have certified both.
 test.describe("authenticated guest home — the masthead never clips the switcher", () => {
-  for (const width of [390, 768, 800, 834, 900, 960, 1024, 1280]) {
-    test(`at ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await stubApi(page);
-      await page.goto("/r/e2e-token");
-      // The redemption navigates to "/" on success. Waiting for the switcher
-      // rather than a URL keeps this honest: a blank page would satisfy a URL
-      // assertion and measure nothing.
-      await page.waitForSelector('[role="group"][aria-label="Language switcher"]', {
-        timeout: 15_000,
+  for (const width of [390, 768, 800, 834, 900, 960, 1024, 1100, 1280]) {
+    for (const locale of ["en", "pt-PT", "fr", "es"]) {
+      test(`at ${width}px in ${locale}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await stubApi(page, locale);
+        // `?lng=` is first in the detector order, so it wins outright. The
+        // redemption navigates to "/" on success; waiting for the switcher
+        // rather than a URL keeps this honest, because a blank page would
+        // satisfy a URL assertion and measure nothing.
+        await page.goto(`/r/e2e-token?lng=${locale}`);
+        await page.waitForSelector('[role="group"][aria-label="Language switcher"]', {
+          timeout: 15_000,
+        });
+        assertNoClipping(await measure(page, "Language switcher"), `home @${width} [${locale}]`);
       });
-      assertNoClipping(await measure(page, "Language switcher"), `home @${width}`);
-    });
+    }
   }
 });
 
