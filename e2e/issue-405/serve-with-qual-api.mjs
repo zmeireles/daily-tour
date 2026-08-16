@@ -108,6 +108,8 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () =>
-  console.log(`serving ${DIST} on http://localhost:${PORT} (api -> ${UPSTREAM})`),
+// Loopback only. This forwards the caller's headers upstream to qual, so bound
+// to 0.0.0.0 it is an open proxy to qual's /v1 for anyone on the LAN.
+server.listen(PORT, "127.0.0.1", () =>
+  console.log(`serving ${DIST} on http://127.0.0.1:${PORT} (api -> ${UPSTREAM})`),
 );
