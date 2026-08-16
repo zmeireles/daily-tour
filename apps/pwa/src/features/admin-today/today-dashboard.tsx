@@ -19,9 +19,7 @@ function GreetingHeader() {
   const greeting = t(`dashboard.greeting.${greetingKey(new Date().getHours())}`, { name });
 
   const firstGuesthouse = guesthouses.data?.data[0];
-  const propertyName = firstGuesthouse
-    ? localizedName(firstGuesthouse.name, i18n.language)
-    : null;
+  const propertyName = firstGuesthouse ? localizedName(firstGuesthouse.name, i18n.language) : null;
 
   return (
     <header className="space-y-1">
