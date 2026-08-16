@@ -33,7 +33,13 @@ if (!TOKEN) {
 
 // 768 and 834 are iPad portrait. 960 is where the issue reports it clears —
 // included as a control: if 960 ever fails too, the diagnosis has moved.
-const WIDTHS = [768, 800, 834, 900, 960, 1024, 1280];
+const WIDTHS = [768, 800, 834, 900, 960, 1024, 1100, 1200, 1280];
+// ⚠️ LOCALE IS A DIMENSION, not a detail. The compaction budget was computed
+// against pt-PT, and French nav labels are wider (item widths 104/87/124 vs
+// 102/58/119) — so a fix that measures clean in Portuguese can still overflow
+// in French. Review caught exactly that: 20px at 768, in a shipped locale, on
+// iPad portrait. `?lng=` is first in the detector order, so it wins outright.
+const LOCALES = ["en", "pt-PT", "fr", "es"];
 const LOCALE_LABELS = /^(EN|PT|FR|ES|English|Português|Français|Español)$/i;
 
 const results = [];
@@ -72,11 +78,13 @@ if (!seedAuthed.hasNav) {
 const storageState = await seed.storageState();
 await seed.close();
 
-for (const width of WIDTHS) {
+for (const { width, locale } of WIDTHS.flatMap((width) =>
+  LOCALES.map((locale) => ({ width, locale })),
+)) {
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, storageState });
   const page = await ctx.newPage();
   try {
-    await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 45000 });
+    await page.goto(`${BASE}/?lng=${locale}`, { waitUntil: "networkidle", timeout: 45000 });
     await page.waitForTimeout(900);
 
     const m = await page.evaluate((labelSrc) => {
@@ -96,7 +104,22 @@ for (const width of WIDTHS) {
       // `innerText` reads "PT Português" and an anchored label regex matches
       // nothing — which reported `buttons=0` and failed a working fix.
       const group = document.querySelector('[role="group"][aria-label="Language switcher"]');
-      const buttons = group ? [...group.querySelectorAll("button")].map(box) : [];
+      const buttons = group
+        ? [...group.querySelectorAll("button")].map((b) => {
+            const r = b.getBoundingClientRect();
+            // ⚠️ Size and hit-test, not just position. Without these, a "fix"
+            // that hides the switcher (display:none below lg) reports
+            // authed=true, overflow=0, offscreen=0, buttons=4 — every rect
+            // collapsed to 0×0 at the origin, so nothing is "off-screen" and
+            // the spec passes. Demonstrated; this is the third false-pass path
+            // found in this harness.
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+            const hit =
+              r.width > 0 && r.height > 0 && b.contains(document.elementFromPoint(cx, cy));
+            return { ...box(b), hit };
+          })
+        : [];
       void re;
 
       // What is actually consuming the row? Report the header's direct children
@@ -135,19 +158,29 @@ for (const width of WIDTHS) {
     }, LOCALE_LABELS.source);
 
     const offscreen = m.buttons.filter((b) => b.left < 0 || b.right > m.viewport + 1);
-    evidence.push({ width, ...m, offscreen });
+    evidence.push({ width, locale, ...m, offscreen });
 
-    const ok = m.authed && m.overflow <= 1 && offscreen.length === 0 && m.buttons.length === 4;
+    const invisible = m.buttons.filter((b) => !b.hit || b.w < 8);
+    const ok =
+      m.authed &&
+      m.overflow <= 1 &&
+      offscreen.length === 0 &&
+      invisible.length === 0 &&
+      m.buttons.length === 4;
     step(
-      `${width}px — overflow 0 and all four locale buttons on-screen`,
+      `${width}px [${locale}] — overflow 0, all four buttons on-screen and hittable`,
       ok,
       `authed=${m.authed} overflow=${m.overflow}px buttons=${m.buttons.length}` +
         (offscreen.length ? ` OFFSCREEN=${offscreen.map((b) => b.label).join(",")}` : "") +
+        (invisible.length
+          ? ` NOT-HITTABLE=${invisible.map((b) => b.label || "?").join(",")}`
+          : "") +
         (m.worst ? ` worst=<${m.worst.tag} class="${m.worst.cls}"> over by ${m.worst.over}px` : ""),
     );
-    await page.screenshot({ path: `${OUT}home-${width}.png` }).catch(() => {});
+    if (locale === "fr")
+      await page.screenshot({ path: `${OUT}home-${width}-fr.png` }).catch(() => {});
   } catch (e) {
-    step(`${width}px`, false, e.message.slice(0, 160));
+    step(`${width}px [${locale}]`, false, e.message.slice(0, 160));
   } finally {
     await ctx.close();
   }
