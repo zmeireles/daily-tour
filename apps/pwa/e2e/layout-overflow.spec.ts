@@ -98,11 +98,31 @@ async function measure(page: Page, groupLabel: "Language switcher" | "Language")
           };
         })
       : [];
+    // ⚠️ `header` is load-bearing. The mobile bottom tab bar carries the SAME
+    // `nav[aria-label="Primary"]`, and the mobile app bar carries the same
+    // role="group" switcher with hittable buttons — so an unscoped probe
+    // passes happily on the phone tree. Demonstrated: flipping Home's
+    // `engageAt` from "md" to "lg" hands every iPad width the mobile UI, and
+    // this file stayed green while the masthead was never rendered at all.
+    // The bottom tab bar is not inside a <header>.
+    const headerNav = document.querySelector('header nav[aria-label="Primary"]');
     return {
       present: !!group,
       overflow: de.scrollWidth - de.clientWidth,
       viewport: window.innerWidth,
       buttons,
+      masthead: !!headerNav,
+      // Wrap depth. Horizontal overflow SATURATES: the row is packed
+      // edge-to-edge, so added pressure is spent wrapping nav labels deeper
+      // while overflow stays 0, until the nav hits min-content. Restoring the
+      // profile stub costs French guests a three-line label on iPad portrait
+      // and passes every overflow assertion. This is the axis that fails first.
+      navItems: headerNav
+        ? [...headerNav.querySelectorAll("a")].map((a) => ({
+            text: (a as HTMLElement).innerText.replace(/\s+/g, " ").trim().slice(0, 28),
+            height: +a.getBoundingClientRect().height.toFixed(0),
+          }))
+        : [],
     };
   }, groupLabel);
 }
@@ -142,6 +162,33 @@ function assertNoClipping(
   ).toEqual([]);
 }
 
+// A single-line nav item is 44px; a three-line one is 60px. Measured across all
+// four shipped locales at 768/834/1024/1280, everything is 44 with exactly one
+// exception: French at 1024 renders the chat label on three lines. That is
+// PRE-EXISTING — identical on qual before this work — so it is pinned as a known
+// value rather than smoothed away. Pinning it means a regression from 44 to 60
+// anywhere else fails, and French getting *worse* than 60 fails too.
+const MAX_NAV_ITEM_HEIGHT = 44;
+const KNOWN_WRAP_RESIDUALS: Record<string, number> = {
+  // fr @1024 — the masthead is simply dense in the longer locales at that
+  // width. Filed separately as a copy/design question, not fixed here.
+  "fr@1024": 60,
+};
+
+function assertWrapDepth(
+  m: Awaited<ReturnType<typeof measure>>,
+  width: number,
+  locale: string,
+): void {
+  const allowed = KNOWN_WRAP_RESIDUALS[`${locale}@${width}`] ?? MAX_NAV_ITEM_HEIGHT;
+  const tooTall = m.navItems.filter((i) => i.height > allowed);
+  expect(
+    tooTall,
+    `${locale} @${width}: nav label wrapped deeper than ${allowed}px. Overflow saturates — ` +
+      `it stays 0 while the row absorbs pressure by wrapping, so this is the axis that fails first.`,
+  ).toEqual([]);
+}
+
 // The public landing. Unauthenticated, so this half needs no session at all.
 // 320 is where #405's secondary defect lived, and it is invisible to a
 // page-overflow check.
@@ -165,7 +212,9 @@ test.describe("public landing — the locale switcher never clips", () => {
 // overflowed 20px at 768 in French — and 49px at 1024, which was pre-existing.
 // A guard that tests one locale would have certified both.
 test.describe("authenticated guest home — the masthead never clips the switcher", () => {
-  for (const width of [390, 768, 800, 834, 900, 960, 1024, 1100, 1280]) {
+  // 768 is where the desktop masthead engages; below it the app renders the
+  // mobile tree, which has no masthead at all and is covered separately below.
+  for (const width of [768, 800, 834, 900, 960, 1024, 1100, 1280]) {
     for (const locale of ["en", "pt-PT", "fr", "es"]) {
       test(`at ${width}px in ${locale}`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
@@ -175,10 +224,42 @@ test.describe("authenticated guest home — the masthead never clips the switche
         // rather than a URL keeps this honest, because a blank page would
         // satisfy a URL assertion and measure nothing.
         await page.goto(`/r/e2e-token?lng=${locale}`);
+        // The masthead specifically, not just "some primary nav" — see the
+        // note in measure(). This is what makes an engageAt regression fail
+        // instead of silently measuring the phone UI.
+        await page.waitForSelector('header nav[aria-label="Primary"]', { timeout: 15_000 });
         await page.waitForSelector('[role="group"][aria-label="Language switcher"]', {
           timeout: 15_000,
         });
-        assertNoClipping(await measure(page, "Language switcher"), `home @${width} [${locale}]`);
+        const m = await measure(page, "Language switcher");
+        expect(m.masthead, `home @${width} [${locale}]: desktop masthead not rendered`).toBe(true);
+        assertNoClipping(m, `home @${width} [${locale}]`);
+        assertWrapDepth(m, width, locale);
+      });
+    }
+  }
+});
+
+// The authenticated home on the MOBILE tree, which has no masthead — the
+// switcher rides in the app bar instead. Kept as its own group because the
+// masthead assertions cannot apply here, and folding the two together is what
+// let an `engageAt` regression read as a pass: iPad widths silently rendering
+// this tree satisfied every check written for the other one.
+test.describe("authenticated guest home (mobile tree) — the switcher never clips", () => {
+  for (const width of [320, 360, 390, 414]) {
+    for (const locale of ["en", "pt-PT", "fr", "es"]) {
+      test(`at ${width}px in ${locale}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await stubApi(page, locale);
+        await page.goto(`/r/e2e-token?lng=${locale}`);
+        await page.waitForSelector('[role="group"][aria-label="Language switcher"]', {
+          timeout: 15_000,
+        });
+        const m = await measure(page, "Language switcher");
+        // The inverse control of the masthead group: below `md` there must be
+        // no masthead, so a regression in the other direction is caught too.
+        expect(m.masthead, `mobile @${width}: masthead should NOT render below md`).toBe(false);
+        assertNoClipping(m, `mobile @${width} [${locale}]`);
       });
     }
   }
