@@ -4,6 +4,7 @@
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
+import { isSameOrigin } from "../lib/same-origin.mjs";
 
 const require = createRequire(import.meta.url);
 const REPO = "/media/jmeireles/ssd3/my-projects/daily-tour";
@@ -62,7 +63,7 @@ try {
   await page.goto(APEX + "/admin", { waitUntil: "domcontentloaded" });
   // SPA boots then signinRedirect() pushes to Authentik. Wait for the host switch.
   await page.waitForURL(/auth\.qual\.stay\.portugalodyssey\.pt/, { timeout: 30000 });
-  const onAuth = page.url().startsWith(AUTH);
+  const onAuth = isSameOrigin(page.url(), AUTH);
   step("A1 /admin redirects to Authentik login", onAuth, page.url().split("?")[0]);
   await shot("A1-authentik-login");
 

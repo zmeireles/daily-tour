@@ -7,6 +7,7 @@ import { readdirSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { isSameOrigin } from "../lib/same-origin.mjs";
 
 const repoRoot = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const pnpmDir = resolve(repoRoot, "node_modules/.pnpm");
@@ -184,7 +185,7 @@ try {
   await owner.locator('input[name="password"]').waitFor({ timeout: 15000 });
   await owner.locator('input[name="password"]').fill(AK_PW);
   await owner.locator('input[name="password"]').press("Enter");
-  for (let i = 0; i < 25 && !owner.url().startsWith(BASE); i++) {
+  for (let i = 0; i < 25 && !isSameOrigin(owner.url(), BASE); i++) {
     const s = owner.locator('button[type="submit"]');
     if (await s.count())
       await s

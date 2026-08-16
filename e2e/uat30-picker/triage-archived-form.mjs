@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isSameOrigin } from "../lib/same-origin.mjs";
 
 const repoRoot = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const pnpmDir = resolve(repoRoot, "node_modules/.pnpm");
@@ -39,7 +40,7 @@ await page.locator('input[name="uidField"]').press("Enter");
 await page.locator('input[name="password"]').waitFor({ timeout: 15000 });
 await page.locator('input[name="password"]').fill(AK_PW);
 await page.locator('input[name="password"]').press("Enter");
-for (let i = 0; i < 25 && !page.url().startsWith(BASE); i++) {
+for (let i = 0; i < 25 && !isSameOrigin(page.url(), BASE); i++) {
   const s = page.locator('button[type="submit"]');
   if (await s.count())
     await s

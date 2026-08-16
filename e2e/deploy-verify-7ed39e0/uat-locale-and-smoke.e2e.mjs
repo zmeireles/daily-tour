@@ -2,6 +2,7 @@
 // READ-ONLY. Report-only (exit 0). Screenshots + evidence -> temp/deploy-verify-7ed39e0/.
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { isSameOrigin } from "../lib/same-origin.mjs";
 
 const require = createRequire(import.meta.url);
 const REPO = "/media/jmeireles/ssd3/my-projects/daily-tour";
@@ -109,7 +110,7 @@ writeFileSync(`${SHOTS}locale-evidence.json`, JSON.stringify(localeEvidence, nul
   });
   page.on("response", (r) => {
     const u = r.url();
-    if (r.status() >= 400 && u.startsWith(BASE))
+    if (r.status() >= 400 && isSameOrigin(u, BASE))
       netFails.push(`${r.status()} ${r.request().method()} ${u}`);
   });
   try {
@@ -132,7 +133,7 @@ writeFileSync(`${SHOTS}locale-evidence.json`, JSON.stringify(localeEvidence, nul
     const priv = await page.evaluate(() => document.body.innerText.trim().length);
     step(
       "B2 direct-nav /privacy renders (same-origin https)",
-      r2?.status() === 200 && finalUrl.startsWith(BASE) && priv > 200,
+      r2?.status() === 200 && isSameOrigin(finalUrl, BASE) && priv > 200,
       `status=${r2?.status()} finalUrl=${finalUrl} bodyLen=${priv}`,
     );
     await page.screenshot({ path: `${SHOTS}smoke-privacy.png` }).catch(() => {});

@@ -6,6 +6,7 @@
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
+import { isSameOrigin } from "../lib/same-origin.mjs";
 
 const require = createRequire(import.meta.url);
 const REPO = "/media/jmeireles/ssd3/my-projects/daily-tour";
@@ -66,7 +67,11 @@ try {
   // ── 1. Owner login via Authentik ────────────────────────────────────────────
   await page.goto(APEX + "/admin", { waitUntil: "domcontentloaded" });
   await page.waitForURL(/auth\.qual\.stay\.portugalodyssey\.pt/, { timeout: 30000 });
-  step("S1 /admin redirects to Authentik", page.url().startsWith(AUTH), page.url().split("?")[0]);
+  step(
+    "S1 /admin redirects to Authentik",
+    isSameOrigin(page.url(), AUTH),
+    page.url().split("?")[0],
+  );
 
   const userField = page.locator('input[name="uidField"]').first();
   await userField.waitFor({ state: "visible", timeout: 20000 });
