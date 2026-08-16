@@ -30,6 +30,15 @@ pre-commit:
         Secret scan failed. If gitleaks is not installed, install it (see lefthook.yml header).
         If a real secret was detected, remove it from the staged files before committing.
 
+    uat-specs-not-in-temp:
+      # Specs belong in the tracked e2e/; temp/ is gitignored and disposable.
+      # Six UAT specs were lost on 2026-08-15 because they lived only in temp/
+      # and had never been `git add`ed. The convention had been written into
+      # four consecutive handoffs and still failed, so this is the mechanical
+      # version. See scripts/dev/check-uat-specs.sh and e2e/README.md.
+      run: bash scripts/dev/check-uat-specs.sh
+      fail_text: "Move the UAT spec(s) out of temp/ and into e2e/ — see the paths printed above."
+
     prettier-staged:
       # Source nvm so non-interactive hook shells pick up the .nvmrc-pinned Node.
       # Falls through gracefully if nvm isn't installed (engine-strict will then
