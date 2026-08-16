@@ -99,6 +99,74 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # The layout axis, which the unit suite structurally cannot cover: jsdom
+  # loads no CSS and does no layout, so it can assert accessible names and
+  # class strings and nothing else. Two shipped defects came through that gap
+  # (#382, #405) — both "a guest cannot reach their own language because its
+  # button is off-screen" — and reviewing #400 measured the gap directly: a
+  # mutation deleting the responsive label pair, which overflows WORSE than the
+  # original bug, passed all seven of that PR's new tests. It fails 7 of the 15
+  # specs here. (#406)
+  #
+  # A separate job so the browser download never slows the main quality gate.
+  # No backend: the guest session is established by stubbing the token exchange,
+  # because layout needs the right components mounted, not real data.
+  e2e:
+    name: E2E (layout / overflow)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable pnpm via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.14.2 --activate
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Cache the browser binary (~113 MB) on the Playwright version, so a
+      # dependency bump invalidates it and nothing else does.
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Chromium
+        run: pnpm --filter @daily-tour/pwa exec playwright install --with-deps chromium
+
+      # playwright.config.ts starts `pnpm preview` itself, which serves dist —
+      # so the bundle has to exist first. This is the built artefact, not the
+      # dev server: the defects being guarded are CSS-at-real-widths defects.
+      - name: Build the PWA
+        run: pnpm --filter @daily-tour/pwa build
+
+      - name: Run layout specs
+        run: pnpm --filter @daily-tour/pwa exec playwright test e2e/layout-overflow.spec.ts
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: apps/pwa/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
   # Python services are NOT in the turbo graph (no package.json), so the
   # `quality` job above never touched them — the Plan-001 accounting retro's
   # root cause (false-resolves shipped because CI never exercised chat-hub /
