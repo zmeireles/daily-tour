@@ -1,3 +1,4 @@
+import { requestError } from "@/lib/api/request-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOwnerJwt } from "@/store/owner-session";
 
@@ -134,7 +135,7 @@ export function useCreatePlace() {
         headers: { ...authHeader(jwt!), "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`create place ${res.status}`);
+      if (!res.ok) throw await requestError(res, "create place");
       return res.json() as unknown;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
@@ -151,11 +152,10 @@ export function useUpdatePlace(id: string) {
         headers: { ...authHeader(jwt!), "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        const err = new Error(`update place ${res.status}`) as Error & { status?: number };
-        err.status = res.status;
-        throw err;
-      }
+      // Carries the server's own `{error}` — notably `place_archived`, which
+      // an owner hits by saving an archived place without restoring it (#376).
+      // A bare "update place 409" told them nothing they could act on.
+      if (!res.ok) throw await requestError(res, "update place");
       return res.json() as unknown;
     },
     // T-8.2.5 — optimistic: the pick toggle (and any inline PATCH) reflects in the
@@ -192,7 +192,7 @@ export function useArchivePlace() {
         method: "DELETE",
         headers: authHeader(jwt!),
       });
-      if (!res.ok && res.status !== 204) throw new Error(`archive place ${res.status}`);
+      if (!res.ok && res.status !== 204) throw await requestError(res, "archive place");
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: PLACES_KEY }),
   });

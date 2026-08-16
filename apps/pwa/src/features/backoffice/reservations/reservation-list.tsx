@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { pickLocale } from "@daily-tour/shared-types";
 import { formattingLocale } from "@/lib/i18n/formatting-locale";
 import { toast } from "sonner";
 import {
@@ -41,12 +42,12 @@ function guestLink(token: string): string {
   return `${window.location.origin}/r/${token}`;
 }
 
-// Guesthouse display name for the property chip, resolved against the active
-// locale with graceful fallbacks. Mirrors place-list's localized-name stance.
+// Guesthouse display name for the property chip. The resolution order lives in
+// `pickLocale` — this used to be a hand-rolled copy, duplicated verbatim in
+// chat-inbox.tsx, and the two drifted from the other two helpers (#392).
 function guesthouseName(gh: GuesthouseRow | undefined, locale: string): string {
   if (!gh) return "";
-  const base = locale.split("-")[0] ?? locale;
-  return gh.name[locale] ?? gh.name[base] ?? gh.name["en"] ?? Object.values(gh.name)[0] ?? "";
+  return pickLocale(gh.name, locale);
 }
 
 // Upcoming check-in first; id as a stable tiebreaker so equal dates don't jitter.

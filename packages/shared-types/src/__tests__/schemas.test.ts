@@ -367,6 +367,41 @@ describe("pickLocale", () => {
     expect(pickLocale({ "pt-PT": "Olá" }, "de", "pt-PT")).toBe("Olá");
   });
 
+  // The defect the four-helper unification exposed (#392). Every previous
+  // helper resolved the base language as `text[base]` — a lookup for a key
+  // called `pt` — while the maps are keyed `pt-PT`. So a Brazilian or
+  // region-less Portuguese speaker fell straight past perfectly good
+  // Portuguese content to the English baseline. Same shape as the bug #403
+  // fixed in the language detector.
+  it("resolves a regional tag to same-base content, not to the fallback", () => {
+    const name = { en: "Miguel's House", "pt-PT": "Casa do Miguel" };
+    expect(pickLocale(name, "pt-BR")).toBe("Casa do Miguel");
+    expect(pickLocale(name, "pt")).toBe("Casa do Miguel");
+    expect(pickLocale(name, "PT-br")).toBe("Casa do Miguel");
+  });
+
+  it("prefers an exact key over a same-base one", () => {
+    expect(pickLocale({ "pt-PT": "Europeu", en: "English" }, "pt-PT")).toBe("Europeu");
+  });
+
+  it("takes each fallback in turn", () => {
+    // The owner console's Today screen passes ["pt-PT", "en"]; every other
+    // surface passes the default "en". Making the chain explicit is what let
+    // four helpers become one without silently changing either.
+    expect(pickLocale({ en: "EN", "pt-PT": "PT" }, "fr", ["pt-PT", "en"])).toBe("PT");
+    expect(pickLocale({ en: "EN", "pt-PT": "PT" }, "fr")).toBe("EN");
+
+    // ⚠️ The second entry has to be reachable independently of the
+    // any-value fallback, or the case proves nothing: with `{ en }` alone,
+    // "take en" and "give up and take the first value" both answer "EN".
+    // `de` sorts first here, so only a real second hop returns "EN".
+    expect(pickLocale({ de: "DE", en: "EN" }, "fr", ["pt-PT", "en"])).toBe("EN");
+  });
+
+  it("ignores an empty string as if the key were absent", () => {
+    expect(pickLocale({ "pt-PT": "", en: "English" }, "pt-PT")).toBe("English");
+  });
+
   it("returns any value when preferred and fallback are missing", () => {
     const result = pickLocale({ fr: "Bonjour" }, "de", "en");
     expect(result).toBe("Bonjour");
