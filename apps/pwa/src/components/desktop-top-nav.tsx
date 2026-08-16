@@ -74,7 +74,12 @@ export function DesktopTopNav() {
 
   return (
     <header className="sticky top-0 z-30 h-20 border-b border-outline-variant bg-surface/80 backdrop-blur">
-      <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between gap-6 px-8 xl:px-12">
+      {/* Tightened below `lg`. The masthead engages at `md` (768) but needs
+          ~1004px with full-word locale labels, so it overflowed by 204px at
+          768 and pushed Espanol and Francais off-screen (#405). Measured
+          savings: padding 32px, gaps 24px, nav item padding 48px, locale
+          codes 152px — 256px against a 236px deficit. */}
+      <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between gap-3 px-4 lg:gap-6 lg:px-8 xl:px-12">
         <Link to="/" aria-label="Daily Tour" className="shrink-0">
           <BrandLockup size="masthead" />
         </Link>
@@ -87,7 +92,7 @@ export function DesktopTopNav() {
                 key={s.id}
                 to={s.to}
                 aria-current={active ? "page" : undefined}
-                className="group relative flex min-h-[44px] items-center gap-2 px-4"
+                className="group relative flex min-h-[44px] items-center gap-2 px-2 lg:px-4"
               >
                 {s.withAvatar && (
                   <Avatar className="size-6">
