@@ -67,7 +67,24 @@ async function stubApi(page: Page, locale = "pt-PT") {
 
 /** Every locale button's box, plus the page's own horizontal overflow. */
 async function measure(page: Page, groupLabel: "Language switcher" | "Language") {
-  return page.evaluate((label) => {
+  return page.evaluate(async (label) => {
+    // ⚠️ FIRST, AND INSIDE measure() SO IT CANNOT BE FORGOTTEN. Wrap depth is a
+    // pure function of text metrics, so measuring before the webfont applies
+    // reports the FALLBACK font's narrower labels — systematically optimistic,
+    // and worst in CI where the font cache is always cold.
+    //
+    // This was not hypothetical. #412 (fr@1024 wraps) reproduces on qual and on
+    // a local build with a real session, in system Chrome and in Playwright's
+    // Chromium alike — 60px every time. This file reported 44px and passed,
+    // including with #414's 60px pin REMOVED, which is what exposed it: a
+    // residual the file was written to pin could not make it fail. With this
+    // await, that case reports the measured 60px and goes red.
+    //
+    // The line count below independently catches THAT case, so neither is
+    // redundant: this await stops every assertion in the file from being taken
+    // against narrower fallback-font metrics, and the line count closes the
+    // separate blindness of the 44px min-height. Both were mutation-tested.
+    await document.fonts.ready;
     const de = document.documentElement;
     const group = document.querySelector(`[role="group"][aria-label="${label}"]`);
     const buttons = group
@@ -117,11 +134,45 @@ async function measure(page: Page, groupLabel: "Language switcher" | "Language")
       // while overflow stays 0, until the nav hits min-content. Restoring the
       // profile stub costs French guests a three-line label on iPad portrait
       // and passes every overflow assertion. This is the axis that fails first.
+      //
+      // ⚠️ HEIGHT ALONE CANNOT COUNT LINES. The link carries `min-h-[44px]` and
+      // two lines of 14px `text-sm` measure ~40px, so a TWO-line label sits
+      // inside the floor and reports the same 44px as a one-line one. Only a
+      // third line pushes past it. Measured on qual: 11 of 24 locale × width
+      // cells already hold a two-line label, at every width from 768 to 1280 —
+      // none of it visible on the height axis. So count lines too.
       navItems: headerNav
-        ? [...headerNav.querySelectorAll("a")].map((a) => ({
-            text: (a as HTMLElement).innerText.replace(/\s+/g, " ").trim().slice(0, 28),
-            height: +a.getBoundingClientRect().height.toFixed(0),
-          }))
+        ? [...headerNav.querySelectorAll("a")].map((a) => {
+            // The LABEL, not the first span: the chat item's first span is the
+            // avatar, which is `hidden` below `xl` and yields zero rects — a
+            // measurement that reads as "one line". The avatar fallback is a
+            // single character, so the label is the longest non-aria-hidden one.
+            const span =
+              [...a.querySelectorAll("span")]
+                .filter((s) => !s.hasAttribute("aria-hidden"))
+                .sort(
+                  (x, y) =>
+                    (y.textContent ?? "").trim().length - (x.textContent ?? "").trim().length,
+                )[0] ?? a;
+            // Count over the TEXT, not the element. The label span is a flex
+            // item and therefore block-level, so `span.getClientRects()` returns
+            // exactly one rect however many lines it holds — that version
+            // reported "one line" for a label measured at three. A Range over
+            // its contents yields one rect per line box.
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const lh = parseFloat(getComputedStyle(span).lineHeight);
+            return {
+              text: (a as HTMLElement).innerText.replace(/\s+/g, " ").trim().slice(0, 28),
+              height: +a.getBoundingClientRect().height.toFixed(0),
+              lines: Math.max(
+                range.getClientRects().length,
+                // Independent cross-check, so a Range quirk cannot silently
+                // under-report: the box height over one line's height.
+                Number.isFinite(lh) ? Math.round(span.getBoundingClientRect().height / lh) : 0,
+              ),
+            };
+          })
         : [],
     };
   }, groupLabel);
@@ -162,30 +213,40 @@ function assertNoClipping(
   ).toEqual([]);
 }
 
-// A single-line nav item is 44px; a three-line one is 60px. Measured across all
-// four shipped locales at 768/834/1024/1280, everything is 44 with exactly one
-// exception: French at 1024 renders the chat label on three lines. That is
-// PRE-EXISTING — identical on qual before this work — so it is pinned as a known
-// value rather than smoothed away. Pinning it means a regression from 44 to 60
-// anywhere else fails, and French getting *worse* than 60 fails too.
+// A one- or two-line nav item is 44px (the `min-h-[44px]` floor absorbs the
+// second line); a three-line one is 60px. #412's fr@1024 residual is now fixed
+// in copy, so there is no height exception left to pin.
 const MAX_NAV_ITEM_HEIGHT = 44;
-const KNOWN_WRAP_RESIDUALS: Record<string, number> = {
-  // fr @1024 — the masthead is simply dense in the longer locales at that
-  // width. Filed separately as a copy/design question, not fixed here.
-  "fr@1024": 60,
-};
+
+// The line ceiling is 2, and that number is a RECORD OF THE CURRENT STATE rather
+// than a target. Measured on qual across 4 locales × 6 widths: 11 of 24 cells
+// hold a two-line label, in every locale, from 768 up to and including 1280 —
+// because the nav is the only shrinking flex child and it is squeezed to 321.7px
+// at 1024. Getting every label onto one line means giving the nav real width
+// back, which is a design change across the whole desktop band (#417), not a
+// copy fix. Until that is decided, 2 is what ships — so assert 2 and let a THIRD
+// line fail, which is exactly the regression #412 was.
+const MAX_NAV_LABEL_LINES = 2;
 
 function assertWrapDepth(
   m: Awaited<ReturnType<typeof measure>>,
   width: number,
   locale: string,
 ): void {
-  const allowed = KNOWN_WRAP_RESIDUALS[`${locale}@${width}`] ?? MAX_NAV_ITEM_HEIGHT;
-  const tooTall = m.navItems.filter((i) => i.height > allowed);
+  const tooDeep = m.navItems.filter((i) => i.lines > MAX_NAV_LABEL_LINES);
+  expect(
+    tooDeep,
+    `${locale} @${width}: nav label on more than ${MAX_NAV_LABEL_LINES} lines. The 44px ` +
+      `min-height hides a second line, so height alone cannot see this — and a third line is ` +
+      `what #412 was.`,
+  ).toEqual([]);
+
+  const tooTall = m.navItems.filter((i) => i.height > MAX_NAV_ITEM_HEIGHT);
   expect(
     tooTall,
-    `${locale} @${width}: nav label wrapped deeper than ${allowed}px. Overflow saturates — ` +
-      `it stays 0 while the row absorbs pressure by wrapping, so this is the axis that fails first.`,
+    `${locale} @${width}: nav label wrapped deeper than ${MAX_NAV_ITEM_HEIGHT}px. Overflow ` +
+      `saturates — it stays 0 while the row absorbs pressure by wrapping, so this is the axis ` +
+      `that fails first.`,
   ).toEqual([]);
 }
 
