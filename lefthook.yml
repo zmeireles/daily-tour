@@ -25,10 +25,22 @@ pre-commit:
           echo "[lefthook] Install gitleaks to enable local secret scanning (see lefthook.yml header)."
           exit 0
         fi
-        gitleaks protect --staged --redact -v --config .gitleaks-ext.toml
+        # The SAME config CI resolves. It used to be `.gitleaks-ext.toml`, which
+        # chains to a machine-local central config no runner can read — so a
+        # local pass predicted nothing about CI, and CI in fact ran with no
+        # config at all (#415).
+        gitleaks protect --staged --redact -v --config .gitleaks.toml
       fail_text: |
         Secret scan failed. If gitleaks is not installed, install it (see lefthook.yml header).
         If a real secret was detected, remove it from the staged files before committing.
+
+    gitleaks-config-in-sync:
+      # `.gitleaks.toml` is generated from the central config + `.gitleaks-ext.toml`.
+      # A central-rules update that never reaches this repo's committed copy would
+      # otherwise sit unnoticed — and unlike a missing config, silently. Skips
+      # where the central config is absent (i.e. CI, which only needs the result).
+      run: bash scripts/dev/sync-gitleaks-config.sh --check
+      fail_text: "Run scripts/dev/sync-gitleaks-config.sh --write and commit the regenerated .gitleaks.toml."
 
     uat-specs-not-in-temp:
       # Specs belong in the tracked e2e/; temp/ is gitignored and disposable.
