@@ -1,6 +1,119 @@
-# Session Handoff — … → 08-17 (**s732 — recovered s731's undocumented 08-16 batch after a second crash; 5 PRs were already merged, nothing lost. Deployed to qual. Found the weekly Security gate red for 5 straight weeks.**) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-17 (**s733 — reconciliation after a third crash; nothing lost again. Three PRs open and green, all awaiting the owner. #423 filed for the blind spot #421 creates.**) · 08-17 (s732 — recovered s731's undocumented 08-16 batch after a second crash; #412 and #407 fixed, three layout guards found unable to fail; qual at `8058c5c`) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-08-17 (LATEST — session `s732`. A workstation crash ended `s731` on 08-16 after it had merged 5 PRs and written none of them down. This block is that recovery. ▶ next: **#412**.)**
+> **UPDATE 2026-08-17 (LATEST — session `s733`. A third workstation crash — the machine was slept to move office→home — ended `s732` at ~11:38Z. This block is the reconciliation. No work was done beyond one issue filed; read the `s732` block below for what actually shipped.)**
+>
+> ### Nothing was lost — measured, not assumed
+>
+> `s732` crashed **after** posting its closing report (transcript ends `11:38:39Z`; the report is timestamped `11:35:31Z`). It had nothing in flight.
+>
+> | checked               | state                                                                                    |
+> | --------------------- | ---------------------------------------------------------------------------------------- |
+> | working tree          | clean · no stashes · no worktrees · no git locks · no untracked files                    |
+> | `main`                | **`a143f3b`** == `origin/main`                                                           |
+> | 3 local branches      | all three have an upstream and **0 unpushed commits** (`origin/<b>..<b>` empty for each) |
+> | `e2e/` specs          | **44 tracked** · no `.mjs` under `temp/` — the pre-commit guard's condition holds        |
+> | A2A `comm_whoami`     | `dt:Furnas` / `DAILY-TOUR` ✅ · scope covers daily-tour **and** dt-tests                 |
+> | `comm_inbox`          | `after_seq=626` → **0 messages**                                                         |
+> | dt-tests              | `review` **empty** · #30/#31 still `todo` (tester) · #22 deferred-until-prod             |
+> | `orchestrator-comms/` | `inbox-daily-tour.md` unchanged since 06-23 — nothing new                                |
+> | memory index          | 26 files ↔ 26 rows in `MEMORY.md` — no orphans, no dangling links                        |
+> | cc-platform-feedback  | `s732`'s entry verified present on disk (written `11:34`), not just claimed              |
+> | GitHub since `11:38Z` | no new comments, reviews, or issues                                                      |
+>
+> ### ⚠️ The `s732` block below is accurate about the day but STALE about the queue
+>
+> It says **"2 PRs open"** and lists #415/#417 as issues with no PR. Both got PRs in the ~50 minutes between it being written and the crash. Current truth is the table below.
+>
+> ### State
+>
+> `main` **`a143f3b`** · qual **`8058c5c`** and **current** — the gap is `docs/ai/session-handoff.md` only, and qual answers `200` on the landing plus `ok` on `/healthz`. **3 PRs open, none auto-mergeable.**
+>
+> | PR       | Closes             | base                       | checks                               | why it waits                                                          |
+> | -------- | ------------------ | -------------------------- | ------------------------------------ | --------------------------------------------------------------------- |
+> | **#419** | #407               | `main`                     | **12/12** ✅                         | touches `apps/pwa/src` — outside the auto-mergeable categories        |
+> | **#421** | #415               | `main`                     | **11/11** ✅                         | **always-escalate** — touches `security.yml` + `lefthook.yml`         |
+> | **#422** | #417 _(partially)_ | `fix/s732-407-tap-targets` | **1 check, and that is not a green** | stacked on #419; CI triggers on `pull_request: branches: [main]` only |
+>
+> **Open issues: #423** (new, see below) · **#417** (residual after #422) · **#407** · **#389** · **#328**. #415 is answered by #421.
+>
+> ### The one thing this session added: #423
+>
+> `s732` flagged a residual inside #421's body and nowhere else. **A PR body is not a tracker**, and this one is the kind that disappears the moment the gate goes green: #421 makes CI honour the project's gitleaks allowlists for the first time, and three of them are **whole-file** exemptions under `infra/`. A planted AWS-shaped key in `infra/rabbitmq/definitions.json` was **not** detected. Pre-existing as a config, but **new as a CI blind spot** — created by the same change that fixes the five-week red. Filed as **#423**, blocked on #421.
+>
+> ⚠️ The repo is **PUBLIC**, so #423 is world-readable. It names no secret and adds nothing #415/#421 did not already state openly, but the owner may prefer it closed or moved.
+>
+> ### ▶ THE QUEUE — merge order matters, and it is not the PR-number order
+>
+> 1. **#419 first.** It is the base of #422. Merging it retargets #422 to `main`, which is the only way #422's full CI ever runs.
+> 2. **#422 second — and re-read its checks after the retarget.** Right now it has one green check out of twelve. Its local evidence (57/57 layout, 576 unit) is real but is not CI.
+> 3. **#421 third** (independent; escalated for the owner's call).
+> 4. **Immediately after #421 merges: dispatch `Security` on `main`.** `workflow_dispatch` was added by that PR precisely so this is provable in minutes instead of a week. **Until that dispatched run is green on `main`, #415 is fixed-in-theory.**
+> 5. **After #419/#422 are on `main`: deploy qual, then re-measure on qual.** `publish-images` fires on both (they touch `apps/pwa`), so `image_tag` = the full 40-char SHA of the merge commit. Then, with `RTOKEN="$(make qual-token | grep -oE '[^/]+$')"`:
+>    - `node e2e/issue-407/measure-tap-targets.mjs` — expect **32/32**; it scored 16/32 on the deployed build
+>    - `node e2e/issue-412/measure-wrap-depth.mjs` — expect **5** wrapping cells; 11 today
+>    - ⚠️ the wrap probe has **±1 jitter** on borderline cells — a one-cell delta decides nothing without a repeat
+> 6. **#417 stays open** and needs two further owner design calls, both stated in #422: the **185.1px brand lockup** at 768–800, and at 1280 the avatar returning at the same breakpoint as the full words (cheapest candidate: move the decorative avatar to `2xl`).
+> 7. **#423** (after #421) · **#389** · **#328**.
+> 8. **Human:** UAT **#30** and **#31** still `todo` — https://tasks.codecomedy.dev/p/dt-tests/r/31
+> 9. **Repo setting, yours:** make the `e2e (layout)` job a **required** check.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`. A wrong-token session looks completely normal from the inside.
+> 2. **`comm_inbox after_seq=626`** — still the watermark; nothing has arrived since.
+> 3. **Re-arm the A2A bridge — it is NOT armed.** Stopped at this closeout, and verified stopped: the only live `comm-watch` pair belongs to **po-platform-sA** (`cwd=…/cristina-meireles/po-platform-sA`). daily-tour has no local script; use codecomedy-platform's with daily-tour's env:
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    ⚠️ **Check the env/path, never the count** — this session found live bridges and none were ours. Third handoff running that this gotcha has bitten.
+> 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — empty at close.
+>
+> ### Telegram — one paired party, no third party, nothing sent
+>
+> The startup instruction was to announce being back online **only if a client other than the owner is attached**. Both allowlists — global `~/.claude/channels/telegram/state` and the project-scoped `.claude/channels/telegram/state/access.json` — read identically: `dmPolicy: pairing`, **one** entry in `allowFrom`, `groups: {}`, `pending: {}`. No third party exists on this channel, so **no message was sent**. The channel itself is up (bot process alive since `12:46:37`), and its `.env` is untracked and covered by `.gitignore:2`.
+>
+> ### The reusable bit
+>
+> Three crashes in three sessions have now cost **zero** work, and the reason is the same each time: **push early, and let the remote be the record.** What has actually been lost across those three is the _write-up_ — twice — which is why the recovery ritual is now a table of anchors (tree/branches/remote/inbox/specs/index) rather than a look around. It takes minutes and it converts "I think we're fine" into a measurement.
+
+> **UPDATE 2026-08-17 (session `s732`. A workstation crash ended `s731` on 08-16 after it had merged 5 PRs and written none of them down. This block is that recovery, plus the work that followed it.)**
+>
+> ### Where things stand at the time of writing
+>
+> main **`8058c5c`** · qual **`8058c5c`** (deployed twice today: `65151f3`, then this) · **2 PRs open, both green, both awaiting review** · 4 issues open.
+>
+> | PR       | what                                                               | why not merged                                                       |
+> | -------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+> | **#419** | **#407** — 44×44 tap targets on the guest's first phone screen     | touches `apps/pwa/src` — outside the auto-mergeable categories       |
+> | ~~#418~~ | **#412** — French three-line label + the guard that could not fail | **merged on the owner's explicit go-ahead**, deployed, verified live |
+>
+> **Open: #417** (needs the owner's design call — see below) · **#415** (weekly gitleaks gate; security-config, always-escalate) · **#389** · **#328**.
+>
+> ▶ **Next, unless the owner redirects:** #415, then #389. #417 is blocked on a decision, not on work.
+>
+> ### The axis this day was really about: a guard that cannot fail
+>
+> Three separate instances, all in the same afternoon, all in checks written _specifically_ to catch layout defects:
+>
+> 1. **#414's pin could not bind.** It pinned `fr@1024 = 60px` as a known residual; removing the pin left all 32 masthead cases green. The spec measured **before the webfont applied**, so every box was taken against the fallback font's narrower text. `measure()` now awaits `document.fonts.ready` **inside the helper**, where it cannot be skipped. CI is the worst case — the font cache is cold every run.
+> 2. **`min-h-[44px]` hides an entire line.** Two lines of 14px text measure ~40px, so a two-line label reports the same 44px as a one-line one; only a third line shows. The height axis could only ever see the three-line case. On qual, **11 of 24** cells already held a two-line label — none of it visible. Now counted (#417).
+> 3. **My own line counter was wrong twice, and both versions read as "clean".** `a.querySelector("span")` returns the **avatar**, `hidden` below `xl`, so its zero rects made `Math.max` report one line for the one item that wrapped. Then `span.getClientRects().length` returns **one rect regardless of line count**, because the label span is a flex item and therefore block-level — that version reported "nothing wraps anywhere" against a build measured at three lines. Fixed with a `Range` over the span's contents, cross-checked against height ÷ line-height, hard-failing on a zero.
+>
+> **What caught all three was the same move: run the check against a build where the defect is KNOWN present, before trusting any green.** Cheap, and it was decisive three times.
+>
+> ### And a second-order one: overflow is not the only saturating metric
+>
+> #407's obvious scope was "wherever the compact code renders" (`lg`). That version costs ~8px, and in the 768–1023 band — which #405 cleared with **3px** of margin in French — it moved `en@768` from a one-line nav label to two. **Page overflow stayed 0 the whole time.** So the boundary is `md`, and the tablet keeps ~41×32 targets until #417 widens that band.
+>
+> ⚠️ **The wrap-depth probe has ±1 jitter on borderline cells** — one run read 10 where two others read 11. So a one-cell delta from it decides nothing until repeated. The `lg` regression was confirmed 3 runs of 3 before it was allowed to change the design.
+>
+> ### Reusable gates (both tracked, both proven able to fail)
+>
+> | probe                                   | what it measures                                                     | proven by                                             |
+> | --------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- |
+> | `e2e/issue-405/repro-405.e2e.mjs`       | authenticated masthead overflow + reachability, 4 locales × 9 widths | 19/40 on the unfixed build, **40/40** after           |
+> | `e2e/issue-412/measure-wrap-depth.mjs`  | nav label **line count** + nav width, per locale per width           | 12 wrapping cells on the unfixed build, 11 after      |
+> | `e2e/issue-407/measure-tap-targets.mjs` | tap-target size + clipping, guest app bar **and** landing            | **16/32 cells failed** on the deployed build, 0 after |
+>
+> All three need `RTOKEN="$(make qual-token | grep -oE '[^/]+$')"`. All three exit non-zero and refuse to report a clean row when they cannot see the surface — the guest app-bar probe demands exactly 4 buttons, the wrap probe rejects a zero line count.
 >
 > ### Nothing was lost to the crash — measured, not assumed
 >
