@@ -1,4 +1,138 @@
-# Session Handoff — … → 08-17 (**s733 — reconciliation after a third crash; nothing lost again. Three PRs open and green, all awaiting the owner. #423 filed for the blind spot #421 creates.**) · 08-17 (s732 — recovered s731's undocumented 08-16 batch after a second crash; #412 and #407 fixed, three layout guards found unable to fail; qual at `8058c5c`) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-17 (**s734 — the queue drained: #419/#425/#421 all merged green, #415 closed with proof. qual NOT deployed — blocked on a GitHub outage.**) · 08-17 (s733 — reconciliation after a third crash; nothing lost again. Three PRs open and green, all awaiting the owner. #423 filed for the blind spot #421 creates.) · 08-17 (s732 — recovered s731's undocumented 08-16 batch after a second crash; #412 and #407 fixed, three layout guards found unable to fail; qual at `8058c5c`) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-17 (LATEST — session `s734`, `dt:Furnas`. The owner authorised the whole queue in one go; all three PRs merged green. Two things stop this being a clean close: a **GitHub partial outage** blocked the qual deploy, and a correction below overturns something three prior handoffs asserted.)**
+>
+> ### State
+>
+> `main` **`bca61be`** == `origin/main` · qual **`8058c5c`** — **still, and deliberately: the deploy did NOT happen** (see the block on `publish-images`) · **0 open PRs** · tree clean, no stashes, no worktrees · A2A bridge **ARMED** and identity-checked by cwd, not by count.
+>
+> **Open issues: #423 · #389 · #328.** Closed today: **#407** (by #419), **#415** (by #421), **#417** (see the caveat below — not by a commit).
+>
+> ### Shipped — three PRs, each with full CI green
+>
+> | PR                      | Closes           | merge commit | checks                                       |
+> | ----------------------- | ---------------- | ------------ | -------------------------------------------- |
+> | **#419**                | #407             | `d6ca16b`    | 12/12                                        |
+> | **#425** (was **#422**) | #417 _partially_ | `9f34ac6`    | 12/12                                        |
+> | **#421**                | #415             | `bca61be`    | 11/11 — **11 is correct here**, see the note |
+>
+> ⚠️ **#421's 11 is not a missing check.** `Lighthouse Perf Budgets` runs only on `pull_request` with `paths: apps/pwa/**` (`lighthouse.yml:4-7`), and #421 touches only security configs. A wait loop demanding 12 hangs on a perfectly green PR — verify the path filter before treating a lower count as incomplete.
+>
+> ### 🪤 The stacked-PR trap: `--delete-branch` CLOSES the child, it does not retarget it
+>
+> The `s733` queue predicted _"merging #419 retargets #422 to `main`"_. **It does not.** Deleting the base branch on merge **closed** #422, and GitHub **refuses to reopen a PR whose base branch is gone** (`reopenPullRequest` fails; the REST retarget answers `422 Cannot change the base branch of a closed pull request`).
+>
+> Recovery, for the next time this shape appears:
+>
+> 1. `git rebase --onto origin/main <squashed-commit> <child-branch>` — drops the commit the squash absorbed, leaving only the child's own work.
+> 2. Force-push with lease, open a **fresh PR** from the same branch, carry the body over, and cross-link both ways.
+> 3. **Verify the parent's fix survived the rebase with a negative control** — I grepped `locale-switcher.tsx` for the tap-target classes on the pre-#419 commit (returned **nothing**) and on the rebased branch (`min-w-11 … md:min-w-0`). Without the empty first result the second proves nothing.
+>
+> **Cheaper alternative next time:** merge the parent **without** `--delete-branch`, retarget the child to `main` while its base still exists, then delete the branch.
+>
+> ### #415 is closed with proof, and the proof is the commit count
+>
+> The `workflow_dispatch` #421 added was used immediately. Same commit, same day, same config — only the event differs:
+>
+> | run           | event               | commits scanned | result                                                             |
+> | ------------- | ------------------- | --------------- | ------------------------------------------------------------------ |
+> | `32043607040` | `push`              | **1**           | no leaks — **this is the green that meant nothing for five weeks** |
+> | `32043619959` | `workflow_dispatch` | **419**         | no leaks — this one answers the question                           |
+>
+> Checked **before** merging, because the config makes claims that can be tested rather than believed:
+>
+> - **Positive control:** a shape-valid fake AWS credential planted in `services/bff/src/` **was detected** (`aws-access-token`). Without it, "no leaks found" is indistinguishable from a scanner that cannot see.
+> - `.gitleaks/central.toml` **is** byte-identical to the platform SoT config it claims to vendor — 11496 bytes, sha256 `a103fb3d7557…`.
+> - Full history locally with the new config: 423 commits, no leaks, exit 0.
+>
+> **#423 is now measured, not argued.** The _identical_ key planted in `infra/rabbitmq/definitions.json` was **NOT** detected — one finding total across both files. Three whole-file exemptions survive under `infra/`. Evidence table posted on the issue.
+>
+> ### 🔴 THE DEPLOY DID NOT HAPPEN — and why
+>
+> `publish-images` **failed on both** `d6ca16b` and `9f34ac6`. **Not code:** 10 of 11 jobs succeeded (including `pwa` and `bff`); only **chat-hub** failed, on `429 Too Many Requests` / `503` downloading the `docker/setup-buildx-action` archive from `codeload.github.com`. Reran the failed job — **it failed the same way a second time**, so I stopped at two rather than burn a third.
+>
+> GitHub was in a **Partial System Outage** throughout: API, Issues, Pull Requests and **Actions** all `major_outage`. Several of this session's API calls needed retries; `gh pr merge`/`gh pr checks` (GraphQL) were unusable and everything went through **REST**, which stayed up.
+>
+> ⚠️ **chat-hub has not changed** in the gap (`git diff --name-only 8058c5c..bca61be` touches no chat-hub path) — but the deploy uses **one `image_tag` for all services**, so the image must exist at that tag regardless. That is the only thing blocking the roll.
+>
+> **No schema migrations in the gap** — verified, not assumed.
+>
+> ### ▶ THE QUEUE
+>
+> 1. **Rerun `publish-images` on `9f34ac6`** once Actions is healthy (`gh api -X POST repos/zmeireles/daily-tour/actions/runs/32042849102/rerun-failed-jobs`). Only `chat-hub` needs to go green.
+> 2. **Then deploy qual** at `image_tag` = the **full 40-char SHA** `9f34ac6f37234b603530ee1c2d2a118cbf451d37`. Note this is `main`-minus-`bca61be`; that commit is CI-only config with no runtime effect, and `publish-images` does not fire on it.
+> 3. **Then re-measure on qual**, with `RTOKEN="$(make qual-token | grep -oE '[^/]+$')"`:
+>    - `node e2e/issue-407/measure-tap-targets.mjs` — expect **32/32**; scored 16/32 on the deployed build
+>    - `node e2e/issue-412/measure-wrap-depth.mjs` — expect **5**; 11 on the deployed build
+>    - ⚠️ the wrap probe has **±1 jitter** on borderline cells; a one-cell delta decides nothing without a repeat
+> 4. **#423** (whole-file `infra/` exemptions) · **#389** · **#328**.
+> 5. **Repo setting, owner's:** make `E2E (layout / overflow)` a **required** check.
+>
+> ### ⚠️ CORRECTION — "UAT #30 is awaiting the tester" has been false since 07-28
+>
+> **UAT #30 PASSED on 2026-07-28**, verified end-to-end on qual `d7eeaf7`: step 7 green on desktop and mobile, corroborated at the data layer by the row `eat | sea-view` (the original defect was **zero** such rows), cleanup done. It is recorded in a **card comment** by `dt-furnas`.
+>
+> **The card is still `todo`.** The status field was never flipped.
+>
+> Precise attribution, because I first told the owner a worse version of this and had to correct it:
+>
+> | session       | what it actually wrote                                                 |                              |
+> | ------------- | ---------------------------------------------------------------------- | ---------------------------- |
+> | **s728**      | _"UAT #30 — PASS"_, and _"#30 PASSED, #31 awaiting the human"_         | ✅                           |
+> | **s731**      | _"UAT #31 still awaits the human"_ — #31 only                          | ✅                           |
+> | **s732**      | _"UAT #30 **and** UAT #31 are both still `todo`, awaiting the tester"_ | ❌ **the error enters here** |
+> | **s733**      | _"#30/#31 still `todo` (tester)"_                                      | ❌ carried forward           |
+> | **s734** (me) | repeated it to the owner at startup                                    | ❌ carried forward           |
+>
+> **One error, three retellings — not four independent misses.** Note line 1 of this very file has said _"07-28 … UAT #30 PASSED"_ the whole time.
+>
+> **The mechanism is worth more than the fact.** The durable record existed in **two** places — the card comment _and_ s728's handoff — and the state still regressed, because the **queryable status field** said `todo`. `s732` polled the card, got `todo`, and wrote that down as established fact **over its own document that said the opposite**. What a query returns beat what was written.
+>
+> ▶ **Owner's call, deliberately not taken by me:** #30 was passed by an **automated** run, not by `akadmin`. Whether that satisfies the forward-flow protocol is a protocol decision. If it does, close #30 and only #31 remains outstanding.
+>
+> ### ⚠️ #417 was closed, and NOT by any commit
+>
+> Closed `2026-08-17T15:36:41Z`, actor `zmeireles`, **`commit_id: null`, `state_reason: null`** — so no closing keyword did it; it was a manual close. None of this session's API calls close issues. Either the owner closed it in the browser, or something else did. **Not attributable from the data, and stated as such.**
+>
+> It matters because **#425 explicitly does not close #417**: six cells still hold a two-line label, from two causes needing owner design calls — the **185.1px brand lockup** at 768–800, and at 1280 the avatar returning at the same breakpoint as the full words (cheapest candidate: move the decorative avatar to `2xl`). **The full residual is recorded in a comment on #417** so it survives either way.
+>
+> ### #328's stated root cause is falsified — re-scoped, not fixed
+>
+> Its hypothesis was that the per-guest limiter's `keyGenerator` decodes the bearer JWT on rejected requests. On `/v1/places/:id` — **the endpoint its own k6 evidence measured** — that decode never happens:
+>
+> - `routes/places.ts:12` sets **no `config.rateLimit`**, so the route falls to the global limiter, which (`app.ts:74-77`) passes **no `keyGenerator`** and uses the default `req.ip`.
+> - `guestKeyGenerator` is wired to exactly **3** sites, all elsewhere (`discover.ts:46`, `discover.ts:192`, `tour-plans.ts:31`); the BFF's only `jwt.decode` lives inside it.
+> - Auth is a **`preHandler`** (`plugins/auth.ts:60-66`) and `@fastify/rate-limit` rejects in **`onRequest`**, strictly earlier — so a 429 does no JWT work at all.
+>
+> Positive control: the same enumeration **does** find all three `keyGenerator` sites, so the negative on `places.ts` is real rather than a broken grep. **The measured degradation is still real and still unexplained**; title re-scoped to the symptom so the next reader does not build against the falsified cause. Untested alternatives (downstream saturation; `helmet`/`cors`/log-serializer running on all ~450/s) are on the issue **as hypotheses**. ⚠️ The k6 artifacts it cites had 14-day retention and are expired — re-deriving means re-running the load test.
+>
+> ### The lesson this session paid for THREE times in one hour
+>
+> **A wait that cannot fail is indistinguishable from one that passed** — [[feedback-verification-that-cannot-fail]], new disguises, all mine, all within an hour:
+>
+> 1. `gh pr view --json statusCheckRollup` returns **`""`** for a queued run, not `null`/`PENDING`. A filter enumerating pending states counted zero and declared CI done **with 11 of 12 checks still running**.
+> 2. `gh pr checks` **exits 1 for BOTH pending and failing**. Discarding stdout on a non-zero exit made the loop _silent on failure_ — it would have timed out at 40 minutes rather than report a red.
+> 3. A green set can still be **incomplete**: checks register over time (the CodeQL summary lands late), so "all completed" can be true of a partial set.
+>
+> Fixed in `wait-checks-rest.sh`: REST-only (GraphQL was down), decides from the JSON and never the exit code, requires the run count to be **stable across two polls**, treats an API wobble as _pending_ rather than settled, and exits `0`/`2`/`1` for green/red/timeout. **Mutation-tested in all four states — including "green but below the expected count" — before being trusted once.**
+>
+> ### A2A
+>
+> Answered `cs:Barra`'s spec-003 elicitation with the UAT #30 case (person↔agent, durable-but-silent). **Then sent an unprompted correction** when I found my "four handoffs" was two — they transcribe verbatim, so an inflated number would have entered their spec. The corrected framing is sharper: not _"the message never arrived"_ but _"what a query returns beat what was written."_
+>
+> ### Orphan remote branches — triaged, NOT touched
+>
+> 10 branches from prior sessions. Seven `jmeireles/t0-*` (May) are **merged** and safe to delete. Three are not ancestors of `main`: `docs/plan-008-slice-3-closeout` (Jul 6, 4 files differ), `docs/s728-closeout` (3 of 4 files already identical to `main`), `test/s731-406-layout-guard` (4 identical, 4 that `main` has since moved past via #414/#425). ⚠️ **A three-dot diff proves nothing here** — it shows what a branch changed since diverging even when a squash landed that content. Compare **per file against `main`**. None appear to hold unlanded work; left alone per the cross-session ownership rule.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`. A wrong-token session looks completely normal from the inside.
+> 2. **`comm_inbox after_seq=774`** — that is my own last send; 761 (`cs:Barra`) is acked and answered.
+> 3. **Re-arm the A2A bridge** — stopped at closeout. daily-tour has no local script:
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    ⚠️ **Check the env/path, never the count** — this session again found live bridges belonging to po-platform-sA and Casa, and none to daily-tour.
+> 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — empty at close. **But read the two owner-call items above before repeating "#30 awaits the tester".**
+> 5. **Check GitHub is healthy**, then resume the queue at item 1.
 
 > **UPDATE 2026-08-17 (LATEST — session `s733`. A third workstation crash — the machine was slept to move office→home — ended `s732` at ~11:38Z. This block is the reconciliation. No work was done beyond one issue filed; read the `s732` block below for what actually shipped.)**
 >
