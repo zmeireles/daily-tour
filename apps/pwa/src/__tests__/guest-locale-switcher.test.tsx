@@ -86,22 +86,28 @@ describe("Guest LocaleSwitcher (#382)", () => {
 
 // An INTENT guard, not a layout guard — be honest about which. jsdom does no
 // layout, so nothing here can measure an overflow; what it catches is the
-// specific regression of someone narrowing the breakpoint back toward `sm`,
-// which is what reintroduces #405 on tablet widths.
+// specific regression of someone narrowing the breakpoint back toward `sm` or
+// `lg`, which reintroduces #405 on tablet widths and #417's wrapping at 1024.
 //
-// The real measurement lives in `e2e/issue-405/repro-405.e2e.mjs`, which drives
-// a real browser against the authenticated home and goes red at 768/800/834/900/960
-// (measured: 204/172/138/72/12px of overflow). That spec is not CI-wired — see #406.
-describe("the compact breakpoint is lg, not sm (#405)", () => {
-  it("swaps code for full word at lg, so the desktop masthead fits at md", () => {
+// The real measurements live in a real browser: `e2e/issue-405/repro-405.e2e.mjs`
+// (overflow — went red at 768/800/834/900/960 with 204/172/138/72/12px) and
+// `e2e/issue-412/measure-wrap-depth.mjs` (line count — 11 wrapping cells before
+// #417 option 1, 5 after). Both are now backed in CI by
+// `apps/pwa/e2e/layout-overflow.spec.ts`, which #414 wired (closing #406).
+describe("the compact breakpoint is xl, not sm (#405, widened by #417)", () => {
+  it("swaps code for full word at xl, so the masthead fits from md to 1279", () => {
     const { container } = render(<LocaleSwitcher />);
     const first = container.querySelector("button");
     const spans = first ? [...first.querySelectorAll("span")] : [];
     const classes = spans.map((s) => s.className);
 
-    expect(classes).toContain("lg:hidden");
-    expect(classes).toContain("sr-only lg:not-sr-only");
+    expect(classes).toContain("xl:hidden");
+    expect(classes).toContain("sr-only xl:not-sr-only");
     // The bug this replaces: a `sm:` breakpoint leaves 768–1023 on full words.
     expect(classes.join(" ")).not.toMatch(/\bsm:/);
+    // And `lg` is no longer sufficient: it left every locale's nav labels on two
+    // lines at 1024–1100, which #417 measured and option 1 fixed by carrying the
+    // codes to 1279. Asserted as a floor so the boundary cannot drift back.
+    expect(classes.join(" ")).not.toMatch(/\blg:/);
   });
 });
