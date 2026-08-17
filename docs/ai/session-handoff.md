@@ -1,6 +1,45 @@
-# Session Handoff — … → 08-17 (**s732 — recovered s731's undocumented 08-16 batch after a second crash; 5 PRs were already merged, nothing lost. Deployed to qual. Found the weekly Security gate red for 5 straight weeks.**) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-17 (**s732 — recovered s731's undocumented 08-16 batch after a second crash; nothing lost. Then #412 and #407 fixed, and three separate layout guards found unable to fail. qual at `8058c5c`. The weekly Security gate has been red for 5 straight weeks.**) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-08-17 (LATEST — session `s732`. A workstation crash ended `s731` on 08-16 after it had merged 5 PRs and written none of them down. This block is that recovery. ▶ next: **#412**.)**
+> **UPDATE 2026-08-17 (LATEST — session `s732`. A workstation crash ended `s731` on 08-16 after it had merged 5 PRs and written none of them down. This block is that recovery, plus the work that followed it.)**
+>
+> ### Where things stand at the time of writing
+>
+> main **`8058c5c`** · qual **`8058c5c`** (deployed twice today: `65151f3`, then this) · **2 PRs open, both green, both awaiting review** · 4 issues open.
+>
+> | PR       | what                                                               | why not merged                                                       |
+> | -------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+> | **#419** | **#407** — 44×44 tap targets on the guest's first phone screen     | touches `apps/pwa/src` — outside the auto-mergeable categories       |
+> | ~~#418~~ | **#412** — French three-line label + the guard that could not fail | **merged on the owner's explicit go-ahead**, deployed, verified live |
+>
+> **Open: #417** (needs the owner's design call — see below) · **#415** (weekly gitleaks gate; security-config, always-escalate) · **#389** · **#328**.
+>
+> ▶ **Next, unless the owner redirects:** #415, then #389. #417 is blocked on a decision, not on work.
+>
+> ### The axis this day was really about: a guard that cannot fail
+>
+> Three separate instances, all in the same afternoon, all in checks written _specifically_ to catch layout defects:
+>
+> 1. **#414's pin could not bind.** It pinned `fr@1024 = 60px` as a known residual; removing the pin left all 32 masthead cases green. The spec measured **before the webfont applied**, so every box was taken against the fallback font's narrower text. `measure()` now awaits `document.fonts.ready` **inside the helper**, where it cannot be skipped. CI is the worst case — the font cache is cold every run.
+> 2. **`min-h-[44px]` hides an entire line.** Two lines of 14px text measure ~40px, so a two-line label reports the same 44px as a one-line one; only a third line shows. The height axis could only ever see the three-line case. On qual, **11 of 24** cells already held a two-line label — none of it visible. Now counted (#417).
+> 3. **My own line counter was wrong twice, and both versions read as "clean".** `a.querySelector("span")` returns the **avatar**, `hidden` below `xl`, so its zero rects made `Math.max` report one line for the one item that wrapped. Then `span.getClientRects().length` returns **one rect regardless of line count**, because the label span is a flex item and therefore block-level — that version reported "nothing wraps anywhere" against a build measured at three lines. Fixed with a `Range` over the span's contents, cross-checked against height ÷ line-height, hard-failing on a zero.
+>
+> **What caught all three was the same move: run the check against a build where the defect is KNOWN present, before trusting any green.** Cheap, and it was decisive three times.
+>
+> ### And a second-order one: overflow is not the only saturating metric
+>
+> #407's obvious scope was "wherever the compact code renders" (`lg`). That version costs ~8px, and in the 768–1023 band — which #405 cleared with **3px** of margin in French — it moved `en@768` from a one-line nav label to two. **Page overflow stayed 0 the whole time.** So the boundary is `md`, and the tablet keeps ~41×32 targets until #417 widens that band.
+>
+> ⚠️ **The wrap-depth probe has ±1 jitter on borderline cells** — one run read 10 where two others read 11. So a one-cell delta from it decides nothing until repeated. The `lg` regression was confirmed 3 runs of 3 before it was allowed to change the design.
+>
+> ### Reusable gates (both tracked, both proven able to fail)
+>
+> | probe                                   | what it measures                                                     | proven by                                             |
+> | --------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- |
+> | `e2e/issue-405/repro-405.e2e.mjs`       | authenticated masthead overflow + reachability, 4 locales × 9 widths | 19/40 on the unfixed build, **40/40** after           |
+> | `e2e/issue-412/measure-wrap-depth.mjs`  | nav label **line count** + nav width, per locale per width           | 12 wrapping cells on the unfixed build, 11 after      |
+> | `e2e/issue-407/measure-tap-targets.mjs` | tap-target size + clipping, guest app bar **and** landing            | **16/32 cells failed** on the deployed build, 0 after |
+>
+> All three need `RTOKEN="$(make qual-token | grep -oE '[^/]+$')"`. All three exit non-zero and refuse to report a clean row when they cannot see the surface — the guest app-bar probe demands exactly 4 buttons, the wrap probe rejects a zero line count.
 >
 > ### Nothing was lost to the crash — measured, not assumed
 >
