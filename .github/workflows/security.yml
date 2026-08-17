@@ -1,9 +1,10 @@
 # Daily Tour — Security Workflow
 #
 # Hard gates for every PR + push to main, plus a weekly scheduled sweep:
-#   - gitleaks: secret scan. gitleaks-action auto-discovers `.gitleaks.toml`
-#     at the repo root, which is GENERATED — see scripts/dev/sync-gitleaks-config.sh.
-#     Editing it by hand is overwritten on the next sync; edit the inputs.
+#   - gitleaks: secret scan. gitleaks-action auto-discovers `.gitleaks.toml` at
+#     the repo root; that file holds this project's allowlists and chains to the
+#     vendored ruleset at `.gitleaks/central.toml` by a REPO-RELATIVE path, so it
+#     resolves on a runner that has no ~/.claude/config (#415).
 #   - pnpm-audit: production dep audit, fail on high+
 #   - codeql: static analysis for JavaScript/TypeScript
 #

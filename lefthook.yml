@@ -34,13 +34,31 @@ pre-commit:
         Secret scan failed. If gitleaks is not installed, install it (see lefthook.yml header).
         If a real secret was detected, remove it from the staged files before committing.
 
-    gitleaks-config-in-sync:
-      # `.gitleaks.toml` is generated from the central config + `.gitleaks-ext.toml`.
-      # A central-rules update that never reaches this repo's committed copy would
-      # otherwise sit unnoticed — and unlike a missing config, silently. Skips
-      # where the central config is absent (i.e. CI, which only needs the result).
-      run: bash scripts/dev/sync-gitleaks-config.sh --check
-      fail_text: "Run scripts/dev/sync-gitleaks-config.sh --write and commit the regenerated .gitleaks.toml."
+    gitleaks-central-in-sync:
+      # `.gitleaks/central.toml` is a VERBATIM copy of the platform SoT config,
+      # vendored because CI cannot read an absolute home path (#415). A central
+      # update that never reaches this repo would otherwise sit unnoticed — and
+      # silently, which is the failure mode that cost five weeks. Skips where the
+      # central original is absent (i.e. CI, which only needs the vendored copy).
+      run: |
+        CENTRAL="${GITLEAKS_CENTRAL_CONFIG:-$HOME/.claude/config/gitleaks.toml}"
+        if [ ! -f "$CENTRAL" ]; then
+          echo "[lefthook] central gitleaks config not on this machine — skipping drift check."
+          exit 0
+        fi
+        if [ ! -f .gitleaks/central.toml ]; then
+          echo "[lefthook] ✗ .gitleaks/central.toml is MISSING. CI resolves the ruleset" >&2
+          echo "  through it; without it the scan falls back to bare defaults (#415)." >&2
+          echo "  Fix (then re-stage):  cp \"$CENTRAL\" .gitleaks/central.toml" >&2
+          exit 1
+        fi
+        if ! cmp -s "$CENTRAL" .gitleaks/central.toml; then
+          echo "[lefthook] ✗ .gitleaks/central.toml has DRIFTED from the platform SoT config." >&2
+          diff -u .gitleaks/central.toml "$CENTRAL" | head -30 >&2
+          echo "  Sync it (then re-stage):  cp \"$CENTRAL\" .gitleaks/central.toml" >&2
+          exit 1
+        fi
+      fail_text: "Sync .gitleaks/central.toml with the platform SoT config and re-stage it."
 
     uat-specs-not-in-temp:
       # Specs belong in the tracked e2e/; temp/ is gitignored and disposable.
