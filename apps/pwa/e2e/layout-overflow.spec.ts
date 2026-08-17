@@ -228,6 +228,29 @@ const MAX_NAV_ITEM_HEIGHT = 44;
 // line fail, which is exactly the regression #412 was.
 const MAX_NAV_LABEL_LINES = 2;
 
+// The HIG/Material touch target (#407). WCAG 2.5.8 AA is 24px and was always
+// met, so a miss here is an ergonomic defect rather than an a11y failure —
+// which is exactly why nothing caught it: compacting the labels for #382 took
+// the guest's first-screen buttons to ~41–43 × 32 and every a11y check stayed
+// green.
+//
+// Asserted on the MOBILE tree only. The same component serves the 768–1023
+// masthead, and taking the targets to 44 there costs ~8px, which is spent on
+// wrap depth rather than overflow — measured, 3 runs of 3: `en@768` goes from a
+// one-line nav label to two. That band is #417's to widen first.
+const MIN_TAP_TARGET = 44;
+
+function assertTapTargets(m: Awaited<ReturnType<typeof measure>>, where: string): void {
+  const tooSmall = m.buttons.filter(
+    (b) => b.width < MIN_TAP_TARGET - 0.5 || b.height < MIN_TAP_TARGET - 0.5,
+  );
+  expect(
+    tooSmall.map((b) => `${b.visibleLabel || b.label}=${b.width}×${b.height}`),
+    `${where}: tap target under ${MIN_TAP_TARGET}px. This passes WCAG 2.5.8 (24px) either way, ` +
+      `so no a11y assertion will ever fail on it.`,
+  ).toEqual([]);
+}
+
 function assertWrapDepth(
   m: Awaited<ReturnType<typeof measure>>,
   width: number,
@@ -321,6 +344,7 @@ test.describe("authenticated guest home (mobile tree) — the switcher never cli
         // no masthead, so a regression in the other direction is caught too.
         expect(m.masthead, `mobile @${width}: masthead should NOT render below md`).toBe(false);
         assertNoClipping(m, `mobile @${width} [${locale}]`);
+        assertTapTargets(m, `mobile @${width} [${locale}]`);
       });
     }
   }

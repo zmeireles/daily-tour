@@ -39,7 +39,27 @@ export function LocaleSwitcher() {
           type="button"
           onClick={() => void i18n.changeLanguage(locale)}
           className={cn(
-            "px-3 py-1.5 rounded text-sm transition-colors",
+            // 44px in BOTH dimensions on the MOBILE tree (#407). Compacting the
+            // labels for #382 had left these at ~41–43 wide by 32 tall: still
+            // past WCAG 2.5.8's 24px, but well short of the HIG/Material target
+            // on the guest's first screen.
+            //
+            // `min-w-11` rather than more `px`, so the number in the class names
+            // the target instead of hiding it in padding arithmetic that the
+            // next label-width change silently invalidates.
+            //
+            // ⚠️ REVERTED AT `md`, NOT `lg`, AND THAT BOUNDARY IS MEASURED. Home
+            // engages the desktop masthead at `md` (768), and 768–1023 is the
+            // band where the masthead is tightest — #405 cleared it with 3px of
+            // margin in French. The row costs ~8px, and carrying it into that
+            // band moved `en@768` from a one-line nav label to two: overflow
+            // stayed 0 throughout, because pressure there is spent on wrap depth
+            // rather than overflow. So this stops where the mobile tree stops.
+            //
+            // The cost is that a tablet keeps ~41×32 targets while its masthead
+            // is that constrained. Recorded on #417, which owns giving that band
+            // real width back; raising these is a second claim on the same px.
+            "min-w-11 rounded px-3 py-3 text-sm transition-colors md:min-w-0 md:py-1.5",
             i18n.language === locale
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground",
