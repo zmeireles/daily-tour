@@ -1,20 +1,31 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-// The visible label narrows to an ISO 639-1 code below `lg`. Four translated
+// The visible label narrows to an ISO 639-1 code below `xl`. Four translated
 // language *words* ("English Português Français Español") are wider than a
 // 390px phone once the brand lockup takes its share of the app bar, so the row
 // overflowed by 36px and clipped "Español" off the right edge — Spanish being
 // a shipped guest locale, unreachable without discovering a sideways scroll
 // (#382). Codes are the same in every language, so they are not translated.
 //
-// The breakpoint is `lg`, not `sm`, because this component serves BOTH the
+// The breakpoint is `xl`, not `sm`, because this component serves BOTH the
 // mobile app bar and the desktop masthead, and the masthead is the tighter of
 // the two. `ResponsiveScreen` engages desktop at `md` (768) for Home, but the
 // masthead needs ~1004px to lay out with full words — so between 768 and 1023
 // it overflowed and put "Español", then "Français", off-screen entirely. iPad
 // portrait is 768–834, so Spanish was unreachable on an iPad even after #382
 // fixed the phone (#405).
+//
+// It moved `lg` → `xl` for #417 (owner's call, option 1). Full words are the
+// single largest consumer of masthead width: the right cluster measured 437.3px
+// at 1024, and the nav — the only flex child that shrinks — was left 321.7px,
+// which is less than the longer locales need on one line. Overflow read 0 the
+// whole time because a packed row spends pressure on WRAPPING instead, so every
+// locale had nav labels on two lines from 768 up to and including 1280, hidden
+// behind the links' `min-h-[44px]`.
+//
+// Codes are recognisable in any language, so carrying them to 1279 costs the
+// reader nothing that a truncated or wrapped word would not cost more.
 //
 // A dropdown was the obvious alternative and is the wrong shape here: the user
 // who needs this control is precisely the one who cannot read the current UI
@@ -66,13 +77,13 @@ export function LocaleSwitcher() {
           )}
           aria-pressed={i18n.language === locale}
         >
-          <span className="lg:hidden">{code}</span>
+          <span className="xl:hidden">{code}</span>
           {/* Kept in the accessible name at every width rather than swapped out:
-              below `lg` the button announces "PT Português", so the visible
+              below `xl` the button announces "PT Português", so the visible
               text is a subset of the accessible name (WCAG 2.5.3 Label in
               Name). An aria-label of "Português" over a visible "PT" would
               read fine to a screen reader and break voice control. */}
-          <span className="sr-only lg:not-sr-only">{t(`locale.${locale}`)}</span>
+          <span className="sr-only xl:not-sr-only">{t(`locale.${locale}`)}</span>
         </button>
       ))}
     </div>

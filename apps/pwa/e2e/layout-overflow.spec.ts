@@ -226,7 +226,30 @@ const MAX_NAV_ITEM_HEIGHT = 44;
 // back, which is a design change across the whole desktop band (#417), not a
 // copy fix. Until that is decided, 2 is what ships — so assert 2 and let a THIRD
 // line fail, which is exactly the regression #412 was.
-const MAX_NAV_LABEL_LINES = 2;
+const MAX_NAV_LABEL_LINES = 1;
+
+// The six cells that still hold a two-line label after #417's option 1, pinned
+// individually rather than as a blanket ceiling — so the 834–1100 band that
+// option 1 just cleared cannot quietly regress. Before it, ELEVEN cells wrapped.
+//
+// Two distinct causes, both measured from the masthead's three columns:
+//
+//   @768–800  right cluster is already minimal at 179.6px (codes, stubs hidden),
+//             so the nav gets 347.3 and the longer locales need ~377. The only
+//             reducible item left at that width is the 185.1px brand lockup.
+//   @1280     the cluster jumps to 437.3px as the full words return, and the nav
+//             simultaneously takes back the `xl` avatar. nav gets 433.7 and needs
+//             more.
+//
+// Both are open design questions on #417, not something a copy change reaches.
+const KNOWN_WRAP_RESIDUALS: Record<string, number> = {
+  "pt-PT@768": 2,
+  "fr@768": 2,
+  "es@768": 2,
+  "pt-PT@800": 2,
+  "pt-PT@1280": 2,
+  "fr@1280": 2,
+};
 
 // The HIG/Material touch target (#407). WCAG 2.5.8 AA is 24px and was always
 // met, so a miss here is an ergonomic defect rather than an a11y failure —
@@ -256,10 +279,11 @@ function assertWrapDepth(
   width: number,
   locale: string,
 ): void {
-  const tooDeep = m.navItems.filter((i) => i.lines > MAX_NAV_LABEL_LINES);
+  const allowed = KNOWN_WRAP_RESIDUALS[`${locale}@${width}`] ?? MAX_NAV_LABEL_LINES;
+  const tooDeep = m.navItems.filter((i) => i.lines > allowed);
   expect(
     tooDeep,
-    `${locale} @${width}: nav label on more than ${MAX_NAV_LABEL_LINES} lines. The 44px ` +
+    `${locale} @${width}: nav label on more than ${allowed} line(s). The 44px ` +
       `min-height hides a second line, so height alone cannot see this — and a third line is ` +
       `what #412 was.`,
   ).toEqual([]);
@@ -352,11 +376,19 @@ test.describe("authenticated guest home (mobile tree) — the switcher never cli
 
 // Guards the specific regression that #405 was: the switcher serves BOTH the
 // mobile app bar and the desktop masthead, so a breakpoint that is right for
-// one can be wrong for the other. Below `lg` the visible label must be the
-// short code — full words do not fit the masthead until 1024.
-test.describe("the compact label is what actually renders below lg", () => {
+// one can be wrong for the other. Below `xl` the visible label must be the short
+// code — full words cost 152.7px of the right cluster, which the nav needs until
+// 1280 (#417, option 1).
+//
+// 1024 and 1100 are the load-bearing rows: they are what option 1 changed, and
+// asserting the CODE renders there is what stops the boundary drifting back to
+// `lg` without the wrap-depth residuals being re-measured. 834 and 1280 bracket
+// the whole range.
+test.describe("the compact label is what actually renders below xl", () => {
   for (const [width, expectShort] of [
     [834, true],
+    [1024, true],
+    [1100, true],
     [1280, false],
   ] as const) {
     test(`at ${width}px the visible label is ${expectShort ? "a code" : "a full word"}`, async ({
