@@ -1,7 +1,10 @@
 # Daily Tour — Security Workflow
 #
 # Hard gates for every PR + push to main, plus a weekly scheduled sweep:
-#   - gitleaks: secret scan (uses .gitleaks.toml at the repo root)
+#   - gitleaks: secret scan. gitleaks-action auto-discovers `.gitleaks.toml` at
+#     the repo root; that file holds this project's allowlists and chains to the
+#     vendored ruleset at `.gitleaks/central.toml` by a REPO-RELATIVE path, so it
+#     resolves on a runner that has no ~/.claude/config (#415).
 #   - pnpm-audit: production dep audit, fail on high+
 #   - codeql: static analysis for JavaScript/TypeScript
 #
@@ -19,6 +22,13 @@ on:
   schedule:
     # Weekly sweep — Mondays 06:00 UTC.
     - cron: "0 6 * * 1"
+  # On demand, and this is load-bearing rather than a convenience. gitleaks-action
+  # scans ONLY the pushed commits on a `push` event and the WHOLE history on
+  # schedule/dispatch, so the two answer different questions — which is how the
+  # weekly run stayed red for five weeks (2026-07-20 … 08-17) while every push
+  # run passed. Without a dispatch trigger, a fix to that gate could not be
+  # verified without waiting a week (#415).
+  workflow_dispatch:
 
 permissions:
   contents: read

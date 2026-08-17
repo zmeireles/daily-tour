@@ -1,0 +1,204 @@
+# ============================================================================
+# CENTRAL gitleaks config — Platform SoT (single source of truth)
+# ============================================================================
+# Canonical home: this file is the ONE authoritative gitleaks config for every
+# project on this platform. Deployed as ~/.claude/config/gitleaks.toml and
+# referenced by each repo's lefthook pre-commit job via
+#   gitleaks protect --staged --redact --config ~/.claude/config/gitleaks.toml
+# A missing/broken --config makes gitleaks ERROR (fail-loud) — unlike a drifted
+# per-project copy, which fails silent. (SoT Fase 1 v3 §2.1, central-singleton.)
+#
+# Provenance / genesis:
+#   - 2026-07-17 SoT Fase 1 P0 "gitleaks centralization" (closes weakness ⑤).
+#     Consolidates the 5 drifted shapes across 7 per-project .gitleaks.toml
+#     copies. Universal rules + allowlists live HERE; genuinely per-project
+#     allowlists survive as small Class-B *extension* configs that chain after
+#     this one (extend.path), holding allowlists only — never rules.
+#   - Carries forward the canonical codecomedy-platform rules (INC-007/009/016)
+#     and ADDS the leak-incident classes the canonical base missed:
+#     RIFF_AGENT_TOKEN, POSTGRES_PASSWORD, .mcp.json inline secrets, and vim
+#     swap / backup files that mirror .mcp.json / .env (the ..mcp.json.swp
+#     artifact of the real leak).
+#
+# Rule inventory (ids):
+#   default            : gitleaks v8 built-ins (incl. telegram-bot-api-token)
+#   provider-key-in-shell-default   [carried, INC-007]
+#   minio-s3-access-key             [carried, INC-009/016]
+#   minio-s3-secret-key             [carried, INC-009/016]
+#   riff-agent-token-assignment     [NEW 2026-07-17]
+#   riff-agent-token-value          [NEW 2026-07-17]
+#   postgres-password-assignment    [NEW 2026-07-17]
+#   mcp-json-inline-secret          [NEW 2026-07-17, generalized from po-platform]
+#   editor-swap-of-secret-file      [NEW 2026-07-17]
+#
+# Keep allowlists narrow. Whole-file waivers are a last resort. When adding an
+# entry, note the file + rule + reason.
+# ============================================================================
+
+title = "central-platform-gitleaks"
+
+[extend]
+useDefault = true
+
+# ============================================================================
+# CARRIED-FORWARD canonical rules (from codecomedy-platform/.gitleaks.toml)
+# Each catches a class the gitleaks v8 default ruleset misses.
+# ============================================================================
+
+# INC-007 §C (2026-04-23). Source:
+#   ~/.claude/incidents/INC-007-po-platform-unrotated-secrets.md
+#   ~/.claude/docs/cc-platform-feedback.md (2026-04-24 — gitleaks shell-default FN)
+# The default `gcp-api-key` rule matches `KEY=AIza…`, `"key":"AIza…"`, URL query
+# strings, etc. — but NOT the bash shell-default-expansion form
+# `${VAR:-AIza…}` / `${VAR:=AIza…}`. The AIza prefix + entropy are both present,
+# so the secret is there — the surrounding shell syntax is what the default
+# context match misses. One rule covers GCP + the common provider prefixes.
+[[rules]]
+id = "provider-key-in-shell-default"
+description = "Provider API key / token as shell-default fallback (${VAR:-…} or ${VAR:=…}) — gitleaks v8 misses these"
+regex = '''\$\{[A-Z_][A-Z0-9_]*:[-=](AIza[A-Za-z0-9_\-]{35}|ghp_[A-Za-z0-9]{36}|glpat-[A-Za-z0-9_\-]{20}|xoxb-[A-Za-z0-9\-]{10,}|sk-[A-Za-z0-9]{32,}|ya29\.[A-Za-z0-9_\-]{20,})\}'''
+tags = ["google", "github", "gitlab", "slack", "openai", "gcp-oauth", "api-key", "shell-default"]
+
+# INC-009 (2026-05-05). Source:
+#   ~/.claude/incidents/INC-009-cc-platform-minio-creds-in-tracked-n8n-workflow.md
+# MinIO-issued S3-compatible access keys are 20-char uppercase alphanumeric
+# (no AKIA prefix — gitleaks' default `aws-access-key-id` rule misses them).
+# 20-char alnum is too generic alone, so anchor on a recognisable variable name.
+# INC-016 (2026-06-30): the quote class allows an OPTIONAL leading backslash
+# (`\\?`) so the JSON-escaped form `const secretKey = \"…\"` inside an exported
+# n8n workflow's jsCode string is caught.
+[[rules]]
+id = "minio-s3-access-key"
+description = "MinIO/S3-compatible access key (20-char uppercase alnum) bound to a recognisable variable name"
+regex = '''(?i)(?:access[_-]?key(?:[_-]?id)?|s3[_-]?access[_-]?key|minio[_-]?access[_-]?key)['"]?\s*[:=]\s*\\?['"]([A-Z0-9]{20})\\?['"]'''
+tags = ["minio", "s3", "aws", "access-key"]
+
+# Sibling rule for the secret key. 40-char base64-like is almost-too-generic,
+# so context-anchor on variable names in the same family.
+[[rules]]
+id = "minio-s3-secret-key"
+description = "MinIO/S3-compatible secret key (40-char base64-like) bound to a recognisable variable name"
+regex = '''(?i)(?:secret[_-]?(?:access[_-]?)?key|s3[_-]?secret[_-]?key|minio[_-]?secret[_-]?key)['"]?\s*[:=]\s*\\?['"]([A-Za-z0-9+/=]{40})\\?['"]'''
+tags = ["minio", "s3", "aws", "secret-key"]
+
+# ============================================================================
+# NEW central rules — 2026-07-17 SoT Fase 1 P0 (weakness ⑤)
+# These close the exact classes of the real leak incident (a filled .mcp.json
+# swap file carrying a live POSTGRES_PASSWORD + a RIFF_AGENT_TOKEN in .env).
+# ============================================================================
+
+# --- RIFF_AGENT_TOKEN, assignment form -------------------------------------
+# The per-project A2A agent token (`~/.secrets/tasks-<env>-<dir>.env`,
+# RIFF_AGENT_TOKEN=riff_…). Default gitleaks has no rule for it. Anchored on the
+# env-var NAME so it only fires in an assignment (env / JSON / yaml), never in
+# prose. The value is captured after `=`/`:`; placeholder forms are allowlisted.
+[[rules]]
+id = "riff-agent-token-assignment"
+description = "RIFF_AGENT_TOKEN assigned a literal value — the per-project A2A agent token; source it from ~/.secrets/tasks-<env>-<dir>.env, never commit it"
+regex = '''(?i)RIFF_AGENT_TOKEN['"]?\s*[:=]\s*['"]?([A-Za-z0-9._+/=\-]{12,})['"]?'''
+tags = ["riff", "a2a", "agent-token"]
+  [rules.allowlist]
+  regexTarget = "match"
+  # Placeholder / indirection forms that are NOT a real token value.
+  regexes = [
+    '''(?i)RIFF_AGENT_TOKEN['"]?\s*[:=]\s*['"]?(\$\{?[A-Z_]|<|paste|placeholder|your[_-]?|replace|changeme|example|dummy|redacted|token[_-]?here|xxxx)''',
+  ]
+
+# --- RIFF_AGENT_TOKEN, bare value form -------------------------------------
+# Catches the token when it appears WITHOUT the RIFF_AGENT_TOKEN= keyword —
+# e.g. `--token riff_…`, inside a committed vim swap's noise, or a pasted arg.
+# `riff_` prefix + 20 alnum keeps FPs near-zero (excludes underscore/hyphen so
+# snake_case identifiers like `riff_agent_token_binding` do NOT match).
+[[rules]]
+id = "riff-agent-token-value"
+description = "Bare RIFF agent token (riff_ prefix) outside an assignment — never commit a live agent token"
+regex = '''\briff_[A-Za-z0-9]{20,}\b'''
+tags = ["riff", "a2a", "agent-token"]
+  [rules.allowlist]
+  regexTarget = "match"
+  regexes = [
+    '''(?i)riff_(paste|placeholder|your|example|dummy|redacted|token|xxxx)''',
+  ]
+
+# --- POSTGRES_PASSWORD, assignment form ------------------------------------
+# The shared-infra DB password (`~/.secrets/tasks-<env>.env`). Default gitleaks
+# has no keyword rule for POSTGRES_PASSWORD. Fires on a literal value assigned in
+# env / compose / JSON; `${VAR}`, `<placeholder>`, `{{tmpl}}` and empty are
+# allowlisted (the first value char excludes `$ < {` and a quote).
+[[rules]]
+id = "postgres-password-assignment"
+description = "POSTGRES_PASSWORD assigned a literal value — must be sourced from ~/.secrets/tasks-<env>.env, never committed"
+regex = '''(?i)POSTGRES_PASSWORD['"]?\s*[:=]\s*['"]?([^\s'"$<{][^\s'"]{4,})'''
+tags = ["postgres", "database", "password"]
+  [rules.allowlist]
+  regexTarget = "match"
+  regexes = [
+    '''(?i)POSTGRES_PASSWORD['"]?\s*[:=]\s*['"]?(changeme|placeholder|example|your[_-]?|replace|redacted|password123|xxxx)''',
+  ]
+
+# --- .mcp.json inline secret (generalized from po-platform) -----------------
+# Defence in depth — `.mcp.json` is gitignored, but if anyone ever stages it,
+# block any inline secret-shaped value. Secrets must be sourced from
+# ~/.secrets/<name>.env by the server's wrapper (start.sh). Allowed forms:
+# `${VAR}` placeholders, `<PASTE_…>` template markers, or empty strings.
+[[rules]]
+id = "mcp-json-inline-secret"
+description = "Secret-shaped key with a literal value in .mcp.json — move it to ~/.secrets/<name>.env"
+path = '''\.mcp\.json$'''
+regex = '''(?i)"[a-z0-9_]*(password|secret|token|api[_-]?key|private[_-]?key)[a-z0-9_]*"\s*:\s*"[^"$<{][^"]*"'''
+tags = ["mcp", "config", "inline-secret"]
+
+# --- Editor swap / backup of a secret-bearing file (path rule) --------------
+# A vim swap (`..mcp.json.swp`) or backup (`.env.bak`, `.mcp.json~`) MIRRORS the
+# live on-disk secret file byte-for-byte and must NEVER be committed — this is
+# the exact artifact of the real leak incident (a committed ..mcp.json.swp
+# carrying a live POSTGRES_PASSWORD). Path-only match: block the file's presence
+# regardless of content, defense-in-depth for when .gitignore is absent/drifted.
+[[rules]]
+id = "editor-swap-of-secret-file"
+description = "Editor swap/backup of .mcp.json or .env staged — mirrors a live secret file, never commit it"
+path = '''(^|/)\.{0,2}(mcp\.json|env)(\.[A-Za-z0-9_]+)*(\.(sw[a-p]|bak|orig|save|tmp|old)|~)$'''
+tags = ["swap", "backup", "mcp", "env", "defense-in-depth"]
+
+# --- Daily Tour reservation token (dt_ prefix) — PORTED to central 2026-07-19 -
+# Carried from daily-tour/.gitleaks.toml per the SoT rollout: the `dt_` prefix is
+# zero-FP in any other repo, so hosting it centrally keeps daily-tour's extension
+# allowlists-only. The rule-level allowlist (docs / test / spec / __tests__ /
+# infra namespace paths) rides with it — those paths only ever affect dt_ matches.
+[[rules]]
+id = "daily-tour-test-token"
+description = "Daily Tour reservation token (dt_ prefix) outside allowed locations"
+regex = '''dt_[A-Za-z0-9_-]{20,}'''
+tags = ["daily-tour", "token"]
+  [rules.allowlist]
+  description = "Allow dt_ tokens only inside test files, docs, and infra resource names"
+  paths = [
+    "docs/.*",
+    ".*\\.test\\.(js|ts|jsx|tsx)$",
+    ".*\\.spec\\.(js|ts|jsx|tsx)$",
+    ".*__tests__.*",
+    # Compose files name resources `dt_<resource>` (volumes, networks, containers).
+    "infra/.*",
+  ]
+
+# ============================================================================
+# GLOBAL allowlist — UNIVERSAL false positives only (apply to every project).
+# Project-specific allowlists do NOT live here — they go in a per-project
+# Class-B extension config (see the rollout note in the P0 return).
+# ============================================================================
+[allowlist]
+description = "Universal FPs — pedagogical markers + the gitleaks fixture gate"
+regexTarget = "match"
+paths = [
+  # The fixture gate (this rollout's canonical test tool, lives in scripts/)
+  # DELIBERATELY embeds positive-test secrets to prove every rule fires;
+  # scanning the file itself must not block its own commit. Purpose-built test
+  # file — a whole-file allowlist is correct here, not a masked real secret.
+  '''(^|/)test-gitleaks-rules\.sh$''',
+]
+regexes = [
+  # OPENSSH marker shown as a doc template (carried from cc-platform &
+  # po-platform: copilot-error-explanation.md, CI/CD how-to docs). Matches only
+  # the exact marker line, no key body.
+  '''-----BEGIN OPENSSH PRIVATE KEY-----''',
+]
