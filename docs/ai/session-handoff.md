@@ -1,6 +1,79 @@
-# Session Handoff — … → 08-15 (**s731 — the locale batch shipped, deployed and verified live; the lost UAT specs recovered into version control.** ▶ next: **#405** — Español is unreachable on iPad portrait.) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-17 (**s732 — recovered s731's undocumented 08-16 batch after a second crash; 5 PRs were already merged, nothing lost. Deployed to qual. Found the weekly Security gate red for 5 straight weeks.**) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-08-15 (LATEST — session `s731`, continuing `s730` after a workstation crash. #400/#403/#404 merged, deployed to qual as `f3a00f3` and verified live. 3 issues filed (#405–#407), 3 closed (#382/#391/#402). PR #408 open — awaiting review, NOT auto-mergeable.)**
+> **UPDATE 2026-08-17 (LATEST — session `s732`. A workstation crash ended `s731` on 08-16 after it had merged 5 PRs and written none of them down. This block is that recovery. ▶ next: **#412**.)**
+>
+> ### Nothing was lost to the crash — measured, not assumed
+>
+> `s731` crashed some time after 08-16 17:49Z. Every piece of its work had already reached `origin`:
+>
+> | checked           | state                                                                       |
+> | ----------------- | --------------------------------------------------------------------------- |
+> | working tree      | clean · no stashes · no git locks · no worktrees                            |
+> | branches          | `main` only — all five feature branches merged and deleted                  |
+> | `main`            | **`331d35e`** == `origin/main`                                              |
+> | open PRs          | **0** (#408 was reviewed and merged before the crash)                       |
+> | `e2e/` specs      | **43 tracked** — #408 landed, so the crash could not repeat the 08-15 loss  |
+> | `temp/**/*.mjs`   | none — the pre-commit guard's condition holds                               |
+> | A2A `comm_whoami` | `dt:Furnas` / `DAILY-TOUR` ✅ · `comm_inbox after_seq=626` → **0 messages** |
+> | dt-tests `review` | **empty**                                                                   |
+>
+> The reflog shows the last acts were ordinary: `fix(ci): build the PWA through turbo so its workspace deps exist` on `test/s731-406-layout-guard-v2`, then the #408 fast-forward. **The crash interrupted the write-up, not the work.**
+>
+> ### What `s731` shipped on 08-16 (5 PRs, all merged, all Fable-gated)
+>
+> | PR       | Closes | What                                                                                                    |
+> | -------- | ------ | ------------------------------------------------------------------------------------------------------- |
+> | **#409** | #405   | Masthead compaction — Español was unreachable on iPad portrait                                          |
+> | **#411** | #392   | One `pickLocale` helper replaces four; **stops `pt`/`pt-BR` falling past Portuguese to English**        |
+> | **#413** | #376   | An owner can undo an archive; archived rows answer **409 `place_archived`**, not a false 404            |
+> | **#414** | #406   | `layout-overflow.spec.ts` — **55 layout cases wired into CI**, the axis that had no guard               |
+> | **#408** | —      | 41 UAT specs into a tracked `e2e/` + pre-commit guard (touched `lefthook.yml` — escalated, then merged) |
+>
+> **Filed and still open: #412** — French masthead wraps to three lines at 1024, and pt/fr wrap two even at 1280.
+>
+> ### The three things from that batch worth carrying
+>
+> **1 · Overflow saturates; wrap depth is the real signal.** A packed row spends pressure on wrapping labels deeper while `scrollWidth` stays 0. #414 asserts nav-item height per width **per locale** and pins `fr@1024 = 60px` as a known residual (#412) rather than smoothing it away. Recorded as [[feedback-overflow-metric-saturates]].
+>
+> **2 · Locale is a dimension, not a case.** #409's 236px budget was computed against pt-PT; **French still overflowed 20px at 768** after that fix, and 49px at 1024 — a pre-existing defect at the commonest laptop width, found only by re-measuring all four shipped locales. A guard testing one locale would have certified the bug.
+>
+> **3 · A non-compiling mutation is not a red.** #413's first mutation attempt produced a file that did not compile, so vitest reported **"no tests"** — which reads exactly like a pass if you only read the summary line. Same family as [[feedback-verification-that-cannot-fail]], new disguise.
+>
+> ### 🔴 NEW — the weekly Security gate has been red for five consecutive weeks
+>
+> Found by this session, not by anyone reading CI. The **scheduled** `Security` run has failed every week since **2026-07-20** (07-20, 07-27, 08-03, 08-10, 08-17); every **push** run in the same period was green.
+>
+> **Root cause — CI's gitleaks runs with no config at all:**
+>
+> - `gitleaks/gitleaks-action@v2` auto-discovers **`.gitleaks.toml`** at the repo root. **That file does not exist.** `security.yml:4` claims it does.
+> - The project's waivers live in **`.gitleaks-ext.toml`**, which only **lefthook** passes via `--config` (`lefthook.yml:28`). CI never loads it.
+> - Worse, `.gitleaks-ext.toml`'s `[extend].path` is an **absolute path into `/home/jmeireles/.claude/config/gitleaks.toml`** — a machine-local file CI could never read even if it did find the ext config.
+> - **Push** runs scan only the pushed commits, so the three old findings never appear in a diff → green. **Schedule** runs scan all 412 commits → the same three every week → red.
+>
+> All three findings are **already deliberately waived** in `.gitleaks-ext.toml`: the `docs/ai/session-handoff.md` redeem token, `ci-test-jwt-signing-key` in `load-test.yml`, and `infra/rabbitmq/definitions.json`'s placeholder `password_hash`. So the red is **noise CI cannot suppress** — and it is the worst kind, because a gate that is always red carries no signal when something real lands. Filed as **#415**.
+>
+> ⚠️ **The repo is PUBLIC** (`gh repo view` → `visibility=PUBLIC`). The waived redeem token is therefore world-readable in both the tree and history since 2026-06-17. **Verified dead, two ways:** `GET /v1/r/YI3yn…` → **302 `?reason=expired`**, while a freshly-minted token on the same endpoint → **200**. So the positive control passes and the 302 means what it says. No rotation needed; the waiver's premise (dev test data) holds.
+>
+> ### qual was stale again — deployed
+>
+> Last deploy was `f3a00f3` (08-15). `main` was **4 code commits ahead**. Deployed **`65151f3b109df842f5e871a8a1005662ceeabe8f`** — the newest commit with published images (#408 is e2e/docs only and triggers no `publish-images`). **No schema migrations in the gap** (verified: `git diff --name-only f3a00f3..331d35e` hits only `ci.yml`), so this is a plain image roll.
+>
+> **Verified live, two independent ways:**
+>
+> 1. `RTOKEN=… node e2e/issue-405/repro-405.e2e.mjs` against qual → **40/40**, matching #409's local prediction exactly. This is the gate that scored **19/40** on the unfixed qual build, so its green is load-bearing rather than decorative: 4 shipped locales × 9 widths on the **authenticated** home, plus the landing at 320/360/390.
+> 2. All **11** daily-tour service containers report image tag `…:65151f3b1…` and `healthy` — the backend fixes (#411, #413) rolled too, not just the PWA bundle.
+>
+> Reusable as the post-deploy gate for any masthead/locale work — unlike `locale-verify`, it redeems a token and measures the authenticated tree. Needs `RTOKEN="$(make qual-token | grep -oE '[^/]+$')"`.
+>
+> ### ▶ THE QUEUE
+>
+> 1. **#412** — French masthead wraps three lines at 1024; pt/fr wrap two at 1280. Already pinned by #414's guard, so the fix has a test that will go green.
+> 2. **#415** — commit a real `.gitleaks.toml` CI can discover (and make the ext config's extend path portable). Until then the weekly gate stays red.
+> 3. **#407** (tap targets ~halved by #400) · **#389** (dead FeedbackDrawer) · **#328** (BFF limiter decode cost).
+> 4. **Human:** **UAT #30** and **UAT #31** are both still `todo` in dt-tests, awaiting the tester. https://tasks.codecomedy.dev/p/dt-tests/r/31
+> 5. **Repo setting, yours:** making the new `e2e (layout)` CI job a **required** check.
+
+> **UPDATE 2026-08-15 (session `s731`, continuing `s730` after a workstation crash. #400/#403/#404 merged, deployed to qual as `f3a00f3` and verified live. 3 issues filed (#405–#407), 3 closed (#382/#391/#402). PR #408 open — awaiting review, NOT auto-mergeable.)**
 >
 > ### ⚠️ CORRECTION TO THE 08-14 BLOCK BELOW — do not act on its queue
 >
