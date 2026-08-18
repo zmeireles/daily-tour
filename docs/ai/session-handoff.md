@@ -1,4 +1,56 @@
-# Session Handoff — … → 08-18 (**s735 — the blocked deploy landed: qual at `9f34ac6`; #407 re-measured 32/32 and #412 down to 5 wrapping cells, both on the deployed build; #428 open for #423. TWO OWNER DECISIONS STILL OPEN.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-18 (LATEST — session `s735`, `dt:Furnas`, closing for a coordinated shutdown. Everything that did not need the owner is done or awaiting review; two things genuinely need him and are listed first.)**
+>
+> ### ▶ WHAT NEEDS THE OWNER — read this before anything else
+>
+> 1. **Make the layout/overflow browser gate a required check** — the owner chose to do this and asked to be guided. It is **not** in the `protect-main` ruleset (id `16458194`), which currently requires 10 checks. A ready-to-apply payload with the 10 existing plus the new one was written to the session scratchpad; regenerate it by reading the ruleset and appending the context `E2E (layout / overflow)`, then `gh api -X PUT repos/zmeireles/daily-tour/rulesets/16458194 --input <file>`. **Safety verified, not assumed:** the job carries no `paths`/`if` gate and demonstrably reported on both docs-only pull requests this session, so requiring it cannot deadlock a docs change. Reliability measured over the last 45 CI runs: **34 of 35 completed runs passed (97%)**; the single genuine failure (08-16) was the guard catching a real defect, and one infra timeout (apt hanging inside the Playwright install) cleared on a rerun.
+> 2. **The action-picker guest-visibility test needs a human run** (`dt-tests` card `#30`) — the owner decided an automated pass does **not** satisfy forward-flow, so this stays open until he runs it. A guest link was minted for him this session and will expire; mint a fresh one with `make qual-token`. The owner password for the console is `AUTHENTIK_BOOTSTRAP_PASSWORD` in `/opt/daily-tour/.env.qual` on the box (presence confirmed; value never printed). **Step 7 — the owner-created place appearing to the guest — is the load-bearing one.** Three traps that cause a false fail are written on the card: both language tabs must be filled, two English-label defects are cosmetic and must not fail a step, and archiving is irreversible so the place needs a `ZZ-` throwaway name.
+>
+> ### State
+>
+> `main` **`3114ce3`** · qual **`9f34ac6`** — deployed this session, smoke + readiness gate green, `.last_deploy_tag` on the box confirms it · tree clean · A2A bridge **STOPPED at closeout**.
+>
+> **Three pull requests open, all awaiting review, none auto-mergeable:**
+>
+> | what it does                                             | PR     | state                                                                                                                                                        |
+> | -------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+> | deletes the unreachable guest feedback drawer            | `#430` | ⚠️ merge state `UNKNOWN` — the ruleset is **strict**, so it likely needs `gh pr update-branch --rebase` before it can merge, exactly as the gitleaks one did |
+> | makes the load-test dispatch button actually run         | `#432` | CLEAN, green                                                                                                                                                 |
+> | corrects two in-code comments asserting falsified causes | `#433` | CLEAN, green                                                                                                                                                 |
+>
+> **Open issues:** the orphaned guest-feedback endpoint and table (`#431`, new) · the masthead nav two-line residual (`#417`, **reopened** on the owner's decision) · the feedback drawer (`#389`, closes with its pull request) · the 429-flood latency (`#328`).
+>
+> ### Shipped and merged
+>
+> - **The deploy the outage blocked went through, and needed no code.** The image build had failed twice on a `codeload.github.com` 429/503 during GitHub's partial outage; one rerun with Actions healthy turned all 11 jobs green. All 11 images were verified present in the registry **with a negative control** — a bogus tag returned NO on the same query that returned YES for the real one.
+> - **Both layout probes re-measured on the deployed build:** tap targets **32/32, zero failing** (was 16/32); nav wrap depth **5 cells** (was 11), run **twice** for a byte-identical residual because that probe has documented ±1 jitter.
+> - **The gitleaks blind spot is closed and proven in CI** (`#428`, closing `#423`). Three whole-file `infra/` waivers became one value-scoped entry; two were deleted outright because they suppressed nothing anywhere in history. The dispatched full-history scan on the merge commit: **424 commits scanned, no leaks**.
+>
+> ### 🪤 Three cannot-fail traps in one session — all caught, one only barely
+>
+> 1. **A control the scanner ignores by design.** The first gitleaks control planted the AWS **documentation example** access-key id, which the CI scanner waives. It reported **0 of 3 caught** — indistinguishable from a broken fix. What exposed it was adding a **baseline row** (same tree, waivers removed) in which the control _must_ fire; it caught 3/3 there, which made every other row readable. **A well-known example value is the worst possible control.**
+> 2. **A stale comment that would have voided the whole analysis.** `overlay.qual.yml` claimed `deploy.resources.limits` is Swarm-only and ignored by plain compose. Measured instead of believed — two throwaway services, one per style, **both** came up with `NanoCpus=500000000`. Had I trusted it, the half-core cap would have been dismissed as inert while it is the entire mechanism behind the latency issue.
+> 3. **A dispatch trigger that has never worked.** The load-test workflow lists `workflow_dispatch` under `on:` but not in the job's `if:`, so dispatching completes as **`skipped`** — `gh workflow run` exits 0, a run appears in the list, nothing executes. Proven with run `32126791400`.
+>
+> ### The 429-flood latency issue — stated cause falsified again, real cause quantified
+>
+> The expired artifacts were a non-problem: the **nightly runs and passes every night**, so fresh data was one download away (run `32091893898`).
+>
+> - Rejections cost **0.9 ms median**. Rejection was already near-free; that premise was never the problem.
+> - **Natural experiment:** the discover endpoint **does** use the JWT-decoding key generator, the place-detail endpoint does not. Identical rejection median, and discover's admitted p95 is **3× better**. The decode is not the driver.
+> - All latency is in `waiting` (TTFB), with blocked/connecting at zero → server-side, not connection backlog. k6 hits the bff directly; no proxy is in that stack.
+> - **Mechanism:** the bff is capped at **half a core**. At 471 rejections/s × 0.46 ms floor cost, saying "no" alone consumes **~43% of the entire budget** — a lower bound. **qual runs the same cap**, so this is not a test artifact.
+> - ⚠️ **Not measured:** no bff-side CPU or event-loop-lag metric was captured during the run, so saturation is _inferred_ from latency structure plus arithmetic. Confirming it needs runtime metrics scraped during a load run. Stated as a well-supported hypothesis, not a measurement.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** — confirm the handle is `dt:Furnas` on `DAILY-TOUR`.
+> 2. **`comm_inbox after_seq=815`** — 815 is this agent's own last send. Nothing was owed on agent-to-agent comms at close.
+> 3. **Re-arm the A2A bridge** — stopped at this closeout. ⚠️ Verify by **cwd/env, never by count**: four bridges were live this session and none were this project's.
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+> 4. **Poll the tester board for anything in `review`** (project `e03901a6-…081cc`) — **empty** at close.
+> 5. **The two owner actions at the top of this block**, then the three open pull requests.
 
 > **UPDATE 2026-08-18 (LATEST — session `s735`, `dt:Furnas`. GitHub was healthy again, so everything `s734` left blocked went through. Two owner decisions carried over from `s734` are still open and are NOT mine to take.)**
 >
