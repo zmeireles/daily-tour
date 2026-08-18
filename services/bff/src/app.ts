@@ -39,6 +39,13 @@ function redactOpaqueInUrl(url: string | undefined): string {
   return url.replace(/\/r\/[^/?#]+/, "/r/[redacted]");
 }
 
+/**
+ * Number of reverse-proxy hops in front of this service whose
+ * `X-Forwarded-For` contribution may be believed. Deployments put exactly one
+ * (Traefik) in the path; see infra/compose/docker-compose.traefik.yml.
+ */
+const TRUSTED_PROXY_HOPS = 1;
+
 export async function createApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
@@ -53,7 +60,17 @@ export async function createApp(): Promise<FastifyInstance> {
         },
       },
     },
-    trustProxy: true,
+    // Trust exactly ONE proxy hop — the Traefik instance that fronts this
+    // service — so `req.ip` is the address that proxy observed, not whatever
+    // a caller put in `X-Forwarded-For`. `true` would trust the whole chain,
+    // which makes the client's own value authoritative; since the global
+    // rate-limiter keys on `req.ip`, that hands callers control of their own
+    // limiter bucket. Covered by __tests__/proxy-trust.test.ts.
+    //
+    // A CIDR would be stricter still, but `dt_internal`'s subnet is assigned
+    // by Docker and is not pinned in the compose files, so it drifts between
+    // hosts; a stale CIDR fails closed into "every client shares one bucket".
+    trustProxy: TRUSTED_PROXY_HOPS,
   });
 
   // Security headers. CSP is relaxed for dev; Phase 5 tightens it once
