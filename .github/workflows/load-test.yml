@@ -16,8 +16,15 @@ concurrency:
 
 jobs:
   load-test:
+    # `workflow_dispatch` must be named here as well as in `on:`. It was in
+    # `on:` alone (#324), so the Run-workflow button produced a run that
+    # completed as `skipped` — exit 0, a green-ish entry in the run list, and no
+    # load test. A trigger that cannot fire is indistinguishable from one that
+    # ran and found nothing; proven by dispatching run 32126791400, which
+    # skipped on the very commit this fixes.
     if: >-
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.event.label.name == 'load-test')
     runs-on: ubuntu-latest
     timeout-minutes: 45
