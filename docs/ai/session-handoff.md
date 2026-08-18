@@ -1,4 +1,48 @@
-# Session Handoff — … → 08-17 (**s734 — the queue drained: #419/#425/#421 all merged green, #415 closed with proof. qual NOT deployed — blocked on a GitHub outage.**) · 08-17 (s733 — reconciliation after a third crash; nothing lost again. Three PRs open and green, all awaiting the owner. #423 filed for the blind spot #421 creates.) · 08-17 (s732 — recovered s731's undocumented 08-16 batch after a second crash; #412 and #407 fixed, three layout guards found unable to fail; qual at `8058c5c`) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-17 (session `s734`, closeout addendum. Written after the block below was already merged as #426 — it CORRECTS that block on one point and records two decisions the owner has not yet made. Read this before acting on anything below.)**
+>
+> `main` **`3e8aebc`** == `origin/main` · tree clean · **0 open PRs** · local branches **main only** · no stashes, no worktrees · A2A bridge **STOPPED** at closeout.
+>
+> ### 🔴 CORRECTION — the block below is WRONG about how #417 was closed
+>
+> It says #417 was closed manually and _"not attributable from the data"_. **Both halves are false, and the reasoning behind them was the bug.**
+>
+> **What actually closed it: the sentence written to say it must NOT be closed.** #425's body carried the heading
+>
+> ```
+> ## ⚠️ Option 1 does not close #417, and I am not claiming it does
+> ```
+>
+> GitHub's keyword parser matches `close #417` and **does not understand the negation**. Confirmed by GraphQL: `closingIssuesReferences` on **#425 → #417**; on the superseded #422 → none.
+>
+> **And the evidence used to rule that out could not have distinguished it.** The claim rested on `commit_id: null` in the timeline's `closed` event. Control: **#407 and #415 — both closed by a proven `Closes #N` keyword — have the identical shape** (`commit_id: null`, `state_reason: null`, `performed_via_github_app: null`). So `null` is what _every_ close looks like here. A null was read as evidence when null carries no information at all — the same family as [[feedback-verification-that-cannot-fail]], this time in a _forensic_ reading rather than a test.
+>
+> ⚠️ **Reusable, and it will bite again:** never write `close/fixes/resolves #N` in a PR body or commit message — **not even inside a sentence denying it**. Say "does not resolve issue 417" or "#417 stays open", never the keyword next to the number.
+>
+> ### ▶ TWO OWNER DECISIONS, both put to the owner, neither answered
+>
+> **DECISION A — #417 is closed by accident. Reopen it?**
+> The residual is real: six cells still hold a two-line label. Options put to the owner: **(a)** reopen #417 _(recommended — the history and the measurements are there)_ · **(b)** leave closed, open a fresh issue with only the residual · **(c)** accept the six cells as they are.
+> The two design calls it carries, unchanged:
+>
+> - **768–800px** — right cluster is already minimal (179.6px, codes only, both stubs hidden); nav gets 347.3 and needs ~377. **The only reducible item left is the 185.1px brand lockup.**
+> - **1280px** — cluster jumps to 437.3px as full words return _and_ the nav simultaneously takes back the `xl` avatar (~32px). Cheapest candidate: move the decorative avatar to `2xl`.
+>   The full residual table is already a comment on #417, so it survives whichever way this goes.
+>
+> **DECISION B — does UAT #30's automated PASS satisfy forward-flow?**
+> The protocol pulls both ways, which is why this is the owner's and was not taken unilaterally:
+>
+> - **Against:** `done` is defined as _"PASS recorded by tester, no further work"_; the state machine is `todo → doing (tester) → review (tester) → done (engineer)`. #30 was passed by `dt-furnas`, an automated run — the engineer's side. Its surfaces (PWA guest, PWA backoffice) are both `required` in the table.
+> - **For:** the table's skip row — _"Path covered by a green Playwright spec → skip"_ — and the spec exists and is tracked: `e2e/uat30-picker/reverify-s7-s8.mjs`. That row's parenthetical _"(None today — plan-002 will add them.)"_ is **stale**; there are 44 tracked specs now.
+> - **⚠️ What decides it, measured:** **CI runs exactly ONE spec** — `apps/pwa/e2e/layout-overflow.spec.ts` (`ci.yml:164`). **None of the 44 `e2e/**/_.mjs` run in CI.\*\* So "green spec" here means _"was green once, on 07-27, against `d7eeaf7`"\* — and `main` has taken **14 commits** touching `apps/pwa/src` / `services/bff/src` / `catalog-svc` since, including two today on `locale-switcher.tsx`.
+> - Options put to the owner: **(1)** accept and close #30 · **(2)** re-run `reverify-s7-s8.mjs` against qual after the deploy and close only on green _(recommended — minutes, and turns "was green" into "is green")_ · **(3)** require the human tester; #30 back to `todo`.
+>
+> ⭐ **Either way, the root cause is that the skip row is currently unusable**: 44 specs exist and 43 of them never run. Wiring them into CI is the change that makes that row mean something.
+>
+> ### Still true and still first: the deploy did not happen
+>
+> Unchanged from the block below. `publish-images` failed **twice** on `chat-hub` (`429`/`503` fetching `docker/setup-buildx-action` during the GitHub outage; 10 of 11 jobs green including `pwa` and `bff`). **Deploy remains item 1 of the queue** — rerun `gh api -X POST repos/zmeireles/daily-tour/actions/runs/32042849102/rerun-failed-jobs`, then deploy `image_tag=9f34ac6f37234b603530ee1c2d2a118cbf451d37`, then the two probes.
 
 > **UPDATE 2026-08-17 (LATEST — session `s734`, `dt:Furnas`. The owner authorised the whole queue in one go; all three PRs merged green. Two things stop this being a clean close: a **GitHub partial outage** blocked the qual deploy, and a correction below overturns something three prior handoffs asserted.)**
 >
