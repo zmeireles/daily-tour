@@ -177,6 +177,10 @@ load-test:
 
 ## Run all four k6 scenarios sequentially.
 load-test-all:
+	# place-detail-slo runs FIRST and deliberately so: it asserts that nothing
+	# was rejected, and every other scenario floods the shared 200/min per-IP
+	# window. Run it after one of them and it fails as invalid, not as slow.
+	$(MAKE) load-test SCENARIO=place-detail-slo
 	$(MAKE) load-test SCENARIO=token-exchange
 	$(MAKE) load-test SCENARIO=discover
 	$(MAKE) load-test SCENARIO=place-detail

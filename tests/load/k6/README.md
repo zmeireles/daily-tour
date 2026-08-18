@@ -1,6 +1,6 @@
 # k6 Load Tests
 
-Four scenarios covering critical guest journeys. Each can run standalone or
+Five scenarios covering critical guest journeys. Each can run standalone or
 via `make load-test`.
 
 ## Prerequisites
@@ -17,23 +17,50 @@ brew install k6
 
 ## Scenarios
 
-| Scenario | File | VUs | Duration | p95 target | Error cap |
-|---|---|---|---|---|---|
-| Token exchange | `scenarios/token-exchange.js` | 50 | 1 min | 300 ms | 0.1% |
-| Discover | `scenarios/discover.js` | 100 | 2 min | 500 ms | 0.5% |
-| Place detail | `scenarios/place-detail.js` | 100 | 2 min | 200 ms | 0.1% |
-| Tour plan | `scenarios/tour-plan.js` | 5 | 5 min | 30 s | 5% |
+| Scenario                   | File                            | VUs      | Duration | p95 target | Error cap |
+| -------------------------- | ------------------------------- | -------- | -------- | ---------- | --------- |
+| Token exchange             | `scenarios/token-exchange.js`   | 50       | 1 min    | 300 ms     | 0.1%      |
+| Discover                   | `scenarios/discover.js`         | 100      | 2 min    | 500 ms     | 0.5%      |
+| Place detail (flood)       | `scenarios/place-detail.js`     | 100      | 2 min    | med 2.5 s  | 0.1%      |
+| Place detail (latency SLO) | `scenarios/place-detail-slo.js` | 3/s open | 2 min    | p95 200 ms | 0.1%      |
+| Tour plan                  | `scenarios/tour-plan.js`        | 5        | 5 min    | 30 s       | 5%        |
+
+### ⚠️ Two place-detail scenarios, and the order matters
+
+They answer different questions and neither replaces the other:
+
+- **`place-detail.js` (flood)** offers ~500 req/s from a single IP against the
+  BFF's 200/min global per-IP cap, so **>99% of it is rejected by design**. It
+  asks _does the service survive a flood and keep rejecting cheaply?_ Its
+  admitted-latency figure is **not** a UX signal: measured on 2026-08-18
+  (#328), a 2-minute run admits exactly 400 requests and every one of them
+  lands inside **2–11 seconds of the 120** — a thundering herd at the fixed
+  limiter window's opening. That is why its tail swings ±40% between identical
+  runs, and why its CI threshold is a loose median tripwire rather than a p95.
+- **`place-detail-slo.js`** uses an **open** model (constant arrival rate, not
+  VUs-with-sleep, so latency cannot throttle offered load) at 3 req/s — under
+  the cap — and asks _how fast is a request that is simply served?_ At the
+  shipped `cpus: "0.5"` limits this measures **p95 ≈ 69 ms**, well inside the
+  200 ms UX SLO.
+
+🔴 **Run the SLO scenario before any flooding scenario, never after.** All
+scenarios share one per-IP limiter window, and `place-detail-slo.js` asserts
+that ~nothing was rejected (`place_detail_slo_throttled < 1%`) so it can tell
+"I measured served latency" from "I measured who won a race". Start it while a
+flood has the window consumed and it fails as **invalid**, which is the correct
+behaviour and an unhelpful thing to debug at 2 a.m. `make load-test-all` and
+the CI workflow both already order it first.
 
 ## Environment variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `BASE_URL` | `http://localhost:8080` | BFF base URL |
-| `TOKEN_SVC_URL` | `http://localhost:8088` | token-svc URL (internal; for local minting) |
-| `K6_OPAQUE_TOKENS` | _(none)_ | Comma-separated pre-minted opaque tokens |
-| `K6_PLACE_IDS` | dev-seed pool | Comma-separated place UUIDs |
-| `K6_RESERVATION_IDS` | dev-seed pool | Comma-separated reservation UUIDs (for auto-mint) |
-| `K6_LOC` | `37.7412,-25.6756` | `lat,lng` for discover requests |
+| Variable             | Default                 | Description                                       |
+| -------------------- | ----------------------- | ------------------------------------------------- |
+| `BASE_URL`           | `http://localhost:8080` | BFF base URL                                      |
+| `TOKEN_SVC_URL`      | `http://localhost:8088` | token-svc URL (internal; for local minting)       |
+| `K6_OPAQUE_TOKENS`   | _(none)_                | Comma-separated pre-minted opaque tokens          |
+| `K6_PLACE_IDS`       | dev-seed pool           | Comma-separated place UUIDs                       |
+| `K6_RESERVATION_IDS` | dev-seed pool           | Comma-separated reservation UUIDs (for auto-mint) |
+| `K6_LOC`             | `37.7412,-25.6756`      | `lat,lng` for discover requests                   |
 
 ## Running locally
 

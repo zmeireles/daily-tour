@@ -129,6 +129,22 @@ jobs:
       # and token-svc (dt_token_svc:8088) directly — no host-port mapping needed.
       # Each step exits non-zero (code 99) if any threshold is violated, failing
       # the job and signalling the broken SLO in the PR / nightly report.
+      # ⚠️ FIRST, and deliberately so. Every other scenario floods the shared
+      # 200/min per-IP limiter window, and this one asserts that ~nothing was
+      # rejected — that assertion is what lets it distinguish "served latency"
+      # from "whoever won the race at the window boundary". Run it after a
+      # flood and it fails as INVALID rather than slow. See tests/load/k6/README.md.
+      - name: k6 — place-detail latency SLO (below the rate limit)
+        run: |
+          docker run --rm \
+            --network dt_internal \
+            -v "${{ github.workspace }}/tests/load/k6:/tests" \
+            -e BASE_URL=http://dt_bff:8080 \
+            -e TOKEN_SVC_URL=http://dt_token_svc:8088 \
+            grafana/k6 run \
+              --out json=/tests/results/place-detail-slo.json \
+              /tests/scenarios/place-detail-slo.js
+
       - name: k6 — token-exchange
         run: |
           docker run --rm \
