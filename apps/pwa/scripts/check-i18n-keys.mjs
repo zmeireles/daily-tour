@@ -46,10 +46,7 @@ const PLURAL_SUFFIXES = ["_zero", "_one", "_two", "_few", "_many", "_other"];
 // moment anything imports one of these, which is exactly when the keys stop
 // being harmless. An allowlist that can't detect its own expiry is how debt
 // becomes invisible.
-const UNREACHABLE_FILES = [
-  // #389 — wire it and translate, or delete it.
-  "features/feedback/feedback-drawer.tsx",
-];
+const UNREACHABLE_FILES = [];
 
 function flatKeys(obj, prefix = "") {
   return Object.entries(obj).flatMap(([k, v]) => {
