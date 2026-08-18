@@ -50,10 +50,6 @@ paths = [
   ".*\\.snap$",
   # Placeholder-only template (real values sourced from ~/.secrets).
   "\\.mcp\\.json\\.template$",
-  # Pre-hashed placeholder credentials, rotated per infra/README.md.
-  "infra/rabbitmq/definitions\\.json$",
-  "infra/traefik/dashboard-users$",
-  "infra/authentik/blueprints/.*\\.yaml$",
 ]
 regexes = [
   # Doc/template placeholders like <YOUR_API_KEY_HERE>.
@@ -98,4 +94,22 @@ regexes = [
   # SHAPE on construction, so the test needs a well-formed one. Self-describing
   # fake, value-scoped rather than waiving the tests directory.
   '''123456789:AAHfakeTokenForTestingPurposes01234''',
+  # ──────────────────────────────────────────────────────────────────────────
+  # #423 — NARROWED from three whole-file `infra/` path waivers.
+  # Measured with CI's gitleaks (8.24.3, via the pinned container — the
+  # workstation's build is a different version and finds NOTHING here, so a
+  # local green proves nothing): across all three paths the runner raises
+  # exactly ONE finding, the line below. The other two paths
+  # (`infra/traefik/dashboard-users`, `infra/authentik/blueprints/*.yaml`)
+  # raise none at all, in the working tree or anywhere in history — so their
+  # waivers silenced nothing and are simply gone. A path waiver that suppresses
+  # no real finding is pure blind spot: an AWS-shaped key planted in each of the
+  # three was detected 0/3 with them and 3/3 without.
+  #
+  # The `dailytour` broker user's DEV password hash. Not the qual credential:
+  # RabbitMQ ignores RABBITMQ_DEFAULT_USER when `load_definitions` is set, so
+  # `deploy-qa.yml` reconciles the real password post-`up` with
+  # `rabbitmqctl change_password` (#228, Plan-007 EXECUTION row 4). Value-scoped,
+  # so a REAL secret added anywhere in that file still fires.
+  '''G/XQ27SDPoHr9aEWF7UJ54ZzAFLfJXTDit1pWjTmM234GWWe''',
 ]
