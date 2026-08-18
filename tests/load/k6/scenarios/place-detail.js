@@ -22,12 +22,21 @@ export const options = {
   duration: "2m",
   thresholds: {
     // CI tripwire on the MEDIAN, not the tail: under k6's single-IP 429
-    // flood the ~200/min admitted requests queue behind limiter CPU (the
-    // keyGenerator JWT-decodes every rejected request too), and their p95
-    // swings ±40% between identical runs on shared 2-core runners (4.2s vs
-    // 5.8s, PR #324). The median is stable (~0.7-0.8s) and still trips on
-    // step-change regressions; the 200ms UX SLO is qual-hardware territory
-    // (Grafana bff-latency dashboard).
+    // flood the admitted requests queue behind the sheer volume of rejections,
+    // and their p95 swings ±40% between identical runs on shared 2-core
+    // runners (4.2s vs 5.8s, PR #324). The median is stable (~0.7-0.8s) and
+    // still trips on step-change regressions; the 200ms UX SLO is
+    // qual-hardware territory (Grafana bff-latency dashboard).
+    //
+    // ⚠️ This comment used to blame the keyGenerator JWT-decoding every
+    // rejected request. That is FALSE and was the cause #328 was filed on.
+    // This route sets no `config.rateLimit`, so it never reaches
+    // `guestKeyGenerator` at all, and the limiter rejects in `onRequest`,
+    // strictly before auth's `preHandler`. Measured on the 08-18 nightly:
+    // rejections cost 0.9ms median here, and `discover` — which DOES decode —
+    // has the same median and a 3x BETTER admitted p95. The real mechanism is
+    // volume against a half core (`cpus: "0.5"`): ~471 rejections/s is enough
+    // to saturate the event loop no matter how cheap each one is. See #328.
     place_detail_duration: ["med<2500"],
     place_detail_errors: ["rate<0.001"],
   },
