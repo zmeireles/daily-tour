@@ -29,8 +29,12 @@
 #      JSON).
 #   4. NODE_ENV=production on the 4 Node services; fix planner-svc OSRM_URL.
 #   5. GHCR image overrides on the 10 built services (pull, don't build on VPS).
-#   6. Top-level mem_limit/cpus on each service (deploy.resources.limits is
-#      Swarm-only and IGNORED by plain `docker compose up`).
+#   6. Top-level mem_limit/cpus on each service. ⚠️ NOT because
+#      deploy.resources.limits is ignored — it is NOT. Measured on Docker
+#      28.1.1 / Compose v2 (#328): two throwaway services, one declaring
+#      `deploy.resources.limits.cpus: "0.5"` and one declaring `cpus: 0.5`,
+#      both came up with NanoCpus=500000000. The reason for the top-level
+#      form is the mem_limit/deploy conflict noted below, not non-application.
 #
 # ── ACME resolvers (Q.2.2, folded into this PR) ─────────────────────────────
 # infra/traefik/traefik.yml defines the `letsencrypt` (production) and
@@ -78,9 +82,12 @@ services:
     volumes: !override
       - dt_postgres_data:/var/lib/postgresql/data
       - ../postgres/init-qual:/docker-entrypoint-initdb.d:ro
-    # Drop the Swarm-only deploy.resources block (ignored by `compose up`, and
-    # compose errors if mem_limit ≠ deploy.resources.limits.memory). mem_limit
-    # is the sole authority. Same pattern on every service below.
+    # Drop the deploy.resources block because compose errors when
+    # mem_limit ≠ deploy.resources.limits.memory; mem_limit is then the sole
+    # authority. Same pattern on every service below.
+    # ⚠️ It is NOT dropped because compose ignores it — measured, it applies
+    # (#328). Reading it as ignored led to the bff's 0.5-CPU cap being
+    # dismissed as inert while it was the whole mechanism behind #328.
     deploy: !reset null
     mem_limit: 1g
     cpus: 1.0
