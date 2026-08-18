@@ -1,4 +1,73 @@
-# Session Handoff — … → 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-18 (**s735 — the blocked deploy landed: qual at `9f34ac6`; #407 re-measured 32/32 and #412 down to 5 wrapping cells, both on the deployed build; #428 open for #423. TWO OWNER DECISIONS STILL OPEN.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-18 (LATEST — session `s735`, `dt:Furnas`. GitHub was healthy again, so everything `s734` left blocked went through. Two owner decisions carried over from `s734` are still open and are NOT mine to take.)**
+>
+> ### State
+>
+> `main` **`facf7e1`** == `origin/main` · qual **`9f34ac6`** — **deployed, smoke + readiness gate green** · **1 PR open (#428)** · tree clean, no worktrees · A2A bridge **ARMED** and checked by cwd (one daily-tour pair; the other live bridges are po-platform-sA, Casa, fit-platform, codecomedy).
+>
+> **Open issues: #423** (has a PR) **· #389 · #328.**
+>
+> ### The deploy that was blocked for a day, and why it went through untouched
+>
+> `publish-images` on `9f34ac6` had failed **twice** on 08-17 — `chat-hub` only, on a `codeload.github.com` 429/503 during GitHub's partial outage. **No code change was needed.** One `rerun-failed-jobs` with Actions healthy: **all 11 jobs green.**
+>
+> Before dispatching, all **11 images verified present in GHCR at the tag** — with a negative control, because a loop that answers "YES" for everything answers nothing: a bogus tag returned `NO` on the same query that returned `YES` for the real one.
+>
+> Deployed at `image_tag` = `9f34ac6f37234b603530ee1c2d2a118cbf451d37`, which is `main` minus `bca61be` (CI config) and the docs commits — neither has runtime effect and `publish-images` does not fire on them. Logged in `DEPLOYS.md` per that file's own convention (dispatched deploys go in the tracked table; it had gone unused since 06-13).
+>
+> ### The two probes, on the deployed build
+>
+> | probe                                   | before            | now                     |                                   |
+> | --------------------------------------- | ----------------- | ----------------------- | --------------------------------- |
+> | `e2e/issue-407/measure-tap-targets.mjs` | 16/32             | **32/32, zero failing** | ✅                                |
+> | `e2e/issue-412/measure-wrap-depth.mjs`  | 11 wrapping cells | **5**                   | ✅ matches the predicted residual |
+>
+> ⚠️ The wrap probe has documented ±1 jitter, so it was **run twice**. Both runs returned a **byte-identical** residual set — pt-PT/fr/es @768 and pt-PT/fr @1280. The 5 is measured, not one sample.
+>
+> ⚠️ **The handoff's "six cells" is not contradicted.** This probe samples 768/834/960/1024/1100/**1280** and does **not** sample 800 — and the 768–800 brand-lockup band is one of the two named causes. The sixth cell is most likely at 800, outside the probe's width set. Stated as the likely explanation, **not verified**.
+>
+> ⚠️ **`ERR_NETWORK_CHANGED` twice mid-run** aborted the first two probe attempts. Not qual: `curl` answered 5/5 × `200` at ~0.5s throughout. It is Chrome's own network-change detector firing on this workstation's churning docker/VPN interfaces. Retry; if it becomes chronic, `--disable-features=NetworkChangeNotifierAutoDetect` on the probes' `chromium.launch` is the fix.
+>
+> ### #428 — #423, and the control that lied
+>
+> Three allowlist entries exempted **whole paths** under `infra/`. Narrowed to one value-scoped entry; **two deleted outright** because they raise no findings at all, in the tree or across 418 commits — a waiver that hides nothing is pure blind spot.
+>
+> Everything measured under **gitleaks 8.24.3 in the pinned container**, never the workstation's build (#421 established they disagree; the local one finds nothing here either way).
+>
+> | config             | findings | planted caught |
+> | ------------------ | -------- | -------------- |
+> | exemptions removed | 7        | **3/3**        |
+> | old, whole-file    | 0        | **0/3**        |
+> | new, value-scoped  | 6        | **3/3**        |
+>
+> Full history with the new config: **421 commits, no leaks.**
+>
+> 🪤 **The first control run reported 0/3 and was worthless.** It planted the AWS **documentation example** access-key id (`AKIA…EXAMPLE`, written here with an ellipsis on purpose — see below), which 8.24.3 ignores by design. A control that cannot fire reads exactly like a broken fix, and I nearly filed it as one. What exposed it was adding the **"exemptions removed" baseline row**: without a config in which the control _must_ fire, no other row can be interpreted. New disguise for [[feedback-verification-that-cannot-fail]] — **when planting a control value, a well-known example is the single worst choice**, because it is what scanners allowlist first.
+>
+> 🎯 **And the version skew got demonstrated for free:** writing that literal into this very file made the pre-commit hook **reject the commit** — the workstation's gitleaks flags the AWS example key that CI's 8.24.3 waives. The two scanners disagree in **both** directions, which is the whole reason #428's evidence had to be gathered in the pinned container.
+>
+> ⚠️ **#428's positive control was NOT run as a dispatched CI run**, which is what #423's acceptance asks for. Doing so means pushing a synthetic AWS key into a **public** repo's history, tripping GitHub secret scanning and AWS's notifications. Run under CI's pinned version locally instead; the deviation is stated in the PR. The **negative** half (no false positives, full history green) needs nothing planted and **should be dispatched on `main` after merge**.
+>
+> ### ▶ THE QUEUE
+>
+> 1. **#428** — needs the owner: touches `.gitleaks.toml`, always-escalate. After merge, **dispatch `Security` on `main`** and confirm green.
+> 2. **#389** · **#328** (its stated cause is falsified; the measured degradation is real and unexplained, and its k6 artifacts have expired — re-deriving means re-running the load test).
+> 3. **Repo setting, owner's:** make `E2E (layout / overflow)` a **required** check. It is now the third session this has been carried.
+>
+> ### ▶ TWO OWNER DECISIONS, both inherited from `s734`, both still unanswered
+>
+> - **A — #417 was closed by accident** (PR #425's body said "does not close 417"; GitHub's parser ignored the negation). Reopen, file a fresh residual issue, or accept the 5 remaining two-line cells. The fresh measurement is now posted as a comment on #417. Both design calls are written out there: the **185.1px brand lockup** at 768–800, and the avatar returning at 1280 with the full words.
+> - **B — does UAT #30's automated PASS satisfy forward-flow?** #30 passed on 07-28 by an automated run, not by `akadmin`. The card is **still `todo`** — that stale field is what beat two written records and produced three sessions of false handoff state. Note CI runs exactly one spec (`ci.yml:164`), so none of the 44 tracked `e2e/**/*.mjs` run there.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`.
+> 2. **`comm_inbox after_seq=815`** — 815 is my own last send (the answer to `cs:Barra`, delivered). Message 776 is acked **and answered**; nothing is owed on A2A.
+> 3. **Re-arm the A2A bridge** — stopped at closeout. ⚠️ Check by **cwd/env, never by count**: this session again found four live bridges, none of them daily-tour's.
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+> 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — **empty**. `#30`/`#31` are `todo` and `#22` is deferred-until-prod; read decision **B** above before writing "awaiting the tester" again.
+> 5. **#428's CI**, then the queue.
 
 > **UPDATE 2026-08-17 (session `s734`, closeout addendum. Written after the block below was already merged as #426 — it CORRECTS that block on one point and records two decisions the owner has not yet made. Read this before acting on anything below.)**
 >
