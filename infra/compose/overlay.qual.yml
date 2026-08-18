@@ -153,6 +153,11 @@ services:
       - "traefik.http.routers.bff-apex-v1.tls.certresolver=letsencrypt"
       - "traefik.http.routers.bff-apex-v1.service=bff"
       - "traefik.http.routers.bff-apex-v1.priority=100"
+      # This router — not the api.<apex> one — is what actually carries qual
+      # traffic, so it needs the edge limiter in its own right: middlewares are
+      # per-router, and the label set here merges with app.yml by key rather
+      # than replacing it.
+      - "traefik.http.routers.bff-apex-v1.middlewares=default-ratelimit@file"
 
   token-svc:
     image: ghcr.io/zmeireles/daily-tour/token-svc:${IMAGE_TAG:-qual}
