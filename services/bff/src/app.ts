@@ -22,7 +22,6 @@ import authRefreshRoute from "./routes/auth-refresh.js";
 import chatHistoryRoute from "./routes/chat-history.js";
 import chatWsRoute from "./routes/chat-ws.js";
 import discoverRoute from "./routes/discover.js";
-import feedbackRoute from "./routes/feedback.js";
 import healthRoute from "./routes/health.js";
 import placesRoute from "./routes/places.js";
 import tokenExchangeRoute from "./routes/token-exchange.js";
@@ -131,7 +130,6 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(adminChatRoute);
   await app.register(tourPlansRoute);
   await app.register(telemetryRoute);
-  await app.register(feedbackRoute);
   await app.register(adminBetaMetricsRoute);
   await app.register(publicTourPlansRoute);
   await app.register(chatHistoryRoute);
