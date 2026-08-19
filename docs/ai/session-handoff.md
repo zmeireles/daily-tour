@@ -1,6 +1,91 @@
-# Session Handoff — … → 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-08-19 (LATEST — session `s736`, `dt:Furnas`. Closing for a coordinated shutdown. The queue is EMPTY: zero open pull requests, every owner decision from `s735` taken and executed.)**
+> **UPDATE 2026-08-19 (LATEST — session `s737`, `dt:Furnas`. The required layout gate was wedging every pull request and is fixed; the queue the owner authorised is drained; `UAT #30` finally has its HUMAN pass. Four verification errors, all mine, all caught — they are the most useful part of this block.)**
+>
+> ### State
+>
+> `main` **`bd2058e`** · **0 open pull requests** · tree clean · A2A bridge **ARMED** (checked by supervisor cwd; six other projects' bridges were live and none was this one's) · qual deployed at **`80e017f0378c…`**.
+>
+> ⚠️ **qual does NOT carry today's PWA fix.** The masthead change (`#443`) merged after the deploy, and it touches `apps/pwa/**`, so `publish-images` fires on `bd2058e` — a fresh image set will exist. Deploying it is a decision, not a leftover.
+>
+> ### ▶ WHAT NEEDS THE OWNER
+>
+> 1. **`dt-tests` card `#31`** — opening-hours data loss + guesthouse slug/error fixes. He said on 08-19 he would run it the same day.
+> 2. **Whether to deploy the masthead fix to qual.** Nothing depends on it; the environment has no audience yet.
+>
+> ### Shipped and merged
+>
+> | what                                                                                   | PR     |
+> | -------------------------------------------------------------------------------------- | ------ |
+> | take apt off the required layout gate's critical path, and stop caching on a blank key | `#441` |
+> | the `s736` closeout documentation that had been wedged behind that gate                | `#440` |
+> | remove the guest-feedback route orphaned by the drawer deletion (**table kept**)       | `#442` |
+> | give the masthead nav its width back so no locale wraps                                | `#443` |
+>
+> Closed with evidence: the 429-latency issue (`#328`), the orphaned endpoint (`#431`), the masthead (`#417`).
+>
+> ### 🔴 The required gate was wedging every pull request — and the obvious fix was wrong
+>
+> `E2E (layout / overflow)` became a required check on 08-19 and immediately failed a **docs-only** pull request. Two defects, found in that order:
+>
+> 1. **The retry could not work.** `timeout` kills `pnpm`, never the `apt-get` three levels under it; the orphan keeps `/var/lib/apt/lists/lock`, so attempt 2 died **eleven seconds** in. Reaping the orphan fixed that — **and was not enough**: with the lock free, attempt 2 used its full 300 s and hung exactly like attempt 1.
+> 2. **apt itself is the cause, and it is not ours.** The runner's mirrorlist puts `azure.archive.ubuntu.com` first, every index off it is `Ign`'d, and the fallback then goes **silent mid-acquire for 4m21s** — measured twice in a row (runs `32230362122`, `32235692022`). No retry budget can help.
+>
+> ⇒ **Install the browser without apt, then prove it launches.** apt remains only as a fallback for a genuinely missing library. Result on a **cold** cache: install **12 seconds**, versus two consecutive 10-minute failures; 57 layout specs pass.
+>
+> 🪤 **And a second, quieter defect in the same job:** `Resolve Playwright version` threw from the repo root (`@playwright/test` belongs to `apps/pwa`; pnpm's `node_modules` is isolated), the command substitution swallowed it, and `echo` still exited 0. **The browser cache key had silently been the constant `playwright-Linux-`** — invalidated by nothing, least of all the version bump it exists to catch. Now `playwright-Linux-1.60.0`, and the step refuses to cache on a blank key.
+>
+> ### The deploy, and the trap in dispatching it
+>
+> ⚠️ **`image_tag` must be the SHA of a `publish-images` commit, and `main`'s head usually is not one.** `publish-images` does not watch `infra/compose/**`, so the edge-limiter commit (a Traefik label change) never produced images. Left blank, the input defaults to `github.sha` and the deploy pulls a manifest that does not exist. Deployed at `80e017f0378c…`; **all 11 images verified present with a negative control** (a bogus tag answered NO on the same query that answered YES for the real one). The compose change still lands, because the workflow does `git checkout -f` at the dispatched ref.
+>
+> **Post-deploy, the two checks the change required:** ordinary traffic **not** 429'd (25 requests, all 200 — the collapse symptom a wrong proxy-trust direction would produce), and the hop count still **one** (apex `server: nginx`, `/v1` helmet headers and no `Server`, identical to the pre-deploy fingerprint). Readiness gate: 48 places, 11 relations, `akadmin in staff: True`.
+>
+> ⚠️ **Not measured:** the limiter's rejection behaviour under a real flood on qual. Doing so means deliberately flooding the environment the owner tests in.
+>
+> ### 🎉 `UAT #30` has its HUMAN pass — forward-flow satisfied after four sessions
+>
+> The owner ran it on 08-19 and moved the card to `done` (**status field verified**, not taken on report — this is the card whose `status` disagreed with its own comments for 20 days). Corroborated in the database rather than from the screen: the created place carries **`eat` / `sea-view`**, the _Comer → Vista para o mar_ of steps 3–4. That tag row is the mechanism step 7 depends on, because the guest query **inner-joins** through `place_action_wish` — an untagged place is structurally invisible.
+>
+> 🔴 **Qual test data is now a FIXTURE. Do not clean it up.** Owner, 08-19: _"don't clean up the new data — I'm going to use it for other tests."_ This **contradicts the Cleanup section written on the UAT cards**, and archiving is irreversible (`#376`), so a session that follows the card destroys something deliberate. The place `UAT #30` stays `published`.
+>
+> ### 🪤 FOUR verification errors in one session, every one mine
+>
+> 1. **Compared a wrapped width against unwrapped ones** and published the conclusion that the avatar could not be causing the 1280 wrap. It could, and it was.
+> 2. **Applied a padding change that does not exist** — Tailwind's `lg` starts at **1024**, so 768 and 960 share `px-2` — and from that declared the layout model "broken at 768". The model predicts all eight cells correctly; the arithmetic around it did not.
+> 3. **Filtered a failure out of my own output.** A `git commit` was rejected by prettier; I had grepped the output down to the lines I expected, saw none of it, pushed the **old** HEAD and reported "pushed". Caught only when the pull-request creation said _no commits between_.
+> 4. **A wait loop written as `until [ status != "in_progress" ]`** returned instantly while the run was still `queued` — "not started" wearing the costume of "finished".
+>
+> **Plus two controls that went red for the WRONG REASON** — a `sed` that mangled the script into a syntax error (exit **2**), and nested quoting that broke a JS string so node exited **1** on a `SyntaxError`, which is the same code the guard itself returns. A control is evidence only if it fails **by the mechanism under test**.
+>
+> ⇒ All six are one family, and it is the same one the whole `#417`/gitleaks/A2A line has been circling: **an observable that cannot distinguish "it worked" from "it never ran".** Recorded in `~/.claude/…/memory/feedback_verification_that_cannot_fail.md`, which now carries the "fails for the wrong reason" entry.
+>
+> ### The masthead, since the numbers are worth keeping
+>
+> The nav is the **only** shrinking column — brand lockup and right cluster are both `shrink-0` — and `max-w-[1200px]` means a wider viewport never reaches it, so the room had to come from inside the header.
+>
+> | band     | change                                 | buys                                                              |
+> | -------- | -------------------------------------- | ----------------------------------------------------------------- |
+> | 768–1023 | brand lockup steps up only at `lg`     | **57px** against a 41px deficit                                   |
+> | 1280     | `xl` avatar removed, items keep `px-3` | the avatar **alone** leaves pt-PT 2px short, inside browser noise |
+>
+> Margins after: pt-PT **+16.8px** at 768, **+26.8px** at 1280; all 16 locale × width cells single-line. **The residual allowlist in `layout-overflow.spec.ts` is now EMPTY** — adding an entry silences a real defect. Both guards were watched failing first.
+>
+> ### Agent-to-agent
+>
+> The specs session (`cs:Barra`) ran round 1 of 3 on the card-as-async-channel spec. Two amendments of mine were adopted: the requirement is about **the surface the process reads**, not queryability (a "verdict comment" implementation satisfies the old wording and reproduces our 20-day incident whole); and **demonstration is per direction**, as a test that can fail with the opposite direction as control. Then its remaining axis — _protect the scarce side_ — was found **unfalsifiable as written**: four honest counterexamples were all absorbed, so it now stands recorded as `[não falsificável na forma actual]` pending a measurement test.
+>
+> ⚠️ **Routing:** `dt:Furnas → jo:Pico` is not an authorised edge, and replying in-thread inherits the full audience, so a three-way reply is **refused outright**. Drop `in_reply_to` and answer the author.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`.
+> 2. **`comm_inbox after_seq=928`** — 928 was the last processed (from `cs:Barra`, acked; nothing owed).
+> 3. **Re-arm the A2A bridge** if it is down. ⚠️ By **supervisor cwd**, never by count or child — and never with a `pgrep` pattern that your own shell command contains, which reported a bridge that did not exist this session.
+> 4. **Poll the tester board** (project `e03901a6-…081cc`) — `#31` was `todo` at close and the owner intended to run it on 08-19.
+> 5. **Docker containers**, per the rule added to the global config on 08-19: attribute by compose `working_dir`. One container on this host at close — `joraa_legacy_scratch`, exited since 08-14, **no compose labels**, belongs to JORAA, not touched.
+
+> **UPDATE 2026-08-19 (session `s736`, `dt:Furnas`. Closing for a coordinated shutdown. The queue is EMPTY: zero open pull requests, every owner decision from `s735` taken and executed.)**
 >
 > ### State
 >
