@@ -114,7 +114,10 @@ jobs:
   e2e:
     name: E2E (layout / overflow)
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # 20, not 15: the install step may now burn up to 12 minutes across two
+    # bounded attempts before giving up, and the old 15 left no room for the
+    # build and specs after a first-attempt stall.
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,8 +149,37 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
+      # `--with-deps` shells out to apt, which has stalled here repeatedly
+      # (08-16, and twice on 08-18) and eaten the ENTIRE 15-minute job budget.
+      # GitHub reports a job killed by `timeout-minutes` as `cancelled`, so the
+      # symptom is a check that looks like somebody hit the stop button — and
+      # now that this job is a REQUIRED check, that wedges the pull request with
+      # nothing showing red anywhere. It does not retry itself.
+      #
+      # So: bound each ATTEMPT (not just the step), and retry once. A stall now
+      # costs ~5 minutes and usually self-heals; two genuine failures report as
+      # a failure, which is a symptom someone can actually act on.
+      #
+      # Budget: 300s per attempt is set above a COLD run, not a warm one — on a
+      # cache miss this downloads ~113 MB of browser AND runs apt, so a tighter
+      # bound would manufacture false failures every time the Playwright version
+      # changes and invalidates the cache. Worst case is ~2 min of setup + 10
+      # min of retries + ~3 min of build and specs, hence the 20-minute job.
+      #
+      # The per-attempt `timeout` is the load-bearing part. A step-level
+      # timeout alone would fire during attempt 1 and the retry would never run.
       - name: Install Chromium
-        run: pnpm --filter @daily-tour/pwa exec playwright install --with-deps chromium
+        timeout-minutes: 12
+        run: |
+          for attempt in 1 2; do
+            if timeout 300 pnpm --filter @daily-tour/pwa exec playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "::warning::playwright install stalled or failed (attempt $attempt of 2) — retrying"
+            sleep 10
+          done
+          echo "::error::playwright install failed twice; see the apt output above"
+          exit 1
 
       # playwright.config.ts starts `pnpm preview` itself, which serves dist —
       # so the bundle has to exist first. This is the built artefact, not the
