@@ -10,7 +10,15 @@ export type BrandLockupSize = "bar" | "masthead";
 // (guarded by brand-app-bar.test.tsx). "masthead" steps the logo + wordmark up.
 const SIZES: Record<BrandLockupSize, { logo: string; word: string }> = {
   bar: { logo: "h-8 w-8", word: "font-display text-lg leading-none text-primary" },
-  masthead: { logo: "h-10 w-10", word: "font-display text-2xl leading-none text-primary" },
+  // Steps up only from `lg`. Below it the masthead band (768-1023) is the
+  // tightest on the page: the nav is the sole shrinking column and gets
+  // 346.9px at 768, while pt-PT needs 387.9 — a 41px deficit, and this lockup
+  // is the only reducible fixed item left (the right cluster is already down
+  // to codes with both stubs hidden). #417.
+  masthead: {
+    logo: "h-8 w-8 lg:h-10 lg:w-10",
+    word: "font-display text-lg leading-none text-primary lg:text-2xl",
+  },
 };
 
 export function BrandLockup({

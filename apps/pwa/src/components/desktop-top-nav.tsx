@@ -5,14 +5,12 @@ import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/brand-lockup";
 import { Overline } from "@/components/overline";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavSection = {
   id: string;
   key: string;
   to: string;
   isActive: (path: string) => boolean;
-  withAvatar?: boolean;
 };
 
 // Three editorial destinations. Brand = Início (no nav item). Descobrir owns both
@@ -31,7 +29,6 @@ const SECTIONS: NavSection[] = [
     key: "nav.talk_to_host",
     to: "/chat",
     isActive: (p) => p.startsWith("/chat"),
-    withAvatar: true,
   },
 ];
 
@@ -98,23 +95,8 @@ export function DesktopTopNav() {
                 key={s.id}
                 to={s.to}
                 aria-current={active ? "page" : undefined}
-                className="group relative flex min-h-[44px] items-center gap-2 px-2 lg:px-3 xl:px-4"
+                className="group relative flex min-h-[44px] items-center gap-2 px-2 lg:px-3"
               >
-                {/* Decorative below `xl`: the label already names Miguel, so
-                    the avatar repeats it. Dropping it buys 32px (24 + the gap)
-                    in both tight bands — French had 3px of margin at 768 and
-                    1px at 1024, and 3px is inside the noise BETWEEN BROWSERS
-                    (system Chrome measures ~3px wider than Playwright's
-                    Chromium on this masthead). A fix that merely reaches zero
-                    is one translation away from regressing, which is how this
-                    defect already recurred once. */}
-                {s.withAvatar && (
-                  <Avatar className="hidden size-6 xl:flex">
-                    <AvatarFallback className="bg-primary text-[10px] font-medium text-primary-foreground">
-                      M
-                    </AvatarFallback>
-                  </Avatar>
-                )}
                 <Overline
                   className={cn(
                     "transition-colors",
