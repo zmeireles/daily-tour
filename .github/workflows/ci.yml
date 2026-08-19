@@ -138,9 +138,25 @@ jobs:
 
       # Cache the browser binary (~113 MB) on the Playwright version, so a
       # dependency bump invalidates it and nothing else does.
+      # From the repo root `require('@playwright/test/package.json')` THROWS:
+      # the dependency belongs to apps/pwa and pnpm's node_modules is isolated.
+      # The command substitution swallowed the error and `echo` still exited 0,
+      # so this wrote `version=` and the cache key below has been the constant
+      # `playwright-Linux-` — a browser cache invalidated by nothing, least of
+      # all the version bump it exists to catch. Measured on run 32230362122
+      # and reproduced locally. Resolve from the workspace that owns the
+      # dependency, and refuse to cache on a blank key rather than write one
+      # silently.
       - name: Resolve Playwright version
         id: pw
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(node -p "require(require.resolve('@playwright/test/package.json',{paths:['apps/pwa']})).version")
+          if [ -z "$version" ]; then
+            echo "::error::could not resolve the Playwright version — refusing to cache on a blank key"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "resolved Playwright $version"
 
       - name: Cache Playwright browsers
         id: pw-cache
