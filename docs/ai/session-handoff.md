@@ -1,6 +1,86 @@
-# Session Handoff — … → 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-08-18 (LATEST — session `s735`, `dt:Furnas`, closing for a coordinated shutdown. Everything that did not need the owner is done or awaiting review; two things genuinely need him and are listed first.)**
+> **UPDATE 2026-08-19 (LATEST — session `s736`, `dt:Furnas`. Closing for a coordinated shutdown. The queue is EMPTY: zero open pull requests, every owner decision from `s735` taken and executed.)**
+>
+> ### State
+>
+> `main` **`1d34ab1`** · **0 open pull requests** · tree clean · session branch namespace drained to 0 · local stack **torn down** · A2A bridge **stopped at closeout** (by pid, `61349`/`61351`).
+>
+> ⚠️ **qual is NOT deployed with any of this.** Seven commits landed on `main` today and none has been rolled out. Two of them change runtime behaviour on the box — the **proxy-trust fix** and the **edge rate limiter** — so the next deploy is more than routine; see the deploy note below.
+>
+> ### What shipped (7 commits, all verified as landed)
+>
+> | what                                                                       | PR     |
+> | -------------------------------------------------------------------------- | ------ |
+> | scope reverse-proxy trust to one hop — **closes a rate-limit bypass**      | `#437` |
+> | attach the Traefik edge rate limiter to the bff routers                    | `#438` |
+> | stop an apt stall in the Playwright install from wedging the required gate | `#439` |
+> | measure the place-detail **latency SLO** instead of the herd               | `#436` |
+> | correct in-code comments asserting falsified causes                        | `#433` |
+> | make the load-test dispatch button actually run                            | `#432` |
+> | delete the unreachable guest feedback drawer                               | `#430` |
+>
+> Repo setting, done at the owner's instruction after being carried three sessions: **`E2E (layout / overflow)` is now a REQUIRED check** (`protect-main` went 10 → 11).
+>
+> ### 🎯 The 429-flood latency question is ANSWERED — the endpoint was never slow
+>
+> At the **shipped** `cpus: "0.5"` limits, with steady arrival under the rate limit: **p95 69 ms / median 42 ms**, zero throttled, zero errors, against a 200 ms target. `#436` keeps that measurement in the suite as `place-detail-slo.js`.
+>
+> The alarming "p95 4–6 s" was an artifact of the measurement: a 2-minute flood admits **exactly 400 requests** (200 per fixed limiter window) and **every one lands inside 2–11 seconds of the 120**, up to 134 in a single second. It was timing a ~100-way thundering herd at each window's opening — which is also the mechanism behind the ±40% run-to-run swing the scenario's own comment documented without explaining.
+>
+> The CPU caps **do** bind (64–75% of scheduling periods throttled at 0.5 cores, **0%** at 4.0) but as a **chain**: catalog-svc's identical half core is co-equal. Either alone buys ~1.6×; both together 7.4×. On a 2-vCPU box that rules out raising them, which is why the fix went to the edge.
+>
+> The latency issue (`#328`) is retitled and has a closure recommendation posted. **Deliberately left open:** the fixed-window limiter really does concentrate admissions; under a synthetic single-source flood that is mostly an artifact, so it was not pre-emptively reworked.
+>
+> ### 🔴 A rate-limit BYPASS was found on the way — recorded privately, fixed, NOT publicly disclosed
+>
+> `trustProxy: true` made Fastify believe the caller's own `X-Forwarded-For`, and the global limiter keys on `req.ip`. Measured **with a control**: fixed header → 200 admitted + 60 rejected; rotating header → **260 admitted, zero rejected**.
+>
+> The owner chose the quiet route (option 1 of 4, 2026-08-18 15:32Z): no public issue, neutral commit message, review before merge. Evidence and the fix comparison are in **`~/.claude/incidents/INC-019`**, not in the repo. `#437` scopes trust to one hop; `proxy-trust.test.ts` pins **both** failure directions and was accepted only after being watched **fail** against the old setting.
+>
+> ⚠️ **Fixture trap written into that test file:** a **single-entry** `X-Forwarded-For` resolves identically under both settings, so the obvious version of that test passes either way and proves nothing. Do not "simplify" the multi-entry fixtures.
+>
+> ### The edge limiter, measured end to end (`#438`)
+>
+> `default-ratelimit` had been defined since Phase 0 and attached to **no router at all**. Attaching it takes bff CPU throttling from **98% of scheduling periods to 9%**.
+>
+> **It is not spoofable** — re-running the flood with a rotating header across ~250 fabricated addresses changed nothing, because Traefik keys on the real TCP peer. That was the one thing that could have made wiring it pointless, and it is measured, not read off a docs page.
+>
+> Both routers needed it **independently**: middlewares are per-router and the qual overlay _merges_ labels by key, so `bff-apex-v1` — the router that actually carries qual traffic — would have been missed by the obvious one-line change.
+>
+> ### ▶ DEPLOY NOTE — read before the next qual rollout
+>
+> The proxy-trust change alters how `req.ip` is derived, and the edge limiter starts rejecting at Traefik. **Verify after deploying**, because getting proxy trust wrong in the _other_ direction collapses every guest into one bucket and reads as "the rate limit is too aggressive", not as a misconfiguration:
+>
+> 1. Confirm ordinary guest traffic is **not** being 429'd (the collapse symptom).
+> 2. Confirm the hop count is still **one** — client → Traefik → bff. It was verified on 08-18 via response fingerprints: the apex answers `server: nginx` (the PWA static backend behind Traefik) while `/v1` answers with helmet headers and no `Server` (the bff). If `api.<apex>` is ever pointed at the VPS, that ingress path changes and the assumption behind `trustProxy: 1` must be re-checked.
+>
+> ### 🪤 THREE self-inflicted verification errors in one session — all caught, none by luck twice
+>
+> 1. **A null result read as a finding.** Published _"hypothesis falsified"_ from an A/B whose **return leg had already flagged** that host load drifted (twin arms 2.8× apart at identical settings — larger than the 1.7× effect claimed). Recorded the drift, then reasoned past it. **Rule: when a repeat arm disagrees with its twin by more than the effect under test, the experiment measured the environment.**
+> 2. **`gh pr merge` exits 0 when it REFUSES.** It prints an `--auto` hint and returns success. A merge script reported "✓ merged" for five pull requests when **one** had merged. Caught only because `git log` showed one new commit where five belonged. **Verify `state == MERGED`; never trust the exit code.**
+> 3. **A healthy A2A bridge declared dead.** Reported the bridge had died; it had been alive 14 hours. Two causes, both now in memory: `pgrep` on `comm-watch.mjs` matches the short-lived **child** (between re-arms there is none), and the script path is codecomedy-platform's for **every** project because the tool is shared — so the path proves nothing in either direction. **Match `comm-watch-supervise.sh` and resolve its cwd.** Also: the supervisor's "armed, nothing after = SIGKILL" partition describes a process that has **ENDED** — check `ps -p` before reading a missing exit line as a cause of death.
+>
+> All three, plus the earlier gitleaks control, are the same family: **a signal that cannot distinguish "done" from "never started".**
+>
+> ### ▶ THE QUEUE — nothing is blocked, everything below needs the owner
+>
+> 1. **Deploy to qual** — nothing since `9f34ac6`; see the deploy note above.
+> 2. **The orphaned guest-feedback endpoint and table** (`#431`) — now definitively dead, since `#430` deleted the only consumer. Dropping a table is a migration ⇒ always-escalate.
+> 3. **The masthead nav two-line residual** (`#417`) — reopened on the owner's decision; fresh measurement is on the issue.
+> 4. **The action-picker guest-visibility test** (`dt-tests` card `#30`) — still needs a HUMAN run; the owner ruled an automated pass does not satisfy forward-flow.
+> 5. **Close the latency issue** (`#328`) if the posted recommendation is accepted.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`.
+> 2. **`comm_inbox after_seq=821`** — 821 was the last message processed (from `cs:Barra`, acked; nothing owed).
+> 3. **Re-arm the A2A bridge** — stopped at this closeout. ⚠️ Check by **supervisor cwd**, never by count, path, or child process:
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+> 4. **Poll the tester board** for anything in `review` (project `e03901a6-…081cc`) — **empty** at close.
+> 5. **The queue above**, starting with the deploy.
+
+> **UPDATE 2026-08-18 (session `s735`, `dt:Furnas`, closing for a coordinated shutdown. Everything that did not need the owner is done or awaiting review; two things genuinely need him and are listed first.)**
 >
 > ### ▶ WHAT NEEDS THE OWNER — read this before anything else
 >
