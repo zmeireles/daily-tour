@@ -218,38 +218,30 @@ function assertNoClipping(
 // in copy, so there is no height exception left to pin.
 const MAX_NAV_ITEM_HEIGHT = 44;
 
-// The line ceiling is 2, and that number is a RECORD OF THE CURRENT STATE rather
-// than a target. Measured on qual across 4 locales × 6 widths: 11 of 24 cells
-// hold a two-line label, in every locale, from 768 up to and including 1280 —
-// because the nav is the only shrinking flex child and it is squeezed to 321.7px
-// at 1024. Getting every label onto one line means giving the nav real width
-// back, which is a design change across the whole desktop band (#417), not a
-// copy fix. Until that is decided, 2 is what ships — so assert 2 and let a THIRD
-// line fail, which is exactly the regression #412 was.
+// One line, everywhere, with no exceptions — as of #417. It was a record of the
+// current state rather than a target for as long as the nav was squeezed; that
+// squeeze is now gone, so the ceiling is the target again and any regression
+// fails here rather than being pinned below.
 const MAX_NAV_LABEL_LINES = 1;
 
-// The six cells that still hold a two-line label after #417's option 1, pinned
-// individually rather than as a blanket ceiling — so the 834–1100 band that
-// option 1 just cleared cannot quietly regress. Before it, ELEVEN cells wrapped.
+// EMPTY, and that is the point — #417 closed the last four cells (pt-PT/fr/es
+// @768, pt-PT@800) together with the two at 1280. Before it, eleven wrapped.
 //
-// Two distinct causes, both measured from the masthead's three columns:
+// What actually bought the room, both measured rather than reasoned:
 //
-//   @768–800  right cluster is already minimal at 179.6px (codes, stubs hidden),
-//             so the nav gets 347.3 and the longer locales need ~377. The only
-//             reducible item left at that width is the 185.1px brand lockup.
-//   @1280     the cluster jumps to 437.3px as the full words return, and the nav
-//             simultaneously takes back the `xl` avatar. nav gets 433.7 and needs
-//             more.
+//   @768-1023  the masthead brand lockup now steps up only at `lg`, giving the
+//              nav 57px back. It was the sole reducible fixed item: the right
+//              cluster is already down to locale codes with both stubs hidden.
+//   @1280      the `xl` avatar is gone (it repeated the label, which names
+//              Miguel) and nav items keep `px-3` instead of stepping to `px-4`.
+//              The cap is `max-w-[1200px]`, so a wider viewport never reaches
+//              the nav — the room had to come from inside the header.
 //
-// Both are open design questions on #417, not something a copy change reaches.
-const KNOWN_WRAP_RESIDUALS: Record<string, number> = {
-  "pt-PT@768": 2,
-  "fr@768": 2,
-  "es@768": 2,
-  "pt-PT@800": 2,
-  "pt-PT@1280": 2,
-  "fr@1280": 2,
-};
+// Worst remaining margin is pt-PT: +16.8px at 768 and +26.8px at 1280. Adding an
+// entry here silences a real defect, so anything new needs the measurement that
+// justifies it — and note that ~3px is inside the noise BETWEEN BROWSERS on this
+// masthead, so a margin that small is not a margin.
+const KNOWN_WRAP_RESIDUALS: Record<string, number> = {};
 
 // The HIG/Material touch target (#407). WCAG 2.5.8 AA is 24px and was always
 // met, so a miss here is an ergonomic defect rather than an a11y failure —
