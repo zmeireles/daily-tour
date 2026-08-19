@@ -138,9 +138,25 @@ jobs:
 
       # Cache the browser binary (~113 MB) on the Playwright version, so a
       # dependency bump invalidates it and nothing else does.
+      # From the repo root `require('@playwright/test/package.json')` THROWS:
+      # the dependency belongs to apps/pwa and pnpm's node_modules is isolated.
+      # The command substitution swallowed the error and `echo` still exited 0,
+      # so this wrote `version=` and the cache key below has been the constant
+      # `playwright-Linux-` — a browser cache invalidated by nothing, least of
+      # all the version bump it exists to catch. Measured on run 32230362122
+      # and reproduced locally. Resolve from the workspace that owns the
+      # dependency, and refuse to cache on a blank key rather than write one
+      # silently.
       - name: Resolve Playwright version
         id: pw
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(node -p "require(require.resolve('@playwright/test/package.json',{paths:['apps/pwa']})).version")
+          if [ -z "$version" ]; then
+            echo "::error::could not resolve the Playwright version — refusing to cache on a blank key"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "resolved Playwright $version"
 
       - name: Cache Playwright browsers
         id: pw-cache
@@ -149,36 +165,56 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
-      # `--with-deps` shells out to apt, which has stalled here repeatedly
-      # (08-16, and twice on 08-18) and eaten the ENTIRE 15-minute job budget.
-      # GitHub reports a job killed by `timeout-minutes` as `cancelled`, so the
-      # symptom is a check that looks like somebody hit the stop button — and
-      # now that this job is a REQUIRED check, that wedges the pull request with
-      # nothing showing red anywhere. It does not retry itself.
+      # apt is the whole problem, and it is not ours. The runner's mirrorlist
+      # puts http://azure.archive.ubuntu.com first, every index off that host is
+      # Ign'd, and after falling back to archive.ubuntu.com apt goes SILENT
+      # mid-acquire: 4m21s of nothing, twice in a row, on runs 32230362122 and
+      # 32235692022. `--with-deps` shells out to it on EVERY run, cache hit or
+      # not — so a required check is hostage to a mirror we do not own, and a
+      # retry cannot help when both attempts hang the same way.
       #
-      # So: bound each ATTEMPT (not just the step), and retry once. A stall now
-      # costs ~5 minutes and usually self-heals; two genuine failures report as
-      # a failure, which is a symptom someone can actually act on.
+      # So install the browser WITHOUT apt and then prove it can actually
+      # launch. The runner image ships Chrome and its shared libraries, so the
+      # dependencies are normally already there — but "normally" is not a gate,
+      # which is why the launch decides rather than an assumption, and only a
+      # genuine miss pays for apt.
       #
-      # Budget: 300s per attempt is set above a COLD run, not a warm one — on a
-      # cache miss this downloads ~113 MB of browser AND runs apt, so a tighter
-      # bound would manufacture false failures every time the Playwright version
-      # changes and invalidates the cache. Worst case is ~2 min of setup + 10
-      # min of retries + ~3 min of build and specs, hence the 20-minute job.
-      #
-      # The per-attempt `timeout` is the load-bearing part. A step-level
-      # timeout alone would fire during attempt 1 and the retry would never run.
+      # The launch check is a real check, verified in both directions: it
+      # succeeds against an installed browser and exits 1 with "Executable
+      # doesn't exist" when the browser directory is empty.
       - name: Install Chromium
         timeout-minutes: 12
         run: |
+          set -euo pipefail
+          pnpm --filter @daily-tour/pwa exec playwright install chromium
+          if (cd apps/pwa && node -e 'const {chromium}=require("@playwright/test"); chromium.launch().then(b=>b.close()).then(()=>process.exit(0),e=>{console.error(e.message.split("\n")[0]);process.exit(1)})'); then
+            echo "chromium launches — system dependencies already present, apt not needed"
+            exit 0
+          fi
+          echo "::warning::chromium could not launch — falling back to apt for system dependencies"
+          # Only reached when the image genuinely lacks a library. Bound each
+          # attempt, and reap between them: `timeout` kills pnpm, never the
+          # apt-get three levels under it, and that orphan keeps
+          # /var/lib/apt/lists/lock — which is why the previous retry died
+          # eleven seconds in with "Could not get lock ... held by process
+          # 2489" instead of getting a second real try.
+          reap_apt() {
+            sudo pkill -TERM -x apt-get 2>/dev/null || true
+            for _ in $(seq 1 24); do
+              pgrep -x "apt-get|dpkg" >/dev/null || return 0
+              sleep 5
+            done
+            sudo pkill -KILL -x apt-get 2>/dev/null || true
+            echo "::warning::apt still running after two minutes — killed it"
+          }
           for attempt in 1 2; do
             if timeout 300 pnpm --filter @daily-tour/pwa exec playwright install --with-deps chromium; then
               exit 0
             fi
-            echo "::warning::playwright install stalled or failed (attempt $attempt of 2) — retrying"
-            sleep 10
+            echo "::warning::apt install stalled or failed (attempt $attempt of 2) — retrying"
+            reap_apt
           done
-          echo "::error::playwright install failed twice; see the apt output above"
+          echo "::error::chromium could not launch and apt failed twice; see the output above"
           exit 1
 
       # playwright.config.ts starts `pnpm preview` itself, which serves dist —
