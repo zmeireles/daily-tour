@@ -45,18 +45,6 @@ export async function insertTourEvent(opts: {
   );
 }
 
-export async function insertGuestFeedback(opts: {
-  guestId: string | null;
-  rating: number;
-  text: string | null;
-}): Promise<void> {
-  await getPool().query(
-    `INSERT INTO catalog.guest_feedback (guest_id, rating, text)
-     VALUES ($1, $2, $3)`,
-    [opts.guestId, opts.rating, opts.text],
-  );
-}
-
 // A single KPI: its value over the current period, the same figure over the
 // immediately-preceding equal-length period, and the % change between them.
 // `deltaPct` is null when `previous` is 0 — there is no meaningful "% change
