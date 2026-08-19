@@ -134,6 +134,12 @@ services:
       - "traefik.http.routers.bff.rule=Host(`api.${TRAEFIK_DOMAIN_BASE:-dt.localhost}`)"
       - "traefik.http.routers.bff.entrypoints=web"
       - "traefik.http.routers.bff.service=bff"
+      # Reject floods at the edge, in Go, before they cost the bff any CPU.
+      # Measured (#435): under a single-source flood the bff is CPU-throttled in
+      # 98% of its scheduling periods without this and 9% with it. Traefik keys
+      # on the real TCP peer, NOT on X-Forwarded-For — verified by re-running
+      # the flood with a rotating header, which changed nothing.
+      - "traefik.http.routers.bff.middlewares=default-ratelimit@file"
       - "traefik.http.services.bff.loadbalancer.server.port=8080"
     deploy:
       resources:
