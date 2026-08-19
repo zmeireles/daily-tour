@@ -171,12 +171,29 @@ jobs:
       - name: Install Chromium
         timeout-minutes: 12
         run: |
+          # `timeout` kills pnpm, never the apt-get running three levels under
+          # it. The orphan keeps /var/lib/apt/lists/lock, so attempt 2 dies in
+          # eleven seconds with "Could not get lock ... held by process 2489"
+          # — measured on run 32230362122, where the retry above could not
+          # have succeeded no matter how long it waited. Reap the orphan and
+          # wait for the lock before retrying, or the second attempt is
+          # theatre. `pgrep`, not `fuser`: it measures the condition actually
+          # observed and needs no package that may not be on the image.
+          reap_apt() {
+            sudo pkill -TERM -x apt-get 2>/dev/null || true
+            for _ in $(seq 1 24); do
+              pgrep -x "apt-get|dpkg" >/dev/null || return 0
+              sleep 5
+            done
+            sudo pkill -KILL -x apt-get 2>/dev/null || true
+            echo "::warning::apt still running after two minutes — killed it"
+          }
           for attempt in 1 2; do
             if timeout 300 pnpm --filter @daily-tour/pwa exec playwright install --with-deps chromium; then
               exit 0
             fi
             echo "::warning::playwright install stalled or failed (attempt $attempt of 2) — retrying"
-            sleep 10
+            reap_apt
           done
           echo "::error::playwright install failed twice; see the apt output above"
           exit 1
