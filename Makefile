@@ -132,9 +132,43 @@ sh:
 VPS_USER ?= root
 VPS_HOST ?= 77.37.86.126
 
-## SSH into the qual VPS. CMD='…' runs a remote command instead of an interactive shell. e.g. make vps CMD='cd /opt/daily-tour && docker compose ps'
+## SSH into the qual VPS. CMD='…' runs a remote command instead of an interactive shell. e.g. make vps CMD='cd /opt/daily-tour/infra/compose && docker compose ps'
+# 🔴 CMD IS PIPED TO A REMOTE `bash -s`, NOT PASSED AS SSH ARGUMENTS. This recipe
+# used to read `ssh … $(CMD)` UNQUOTED, and the bug that hides behind that is not
+# quoting hygiene — it is that **the command ran on two different machines**.
+#
+# The local shell parses the recipe line before ssh exists, so the FIRST segment
+# went to the VPS and everything after a `;`, `&&` or `|` executed HERE.
+#
+# `[medido 2026-08-20, controlo nos dois sentidos]`
+#
+#   OLD  make vps CMD='hostname; hostname'  ->  srv911943
+#                                               jmeireles-Latitude-5401   ← laptop
+#   NEW  make vps CMD='hostname; hostname'  ->  srv911943
+#                                               srv911943
+#
+# ⚠️ THE DOCUMENTED EXAMPLE WAS ITSELF AFFECTED. `CMD='cd /opt/daily-tour && docker
+# compose ps'` ran the `cd` on the VPS and `docker compose ps` on the workstation,
+# which answered "no configuration file provided" — a laptop's reply, indis-
+# tinguishable from a broken deploy. The same session read `docker info` as
+# `0 containers` and nearly filed qual as DOWN; it was 26 containers, all healthy.
+# Globs went the same way: `ls -d /opt/*/` shipped this laptop's /opt to the VPS.
+#
+# 💀 The destructive shape, since it is one character away from the daily one:
+#      make vps CMD='cd /opt/dt/data && rm -rf *'
+#    -> `cd` succeeds remotely and changes nothing; `rm -rf *` runs in YOUR CWD.
+#
+# ⚠️ STILL NOT FIXED, because it cannot be at this layer: `$(…)` in CMD is eaten
+# by MAKE as a variable reference (undefined ⇒ empty) before the recipe runs.
+# Write `$$(…)` if you need remote command substitution.
+#   make vps CMD='echo $$(hostname)'     # ✅ srv911943
+#   make vps CMD='echo $(hostname)'      # ❌ empty — make consumed it
+#
+# Single-quoted here so the local shell cannot glob or word-split it; the remote
+# bash does all expansion. A CMD containing a single quote will still break —
+# for anything that gnarly, write a script and use the `qual-token` pattern below.
 vps:
-	@ssh -o ConnectTimeout=12 $(VPS_USER)@$(VPS_HOST) $(CMD)
+	@printf '%s\n' '$(CMD)' | ssh -o ConnectTimeout=12 $(VPS_USER)@$(VPS_HOST) 'bash -s'
 
 ## Mint a guest redeem link for qual — prints the full https://…/r/<token> URL. e.g. make qual-token
 qual-token:
