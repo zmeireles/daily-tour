@@ -1,4 +1,135 @@
-# Session Handoff — … → 08-20 (**s738 — qual deployed to `bd2058e`, so qual and `main` finally agree; `UAT #31` unblocked and its destructive Cleanup step rewritten; closed early for a coordinated shutdown.**) · 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-20 (**s739 — a defect hunt found FOUR pieces of inert machinery, including guest revocation that was never wired; the `make vps` target was running half of every command on the workstation. Two PRs green and unmerged; the hunt's fix order UNANSWERED.**) · 08-20 (**s738 — qual deployed to `bd2058e`, so qual and `main` finally agree; `UAT #31` unblocked and its destructive Cleanup step rewritten; closed early for a coordinated shutdown.**) · 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-20 (LATEST — session `s739`, `dt:Furnas`. A defect hunt the owner authorised, which found FOUR pieces of machinery that silently do nothing — including a documented security control that was never built. Two PRs green and unmerged; the hunt's fix order is UNANSWERED. Closed early for a coordinated laptop shutdown.)**
+>
+> ### State
+>
+> `main` **`d3dd5dd`** · **2 open pull requests, both 11/11 green, both awaiting the owner** · tree clean · A2A bridge **stopped at closeout** · zero Docker containers on this host · qual healthy at **`bd2058e`** (26 containers, all `dt_*` healthy) and still head-of-line — everything on `main` since is docs-only.
+>
+> ### ▶ WHAT NEEDS THE OWNER — four things, none of them started
+>
+> 1. **`/mcp`** — this session's Riff MCP server runs **pre-fix code** for two authorization defects fixed upstream. Confirmed **two independent ways**, not inferred (see below). A session cannot restart its own server.
+> 2. **Merge [`#447`](https://github.com/zmeireles/daily-tour/pull/447)** — the `make vps` cross-machine bug. Deliberately NOT auto-merged: it touches the VPS access path, which the doctrine lists as always-escalate.
+> 3. **Merge [`#448`](https://github.com/zmeireles/daily-tour/pull/448)** — the live masthead spec. Tests-only, inside the auto-mergeable category; left unmerged only because the shutdown arrived first.
+> 4. **🔴 Choose the fix order for the defect hunt.** Asked twice, never answered. The four verified findings below are all _inert machinery_, and one of them means guest revocation does not work.
+>
+> ---
+>
+> ## 🔴 The defect hunt — four findings VERIFIED BY THIS SESSION, with controls
+>
+> Three agents swept distinct axes (inert guards · write-path data loss · authz boundaries). **Their reports were not relayed on trust** — the four highest-severity claims were re-measured here, each with a control proving the probe could return the other answer.
+>
+> ### 1. Guest-token revocation is inert — a documented control that was never built
+>
+> `markJtiRevoked` (`services/bff/src/lib/redis.ts:48`) has **zero callers anywhere**. Control: the same grep finds **five** for its sibling `isJtiRevoked`, so the probe discriminates. `services/token-svc/src/routes/revoke.ts` writes `revoked_at` in Postgres only, and **token-svc has no Redis dependency at all** (`package.json`) — so the cache the BFF checks at `plugins/auth.ts:39` can never be populated.
+>
+> ⇒ Revoking a guest leaves their JWT working until it expires — **up to an hour**, with no way to shorten it. Revoke _does_ block minting a new one; the guest does not need one.
+>
+> 🔴 **`AUTH_POSTURES.md:9` documents this cache as THE enforcement for the `required` posture. That line is false.** The only writer of that Redis key in the whole repo is a test that seeds it itself before asserting the guard fires — the guard is real, the writer is fiction.
+>
+> ### 2. Every photo an owner attaches to a place is silently discarded
+>
+> **No `INSERT INTO catalog.place_media` exists in any route** — grep finds it only in tests and seeds. Control: the same query shape finds the writer in `guesthouses.ts`, which _does_ persist media. `media` is stripped at catalog-svc's zod boundary (`routes/places.ts:61-78`, no `media` key ⇒ zod `strip` deletes it and `safeParse` still succeeds).
+>
+> ⇒ Owner drags in photos → each uploads 201 → thumbnails render → save returns **200** → zero `place_media` rows. Guest discover gets `hero_image_url: null`; reopening the form shows no thumbnails. **Bytes survive** in MinIO, only the association is lost.
+>
+> ⚠️ **Trap for whoever fixes it:** the obvious delete-all-then-insert-from-assetIds would wipe `place_media.alt`, `attribution` and `sort_order`. `seeds/places-sao-miguel.sql:723` populates `attribution` with Wikimedia Commons author/licence/source for the 14 landmark photos — **licence-compliance data with no other copy in the app**, currently safe only because no write path exists.
+>
+> ### 3. The pre-push test gate has never run a test
+>
+> `lefthook.yml:159-165` runs `turbo run test --filter=...[HEAD]`. At `pre-push` the commit exists and the tree is clean, so the diff is empty.
+>
+> `[medido]` `...[HEAD]` → **0 packages, 0 tasks**. Control: `...[HEAD~5]` → **3 tasks**, so the command works and it is the ref that is wrong.
+>
+> ⇒ The repo's only local test gate selects nothing, every time. **The hook's own comment names the correct ref** (`[origin/main]`) — a one-token divergence from stated intent.
+>
+> ### 4. The restore drill passes on a dump with no rows
+>
+> `scripts/ops/restore-drill-postgres.sh:127-146`. Two mechanisms compound: `pg_restore` runs without `--exit-on-error` and its non-zero exit — which is _how it reports a partial restore_ — is swallowed by `|| log`; then the verification loop **logs row counts and never compares them** (`|| die` fires only if the table is missing).
+>
+> ⇒ A schema-only dump yields three tables, three counts of `0`, and prints **"restore drill PASSED — latest main dump is restorable."** This is the DR guard; a green drill is the only evidence the backups are worth keeping.
+>
+> ---
+>
+> ## 🟠 Reported by the agents, NOT re-verified here — treat as hypotheses
+>
+> - **No owner-to-owner boundary: 18 of 23 tenant-scoped owner routes** take an id and never compare it to the caller. Authentik has a single flat `staff` group. Chain: list all reservations → `POST /v1/admin/reservations/:id/token` → **mint a working guest JWT into another owner's guesthouse** (and per finding 1, that owner cannot effectively revoke it). ⚠️ **Documented as a deliberate "single-owner v1, deferred to Phase 2"**, so this is a known gap, not a surprise — **severity turns on how many accounts are in `staff` on qual**, which the agent could not measure and which nobody has checked. The subscription direction makes owner #2 the trigger. `admin-profile.ts:11-22` is named as the template for the fix: identity _is_ the address, so a cross-tenant request is unrepresentable rather than merely rejected.
+> - **Tour-plan IDOR** — any guest reads any guest's plan; `guest_id` is written on create and read back by nothing. A `public` variant exposes any `ready` plan unauthenticated (no share flag).
+> - **Rate limiter keyed on an unverified JWT claim** — the `trustProxy` shape one layer up: the counter increments at `onRequest`, signature is checked at `preHandler`, so a stranger holding a victim's `sub` can exhaust their budget. The in-code comment argues it is safe and reasons only about the attacker's _own_ bucket.
+> - **Guest JWTs logged in full** on chat connect — the redactor covers `/r/<token>`, not `?token=`.
+> - **Owner cannot clear phone/email** — blank → `undefined` → dropped by `JSON.stringify`, then by drizzle's SET builder. Console still says "Saved."
+> - Split opening hours truncated to the first interval per day; every place save rewrites `guesthouse_scope` to `{all:true}`. Both **latent** — nothing can currently produce the triggering data — and both fire the day an importer or Phase-1.4 scoping lands.
+>
+> **The agents also recorded verified negatives**, which are worth as much: partial-update clobbering is clean (every PATCH uses explicit `if (x !== undefined)` guards), dirty-fields-only submission is clean, optimistic-UI rollback is correct, and the orphaned-middleware shape was specifically looked for and **not** found (the limiter is attached to both bff routers).
+>
+> ### The one finding worth acting on before the others, if only one gets done
+>
+> **Finding 1.** It is the smallest fix and the largest gap, and unlike the rest it makes a _document_ false.
+>
+> ---
+>
+> ## Shipped this session
+>
+> | what                                                          | PR                                                         | state                                    |
+> | ------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------- |
+> | the `s738` closeout record                                    | `#446`                                                     | merged — **but see the duplicate below** |
+> | `make vps` no longer runs half the command on the workstation | [`#447`](https://github.com/zmeireles/daily-tour/pull/447) | **11/11 green, UNMERGED**                |
+> | live-qual masthead verification, in version control           | [`#448`](https://github.com/zmeireles/daily-tour/pull/448) | **11/11 green, UNMERGED**                |
+>
+> Also: **`dt-tests` `#30`'s Cleanup section rewritten** — it still told the tester to archive the place they create, which is irreversible (`#376`) and contradicts the owner's standing 08-19 fixture instruction. `s738` fixed `#31` and flagged this one. **All 31 cards were then swept**; the other 29 create no data, so the sweep is complete rather than sampled.
+>
+> ---
+>
+> ## 💀 `make vps` was running half of every command on the workstation
+>
+> `Makefile:137` read `ssh … $(CMD)` **unquoted**, so the local shell parsed the recipe before ssh existed: the first segment went to the VPS and **everything after a `;`, `&&` or `|` ran here.**
+>
+> ```
+> OLD  make vps CMD='hostname; hostname'  ->  srv911943
+>                                             jmeireles-Latitude-5401   <- laptop
+> NEW  same                               ->  srv911943
+>                                             srv911943
+> ```
+>
+> ⚠️ **The documented example was itself affected.** `CMD='cd /opt/daily-tour && docker compose ps'` ran the `cd` remotely and `docker compose ps` here, which answers _"no configuration file provided"_ — **a laptop's reply, indistinguishable from a broken deploy.** This session read `docker info` as `0 containers` and came within one probe of filing qual as DOWN. qual had 26 healthy containers. Globs went the same way, shipping this laptop's `/opt` to the VPS.
+>
+> 💀 One character from the daily shape: `make vps CMD='cd /opt/dt/data && rm -rf *'` no-ops remotely and **`rm -rf *` in the caller's working directory.**
+>
+> ---
+>
+> ## 🪤 Verification errors this session — three mine, one in a brief I wrote
+>
+> 1. **A stale ref read as remote state.** I concluded `s738` never shipped its closeout, because `git log origin/main` used a **local ref I had not fetched** and `git ls-remote --heads <branch>` came back empty — which is what you get **both** when a branch was never pushed **and** when it was merged and auto-deleted. Two states, opposite meanings, one reading. Pushed and merged a **duplicate PR** (`#446`); net diff against the real one is **zero**, so no content damage, but `main` carries an empty commit. ⇒ **Ask about the destination, not the vehicle:** fetch first, then `gh pr list --state merged --head <branch>`.
+> 2. **A false claim about my own habit, caught by another agent.** Told `cc:Bicho` I never pass `username` to Riff write tools _"in this session or as a habit"_. The first half was verifiable and true; the second covered ~15 sessions **none of which are visible to me**, and was **false — 9 rows, newest the day before**. The confidence of the checkable half leaked onto the uncheckable half. Root cause is not ours and is worth knowing: the tool's description reads `'Author username (default: claude)'`, **so the agent who reads carefully supplies it obediently and the careless one is right by accident.** Full entry in `~/.claude/docs/verification-incidents.md`.
+> 3. **A guard placed where a louder failure shadows it.** Refactoring the masthead script, I put the `DT_REDEEM_URL` check _after_ the module resolution — so running with no token reported `MODULE_NOT_FOUND` and pointed at `pnpm install` instead of `make qual-token`. Caught by running the control. **A guard an earlier failure can shadow does not fire.**
+> 4. **A tautological measurement, in a brief I wrote.** I told the UAT agent to measure nav headroom as `nav.clientWidth − Σ(children) − gaps`. It is **0 at every width by CSS construction** — `nav` is shrink-to-fit, so its box hugs its children whether comfortable or crushed. The agent caught it and measured the outer row instead. I specified an instrument that cannot vary, in a brief whose whole subject was hunting instruments that cannot fail.
+>
+> ---
+>
+> ## The `/mcp` gap, measured two ways
+>
+> Upstream fixed two authorization defects in `tasks-mcp` at ~09:49Z. **The checkout on this workstation has them; this session's server process does not** — it loaded at 08:49Z.
+>
+> | probe                                                                                                                      | reading |
+> | -------------------------------------------------------------------------------------------------------------------------- | ------- |
+> | **schema** (mine) — `update_task` declares no `project_id`                                                                 | pre-fix |
+> | **behaviour** (`fpm:Vigia`'s) — `update_task(task_id: 999999)` → _"your agent token is not scoped to act on this project"_ | pre-fix |
+>
+> Negative control: `comm_whoami` shows the token **is** scoped to this project, so "not scoped" is a false diagnosis — which is the defect itself.
+>
+> ⚠️ **My schema probe is BLIND to the more serious of the two fixes**, and this matters for anyone reusing it: one fix changed a _declaration_ (visible), the other changed an _enforcement seam_ and left every schema byte identical. Caught by `fpm:Vigia`. ⇒ **The disk being current is precisely the reading that misleads** — a session that pulls, sees a clean tree, and concludes it is fine is wrong.
+>
+> ---
+>
+> ## ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** → expect `dt:Furnas` / `DAILY-TOUR`.
+> 2. **`comm_inbox after_seq=973`** — 973 is the watermark (my last send; last _received_ was 969, acked). Three exchanges with `cc:Bicho` closed this session, nothing owed.
+> 3. **Re-arm the A2A bridge** — stopped at this closeout. By **supervisor cwd**, never by count, and never with a `pgrep` pattern your own command contains.
+> 4. **Ask the owner the four items under ▶ above**, starting with the hunt's fix order. Do **not** open new work while `#447`/`#448` sit green and unmerged.
+> 5. **Docker:** zero containers at close. Nothing owed.
+> 6. **Telegram:** allowlist is Zé alone ⇒ the client-announce rule **does not fire**; nothing was sent, and that is a measured result rather than an omission.
+> 7. **`dt-tests`** — `#31` still `todo` and ready to run; `#22` deferred until prod. Both cards' Cleanup sections are now safe.
 
 > **UPDATE 2026-08-19 → 08-20 (LATEST — session `s738`, `dt:Furnas`. A short, single-purpose session: the deploy decision `s737` left open was taken and executed, and `UAT #31` was unblocked for the owner. Closed early for a coordinated laptop shutdown, so the work queue was never opened.)**
 >
