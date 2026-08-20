@@ -1,4 +1,5 @@
 import { Redis } from "ioredis";
+import { jtiRevokedKey } from "@daily-tour/shared-types";
 import { loadConfig } from "../config.js";
 
 // Lazy singleton so tests can swap REDIS_URL before the first call. Tests must
@@ -33,20 +34,16 @@ export function setRedisForTest(next: Redis | undefined): void {
 }
 
 // Key naming convention:
-//   jti:revoked:<jti>  — presence ⇒ revoked. TTL = remaining JWT lifetime so
-//                        the key auto-evicts once the JWT can't be replayed.
+//   jti:revoked:<jti>  — presence ⇒ revoked. Written by token-svc's revoke
+//                        routes (the BFF only ever reads it); the key shape
+//                        is shared via `jtiRevokedKey` so the two can't drift.
 //   jti:active:<jti>   — presence ⇒ seen recently. TTL = 60s (refresh cycle).
 //                        Useful for instrumentation; not load-bearing.
-const REVOKED_PREFIX = "jti:revoked:";
 const ACTIVE_PREFIX = "jti:active:";
 
 export async function isJtiRevoked(jti: string): Promise<boolean> {
-  const result = await getRedis().exists(`${REVOKED_PREFIX}${jti}`);
+  const result = await getRedis().exists(jtiRevokedKey(jti));
   return result === 1;
-}
-
-export async function markJtiRevoked(jti: string, ttlSeconds: number): Promise<void> {
-  await getRedis().set(`${REVOKED_PREFIX}${jti}`, "1", "EX", Math.max(1, Math.floor(ttlSeconds)));
 }
 
 export async function cacheJtiActive(jti: string, ttlSeconds: number): Promise<void> {

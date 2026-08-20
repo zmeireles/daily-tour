@@ -3,6 +3,7 @@ import "./instrumentation.js"; // MUST be first
 import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { closePool, runMigrations } from "./db/client.js";
+import { closeRedis } from "./lib/redis.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
     app.log.info(`token-svc received ${sig}, shutting down`);
     await app.close();
     await closePool();
+    await closeRedis();
     process.exit(0);
   };
   process.on("SIGTERM", () => void shutdown("SIGTERM"));

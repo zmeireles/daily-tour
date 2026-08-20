@@ -17,6 +17,18 @@ guest path); opt out per route via `config: { auth: 'public' | 'owner' }`.
 | `required` | 401 `unauthorized`       | 401 `unauthorized`      | n/a                  | 401 `revoked`        |
 | `owner`    | 401 `unauthorized`       | 401 `unauthorized`      | 403 `wrong_audience` | n/a (stateless JWKS) |
 
+### Where the `required` posture's revocation actually comes from
+
+The Redis key is the whole enforcement, so it is worth naming both ends:
+**token-svc's revoke routes WRITE `jti:revoked:<jti>`; this plugin READS it.**
+The key shape and its TTL live in `@daily-tour/shared-types` (`jtiRevokedKey`,
+`GUEST_JWT_MAX_TTL_SECONDS`) precisely because writer and reader are different
+services — and a reader with no writer looks exactly like a working control.
+
+Postgres's `token_grant.revoked_at` is the record, not the enforcement: it stops
+a revoked grant being exchanged for a **new** JWT, and does nothing about the one
+already in the guest's browser.
+
 Owner-path 401 vs 403 matters for the PWA `/admin/callback` flow:
 
 - 401 → trigger refresh / re-login.

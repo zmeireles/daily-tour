@@ -1,4 +1,6 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
+import { RedisContainer, type StartedRedisContainer } from "@testcontainers/redis";
+import { Redis } from "ioredis";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
@@ -82,12 +84,40 @@ export async function seedFixtures(pool: pg.Pool): Promise<SeededFixtures> {
 // Test env setup must happen BEFORE the modules under test cache the config.
 // Vitest's beforeAll runs after imports, so we set env vars here at top-level
 // import time of the test file's first import of this helpers module.
-export function setTestEnv(databaseUrl: string): void {
+// Revocation publishes to Redis, so any test that revokes must pass a real
+// container URL. The default only has to PARSE — tests that never revoke never
+// open a connection (getRedis() is lazy), and one that does without a container
+// fails loudly with a 503 rather than quietly skipping the cache write.
+export function setTestEnv(databaseUrl: string, redisUrl = "redis://127.0.0.1:6379/0"): void {
   process.env.TOKEN_SVC_DATABASE_URL = databaseUrl;
+  process.env.REDIS_URL = redisUrl;
   process.env.JWT_SIGNING_KEY =
     process.env.JWT_SIGNING_KEY ?? "test-signing-key-do-not-use-min-32-chars-long";
   process.env.NODE_ENV = "test";
   process.env.LOG_LEVEL = "warn";
   // app.inject() doesn't bind, but loadConfig() validates PORT > 0.
   process.env.PORT = "8088";
+}
+
+// ─── Redis (JTI revocation cache) ────────────────────────────────────────
+export interface TestRedisCtx {
+  container: StartedRedisContainer;
+  client: Redis;
+  url: string;
+}
+
+export async function startTestRedis(): Promise<TestRedisCtx> {
+  const container = await new RedisContainer("redis:7.4-alpine").start();
+  const url = container.getConnectionUrl();
+  const client = new Redis(url, { maxRetriesPerRequest: 3, lazyConnect: false });
+  return { container, client, url };
+}
+
+export async function stopTestRedis(ctx: TestRedisCtx): Promise<void> {
+  await ctx.client.quit().catch(() => undefined);
+  await ctx.container.stop();
+}
+
+export async function flushRedis(client: Redis): Promise<void> {
+  await client.flushall();
 }

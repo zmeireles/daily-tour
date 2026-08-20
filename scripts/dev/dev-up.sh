@@ -215,6 +215,10 @@ if [[ $START_STAGE -le 4 && $END_STAGE -ge 4 ]]; then
   export CATALOG_SVC_DATABASE_URL="postgres://catalog_svc:${SERVICE_DB_PASSWORD_CATALOG}@localhost:${PG_HOST_PORT}/dailytour"
   export TOKEN_SVC_DATABASE_URL="postgres://token_svc:${SERVICE_DB_PASSWORD_TOKEN}@localhost:${PG_HOST_PORT}/dailytour"
   export MEDIA_SVC_DATABASE_URL="postgres://media_svc:${SERVICE_DB_PASSWORD_MEDIA}@localhost:${PG_HOST_PORT}/dailytour"
+  # token-svc's config schema is all-or-nothing, so its host-run migrate needs
+  # REDIS_URL present even though migrations never touch Redis. Containers get
+  # it from docker-compose.app.yml; this is the host equivalent.
+  export REDIS_URL="${REDIS_URL:-redis://default:${REDIS_PASSWORD}@localhost:${DT_HOST_PORT_REDIS:-27379}/0}"
 
   for svc in catalog-svc token-svc media-svc; do
     info "migrating $svc…"
