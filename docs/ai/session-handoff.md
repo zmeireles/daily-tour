@@ -1,4 +1,70 @@
-# Session Handoff — … → 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-20 (**s738 — qual deployed to `bd2058e`, so qual and `main` finally agree; `UAT #31` unblocked and its destructive Cleanup step rewritten; closed early for a coordinated shutdown.**) · 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-19 → 08-20 (LATEST — session `s738`, `dt:Furnas`. A short, single-purpose session: the deploy decision `s737` left open was taken and executed, and `UAT #31` was unblocked for the owner. Closed early for a coordinated laptop shutdown, so the work queue was never opened.)**
+>
+> ### State
+>
+> `main` **`f347549`** (unchanged — no code shipped this session) · **0 open pull requests** · **0 open issues** · tree clean · A2A bridge armed at start, **stopped at closeout** · **qual NOW deployed at `bd2058e6c485…`** (was `80e017f`).
+>
+> ⇒ **qual and `main` now agree** on everything that produces an image. `f347549` is docs-only and builds none, so `bd2058e` is the correct head-of-line tag.
+>
+> ### ▶ WHAT NEEDS THE OWNER
+>
+> 1. **`dt-tests` card `#31`** — opening-hours data loss + guesthouse slug/error fixes. **Ready to run right now**; the readiness gate says so in as many words. Its Cleanup section was rewritten this session — see below before running it.
+> 2. **An unanswered question of mine:** with the tracker empty, whether the next session opens a **defect hunt**, starts a **new feature initiative** (deferred at scale: reservations beta-scoping, needing a token-svc discriminator column; and the O(N) list→count endpoint), or holds. Asked, never answered — the shutdown came first.
+>
+> ### The deploy, and what was actually verified
+>
+> Run [`32275487028`](https://github.com/zmeireles/daily-tour/actions/runs/32275487028) — every step green, `Rollback on failure` **skipped**, rollback target recorded as `80e017f`.
+>
+> **All 11 images confirmed present at `bd2058e` BEFORE dispatch, with a negative control** — a bogus 40-char tag answered `404` on the same query that answered `200` for each real one. The check could distinguish present from absent rather than merely agreeing.
+>
+> Readiness gate verdict: **`✅ ENV READY — tester may run the UAT.`** 17/17 services healthy · **49 places** · 11 relations · `/admin` 200.
+>
+> Post-deploy, the two checks the `s736` proxy-trust + edge-limiter changes require:
+>
+> | check                                                 | result                                                                                            |
+> | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+> | hop count still **one**                               | apex `server: nginx`; `/v1` helmet headers, no `Server` — identical to the pre-deploy fingerprint |
+> | ordinary traffic **not** 429'd (the collapse symptom) | 25 requests, **25× 200, zero 429**                                                                |
+> | `POST /v1/feedback`, removed by `#442`                | genuine bff `404` — gone                                                                          |
+>
+> **Places went 48 → 49: the owner's `UAT #30` place survived the redeploy.** Migrate+seed does not clobber it — which is the first direct evidence that the fixture rule (below) is safe against a routine deploy.
+>
+> ### 🪤 A probe that could not discriminate — caught before it was published
+>
+> The obvious check for `#442` is "`POST /v1/feedback` should 404". Run first, it returned **nginx `405`** — and so did **a route that never existed**. Identical responses: the probe was not reaching the bff at all, because the container was **mid-swap** and Traefik was falling back to the PWA's nginx. A 404-shaped answer would have been reported as proof.
+>
+> ⇒ Re-run after the stack settled, **with a positive control**: `POST /v1/telemetry/tour` → `401` _from the bff_ (route exists, auth required), proving POST reaches it. Only then is `/v1/feedback`'s bff-`404` evidence. Same family as everything in the `s736`/`s737` blocks: **an observable that cannot tell "it worked" from "it never ran".**
+>
+> ### 🪤 The `pgrep` self-match trap fired AGAIN, on the very check that documents it
+>
+> `s737` wrote down that a bridge check must not use a pattern the shell command itself contains. The first check this session did exactly that and reported **two live daily-tour supervisors** — both were my own shell. The bridge was in fact **down**. Re-checked with a pattern split so it cannot self-match; the only live supervisors belonged to Casa, fit-platform, nexumpro-marketplace, po-platform, cc-specs and codecomedy-platform.
+>
+> ⇒ **A written warning did not prevent the repeat.** The habit that worked was the _mechanical_ one: resolve every candidate pid's `cwd`, and treat "the pid is gone a second later" as the tell.
+>
+> ### 🔴 `dt-tests` card `#31` — its Cleanup section was WRONG and is rewritten
+>
+> The card instructed the tester to **archive** the `ZZ-` throwaways when finished. That contradicts the owner's standing 08-19 instruction (_"don't clean up the new data — I'm going to use it for other tests"_), and **archiving is irreversible** (`#376`) — the console cannot re-publish and the API rejects further edits. Following the card would have destroyed something deliberate, with no way back.
+>
+> Rewritten to say leave everything `published`, quoting the instruction and the reason. Parts A–D and the pass criteria are **untouched**. ⚠️ **`UAT #30`'s card carries the same defective Cleanup section and was NOT edited** — check any other card before a tester follows it.
+>
+> ### Not verified, and worth naming
+>
+> **The masthead fix rendering.** Grepping the minified bundle for Tailwind classes was inconclusive and is a bad instrument. What _is_ solid: the deployed `pwa` image is `bd2058e` (confirmed in the run log), the commit carrying `#443`, whose guards passed in CI. A live render at 768 and 1280 in pt-PT would close it properly and was offered, not run.
+>
+> ### Housekeeping
+>
+> `MEMORY.md`'s index line for the F&F testing pivot still listed **Lane-3 Phase-2** and **"remediate the 4 untagged places"** as owed. Both were settled on 07-30 (Phase-2 done; the untagged places a **phantom** — already-archived `ZZ-LANE3` disposables). Index corrected; the memory file itself was already right.
+>
+> ### ⚠️ FIRST ACTIONS NEXT SESSION
+>
+> 1. **`comm_whoami`** → expect `dt:Furnas` / `DAILY-TOUR`.
+> 2. **`comm_inbox after_seq=928`** — 928 remains the watermark; this session drained nothing new (inbox was empty throughout).
+> 3. **Re-arm the A2A bridge** — stopped at this closeout. By **supervisor cwd**, and with a pattern that cannot match your own command.
+> 4. **Poll the tester board** (project `e03901a6-…081cc`) — `#31` was `todo` at close, unblocked and ready.
+> 5. **Docker:** **zero containers on this host** at close — nothing owed, and the JORAA leftover from 08-19 is gone.
+> 6. **Ask the owner the question in ▶ 2** before picking work; the tracker is empty, so the next move is a scope choice, not a queue.
 
 > **UPDATE 2026-08-19 (LATEST — session `s737`, `dt:Furnas`. The required layout gate was wedging every pull request and is fixed; the queue the owner authorised is drained; `UAT #30` finally has its HUMAN pass. Four verification errors, all mine, all caught — they are the most useful part of this block.)**
 >
