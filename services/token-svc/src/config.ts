@@ -5,6 +5,11 @@ const ConfigSchema = z.object({
   // HS256 needs ≥32 bytes of entropy. Rotation is env-var swap + restart;
   // see README. Never log this value — keep it inside lib/jwt.ts's closure.
   JWT_SIGNING_KEY: z.string().min(32),
+  // Required, not optional: revocation is only enforced once the revoked JTI
+  // reaches the cache the BFF reads. A token-svc that boots without Redis
+  // would accept revokes and enforce none of them, silently — so it must not
+  // boot at all. See lib/redis.ts.
+  REDIS_URL: z.string().url(),
   PORT: z.coerce.number().int().positive().default(8088),
   HOST: z.string().default("0.0.0.0"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

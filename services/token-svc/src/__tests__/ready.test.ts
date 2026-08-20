@@ -8,6 +8,8 @@ process.env.JWT_SIGNING_KEY =
 process.env.NODE_ENV = "test";
 process.env.LOG_LEVEL = "warn";
 process.env.PORT = "8088";
+// Required by the config schema; never dialled — these probes don't revoke.
+process.env.REDIS_URL = process.env.REDIS_URL ?? "redis://127.0.0.1:6379/0";
 
 // Control getPool().query per-test: resolve → DB up (200), reject → DB down (503).
 // Only getPool is exercised by /ready; the other exports are stubbed so app

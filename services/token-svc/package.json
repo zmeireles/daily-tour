@@ -33,6 +33,7 @@
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.0",
+    "ioredis": "^5.4.0",
     "jose": "^5.9.6",
     "pg": "^8.13.0",
     "zod": "^3.24.0"
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@daily-tour/shared-config": "workspace:*",
     "@testcontainers/postgresql": "^10.16.0",
+    "@testcontainers/redis": "^10.16.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.31.10",

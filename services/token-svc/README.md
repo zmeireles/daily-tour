@@ -31,17 +31,19 @@ Algorithm: **HS256** (Phase 1). T-1.6.0 may switch to RS256/ES256 + a JWKS endpo
 - **`/v1/reservations/:id/token` is rate-limited** to 10/min per IP (issue flood mitigation).
 - **`/v1/tokens/:opaque/exchange` is rate-limited** to 30/min per IP (brute-force mitigation).
 - The **revoke endpoint is currently open** — the service runs on the internal `dt_internal` Docker network. Wrap in mTLS / API-key when n8n's auto-revoke flow lands (see session-handoff deferrals).
+- **Revoking writes to two places, and both matter.** Postgres stops the grant being exchanged for a new JWT; the `jti:revoked:<jti>` key in Redis stops the JWT the guest is already holding, which the BFF checks on every authed request. A Redis failure returns **503 `revocation_cache_unavailable`** instead of a 204 — the record is updated but live sessions are not, and the caller must retry. Both revoke routes re-derive which JTIs to publish from the grant rows, so a retry works even though the rows are already marked.
 
 ## Required env vars
 
-| Var                           | Required | Notes                                                                                 |
-| ----------------------------- | -------- | ------------------------------------------------------------------------------------- |
-| `TOKEN_SVC_DATABASE_URL`      | yes      | Postgres connection string for the `token_svc` role.                                  |
-| `JWT_SIGNING_KEY`             | yes      | HS256 secret, **≥32 chars**. Rotation = env-var swap + service restart. Never logged. |
-| `PORT`                        | no       | Default `8088`.                                                                       |
-| `HOST`                        | no       | Default `0.0.0.0`.                                                                    |
-| `LOG_LEVEL`                   | no       | One of `fatal`/`error`/`warn`/`info`/`debug`/`trace`. Default `info`.                 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | no       | Empty → SDK no-op. Phase 5 wires the collector.                                       |
+| Var                           | Required | Notes                                                                                                                                                                                   |
+| ----------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TOKEN_SVC_DATABASE_URL`      | yes      | Postgres connection string for the `token_svc` role.                                                                                                                                    |
+| `JWT_SIGNING_KEY`             | yes      | HS256 secret, **≥32 chars**. Rotation = env-var swap + service restart. Never logged.                                                                                                   |
+| `REDIS_URL`                   | yes      | Where revoke publishes `jti:revoked:<jti>`; must be the same instance and db index the BFF reads. Required, not optional — without it a revoke would leave already-minted JWTs working. |
+| `PORT`                        | no       | Default `8088`.                                                                                                                                                                         |
+| `HOST`                        | no       | Default `0.0.0.0`.                                                                                                                                                                      |
+| `LOG_LEVEL`                   | no       | One of `fatal`/`error`/`warn`/`info`/`debug`/`trace`. Default `info`.                                                                                                                   |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | no       | Empty → SDK no-op. Phase 5 wires the collector.                                                                                                                                         |
 
 ## Migration on boot
 

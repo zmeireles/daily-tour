@@ -1,21 +1,28 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { jtiRevokedKey } from "@daily-tour/shared-types";
 import {
   type SeededFixtures,
+  flushRedis,
   seedFixtures,
   setTestEnv,
   startTestPostgres,
+  startTestRedis,
   stopTestPostgres,
+  stopTestRedis,
   truncateAll,
 } from "./helpers.js";
 
 const ctx = await startTestPostgres();
+const redisCtx = await startTestRedis();
 let fixtures: SeededFixtures;
-setTestEnv(ctx.databaseUrl);
+setTestEnv(ctx.databaseUrl, redisCtx.url);
 
 const { createApp } = await import("../app.js");
 const { closePool } = await import("../db/client.js");
 const { resetConfigCache } = await import("../config.js");
 const { resetJwtSecretCache } = await import("../lib/jwt.js");
+const { hashOpaqueToken } = await import("../lib/opaque-token.js");
+const { closeRedis } = await import("../lib/redis.js");
 
 interface ReservationRow {
   id: string;
@@ -41,12 +48,15 @@ describe("token-svc reservations list + reservation-scoped revoke", () => {
 
   beforeEach(async () => {
     await truncateAll(ctx.pool);
+    await flushRedis(redisCtx.client);
     fixtures = await seedFixtures(ctx.pool);
   });
 
   afterAll(async () => {
     await app.close();
     await closePool();
+    await closeRedis();
+    await stopTestRedis(redisCtx);
     await stopTestPostgres(ctx);
   });
 
@@ -135,5 +145,58 @@ describe("token-svc reservations list + reservation-scoped revoke", () => {
     });
     expect(unknown.statusCode).toBe(404);
     expect(unknown.json()).toEqual({ error: "reservation_not_found" });
+  });
+
+  // The backoffice revokes by reservation, so this is the path a real revoke
+  // actually takes. Every grant it kills must reach the BFF's cache, not just
+  // the row it updated.
+  it("publishes EVERY grant of the reservation to the revocation cache", async () => {
+    const jtis: string[] = [];
+    for (let i = 0; i < 2; i += 1) {
+      const issued = await app.inject({
+        method: "POST",
+        url: `/v1/reservations/${fixtures.reservationId}/token`,
+      });
+      jtis.push(hashOpaqueToken(issued.json<{ token: string }>().token));
+    }
+
+    // Control: neither key is present before the revoke.
+    for (const jti of jtis) {
+      expect(await redisCtx.client.exists(jtiRevokedKey(jti))).toBe(0);
+    }
+
+    const revoke = await app.inject({
+      method: "DELETE",
+      url: `/v1/reservations/${fixtures.reservationId}/token`,
+    });
+    expect(revoke.statusCode).toBe(204);
+
+    for (const jti of jtis) {
+      expect(await redisCtx.client.exists(jtiRevokedKey(jti))).toBe(1);
+    }
+  });
+
+  it("a retry re-publishes even though the rows are already revoked", async () => {
+    const issued = await app.inject({
+      method: "POST",
+      url: `/v1/reservations/${fixtures.reservationId}/token`,
+    });
+    const jti = hashOpaqueToken(issued.json<{ token: string }>().token);
+
+    await app.inject({
+      method: "DELETE",
+      url: `/v1/reservations/${fixtures.reservationId}/token`,
+    });
+    // Stand in for a first call whose cache write failed: row revoked, key gone.
+    // An UPDATE ... RETURNING implementation would find nothing to return here
+    // and publish nothing, leaving the retry as useless as the original.
+    await redisCtx.client.del(jtiRevokedKey(jti));
+
+    const retry = await app.inject({
+      method: "DELETE",
+      url: `/v1/reservations/${fixtures.reservationId}/token`,
+    });
+    expect(retry.statusCode).toBe(204);
+    expect(await redisCtx.client.exists(jtiRevokedKey(jti))).toBe(1);
   });
 });

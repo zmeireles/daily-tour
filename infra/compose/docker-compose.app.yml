@@ -171,6 +171,10 @@ services:
       TOKEN_SVC_DATABASE_URL: postgres://token_svc:${SERVICE_DB_PASSWORD_TOKEN}@dt_postgres:5432/dailytour
       # MUST match the BFF's JWT_SIGNING_KEY — token-svc signs, BFF verifies.
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY missing in .env}
+      # Revoke publishes revoked JTIs here; the BFF reads them on every authed
+      # request. Same instance and db index as the BFF — a split would make
+      # revocation silently inert.
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@dt_redis:6379/0
     healthcheck:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but the
       # Fastify listener binds 0.0.0.0 only.

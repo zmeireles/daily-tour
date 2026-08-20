@@ -2,16 +2,22 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { jwtVerify } from "jose";
 import {
   type SeededFixtures,
+  flushRedis,
   seedFixtures,
   setTestEnv,
   startTestPostgres,
+  startTestRedis,
   stopTestPostgres,
+  stopTestRedis,
   truncateAll,
 } from "./helpers.js";
 
 const ctx = await startTestPostgres();
+// The revocation case below calls DELETE, which publishes to Redis and reports
+// a cache failure rather than swallowing it — so this suite needs a real one.
+const redisCtx = await startTestRedis();
 let fixtures: SeededFixtures;
-setTestEnv(ctx.databaseUrl);
+setTestEnv(ctx.databaseUrl, redisCtx.url);
 
 const SIGNING_KEY = process.env.JWT_SIGNING_KEY ?? "";
 const verifySecret = new TextEncoder().encode(SIGNING_KEY);
@@ -21,6 +27,7 @@ const { closePool, getPool } = await import("../db/client.js");
 const { resetConfigCache } = await import("../config.js");
 const { resetJwtSecretCache } = await import("../lib/jwt.js");
 const { hashOpaqueToken } = await import("../lib/opaque-token.js");
+const { closeRedis } = await import("../lib/redis.js");
 
 async function issueAndGetToken(
   app: Awaited<ReturnType<typeof createApp>>,
@@ -47,12 +54,15 @@ describe("GET /v1/tokens/:opaque/exchange", () => {
 
   beforeEach(async () => {
     await truncateAll(ctx.pool);
+    await flushRedis(redisCtx.client);
     fixtures = await seedFixtures(ctx.pool);
   });
 
   afterAll(async () => {
     await app.close();
     await closePool();
+    await closeRedis();
+    await stopTestRedis(redisCtx);
     await stopTestPostgres(ctx);
   });
 

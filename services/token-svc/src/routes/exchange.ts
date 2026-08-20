@@ -1,13 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { GUEST_JWT_MAX_TTL_SECONDS } from "@daily-tour/shared-types";
 import { getDb } from "../db/client.js";
 import { guestTable, reservationTable, tokenGrantTable } from "../db/schema.js";
 import { hashOpaqueToken } from "../lib/opaque-token.js";
 import { signReservationJwt } from "../lib/jwt.js";
 
-// 1h refresh cycle. JWT `exp` = min(checkout + 24h, now + 1h).
-const REFRESH_SECONDS = 60 * 60;
+// 1h refresh cycle. JWT `exp` = min(checkout + 24h, now + 1h). The cap is
+// shared with the revocation cache, whose key TTL is only long enough because
+// no minted JWT can reach past this window. Changing one changes both.
+const REFRESH_SECONDS = GUEST_JWT_MAX_TTL_SECONDS;
 
 const ParamsSchema = z.object({ opaque: z.string().min(1).max(128) });
 
