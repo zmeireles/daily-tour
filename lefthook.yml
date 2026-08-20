@@ -159,7 +159,16 @@ pre-push:
     tests:
       # CI runs `turbo run test --filter=...[origin/main]`. Mirror that here so
       # we catch failing tests before the runner does.
+      #
+      # The base MUST be origin/main, not HEAD. This is pre-push: the commit
+      # already exists and the tree is clean, so `...[HEAD]` diffs HEAD against
+      # itself and selects nothing — measured: 0 packages / 0 tasks, against
+      # 10 tasks across 7 packages for `...[origin/main]` on the same tree. It
+      # ran green on every push for months by selecting no tests at all.
+      # Contrast pre-commit's lint gate, where `...[HEAD]` IS right: there the
+      # changes are staged rather than committed, so HEAD is the previous
+      # commit and the diff is real.
       run: |
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" && nvm use --silent >/dev/null 2>&1
-        pnpm exec turbo run test --filter=...[HEAD]
+        pnpm exec turbo run test --filter=...[origin/main]
       fail_text: "Fix failing tests in the affected package(s) before pushing."
