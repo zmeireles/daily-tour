@@ -406,6 +406,189 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
   });
 });
 
+// The write path that did not exist: `media` was absent from the zod schema, so
+// zod's default `strip` deleted it and `safeParse` still succeeded — every photo
+// an owner attached uploaded fine, rendered a thumbnail, saved 200, and wrote no
+// `place_media` row at all.
+describe("place media persistence", () => {
+  let app: Awaited<ReturnType<typeof createApp>>;
+
+  const ASSET_A = "aaaaaaaa-0000-4000-8000-000000000001";
+  const ASSET_B = "aaaaaaaa-0000-4000-8000-000000000002";
+
+  beforeAll(async () => {
+    resetConfigCache();
+    app = await createApp();
+    await seedReferenceData(ctx.pool);
+  });
+
+  beforeEach(async () => {
+    await truncateAll(ctx.pool);
+    await seedReferenceData(ctx.pool);
+  });
+
+  async function mediaRows(placeId: string) {
+    const { rows } = await ctx.pool.query<{
+      id: string;
+      url: string;
+      sort_order: number;
+      attribution: { author: string; license: string; source_url: string } | null;
+      alt: Record<string, string> | null;
+    }>(
+      `SELECT id, url, sort_order, attribution, alt FROM catalog.place_media
+       WHERE place_id = $1 ORDER BY sort_order ASC`,
+      [placeId],
+    );
+    return rows;
+  }
+
+  it("persists the assets attached on create, in the order given", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
+    });
+    expect(create.statusCode).toBe(201);
+    const { id } = create.json<{ id: string }>();
+
+    const rows = await mediaRows(id);
+    // Control: a place created WITHOUT media has zero rows, so a non-empty
+    // result here is the media argument's doing and not a fixture.
+    const bare = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    expect(await mediaRows(bare.json<{ id: string }>().id)).toHaveLength(0);
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.url)).toEqual([`/v1/media/${ASSET_A}`, `/v1/media/${ASSET_B}`]);
+    expect(rows.map((r) => r.sort_order)).toEqual([0, 1]);
+  });
+
+  // ⚠️ The trap. `place_media.attribution` carries the Wikimedia Commons
+  // author/licence/source for the seeded landmark photos and has NO other copy
+  // in the app. A delete-all-then-reinsert implementation passes every other
+  // test in this block and destroys it on the owner's first save.
+  it("keeps attribution and alt on a row the owner did not remove", async () => {
+    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const { id } = create.json<{ id: string }>();
+
+    const seededId = "33333333-3333-4333-8333-33333333aaaa";
+    await ctx.pool.query(
+      `INSERT INTO catalog.place_media (id, place_id, kind, url, alt, attribution, sort_order)
+       VALUES ($1, $2, 'image', 'https://upload.wikimedia.org/commons/x.jpg',
+               '{"en":"Sete Cidades"}'::jsonb,
+               '{"author":"Jane Doe","license":"CC BY-SA 4.0","source_url":"https://commons.example/file"}'::jsonb,
+               0)`,
+      [seededId, id],
+    );
+
+    // The owner adds a photo of their own and saves. The editor sends the
+    // existing row back by its place_media id, alongside the new asset id.
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { media: [seededId, ASSET_A] },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    const rows = await mediaRows(id);
+    expect(rows).toHaveLength(2);
+
+    const kept = rows.find((r) => r.id === seededId);
+    expect(kept).toBeDefined();
+    // The row survived as ITSELF — same id, same url, licence data intact.
+    expect(kept!.url).toBe("https://upload.wikimedia.org/commons/x.jpg");
+    expect(kept!.attribution).toEqual({
+      author: "Jane Doe",
+      license: "CC BY-SA 4.0",
+      source_url: "https://commons.example/file",
+    });
+    expect(kept!.alt).toEqual({ en: "Sete Cidades" });
+  });
+
+  it("re-orders a kept row without rewriting it, so the hero follows the array", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
+    });
+    const { id } = create.json<{ id: string }>();
+    const before = await mediaRows(id);
+    const [rowA, rowB] = before;
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { media: [rowB!.id, rowA!.id] },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    const after = await mediaRows(id);
+    // Same two rows, same ids — swapped order, nothing recreated.
+    expect(after.map((r) => r.id)).toEqual([rowB!.id, rowA!.id]);
+    expect(after.map((r) => r.sort_order)).toEqual([0, 1]);
+
+    // hero_image_url reads the lowest sort_order image, so the swap moved it.
+    const list = await app.inject({ method: "GET", url: "/v1/places-by-action?action_slug=eat" });
+    const items = list.json<{ items: { id: string; hero_image_url: string | null }[] }>().items;
+    expect(items.find((i) => i.id === id)?.hero_image_url).toBe(`/v1/media/${ASSET_B}`);
+  });
+
+  it("removes exactly the row the owner took out", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
+    });
+    const { id } = create.json<{ id: string }>();
+    const [rowA, rowB] = await mediaRows(id);
+
+    await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { media: [rowA!.id] },
+    });
+
+    const after = await mediaRows(id);
+    expect(after.map((r) => r.id)).toEqual([rowA!.id]);
+    expect(after.some((r) => r.id === rowB!.id)).toBe(false);
+  });
+
+  // A pick toggle or a status flip must not touch the photos. This is also the
+  // test that pins zod behaviour: `media` is `.optional()` rather than
+  // `.default([])` precisely so an absent key can never be read as "empty".
+  it("leaves media untouched on a PATCH that does not mention it", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
+    });
+    const { id } = create.json<{ id: string }>();
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { is_hosts_pick: true },
+    });
+    expect(patch.statusCode).toBe(200);
+
+    const rows = await mediaRows(id);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.url)).toEqual([`/v1/media/${ASSET_A}`, `/v1/media/${ASSET_B}`]);
+  });
+
+  it("clears the photos when the owner explicitly sends an empty list", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/places",
+      payload: { ...VALID_BODY, media: [ASSET_A] },
+    });
+    const { id } = create.json<{ id: string }>();
+    expect(await mediaRows(id)).toHaveLength(1);
+
+    await app.inject({ method: "PATCH", url: `/v1/places/${id}`, payload: { media: [] } });
+    expect(await mediaRows(id)).toHaveLength(0);
+  });
+});
+
 describe("place action tagging (S6b)", () => {
   let app: Awaited<ReturnType<typeof createApp>>;
 
