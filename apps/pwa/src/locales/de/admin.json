@@ -132,5 +132,11 @@
     "select_thread": "Wählen Sie eine Konversation, um die Nachrichten zu sehen.",
     "placeholder": "Antwort schreiben…",
     "send": "Senden"
+  },
+  "media": {
+    "main": "Hauptbild",
+    "remove": "{{name}} entfernen",
+    "move_earlier": "{{name}} nach vorne",
+    "move_later": "{{name}} nach hinten"
   }
 }
