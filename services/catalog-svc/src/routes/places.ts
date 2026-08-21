@@ -73,6 +73,12 @@ const CreatePlaceBodySchema = z.object({
   is_hosts_pick: z.boolean().default(false),
   source_kind: SourceKindSchema,
   source_ref: z.string().optional(),
+  // Ids of the place's photos, IN DISPLAY ORDER. Deliberately `.optional()`
+  // and not `.default([])`: after `.partial()` below a defaulted field's
+  // behaviour on an absent key is a zod detail, and guessing it wrong here
+  // means every PATCH that omits media wipes the place's photos. Absent must
+  // mean "leave alone", and that has to be unmistakable.
+  media: z.array(z.string().uuid()).optional(),
 });
 
 const UpdatePlaceBodySchema = CreatePlaceBodySchema.partial().omit({ source_kind: true });
@@ -239,6 +245,58 @@ async function fetchPlaceMedia(db: Db, placeId: string) {
     attribution: m.attribution ?? null,
     sort_order: m.sortOrder,
   }));
+}
+
+// Owner-attached media arrives as an array of ids in display order. TWO id
+// namespaces necessarily share that array: an EXISTING photo is identified by
+// its `place_media.id`, because the table stores a url and never the media-svc
+// asset id it came from, so the editor has nothing else to send back; a NEWLY
+// uploaded photo is identified by its media-svc asset id. Resolve by lookup —
+// an id matching a row of THIS place IS that row, anything else is a new asset.
+//
+// A surviving row is never rewritten, only re-ordered. That is what protects
+// `attribution`: the Wikimedia Commons author/licence/source on the 14 seeded
+// landmark photos has no other copy in the app, and the obvious
+// delete-all-then-reinsert would erase it on the owner's first save. The only
+// way a row leaves is the owner removing that thumbnail — the editor's own
+// meaning, and their explicit act.
+//
+// `sort_order` is load-bearing, not cosmetic: `hero_image_url` is the lowest
+// sort_order image, so the array's order chooses the place's hero.
+type PlacesTx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+
+async function syncPlaceMedia(tx: PlacesTx, placeId: string, mediaIds: string[]): Promise<void> {
+  const existing = await tx
+    .select({ id: placeMediaTable.id })
+    .from(placeMediaTable)
+    .where(eq(placeMediaTable.placeId, placeId));
+  const existingIds = new Set(existing.map((r) => r.id));
+  const kept = new Set(mediaIds.filter((id) => existingIds.has(id)));
+
+  const removed = existing.filter((r) => !kept.has(r.id)).map((r) => r.id);
+  if (removed.length > 0) {
+    await tx.delete(placeMediaTable).where(inArray(placeMediaTable.id, removed));
+  }
+
+  const inserts: (typeof placeMediaTable.$inferInsert)[] = [];
+  for (const [index, id] of mediaIds.entries()) {
+    if (existingIds.has(id)) {
+      await tx.update(placeMediaTable).set({ sortOrder: index }).where(eq(placeMediaTable.id, id));
+      continue;
+    }
+    inserts.push({
+      placeId,
+      kind: "image",
+      // The BFF streams media-svc's bytes same-origin at this path (see
+      // services/bff/src/routes/media-display.ts), so storing the URL keeps
+      // place_media uniform with the externally-sourced seeded rows.
+      url: `/v1/media/${id}`,
+      sortOrder: index,
+    });
+  }
+  if (inserts.length > 0) {
+    await tx.insert(placeMediaTable).values(inserts);
+  }
 }
 
 function formatPlace(row: Place) {
@@ -580,6 +638,8 @@ export function placesRoutes(app: FastifyInstance): void {
           .insert(placeActionWishTable)
           .values(resolved.pairs.map((p) => ({ placeId: row.id, ...p })));
 
+        await syncPlaceMedia(tx, row.id, body.media ?? []);
+
         return row;
       });
 
@@ -693,6 +753,12 @@ export function placesRoutes(app: FastifyInstance): void {
         await tx
           .insert(placeActionWishTable)
           .values(resolvedPairs.map((p) => ({ placeId: row.id, ...p })));
+      }
+
+      // Absent `media` means "leave the photos alone" — a pick toggle or a
+      // status flip must not touch them. Same discipline as `actions` above.
+      if (row && updates.media !== undefined) {
+        await syncPlaceMedia(tx, row.id, updates.media);
       }
 
       return row;
