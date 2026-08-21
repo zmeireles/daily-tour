@@ -1,6 +1,84 @@
-# Session Handoff — … → 08-21 (**s741 — the defect hunt's last three findings SETTLED: two measured down to latent, one FIXED and green. TWO PRs green and unmerged; the qual deploy and the share-flag product call still UNANSWERED.**) · 08-21 (**s740 — three of the hunt's four findings fixed; the tour-plan finding verified and DOWNGRADED.**) · 08-20 (**s739 — a defect hunt found FOUR pieces of inert machinery, guest revocation among them.**) · 08-20 (s738 — qual deployed to `bd2058e`) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-21 (**s742 — the two green PRs MERGED, qual DEPLOYED to `140520d`, and both blocked UAT cards RUN and PASSED. The guest-revocation security fix is finally live.**) · 08-21 (**s741 — the defect hunt's last three findings SETTLED**) · 08-21 (**s740 — three of four hunt findings fixed**) · 08-20 (**s739 — a defect hunt found FOUR pieces of inert machinery**) · 08-20 (s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 fully CLOSED**)
 
-> **UPDATE 2026-08-21 (LATEST — session `s741`, `dt:Furnas`. Closed out `s739`'s defect hunt: its last three open findings are now all settled — two measured down to latent, the third fixed and green. Closed for a coordinated laptop shutdown.)**
+> **UPDATE 2026-08-21 (LATEST — session `s742`, `dt:Furnas`. Cleared the whole owner queue that `s741` left: both green PRs merged, qual deployed, both blocked UAT cards run and passed. One new gap filed.)**
+>
+> ### State
+>
+> `main` **`140520d`** · **zero open pull requests** · tree clean · **qual is LIVE on `140520d`** — all 10 app images verified on the box, no longer behind `main` · local branches drained to `main` alone · A2A inbox clean, nothing owed · zero Daily Tour containers on the workstation.
+>
+> ### ▶ WHAT NEEDS THE OWNER — one thing, and it is the same one
+>
+> **The plan-sharing product call — now asked across four sessions.** Every `ready` plan is permanently reachable by URL whether or not the guest chose to share it, and a guest who shares **cannot unshare**. Making it explicit **would break existing share links**, which is why no session has done it unilaterally. Nothing else is waiting on him.
+>
+> ---
+>
+> ## What shipped
+>
+> | what                              | PR                                                         | state                |
+> | --------------------------------- | ---------------------------------------------------------- | -------------------- |
+> | place photos are persisted        | [`#452`](https://github.com/zmeireles/daily-tour/pull/452) | **merged** `339ddb2` |
+> | the chat guest JWT out of the URL | [`#454`](https://github.com/zmeireles/daily-tour/pull/454) | **merged** `140520d` |
+>
+> ⚠️ **Both PRs were `BEHIND` and the ruleset refused the merge** — `gh pr merge` returned _"11 of 11 required status checks are expected"_, which reads like a CI failure and is not one. `gh pr update-branch` then a re-run of CI cleared it, one PR at a time (merging the first puts the second behind again).
+>
+> ## The deploy
+>
+> Dispatched `deploy-qa.yml` with the **full 40-char** `image_tag`; every step green including the guest smoke and the `--qual` readiness gate. **Verified on the box rather than taken from the workflow's word:** all 10 `ghcr.io/zmeireles/daily-tour/*` images on `140520da604c…`.
+>
+> 📌 **The `--force-recreate` warning carried since `s740` did NOT apply here, and that was checked rather than assumed.** `#450` put `REDIS_URL` in the **tracked** `docker-compose.app.yml`, and the image tag changed too — two config-hash changes, so `up -d` recreated token-svc on its own. Confirmed after the fact: `dt_token_svc` is `healthy` and its env holds `REDIS_URL`. The Geoapify lesson still holds for its actual case — a change to `.env.qual` alone, with compose and tag unmoved.
+>
+> ---
+>
+> ## Both blocked UAT cards: PASS
+>
+> ### [`dt-tests #33`](https://tasks.codecomedy.dev/p/dt-tests/r/33) — chat after the token left the URL · **4/4**
+>
+> **The question this card existed for is answered: Traefik DOES forward `Sec-WebSocket-Protocol` end-to-end on qual.** Handshake **101**, response echoes **`dt.jwt` alone**, WS URL is bare `/v1/chat/ws`, message sent and survived a reload.
+>
+> **Two negative controls, both fired** — the old `?token=` shape and a bare sentinel with no JWT were each **closed `1008 unauthorized`**. Without them a "connected" result would be indistinguishable from a server that authenticates nobody.
+>
+> ### [`dt-tests #32`](https://tasks.codecomedy.dev/p/dt-tests/r/32) — photos persist · **PASS on every criterion the UI supports**
+>
+> A5 (survives re-opening) and D3 (an unrelated edit does not wipe it) — the two decisive ones — both green. Confirmed down **two independent paths**: the console re-open, and the guest payload `"hero_image_url":"/v1/media/a0408664-…"` carrying the same asset id, rendered in-browser at 400×300. Negative control: a nonexistent place name returns **0** payloads.
+>
+> **Fixture left in place:** `ZZ-Media-1`, published, Host's Pick on, 2 photos. Part E not run, so no catalogue place was touched.
+>
+> ---
+>
+> ## New: [`dt-tests #34`](https://tasks.codecomedy.dev/p/dt-tests/r/34) — an owner can add photos but never remove one
+>
+> `#32` step C4 tells the tester to click _"the ✕ on its thumbnail"_. **There is no ✕** — `media-uploader.tsx` renders each thumbnail as an `<img>` in a bare div, and `place-form.tsx` wires no removal path. Measured live: **0** buttons in thumbnail containers.
+>
+> A **gap, not a regression** — but the first photo is the hero image guests see, so an owner who uploads the wrong one first cannot fix it without an engineer. ⇒ **C4/C5 can never pass and should be struck from `#32`** until this ships, or the next tester files the same phantom defect.
+>
+> ---
+>
+> ## 🪤 Console-UAT gotchas that cost this session ~15 harness iterations
+>
+> Anyone automating the owner console should read these first — each one produced a **false FAIL** before being understood:
+>
+> | trap                                                     | what actually happens                                                                                                                                                                                                                                              |
+> | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+> | **`.fill()` silently does not work**                     | The Identity inputs are React-controlled and ignore it — the DOM value changes, React state does not, and Save blanks the field with _"Required"_. Use `pressSequentially`. The character counter (`10 / 120`) is the honest read of React state.                  |
+> | **All three locale tabs are required**                   | The form opens on **Portuguese** (not English, whatever the underline suggests — read `aria-selected`). `name_en` and `name_es` must be filled too, or Save fires **no network request at all**.                                                                   |
+> | **The category picker is two-level**                     | Clicking "See" is not enough; at least one detail ("Viewpoint", …) is required. Same two-level shape as the action picker in `#370`.                                                                                                                               |
+> | **The Places list is paginated**                         | "Page 1 of 5", sorted by name — a `ZZ-` fixture is on the **last** page. A row lookup without pagination reports "place not found" and reads exactly like a save that failed.                                                                                      |
+> | **Authentik login needs `waitForSelector`, not a sleep** | The identification and password stages advance at their own pace; a fixed `waitForTimeout` lands on the wrong stage and silently restarts the flow.                                                                                                                |
+> | **The sidebar has buttons named `English`/`Português`**  | Same names as the Identity locale tabs. `getByRole("button")` matches the sidebar first and switches the **UI** language instead of the content tab — text then accumulates in one field (observed: 20 chars for a 10-char name). Use `getByRole("tab")` strictly. |
+>
+> Probe scripts are in this session's scratchpad, not committed — they are throwaway harness, not product tests.
+>
+> ---
+>
+> ## Startup checks
+>
+> - **The bridge trap fired again, same direction as `s741` predicted.** A `comm-watch` was running from a path under this machine's projects; the PPID chain walked back to **`po-platform-sA`**'s daemon. Armed my own rather than trusting the `pgrep` hit.
+> - **Telegram sent nothing, and that is a measured result** — `allowFrom` is the owner alone (`2031690099`).
+> - **Containers:** `docker ps -a` empty at session start — not merely zero Daily Tour ones.
+> - **`s741-closeout` deleted** (squash-merged as `#455`, so not an ancestor of `main` — `-D`, not `-d`).
+> - **`cs-agent status` lists 7 `finished` agents** from long-dead sessions with an empty worktree directory. Registry residue, no live work, left alone.
+
+> **UPDATE 2026-08-21 (session `s741`, `dt:Furnas`. Closed out `s739`'s defect hunt: its last three open findings are now all settled — two measured down to latent, the third fixed and green. Closed for a coordinated laptop shutdown.)**
 >
 > ### State
 >
