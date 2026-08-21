@@ -1,3 +1,4 @@
+import { CHAT_JWT_SUBPROTOCOL } from "@daily-tour/shared-types";
 import { jwtVerify, type JWTPayload } from "jose";
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import { WebSocket as WSocket, type RawData } from "ws";
@@ -11,6 +12,29 @@ type WsSocket = WSocket;
 function chatHubWsUrlFor(httpUrl: string, clientId: string): string {
   const wsBase = httpUrl.replace(/^http(s?):/, (_match, s: string) => `ws${s}:`);
   return `${wsBase}/ws/${encodeURIComponent(clientId)}`;
+}
+
+/**
+ * Read the guest JWT out of the `Sec-WebSocket-Protocol` handshake header.
+ *
+ * The client offers `["dt.jwt", "<jwt>"]` — see CHAT_JWT_SUBPROTOCOL for why
+ * the credential travels as a subprotocol rather than as `?token=`. The header
+ * arrives as a comma-separated list; Node collapses a repeated header into an
+ * array, so handle both shapes.
+ *
+ * Returns "" unless the sentinel is present AND something follows it, so a
+ * client that offers only the sentinel is unauthenticated rather than
+ * authenticated-as-empty.
+ */
+function guestTokenFromSubprotocol(header: string | string[] | undefined): string {
+  if (!header) return "";
+  const offered = (Array.isArray(header) ? header.join(",") : header)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  const sentinel = offered.indexOf(CHAT_JWT_SUBPROTOCOL);
+  if (sentinel === -1) return "";
+  return offered[sentinel + 1] ?? "";
 }
 
 async function authenticate(token: string, secret: string): Promise<JWTPayload | null> {
@@ -53,32 +77,30 @@ function bridgeFrames(client: WsSocket, upstream: WsSocket, log: FastifyRequest[
 }
 
 const chatWsRoute: FastifyPluginAsync = (fastify: FastifyInstance) => {
-  fastify.get<{ Querystring: { token?: string } }>(
-    "/v1/chat/ws",
-    { websocket: true, config: { auth: "public" } },
-    (socket, req) => {
-      const config = loadConfig();
-      const token = req.query.token ?? "";
+  fastify.get("/v1/chat/ws", { websocket: true, config: { auth: "public" } }, (socket, req) => {
+    const config = loadConfig();
+    // Deliberately NOT `req.query.token`: that shape is gone, not merely
+    // deprecated, so the credential cannot reach a log by the old path.
+    const token = guestTokenFromSubprotocol(req.headers["sec-websocket-protocol"]);
 
-      void (async () => {
-        const claims = await authenticate(token, config.JWT_SIGNING_KEY);
-        if (!claims?.sub) {
-          socket.close(1008, "unauthorized");
-          return;
-        }
-        if (claims.jti && (await isJtiRevoked(claims.jti))) {
-          socket.close(1008, "revoked");
-          return;
-        }
+    void (async () => {
+      const claims = await authenticate(token, config.JWT_SIGNING_KEY);
+      if (!claims?.sub) {
+        socket.close(1008, "unauthorized");
+        return;
+      }
+      if (claims.jti && (await isJtiRevoked(claims.jti))) {
+        socket.close(1008, "revoked");
+        return;
+      }
 
-        const url = chatHubWsUrlFor(config.CHAT_HUB_URL, claims.sub);
-        req.log.info({ clientId: claims.sub }, "[bff:chat-ws] opening upstream connection");
+      const url = chatHubWsUrlFor(config.CHAT_HUB_URL, claims.sub);
+      req.log.info({ clientId: claims.sub }, "[bff:chat-ws] opening upstream connection");
 
-        const upstream = new WSocket(url);
-        bridgeFrames(socket, upstream, req.log);
-      })();
-    },
-  );
+      const upstream = new WSocket(url);
+      bridgeFrames(socket, upstream, req.log);
+    })();
+  });
 
   return Promise.resolve();
 };
