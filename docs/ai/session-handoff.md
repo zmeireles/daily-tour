@@ -1,6 +1,100 @@
-# Session Handoff — … → 08-20 (**s739 — a defect hunt found FOUR pieces of inert machinery, including guest revocation that was never wired; the `make vps` target was running half of every command on the workstation. Two PRs green and unmerged; the hunt's fix order UNANSWERED.**) · 08-20 (**s738 — qual deployed to `bd2058e`, so qual and `main` finally agree; `UAT #31` unblocked and its destructive Cleanup step rewritten; closed early for a coordinated shutdown.**) · 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-21 (**s740 — three of the hunt's four findings FIXED and merged or green; the tour-plan finding VERIFIED and DOWNGRADED with a measurement that corrects my own earlier framing. One PR green and unmerged; the qual deploy and a share-flag product call UNANSWERED.**) · 08-20 (**s73908-20 (**s739 — a defect hunt found FOUR pieces of inert machinery, including guest revocation that was never wired; the `make vps` target was running half of every command on the workstation. Two PRs green and unmerged; the hunt's fix order UNANSWERED.**) · 08-20 (**s738 — qual deployed to `bd2058e`, so qual and `main` finally agree; `UAT #31` unblocked and its destructive Cleanup step rewritten; closed early for a coordinated shutdown.**) · 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED\*\*)
 
-> **UPDATE 2026-08-20 (LATEST — session `s739`, `dt:Furnas`. A defect hunt the owner authorised, which found FOUR pieces of machinery that silently do nothing — including a documented security control that was never built. Two PRs green and unmerged; the hunt's fix order is UNANSWERED. Closed early for a coordinated laptop shutdown.)**
+> **UPDATE 2026-08-21 (LATEST — session `s740`, `dt:Furnas`. Picked up `s739`'s defect hunt and closed three of its four findings. Also downgraded one of the 🟠 hypotheses on a measurement, correcting a severity claim I had made myself. Closed for a coordinated laptop shutdown.)**
+>
+> ### State
+>
+> `main` **`b97de79`** · **1 open pull request, 11/11 green, awaiting the owner** · tree clean · A2A bridge **stopped at closeout** · **zero Daily Tour containers** on this host (the 8 running are `cc-dev`, owned by `codecomedy-platform` — named and left alone) · qual **NOT deployed this session**, so it is now behind `main` **by a security fix**.
+>
+> ### ▶ WHAT NEEDS THE OWNER — three things, none of them started
+>
+> 1. **Merge [`#452`](https://github.com/zmeireles/daily-tour/pull/452)** — the place-photo fix. Phase-1 feature surface ⇒ always-escalate. His "merge all PRs" earlier covered the three open at that moment; this one landed after, and was deliberately not treated as standing authorisation.
+> 2. **🔴 Deploy qual.** The guest-revocation fix ([`#450`](https://github.com/zmeireles/daily-tour/pull/450)) is merged but **not live** — qual still serves the build where revoking a guest does nothing. ⚠️ token-svc needs **`--force-recreate`**, not `restart`, or the new `REDIS_URL` will not be substituted (the plan-008 Geoapify lesson).
+> 3. **A product decision: should plan-sharing become explicit and revocable?** It changes behaviour and **would break existing share links**, so it was not done unilaterally. See the tour-plan section below.
+>
+> ---
+>
+> ## Shipped this session
+>
+> | what                                                          | PR                                                         | state                        |
+> | ------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------- |
+> | guest-token revocation actually revokes (**hunt finding 1**)  | [`#450`](https://github.com/zmeireles/daily-tour/pull/450) | merged                       |
+> | the pre-push test gate selects something (**hunt finding 3**) | [`#451`](https://github.com/zmeireles/daily-tour/pull/451) | merged                       |
+> | `make vps` stops running half the command on the workstation  | [`#447`](https://github.com/zmeireles/daily-tour/pull/447) | merged (carried from `s739`) |
+> | live-qual masthead spec in version control                    | [`#448`](https://github.com/zmeireles/daily-tour/pull/448) | merged (auto, test-only)     |
+> | place photos are persisted (**hunt finding 2**)               | [`#452`](https://github.com/zmeireles/daily-tour/pull/452) | **11/11 green, UNMERGED**    |
+>
+> Also filed **the forward-flow UAT for the photo fix** — [`dt-tests` card `#32`](https://tasks.codecomedy.dev/p/dt-tests/r/32), marked 🚫 blocked until deployed, carrying the fixture rule (create and leave, never archive) and an optional part that checks a landmark's photo credit survives a save.
+>
+> ### `#451` proved itself within the hour
+>
+> The very next push ran **4 test tasks including `catalog-svc:test`**, where the same gate had been selecting **zero**. The fix is not just argued, it is observed working.
+>
+> ---
+>
+> ## 🔴 The tour-plan finding — VERIFIED, and DOWNGRADED. I had overstated it.
+>
+> I described this to the owner as _"exploitable from the browser"_, in the same breath as the revocation bug, and said I would verify it first because it _"needs no account at all to exploit"_. **That was wrong on reachability**, and it would have mis-set his priorities. The corrected picture, measured:
+>
+> **The missing check is real and structural.** `POST` writes `guestId` from the JWT `sub`; the authed `GET /v1/tour-plans/:planId` destructures **only `locale`** from `req.user`. And the BFF _could not_ check even if it wanted to — `getTourPlan(planId)` sends no caller identity downstream, and planner-svc's `TourPlanOut` is `{id, status, plan_payload}`, so **`guest_id` never crosses the boundary.** Same shape as finding 1: not a weak guard, an absent one, with the data it needs never wired through.
+>
+> **But it is not reachable.** planner-svc exposes exactly **two** plan endpoints — create and get-by-id. **No list endpoint exists anywhere**, and no admin or metrics route reads plan ids out. A plan id only ever appears in its own creator's response, so an attacker needs a UUIDv4 they have no way to obtain. The practical posture is a **capability URL** — the same one `media-display.ts` documents deliberately for asset ids.
+>
+> ⇒ **Latent, not live.** Do not re-inherit it as an open door.
+>
+> ### What IS a present defect, and it is not the IDOR
+>
+> **No share flag exists anywhere.** Probed `is_public` / `is_shared` / `share_token` / `shared_with` across all services: nothing. Positive control — the same probe finds `is_hosts_pick`, so it reaches flag columns in both TS and SQL. Two consequences that are true today:
+>
+> 1. Every `ready` plan is permanently reachable by URL **whether or not the guest ever chose to share it**.
+> 2. A guest who shares a link **cannot unshare it.** The share page (`tour.share.$planId.tsx`) is a real feature — this is a share feature missing its off switch, not a stray endpoint.
+>
+> ### What would make the latent half fire
+>
+> **The first thing that lists plan ids.** Worth knowing: `analytics.tour_event` already stores `plan_id` **and** `guest_id` in the same row — the ingredients sit together, only a reader is missing. An analytics export, or an owner view of guest plans, switches this on.
+>
+> **The small fix that needs no product decision** (proposed, not done): expose `guest_id` from planner-svc and compare it to `sub` in the authed GET. A guest reading their own plan is unaffected.
+>
+> ---
+>
+> ## Still open from the hunt — unchanged, still 🟠 unverified
+>
+> - **No owner-to-owner boundary** — 18 of 23 tenant-scoped owner routes take an id and never compare it to the caller. Severity turns on how many accounts sit in Authentik's flat `staff` group, **which still nobody has measured.**
+> - **Rate limiter keyed on an unverified JWT claim.**
+> - **Guest JWTs logged in full** on chat connect (`?token=` is not covered by the redactor).
+> - **Owner cannot clear phone/email**; split opening hours truncated; every place save rewrites `guesthouse_scope`.
+>
+> ---
+>
+> ## How the two fixes were verified — the controls matter more than the greens
+>
+> Every claim below was re-measured in this session, not inherited.
+>
+> **Finding 1 (revocation).** 5 new tests. Neutering the publish turns **exactly those 5 red** and leaves the 25 pre-existing green — including `"204; 204 again; exchange 401"`, which is precisely why the old suite could never have caught it. CI logs confirm `token-svc:test` genuinely ran 30/30, so the green is not a skip.
+>
+> **Finding 2 (place photos).** Two controls, and the second is the one worth reading:
+>
+> | control                                    | result                                                         |
+> | ------------------------------------------ | -------------------------------------------------------------- |
+> | neuter the writer                          | **exactly the 6 new tests red**, 37 green                      |
+> | substitute the naive `DELETE all → INSERT` | **3 stay GREEN**, 3 catch it — the attribution test among them |
+>
+> ⇒ **Had only the obvious "media persists" and "empty list clears" tests been written, the trap would have shipped straight past them.** They are two of the three the naive version passes. ⚠️ The trap: `place_media.attribution` holds the Wikimedia Commons author/licence/source for the seeded landmarks and has **no other copy in the app**. The implementation therefore never rewrites a surviving row — only its `sort_order` moves.
+>
+> 📌 **A probe was widened mid-task** on `cc:Bicho`'s point that _a positive control proves a probe works, not that it reaches_: finding 2 was re-probed repo-wide, any language, raw SQL included, before being trusted. Control — the same shape finds `catalog.place`'s writers in both drizzle and raw SQL, across services and seeds.
+>
+> ---
+>
+> ## Startup checks, for the next session's benefit
+>
+> - **`/mcp` was NOT needed.** Both probes agreed this session already ran post-fix code: the served `add_comment` says _«OMIT IT … REFUSED (#178)»_, and `update_task(999999, project_id: <home>)` answered **`Task not found`**, not _«not scoped»_ — with `comm_whoami` as the negative control confirming the id really was `home_project_id`. `cc:Bicho` adopted this as a correction to their own fleet-wide "everyone restart" advice. **Run the served-description probe FIRST; only _«(default: claude)»_ justifies asking the owner for `/mcp`.**
+> - ⚠️ **`#177` is still reached by no probe.** Inference, not measurement. Do not cite a green `#176` probe as coverage of it.
+> - **Telegram: nothing was sent, and that is a measured result.** `allowFrom` is the owner alone (`2031690099`), so the client-announce rule does not fire on this project at all. Not an omission.
+> - **A2A:** inbox drained and every message acked. The wake bridge cycled several times (each exit `reason: comm`) and was re-armed each time; **stopped at closeout.** ⚠️ On this machine the supervisor churns processes fast enough that `pgrep` disagrees with itself seconds apart — the authoritative signal is your own armed job's exit record, not the process table.
+>
+> ---
+
+> **UPDATE 2026-08-20 (session `s739`, `dt:Furnas`. A defect hunt the owner authorised, which found FOUR pieces of machinery that silently do nothing — including a documented security control that was never built. Two PRs green and unmerged; the hunt's fix order is UNANSWERED. Closed early for a coordinated laptop shutdown.)**
 >
 > ### State
 >
