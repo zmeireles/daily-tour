@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import i18n from "@/lib/i18n";
 import { useSessionStore } from "@/store/session";
 import ChatRoute from "@/routes/_authed.chat";
+import { CHAT_JWT_SUBPROTOCOL } from "@daily-tour/shared-types";
 
 /**
  * Minimal stand-in for the browser WebSocket — jsdom doesn't ship a working
@@ -21,6 +22,7 @@ class MockWebSocket {
 
   readyState: number = MockWebSocket.CONNECTING;
   url: string;
+  protocols: string | string[] | undefined;
   sent: string[] = [];
 
   onopen: ((this: WebSocket, ev: Event) => unknown) | null = null;
@@ -28,8 +30,9 @@ class MockWebSocket {
   onerror: ((this: WebSocket, ev: Event) => unknown) | null = null;
   onmessage: ((this: WebSocket, ev: MessageEvent<string>) => unknown) | null = null;
 
-  constructor(url: string) {
+  constructor(url: string, protocols?: string | string[]) {
     this.url = url;
+    this.protocols = protocols;
     MockWebSocket.instances.push(this);
   }
 
@@ -117,8 +120,24 @@ describe("Chat route", () => {
 
     expect(screen.getByTestId("chat-connecting")).toBeInTheDocument();
     expect(MockWebSocket.instances).toHaveLength(1);
-    expect(MockWebSocket.instances[0]?.url).toContain("/v1/chat/ws?token=");
-    expect(MockWebSocket.instances[0]?.url).toContain(encodeURIComponent(MOCK_JWT));
+    expect(MockWebSocket.instances[0]?.url).toContain("/v1/chat/ws");
+  });
+
+  it("carries the JWT in the subprotocol and NEVER in the URL", () => {
+    // D15: a token is never echoed in logs, and a query string is echoed into
+    // the BFF request log and Traefik's access log alike (`RequestPath`
+    // includes the query, and Traefik offers no redaction for it). Headers are
+    // dropped from that log by default, so the subprotocol list is the carrier.
+    act(() => {
+      useSessionStore.getState().setSession(MOCK_JWT, MOCK_CLAIMS);
+    });
+    renderChat();
+
+    const socket = MockWebSocket.instances[0];
+    expect(socket?.url).not.toContain(MOCK_JWT);
+    expect(socket?.url).not.toContain(encodeURIComponent(MOCK_JWT));
+    expect(socket?.url).not.toContain("token=");
+    expect(socket?.protocols).toEqual([CHAT_JWT_SUBPROTOCOL, MOCK_JWT]);
   });
 
   it("sends typed text and renders inbound JSON-framed messages", () => {

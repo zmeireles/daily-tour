@@ -1,3 +1,4 @@
+import { CHAT_JWT_SUBPROTOCOL } from "@daily-tour/shared-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface ChatMessage {
@@ -118,10 +119,13 @@ export function useChatWs(jwt: string | null) {
     if (!jwt) return;
 
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${proto}//${window.location.host}/v1/chat/ws?token=${encodeURIComponent(jwt)}`;
+    const url = `${proto}//${window.location.host}/v1/chat/ws`;
 
     setStatus("connecting");
-    const ws = new WebSocket(url);
+    // The JWT rides in the subprotocol list, NOT the URL: a query string is
+    // echoed into the BFF request log and Traefik's access log alike, and D15
+    // requires that a token is never logged. See CHAT_JWT_SUBPROTOCOL.
+    const ws = new WebSocket(url, [CHAT_JWT_SUBPROTOCOL, jwt]);
     wsRef.current = ws;
 
     ws.onopen = () => setStatus("open");
