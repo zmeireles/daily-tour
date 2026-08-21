@@ -1,4 +1,93 @@
-# Session Handoff — … → 08-21 (**s740 — three of the hunt's four findings FIXED and merged or green; the tour-plan finding VERIFIED and DOWNGRADED with a measurement that corrects my own earlier framing. One PR green and unmerged; the qual deploy and a share-flag product call UNANSWERED.**) · 08-20 (**s73908-20 (**s739 — a defect hunt found FOUR pieces of inert machinery, including guest revocation that was never wired; the `make vps` target was running half of every command on the workstation. Two PRs green and unmerged; the hunt's fix order UNANSWERED.**) · 08-20 (**s738 — qual deployed to `bd2058e`, so qual and `main` finally agree; `UAT #31` unblocked and its destructive Cleanup step rewritten; closed early for a coordinated shutdown.**) · 08-19 (**s737 — the required layout gate unwedged (apt, not the lock); qual deployed + verified; UAT #30 HUMAN PASS after four sessions; masthead wrap fully cleared. Four self-inflicted verification errors, all caught.**) · 08-19 (**s736 — the 429-latency question ANSWERED (the endpoint was never slow); a rate-limit BYPASS found and fixed; the edge limiter wired; 7 PRs merged, zero open. THREE self-inflicted verification errors, all caught.**) · 08-18 (**s735 — blocked deploy landed and re-measured; the gitleaks blind spot closed and proven in CI; the dead feedback drawer removed; the 429-latency cause finally quantified. THREE PRs AWAIT REVIEW; TWO OWNER ACTIONS PENDING.**) · 08-17 (**s734 — queue drained (#419/#425/#421 merged green), #415 closed with proof, closeout #426 merged. qual NOT deployed — GitHub outage. TWO OWNER DECISIONS OPEN.**) · 08-17 (s733 — reconciliation after a third crash; three PRs open and green) · 08-17 (s732 — recovered s731's undocumented 08-16 batch; three layout guards found unable to fail) · 08-15 (s731 — locale batch shipped + verified live; lost UAT specs recovered into version control) · 08-14 (s728 — three owner decisions shipped) · 07-28 (react-router v8 cleared on guest, UAT #30 PASSED) · 07-27 (s726 — action picker + 3-bug batch) · 07-20 (**Plan-008 fully CLOSED\*\*)
+# Session Handoff — … → 08-21 (**s741 — the defect hunt's last three findings SETTLED: two measured down to latent, one FIXED and green. TWO PRs green and unmerged; the qual deploy and the share-flag product call still UNANSWERED.**) · 08-21 (**s740 — three of the hunt's four findings fixed; the tour-plan finding verified and DOWNGRADED.**) · 08-20 (**s739 — a defect hunt found FOUR pieces of inert machinery, guest revocation among them.**) · 08-20 (s738 — qual deployed to `bd2058e`) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 fully CLOSED**)
+
+> **UPDATE 2026-08-21 (LATEST — session `s741`, `dt:Furnas`. Closed out `s739`'s defect hunt: its last three open findings are now all settled — two measured down to latent, the third fixed and green. Closed for a coordinated laptop shutdown.)**
+>
+> ### State
+>
+> `main` **`00e194c`** · **2 open pull requests, both fully green, both awaiting the owner** · working tree clean · A2A bridge **stopped at closeout** (mine was pid `37008`, confirmed by PPID chain back to this session's own `claude` process; **nine** other supervisors run on this box and belong to other sessions — none touched) · **zero Daily Tour containers** (the 8 running are `cc-dev-*`, owned by `codecomedy-platform`) · qual **NOT deployed this session** — still `bd2058e`, still behind `main` by the guest-revocation security fix.
+>
+> ### ▶ WHAT NEEDS THE OWNER — four things, none started
+>
+> 1. **Merge [`#452`](https://github.com/zmeireles/daily-tour/pull/452)** — place photos are persisted. 11/11 green since 08-20. Phase-1 feature surface ⇒ always-escalate.
+> 2. **Merge [`#454`](https://github.com/zmeireles/daily-tour/pull/454)** — the chat guest JWT out of the URL. **12/12 green.**
+> 3. **🔴 Deploy qual.** It still serves the build where **revoking a guest does nothing** ([`#450`](https://github.com/zmeireles/daily-tour/pull/450), merged 08-20, never deployed). ⚠️ token-svc needs **`--force-recreate`**, not `restart`, or the new `REDIS_URL` is not substituted. Deploying also unblocks **two** UAT cards: [`dt-tests #32`](https://tasks.codecomedy.dev/p/dt-tests/r/32) and [`#33`](https://tasks.codecomedy.dev/p/dt-tests/r/33).
+> 4. **The plan-sharing product call** — asked three sessions running, still unanswered. Every `ready` plan is permanently reachable by URL whether or not the guest chose to share, and a guest who shares **cannot unshare**. Making it explicit **would break existing share links**, which is why no session has done it unilaterally.
+>
+> ---
+>
+> ## The defect hunt is now CLOSED — all four findings resolved
+>
+> `s739` found four pieces of inert machinery; `s740` fixed three. This session took the remaining three open items (one fix + two unverified severities) and settled every one.
+>
+> ### 1 · Owner-to-owner boundary → **latent, not live** (measured, no code changed)
+>
+> 18 of 23 tenant-scoped owner routes take an id and never compare it to the caller. Severity turned entirely on how many accounts sit in Authentik's flat `staff` group — **which nobody had ever measured.** Now measured on qual:
+>
+> | group                 |           members |
+> | --------------------- | ----------------: |
+> | `authentik Admins`    |                 1 |
+> | **`staff`**           | **1** (`akadmin`) |
+> | `authentik Read-only` |                 0 |
+>
+> Total users = 3; the other two are internals (`AnonymousUser`, an outpost service account) which cannot carry the group claim, and the BFF's owner posture requires it (`plugins/owner-auth.ts`).
+>
+> **Control:** the same query returns a populated group AND a zero-member group, so it discriminates rather than answering "1" to everything.
+>
+> ⇒ **There is no second owner to cross a boundary with.** It fires the day one exists — which the subscription product implies. Do not re-inherit it as a live hole; do not forget it either.
+>
+> ### 2 · Rate limiter keyed on an unverified JWT claim → **real, bounded, deliberately not fixed**
+>
+> `guestKeyGenerator` decodes without verifying, so a forged `sub` earns its own bucket. But `/v1/tour-plans` and `/v1/discover` are both `auth: required`, and the verifying preHandler runs **before** the handler — so a forged token is 401'd and **never reaches the LLM the limiter exists to protect.** An authenticated caller cannot escape their own bucket, because changing `sub` breaks the signature.
+>
+> Reachable consequence: unlimited _401s_ on two routes, under Traefik's `default-ratelimit` (average 100/s, burst 200, applied to `bff` and `bff-apex-v1`). ⇒ 🟡, left alone on purpose. The cheap complete fix, if ever wanted: verify in the keyGenerator and fall back to `req.ip` — HS256 is one HMAC.
+>
+> ### 3 · Guest JWTs in logs → **FIXED**, [`#454`](https://github.com/zmeireles/daily-tour/pull/454), 12/12 green
+>
+> This grew on inspection. It is a straight violation of **D15** ("token in URL … never echoed in logs"), and the credential reached **two** sinks:
+>
+> | sink                        | records                                              | maskable?                                       |
+> | --------------------------- | ---------------------------------------------------- | ----------------------------------------------- |
+> | BFF pino log                | `req.url`, via a redactor covering only `/r/<token>` | yes                                             |
+> | **Traefik JSON access log** | `RequestPath`, **query string included**             | **no** — it can drop headers, not redact a path |
+>
+> 📌 **The Traefik half is measured, not assumed.** Its `RequestPath` holds a scanner's `/wp-admin/install.php?step=1` verbatim, 9 times. ⇒ **A BFF-only redaction would have closed the sink we control and left the one we do not** — and would have read exactly like a fix.
+>
+> **Not yet leaked, and that is measured too:** 11,231 logged requests in 14 days, **zero** `chat/ws` — nobody has opened chat on qual. Positive control: the same probe finds 4,495 `/v1/` URLs, so it works. Armed, not fired.
+>
+> **The fix moves the credential instead of masking it.** The client offers `["dt.jwt", "<jwt>"]` and the server reads `Sec-WebSocket-Protocol` — the standard carrier, since a browser cannot set arbitrary headers on a WS handshake, and request headers are dropped from Traefik's log by default. `handleProtocols` echoes the sentinel ONLY, so it never returns in a response header. The query shape is **removed, not deprecated**: accepting it would keep the leak reachable from any stale client.
+>
+> ⚠️ **What the tests structurally CANNOT answer:** whether Traefik forwards `Sec-WebSocket-Protocol` end-to-end on qual. Standard behaviour, unverified here, and if it does not forward, chat silently stops authenticating. That is exactly what [`dt-tests #33`](https://tasks.codecomedy.dev/p/dt-tests/r/33) exists to check — **run it right after the deploy.**
+>
+> ---
+>
+> ## How #454 was verified — the controls, not the greens
+>
+> | control                      | result                                                                     |
+> | ---------------------------- | -------------------------------------------------------------------------- |
+> | neuter `redactUrlForLog`     | **6 red, 5 green** — the leaves-untouched and sentinel-shape tests survive |
+> | restore `?token=` acceptance | **exactly** the "REJECTS the old way" test red, other 5 green              |
+>
+> The first control matters more than it looks: a suite that goes **all**-red under a neutered function is not discriminating, it is just coupled. This one keeps green precisely the assertions that should not depend on redaction.
+>
+> The serializer Fastify actually receives is now exported (`serializeRequestForLog`) so a test can prove the redaction is **wired** — _a redactor no serializer calls reads exactly like one that works_, which is this project's recurring failure shape.
+>
+> Full BFF suite 181/181 · PWA chat 20/20 · lint + typecheck green on bff, pwa, shared-types · repo-wide sweep found no doc, script or infra still speaking the old shape (control: the same sweep finds 22 references to the new one).
+>
+> ---
+>
+> ## Startup checks, for the next session
+>
+> - **`/mcp` NOT needed.** The served `add_comment` description carries the post-fix «OMIT IT … REFUSED (#178)» text. Run that served-description probe first; only the stale wording justifies asking the owner for `/mcp`.
+> - **A2A inbox drained**, everything acked through **seq 1014** (`cs:Barra`, a notification that explicitly asks for no reply). Nothing owed.
+> - 🪤 **The bridge trap fired here, in the direction the new rule predicts.** At startup a `comm-watch` supervisor WAS running from a path under this machine's projects — and it belonged to **po-platform-sA** (cwd + PPID chain proved it). Read literally, "one is already running, do not arm a second" would have left this session with **no wake bridge at all.** Armed my own and confirmed it by walking the PPID chain back to this session's `claude` process, never by name or count.
+> - **Telegram sent nothing, and that is a measured result** — `allowFrom` is the owner alone (`2031690099`), so the client-announce rule does not fire on this project.
+> - **Containers:** zero belonging to Daily Tour, at both ends of the session. The 8 `cc-dev-*` are `codecomedy-platform`'s — named and left alone.
+>
+> ### Local branch state
+>
+> `s741-chat-token-out-of-url` is **kept deliberately** — its PR (`#454`) is green and unmerged, so it is a deferred-not-merged branch, not an orphan. Delete it after the merge.
+>
+> ---
 
 > **UPDATE 2026-08-21 (LATEST — session `s740`, `dt:Furnas`. Picked up `s739`'s defect hunt and closed three of its four findings. Also downgraded one of the 🟠 hypotheses on a measurement, correcting a severity claim I had made myself. Closed for a coordinated laptop shutdown.)**
 >
