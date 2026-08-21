@@ -167,7 +167,7 @@
 >
 > ---
 
-> **UPDATE 2026-08-21 (LATEST — session `s740`, `dt:Furnas`. Picked up `s739`'s defect hunt and closed three of its four findings. Also downgraded one of the 🟠 hypotheses on a measurement, correcting a severity claim I had made myself. Closed for a coordinated laptop shutdown.)**
+> **UPDATE 2026-08-21 (session `s740`, `dt:Furnas`. Picked up `s739`'s defect hunt and closed three of its four findings. Also downgraded one of the 🟠 hypotheses on a measurement, correcting a severity claim I had made myself. Closed for a coordinated laptop shutdown.)**
 >
 > ### State
 >
