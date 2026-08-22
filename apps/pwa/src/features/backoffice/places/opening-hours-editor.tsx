@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Copy } from "lucide-react";
 import type { PlaceHoursEntry } from "./use-places";
-import { Input } from "@/components/ui/input";
+import { TimeField, isValidTime } from "@/components/ui/time-field";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 
@@ -68,6 +68,19 @@ export const hoursRowsSchema = z
     rows.forEach((row, i) => {
       const open = (row.open ?? "").trim();
       const close = (row.close ?? "").trim();
+      // A malformed time is its own error. `type="time"` used to make this
+      // unreachable by construction; TimeField is a text input, so the
+      // guarantee has to live here instead of being assumed.
+      for (const side of ["open", "close"] as const) {
+        const raw = side === "open" ? open : close;
+        if (raw !== "" && !isValidTime(raw)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [i, side],
+            message: "Times must be written as HH:MM",
+          });
+        }
+      }
       if ((open === "") === (close === "")) return; // both blank or both filled
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -85,7 +98,6 @@ export function OpeningHoursEditor() {
   const { t } = useTranslation("admin");
   const {
     control,
-    register,
     setValue,
     formState: { errors },
   } = useFormContext<HoursForm>();
@@ -159,19 +171,29 @@ export function OpeningHoursEditor() {
               {!isClosed && (
                 <div className="flex flex-1 flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <Input
-                      type="time"
+                    <TimeField
                       aria-label={t("places.form.hours.open_for", { day: dayLabel })}
-                      {...register(`hours.${i}.open`)}
+                      value={row.open}
+                      onChange={(v) =>
+                        setValue(`hours.${i}.open`, v, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
                       disabled={is24h}
                     />
                     <span aria-hidden className="text-muted-foreground">
                       –
                     </span>
-                    <Input
-                      type="time"
+                    <TimeField
                       aria-label={t("places.form.hours.close_for", { day: dayLabel })}
-                      {...register(`hours.${i}.close`)}
+                      value={row.close}
+                      onChange={(v) =>
+                        setValue(`hours.${i}.close`, v, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
                       disabled={is24h}
                     />
                   </div>
