@@ -14,6 +14,13 @@ const ConfigSchema = z.object({
   // Internal HTTP base URL for catalog-svc on dt_internal. Called by the
   // discover aggregator and future place-detail route.
   CATALOG_SVC_URL: z.string().url().default("http://dt_catalog_svc:8081"),
+  // Shared secret the BFF sends to catalog-svc as X-Internal-Token. Mirrors the
+  // MEDIA_SVC_INTERNAL_TOKEN posture above: a dev/CI default so nothing breaks
+  // locally, a real value injected in qual. catalog-svc REQUIRES it (no default
+  // there), so a prod BFF that forgets to set it gets 401s, loudly.
+  CATALOG_SVC_INTERNAL_TOKEN: z
+    .string()
+    .default("change-me-please-catalog-svc-internal-token-min-32c"),
   // Internal HTTP base URL for search-svc on dt_internal (T-2.1.1).
   SEARCH_SVC_URL: z.string().url().default("http://dt_search_svc:8082"),
   // Internal HTTP base URL for media-svc on dt_internal (T-1.4.0).

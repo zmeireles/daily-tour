@@ -5,6 +5,8 @@ process.env.CATALOG_SVC_DATABASE_URL =
 process.env.NODE_ENV = "test";
 process.env.LOG_LEVEL = "warn";
 process.env.PORT = "8081";
+process.env.CATALOG_SVC_INTERNAL_TOKEN =
+  process.env.CATALOG_SVC_INTERNAL_TOKEN ?? "test-catalog-internal-token-32-chars-ok";
 
 const { createApp } = await import("../app.js");
 const { resetConfigCache } = await import("../config.js");

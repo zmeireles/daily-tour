@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
+import { catalogHeaders } from "../lib/catalog-headers.js";
 import type { JWTPayload } from "jose";
 import { loadConfig } from "../config.js";
 
@@ -12,7 +13,9 @@ const adminProfileRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =
     const ownerId = ownerSub(req);
     if (!ownerId) return reply.code(400).send({ error: "missing_sub_claim" });
     const { CATALOG_SVC_URL } = loadConfig();
-    const res = await fetch(`${CATALOG_SVC_URL}/v1/owner-profiles/${ownerId}`);
+    const res = await fetch(`${CATALOG_SVC_URL}/v1/owner-profiles/${ownerId}`, {
+      headers: catalogHeaders(),
+    });
     if (res.status === 404) return reply.code(404).send({ error: "profile_not_found" });
     if (!res.ok) {
       fastify.log.error({ status: res.status }, "[admin-profile] catalog-svc get error");
@@ -28,7 +31,7 @@ const adminProfileRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/owner-profiles`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: catalogHeaders({ "content-type": "application/json" }),
       body: JSON.stringify({ ...(req.body as object), owner_id: ownerId }),
     });
     const data = await res.json();

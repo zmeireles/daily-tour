@@ -167,7 +167,14 @@ describe("BFF admin-places routes", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject(taxonomy);
-    expect(fetchMock).toHaveBeenCalledWith("http://catalog.test/v1/actions");
+    // Now carries the internal token (dt-tests #36) — assert it, so a
+    // regression that drops the header fails here rather than only in qual.
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://catalog.test/v1/actions",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "x-internal-token": expect.any(String) }),
+      }),
+    );
   });
 
   it("GET /v1/admin/actions — catalog-svc down → 502 rather than an empty picker", async () => {

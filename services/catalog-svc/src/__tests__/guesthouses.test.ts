@@ -6,6 +6,7 @@ import {
   stopTestPostgres,
   truncateAll,
 } from "./helpers.js";
+import { TEST_INTERNAL_TOKEN } from "./helpers.js";
 
 const ctx: TestContext = await startTestPostgres();
 setTestEnv(ctx.databaseUrl);
@@ -45,6 +46,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
 
   it("create + get + slug lookup", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/guesthouses",
       payload: VALID_BODY,
@@ -56,13 +58,18 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     expect(created.status).toBe("active");
     expect(created.rooms).toBe(4);
 
-    const get = await app.inject({ method: "GET", url: `/v1/guesthouses/${id}` });
+    const get = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/guesthouses/${id}`,
+    });
     expect(get.statusCode).toBe(200);
     const fetched = get.json<{ status: string; rooms: number | null }>();
     expect(fetched.status).toBe("active");
     expect(fetched.rooms).toBe(4);
 
     const bySlug = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: `/v1/guesthouses?slug=casa-do-mar`,
     });
@@ -71,19 +78,31 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
   });
 
   it("409 on duplicate slug", async () => {
-    await app.inject({ method: "POST", url: "/v1/guesthouses", payload: VALID_BODY });
-    const dup = await app.inject({ method: "POST", url: "/v1/guesthouses", payload: VALID_BODY });
+    await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/guesthouses",
+      payload: VALID_BODY,
+    });
+    const dup = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/guesthouses",
+      payload: VALID_BODY,
+    });
     expect(dup.statusCode).toBe(409);
   });
 
   it("PATCH + 404 on unknown id", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/guesthouses",
       payload: VALID_BODY,
     });
     const { id } = create.json<{ id: string }>();
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/guesthouses/${id}`,
       payload: { address: "Updated address", status: "archived", rooms: 6 },
@@ -95,6 +114,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     expect(patched.rooms).toBe(6);
 
     const patch404 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: "/v1/guesthouses/00000000-0000-4000-8000-000000000000",
       payload: { address: "Nope" },
@@ -104,19 +124,32 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
 
   it("DELETE hard-removes + is idempotent", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/guesthouses",
       payload: VALID_BODY,
     });
     const { id } = create.json<{ id: string }>();
 
-    const del1 = await app.inject({ method: "DELETE", url: `/v1/guesthouses/${id}` });
+    const del1 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "DELETE",
+      url: `/v1/guesthouses/${id}`,
+    });
     expect(del1.statusCode).toBe(204);
 
-    const get404 = await app.inject({ method: "GET", url: `/v1/guesthouses/${id}` });
+    const get404 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/guesthouses/${id}`,
+    });
     expect(get404.statusCode).toBe(404);
 
-    const del2 = await app.inject({ method: "DELETE", url: `/v1/guesthouses/${id}` });
+    const del2 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "DELETE",
+      url: `/v1/guesthouses/${id}`,
+    });
     expect(del2.statusCode).toBe(204);
   });
 
@@ -125,6 +158,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     const PLACE_B = "c0000002-0000-4000-a000-000000000002";
 
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/guesthouses",
       payload: VALID_BODY,
@@ -134,6 +168,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
 
     // Hide A, hide A again (idempotent), then hide B.
     const h1 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PUT",
       url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
     });
@@ -141,12 +176,14 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     expect(h1.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_A]);
 
     const h2 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PUT",
       url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
     });
     expect(h2.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_A]); // no dup
 
     const h3 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PUT",
       url: `/v1/guesthouses/${id}/hidden-places/${PLACE_B}`,
     });
@@ -156,6 +193,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
 
     // Unhide A → only B remains; unhide A again is a no-op.
     const u1 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "DELETE",
       url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
     });
@@ -163,6 +201,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
     expect(u1.json<{ hidden_place_ids: string[] }>().hidden_place_ids).toEqual([PLACE_B]);
 
     const u2 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "DELETE",
       url: `/v1/guesthouses/${id}/hidden-places/${PLACE_A}`,
     });
@@ -171,6 +210,7 @@ describe("POST/GET/PATCH/DELETE /v1/guesthouses", () => {
 
   it("hide on a missing guesthouse → 404", async () => {
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PUT",
       url: "/v1/guesthouses/00000000-0000-4000-8000-000000000000/hidden-places/c0000001-0000-4000-a000-000000000001",
     });

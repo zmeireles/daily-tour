@@ -52,3 +52,15 @@ The mapping below is _intended_ state; not every route is implemented yet.
 - `/v1/discover/*`, `/v1/places/:id`, `/v1/reservations/*` → `required` (guest JWT).
 - `/v1/owner/*`, `/v1/admin/*`, `/v1/backoffice/*` → `owner` (Authentik JWT).
 - `/v1/internal/*` → never reach the BFF (catalog-svc / media-svc use a separate `X-Internal-Token`).
+
+> ⚠️ **`X-Internal-Token` is a shared secret on `dt_internal`, not a proof the caller is the BFF.**
+> It became load-bearing the day another product's containers (qr-bell) joined
+> `dt_internal` to reuse Traefik — network membership stopped implying "the BFF".
+> Both catalog-svc (`plugins/internal-auth.ts`, added dt-tests #36) and media-svc
+> now reject any non-health request without it. `/health` and `/ready` stay open
+> because Docker's healthcheck sends no headers.
+>
+> ⟲ **Falsifier:** from a container on `dt_internal` that is NOT the BFF, `curl`
+> `http://dt_catalog_svc:8081/v1/places` with no header. A 200 with data means the
+> gate regressed or was never wired; a 401 means it holds. (Measured 401 after
+> #36; measured 200 — full data — before it.)

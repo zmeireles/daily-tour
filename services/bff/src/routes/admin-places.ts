@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { catalogHeaders } from "../lib/catalog-headers.js";
 import { z } from "zod";
 import { loadConfig } from "../config.js";
 
@@ -10,7 +11,7 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     const { CATALOG_SVC_URL } = loadConfig();
     const qs = new URLSearchParams(req.query as Record<string, string>).toString();
     const url = qs ? `${CATALOG_SVC_URL}/v1/places?${qs}` : `${CATALOG_SVC_URL}/v1/places`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: catalogHeaders() });
     if (!res.ok) {
       fastify.log.error({ status: res.status }, "[admin-places] catalog-svc list error");
       return reply.code(502).send({ error: "catalog_unavailable" });
@@ -22,7 +23,7 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
   // owner-gated like the rest of /v1/admin.
   fastify.get("/v1/admin/actions", { config: { auth: "owner" } }, async (_req, reply) => {
     const { CATALOG_SVC_URL } = loadConfig();
-    const res = await fetch(`${CATALOG_SVC_URL}/v1/actions`);
+    const res = await fetch(`${CATALOG_SVC_URL}/v1/actions`, { headers: catalogHeaders() });
     if (!res.ok) {
       fastify.log.error({ status: res.status }, "[admin-places] catalog-svc actions error");
       return reply.code(502).send({ error: "catalog_unavailable" });
@@ -34,7 +35,7 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/places`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: catalogHeaders({ "content-type": "application/json" }),
       body: JSON.stringify(req.body),
     });
     const data = await res.json();
@@ -47,7 +48,10 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
       return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
     }
     const { CATALOG_SVC_URL } = loadConfig();
-    const res = await fetch(`${CATALOG_SVC_URL}/v1/places/${parsed.data.id}?include_archived=true`);
+    const res = await fetch(
+      `${CATALOG_SVC_URL}/v1/places/${parsed.data.id}?include_archived=true`,
+      { headers: catalogHeaders() },
+    );
     if (!res.ok) {
       return reply.code(res.status === 404 ? 404 : 502).send({ error: "catalog_error" });
     }
@@ -62,7 +66,7 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/places/${parsed.data.id}`, {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
+      headers: catalogHeaders({ "content-type": "application/json" }),
       body: JSON.stringify(req.body),
     });
     const data = await res.json();
@@ -77,6 +81,7 @@ const adminPlacesRoute: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/places/${parsed.data.id}`, {
       method: "DELETE",
+      headers: catalogHeaders(),
     });
     return reply.code(res.status).send();
   });

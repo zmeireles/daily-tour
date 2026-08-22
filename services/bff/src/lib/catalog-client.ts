@@ -1,4 +1,5 @@
 import { loadConfig } from "../config.js";
+import { catalogHeaders } from "./catalog-headers.js";
 
 export class CatalogError extends Error {
   constructor(
@@ -76,7 +77,7 @@ export interface HydratedPlace {
 export async function fetchPlacesByAction(actionSlug: string): Promise<PlaceCard[]> {
   const { CATALOG_SVC_URL } = loadConfig();
   const url = `${CATALOG_SVC_URL}/v1/places-by-action?action_slug=${encodeURIComponent(actionSlug)}&status=published`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: catalogHeaders() });
   if (!res.ok) {
     throw new CatalogError(res.status, `catalog-svc ${res.status}`);
   }
@@ -99,7 +100,9 @@ export async function fetchPlacesByAction(actionSlug: string): Promise<PlaceCard
 // CatalogError on other non-2xx so the caller can decide whether to degrade.
 export async function fetchHiddenPlaceIds(guesthouseId: string): Promise<string[]> {
   const { CATALOG_SVC_URL } = loadConfig();
-  const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses/${encodeURIComponent(guesthouseId)}`);
+  const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses/${encodeURIComponent(guesthouseId)}`, {
+    headers: catalogHeaders(),
+  });
   if (res.status === 404) return [];
   if (!res.ok) {
     throw new CatalogError(res.status, `catalog-svc ${res.status}`);
@@ -113,7 +116,9 @@ export async function fetchHiddenPlaceIds(guesthouseId: string): Promise<string[
 // Throws CatalogError(404, ...) if not found; CatalogError(status, ...) for other errors.
 export async function fetchPlaceHydrated(id: string): Promise<HydratedPlace> {
   const { CATALOG_SVC_URL } = loadConfig();
-  const res = await fetch(`${CATALOG_SVC_URL}/v1/places/${encodeURIComponent(id)}/hydrated`);
+  const res = await fetch(`${CATALOG_SVC_URL}/v1/places/${encodeURIComponent(id)}/hydrated`, {
+    headers: catalogHeaders(),
+  });
   if (!res.ok) {
     throw new CatalogError(res.status, `catalog-svc ${res.status}`);
   }

@@ -105,6 +105,7 @@ services:
       REDIS_URL: redis://default:${REDIS_PASSWORD}@dt_redis:6379/0
       # T-1.4.0 media-svc: BFF forwards X-Internal-Token for owner-upload signing.
       MEDIA_SVC_URL: http://dt_media_svc:8087
+      CATALOG_SVC_INTERNAL_TOKEN: ${CATALOG_SVC_INTERNAL_TOKEN:?CATALOG_SVC_INTERNAL_TOKEN missing in .env}
       MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
       # Analytics writes (T-3.4.1) — the bff role's INSERT into analytics.tour_event.
       # Built from SERVICE_DB_PASSWORD_BFF so rotated envs (qual) authenticate; the
@@ -212,6 +213,9 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ""
       OTEL_SERVICE_NAME: catalog-svc
       CATALOG_SVC_DATABASE_URL: postgres://catalog_svc:${SERVICE_DB_PASSWORD_CATALOG}@dt_postgres:5432/dailytour
+      # Internal-token gate (dt-tests #36): the BFF is not the only container
+      # on dt_internal, so catalog-svc verifies this on every non-health route.
+      CATALOG_SVC_INTERNAL_TOKEN: ${CATALOG_SVC_INTERNAL_TOKEN:?CATALOG_SVC_INTERNAL_TOKEN missing in .env}
     healthcheck:
       # IPv4-pin per the T-0.4.3 lesson — BusyBox wget prefers IPv6 but
       # Fastify only listens on 0.0.0.0.

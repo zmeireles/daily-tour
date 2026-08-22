@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { catalogHeaders } from "../lib/catalog-headers.js";
 import type { JWTPayload } from "jose";
 import { z } from "zod";
 import { loadConfig } from "../config.js";
@@ -22,7 +23,7 @@ const adminGuesthousesRoute: FastifyPluginAsync = async (fastify: FastifyInstanc
     const url = qs
       ? `${CATALOG_SVC_URL}/v1/guesthouses?${qs}`
       : `${CATALOG_SVC_URL}/v1/guesthouses`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: catalogHeaders() });
     if (!res.ok) {
       fastify.log.error({ status: res.status }, "[admin-guesthouses] catalog-svc list error");
       return reply.code(502).send({ error: "catalog_unavailable" });
@@ -36,7 +37,9 @@ const adminGuesthousesRoute: FastifyPluginAsync = async (fastify: FastifyInstanc
       return reply.code(400).send({ error: "validation_failed", details: parsed.error.issues });
     }
     const { CATALOG_SVC_URL } = loadConfig();
-    const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses/${parsed.data.id}`);
+    const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses/${parsed.data.id}`, {
+      headers: catalogHeaders(),
+    });
     if (!res.ok) {
       return reply.code(res.status === 404 ? 404 : 502).send({ error: "catalog_error" });
     }
@@ -50,7 +53,7 @@ const adminGuesthousesRoute: FastifyPluginAsync = async (fastify: FastifyInstanc
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: catalogHeaders({ "content-type": "application/json" }),
       body: JSON.stringify({ ...(req.body as object), owner_id: ownerId }),
     });
     const data = await res.json();
@@ -65,7 +68,7 @@ const adminGuesthousesRoute: FastifyPluginAsync = async (fastify: FastifyInstanc
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(`${CATALOG_SVC_URL}/v1/guesthouses/${parsed.data.id}`, {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
+      headers: catalogHeaders({ "content-type": "application/json" }),
       body: JSON.stringify(req.body),
     });
     const data = await res.json();
@@ -83,7 +86,7 @@ const adminGuesthousesRoute: FastifyPluginAsync = async (fastify: FastifyInstanc
     const { CATALOG_SVC_URL } = loadConfig();
     const res = await fetch(
       `${CATALOG_SVC_URL}/v1/guesthouses/${parsed.data.id}/hidden-places/${parsed.data.placeId}`,
-      { method },
+      { method, headers: catalogHeaders() },
     );
     const data = await res.json();
     return reply.code(res.status).send(data);
