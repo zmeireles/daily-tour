@@ -293,7 +293,7 @@ export function ProfileForm({ initialData }: Props) {
                         "profile.form.photo_hint",
                         "Tap to choose from your camera or gallery",
                       )}
-                      onUploaded={handlePhotoUploaded}
+                      onChange={handlePhotoUploaded}
                     />
                   </div>
                 </div>

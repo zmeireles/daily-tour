@@ -470,5 +470,11 @@
     "system": "Sistema",
     "light": "Claro",
     "dark": "Escuro"
+  },
+  "media": {
+    "main": "Principal",
+    "remove": "Remover {{name}}",
+    "move_earlier": "Recuar {{name}}",
+    "move_later": "Avançar {{name}}"
   }
 }

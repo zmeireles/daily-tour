@@ -565,7 +565,9 @@ export function PlaceForm({ initialData, id }: Props) {
               <MediaUploader
                 label={t("places.form.media.upload_hint", "Drag & drop images or click to select")}
                 initialAssets={mediaAssets}
-                onUploaded={setMediaAssets}
+                onChange={setMediaAssets}
+                editable
+                heroHint
               />
               <p className="text-xs text-muted-foreground">
                 {t("places.form.media.hint", "JPG, PNG or WebP · up to 5 MB each")}
