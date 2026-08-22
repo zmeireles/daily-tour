@@ -414,7 +414,8 @@ export function GuesthouseForm({ initialData, id }: Props) {
                   "Drag & drop images or click to select",
                 )}
                 initialAssets={mediaAssets}
-                onUploaded={setMediaAssets}
+                onChange={setMediaAssets}
+                editable
               />
               <p className="text-xs text-muted-foreground">
                 {t("guesthouses.form.media.hint", "JPG, PNG or WebP · up to 5 MB each")}

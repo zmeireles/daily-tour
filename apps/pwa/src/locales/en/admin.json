@@ -470,5 +470,11 @@
     "system": "System",
     "light": "Light",
     "dark": "Dark"
+  },
+  "media": {
+    "main": "Main",
+    "remove": "Remove {{name}}",
+    "move_earlier": "Move {{name}} earlier",
+    "move_later": "Move {{name}} later"
   }
 }
