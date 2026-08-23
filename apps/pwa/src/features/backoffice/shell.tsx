@@ -33,7 +33,11 @@ function AdminRail({ counts, className }: { counts: NavCounts; className?: strin
         <AccountFooter />
         <div className="flex items-center justify-between gap-2">
           <LocaleSwitcher />
-          <ThemeToggle />
+          {/* shrink-0: with the old spelled-out locale names this icon button was
+              the only shrinkable thing in an overflowing row and was crushed to
+              16px, outside the rail (dt-tests #38). The switcher now fits, and
+              this guarantees the toggle holds 36px even if the row tightens. */}
+          <ThemeToggle className="shrink-0" />
         </div>
       </div>
     </aside>
