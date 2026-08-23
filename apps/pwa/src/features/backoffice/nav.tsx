@@ -191,11 +191,16 @@ export function AccountFooter({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col gap-2">
       {profile && (profile.name || profile.email) && (
         <div className="px-3">
-          <p className="truncate text-sm font-medium text-foreground">
+          <p
+            className="truncate text-sm font-medium text-foreground"
+            title={profile.name ?? profile.email ?? undefined}
+          >
             {profile.name ?? profile.email}
           </p>
           {profile.name && profile.email && (
-            <p className="truncate text-xs text-muted-foreground">{profile.email}</p>
+            <p className="truncate text-xs text-muted-foreground" title={profile.email}>
+              {profile.email}
+            </p>
           )}
         </div>
       )}
