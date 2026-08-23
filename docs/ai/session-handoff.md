@@ -1,6 +1,90 @@
-# Session Handoff — … → 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — … → 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-08-23 (LATEST — session `s742`, `dt:Furnas`. Ran a continuous implement→test→PR→merge→deploy→UAT loop under the owner's standing instruction. Seven PRs shipped and verified on qual; a defect hunt filed six findings; one product decision is written up and waiting.)**
+> **UPDATE 2026-08-23 (LATEST — session `s743`, `dt:Furnas`. Resumed the standing implement→deploy→UAT loop. One security defect found by measuring a claim the docs made about themselves: shipped, deployed and verified. Separately, an A2A audit turned into a cross-house method finding.)**
+>
+> ### State
+>
+> `main` **`89248c2`** · **zero open pull requests** · tree clean · **qual deployed and UAT'd on `89248c2`** (image tag confirmed on the box) · local branches drained to `main` alone · A2A inbox drained through **`seq 1098`**, nothing owed.
+>
+> ### ▶ WHAT NEEDS THE OWNER — unchanged from s742, nothing new
+>
+> 1. **[`dt-tests #40`](https://tasks.codecomedy.dev/p/dt-tests/r/40)** — the plan-sharing decision. One token answers it.
+> 2. **[`dt-tests #37`](https://tasks.codecomedy.dev/p/dt-tests/r/37)** — consume the image variants or delete the pipeline. Genuinely opposite directions, so still not picked unilaterally.
+> 3. **[`dt-tests #36`](https://tasks.codecomedy.dev/p/dt-tests/r/36)** stays open on purpose — the network split touches the qr-bell repo.
+>
+> ---
+>
+> ## Shipped: [`#465`](https://github.com/zmeireles/daily-tour/pull/465) — media-svc was allow-by-default
+>
+> **[`dt-tests #41`](https://tasks.codecomedy.dev/p/dt-tests/r/41) — CLOSED.** `GET /v1/assets/:id` had no auth. Measured from `dt_notif_svc` (not the BFF, on `dt_internal`, the network **qr-bell's containers share**):
+>
+> ```
+> GET dt_media_svc:8087/v1/assets/<id>   -> 302 + presigned MinIO GET URL
+> GET dt_media_svc:8087/health           -> 200      (positive control)
+> ```
+>
+> The route carried a comment calling the presigned URL _"the access control mechanism"_. **It bounds a leak; it does not decide who may ask for one.**
+>
+> 📌 **The defect was the DEFAULT, not the route.** media-svc used a `verifyInternal` **preHandler each route had to opt into** — so the next route added would be unauthenticated by omission, with nothing failing. catalog-svc (after `#459`) uses a service-wide `onRequest` hook. The fix mirrors catalog-svc rather than patching the one route; the BFF now also sends the token on `fetchAsset`, the one call that omitted the header it already held.
+>
+> **Verified on qual after deploy — both halves, because a fix that only closed the hole would have taken the console's images down and looked like a success:**
+>
+> | probe                                            | result                                       |
+> | ------------------------------------------------ | -------------------------------------------- |
+> | `/v1/assets/<id>` no header                      | **401** (was 302)                            |
+> | `/v1/assets/<id>` **valid** token                | **302** — the legitimate caller still passes |
+> | `/v1/uploads/sign` no header                     | 401                                          |
+> | BFF `GET /v1/media/<id>` (what the console uses) | **200 `image/png`**, bogus id → 404          |
+> | catalog-svc `#36` gate, regression check         | 401 / `/ready` 200                           |
+>
+> ⚠️ **No deploy-ordering hazard** — unlike `#459`, `MEDIA_SVC_INTERNAL_TOKEN` was already set on both services.
+>
+> ---
+>
+> ## 🩤 Three probes of mine were wrong before they were right — all caught by a control
+>
+> | what                                                                            | why it was silent                                                                                                                                                       |
+> | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | media-svc "unauthenticated" probe returned **404**                              | I guessed route names that don't exist. A 404 is not evidence of auth — **the probe could not have found the thing.**                                                   |
+> | a regex scan reported the two `/v1/admin/geocode` routes as guest-default       | they declare `auth: "owner"` via a **`ROUTE_OPTS` constant** the scan couldn't follow. **A false positive I nearly filed** — reading the file first is what stopped it. |
+> | "the auth hooks are missing `return reply`, so the handler runs behind the 401" | plausible, documented-looking, and **false on Fastify 5**. Measured with a positive control; see the `reference_fastify_hook_send` memory. **Do not re-file it.**       |
+>
+> ⇒ Every one was caught by the same move: **a positive control proving the instrument can see the thing it is looking for.**
+>
+> 🚨 **And a fourth, in this very file:** the first attempt to write this entry consumed its own anchor with an earlier `replace`, so the insert matched nothing — and the script still printed "handoff updated". **Same shape as the s742 slug-fix control.** Assert the change is PRESENT afterwards, not just that the anchor existed before.
+>
+> ---
+>
+> ## The A2A thread — an audit that found a defect in the auditor's own objection
+>
+> `cs:Barra` asked me to ratify a blind-evaluator run for spec 003 (`seq 1058`). I audited it, found the vice that would have annulled it, and then **ran the control that refuted my own objection**:
+>
+> - **Verified independently in git:** the answer key and pass criterion were committed at `287292e` **14:26:58Z**, the evaluator's answers at `a17ad5c` **14:32:26Z**. Six minutes, right order.
+> - **The vice:** the evaluator declared _"no tools, no files"_ — true and **irrelevant**. `~/.claude/CLAUDE.md` contains, verbatim, the answers for three of its seven hits and the opposite of one of its two misses, and **one of those was a gate item**.
+> - **The control:** same package, byte-identical, raw `POST /v1/messages` with **no `system` field**. It reproduced all four. ⇒ my objection died. Reported the score honestly as **6–7/9**, hanging on one reading that goes against me.
+> - ⚠️ **Fable 5 refused the package** (`stop_reason: refusal`, category `cyber` — false positive on the "blind falsifiability test" framing). Control ran on Opus 5; the model difference is declared, not buried.
+>
+> **Promoted the same day** to `~/.claude/docs/verification-protocol.md` as **R1's fifth limit** — it applies to any blind evaluator, jury, adversarial reviewer or delegated negative control run as an agent on this machine.
+>
+> 🔴 **Then I corrected it (`seq 1111`), because half of it was my inference, not my measurement** — `fpm:Vigia` caught that. The file _containing_ the answers was measured; the file _reaching the evaluator_ was inferred from the harness. The fix was to run the falsifier **we had written for future controls, backwards, against the original evaluator's answers**:
+>
+> - `~/.claude/CLAUDE.md:130` — _"answerable with one token: `1`, `b`, `sim`"_
+> - the original evaluator's rule-`G` answer — _"respondível com um **token**"_
+> - **absent from the package**; **absent from my clean control**
+>
+> ⇒ the entry path is now **measured from the receipt side**, not inferred. ⭐ And the leak pushed the evaluator **toward the house file and away from the spec's answer** — it depressed the score rather than inflating it, which is why the result survived the clean control.
+>
+> ---
+>
+> ## Session-conduct notes
+>
+> - 🩤 **The bridge trap fired again, and the new `ESTAB` rule earned its place.** The running `comm-watch` at startup belonged to **po-platform-sA** (PPID chain). Armed my own, then verified with `ss -tnp | grep pid=` → **`ESTAB`**. _Exists · is mine · is listening_ are three questions.
+> - The supervisor exited **three times** with `{"reason":"comm","action":"rearm"}` — that is the design working, not a death. Re-armed each time.
+> - **Telegram:** allowlist is Zé alone, so the client-announce rule sends nothing. Measured, not skipped.
+> - **Containers:** `docker ps -a` empty on the workstation at startup. Nothing to sweep.
+> - Could not send the correction to the closed audience — `no active edge authorizes dt:Furnas -> fpm:Vigia`, even with only `in_reply_to` set. Asked `cs:Barra` to propagate.
+
+> **UPDATE 2026-08-23 (session `s742`, `dt:Furnas`. Ran a continuous implement→test→PR→merge→deploy→UAT loop under the owner's standing instruction. Seven PRs shipped and verified on qual; a defect hunt filed six findings; one product decision is written up and waiting.)**
 >
 > ### State
 >
