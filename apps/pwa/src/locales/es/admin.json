@@ -131,7 +131,7 @@
       "hero": "Foto principal",
       "hero_alt": "Imagen del alojamiento",
       "advanced": "Avanzado",
-      "slug_hint": "Generado automáticamente a partir del nombre. Déjalo en blanco para derivarlo.",
+      "slug_hint": "Si lo dejas en blanco, se crea a partir del nombre al guardar.",
       "status": "Estado",
       "rooms": "Habitaciones",
       "save": "Guardar",
@@ -157,7 +157,9 @@
         "en": "Inglés",
         "pt_PT": "Portugués",
         "es": "Español"
-      }
+      },
+      "slug_label": "Dirección de la página",
+      "slug_example": "mi-alojamiento"
     }
   },
   "places": {

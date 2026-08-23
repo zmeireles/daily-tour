@@ -170,6 +170,12 @@ export function GuesthouseForm({ initialData, id }: Props) {
     formState: { isSubmitting, isDirty },
   } = form;
 
+  // The slug the server would derive on save, from the PT name (the source
+  // locale — SOURCE_LOCALE) — shown as the slug field's placeholder so
+  // "created from the name" is something the owner can see, not just a claim
+  // in the hint (dt-tests #39).
+  const derivedSlug = slugify(form.watch("name_pt") ?? "");
+
   const translation = useFieldTranslation({
     setValue: form.setValue as UseFieldTranslationOptions["setValue"],
     getValues: form.getValues,
@@ -423,39 +429,45 @@ export function GuesthouseForm({ initialData, id }: Props) {
             </CardContent>
           </Card>
 
-          {/* Avançado — slug (auto-generated; editable), collapsed by default */}
+          {/* Avançado — the URL identifier. One card, one field, one label:
+              the disclosure and the duplicate "Slug" heading were removed
+              (dt-tests #39). The placeholder shows the value that will be
+              derived from the name if this is left blank, so the "auto-
+              generated" promise is visible instead of merely asserted. */}
           <Card>
             <CardHeader>
               <CardTitle>{t("guesthouses.form.advanced", "Advanced")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Collapsible defaultOpen={!!initialData?.slug}>
-                <CollapsibleTrigger className="flex w-full items-center justify-between gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                  <span>{t("guesthouses.form.slug", "Slug")}</span>
-                  <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("guesthouses.form.slug", "Slug")}</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="my-guesthouse" className="font-mono" />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          {t(
-                            "guesthouses.form.slug_hint",
-                            "Auto-generated from the name. Leave blank to derive it.",
-                          )}
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("guesthouses.form.slug_label", "Page link")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        // The live derivation, shown greyed until the owner
+                        // types their own. slugify() may return "" (a name with
+                        // no Latin letters yet) — fall back to the example so
+                        // the field is never placeholder-less.
+                        placeholder={
+                          derivedSlug || t("guesthouses.form.slug_example", "my-guesthouse")
+                        }
+                        className="font-mono"
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {t(
+                        "guesthouses.form.slug_hint",
+                        "Leave blank and it is created from the name when you save.",
+                      )}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

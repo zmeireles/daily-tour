@@ -131,7 +131,7 @@
       "hero": "Foto principal",
       "hero_alt": "Imagem do alojamento",
       "advanced": "Avançado",
-      "slug_hint": "Gerado automaticamente a partir do nome. Deixe em branco para o derivar.",
+      "slug_hint": "Se ficar em branco, é criado a partir do nome ao guardar.",
       "status": "Estado",
       "rooms": "Quartos",
       "save": "Guardar",
@@ -157,7 +157,9 @@
         "en": "Inglês",
         "pt_PT": "Português",
         "es": "Espanhol"
-      }
+      },
+      "slug_label": "Endereço da página",
+      "slug_example": "meu-alojamento"
     }
   },
   "places": {
