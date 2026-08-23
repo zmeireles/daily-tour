@@ -7,6 +7,7 @@ import {
   stopTestPostgres,
   truncateAll,
 } from "./helpers.js";
+import { TEST_INTERNAL_TOKEN } from "./helpers.js";
 
 const ctx: TestContext = await startTestPostgres();
 setTestEnv(ctx.databaseUrl);
@@ -49,6 +50,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("create + get + list happy path", async () => {
     const createRes = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: VALID_BODY,
@@ -58,10 +60,18 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(created.name.en).toBe("Test Place");
 
-    const getRes = await app.inject({ method: "GET", url: `/v1/places/${created.id}` });
+    const getRes = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${created.id}`,
+    });
     expect(getRes.statusCode).toBe(200);
 
-    const listRes = await app.inject({ method: "GET", url: "/v1/places" });
+    const listRes = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: "/v1/places",
+    });
     expect(listRes.statusCode).toBe(200);
     const list = listRes.json<{ data: unknown[]; nextCursor: string | null }>();
     expect(list.data.length).toBe(1);
@@ -72,11 +82,22 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     // (e.g. a host's-pick toggle) bump the row to the top of /admin/places.
     const ids: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const res = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+      const res = await app.inject({
+        headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+        method: "POST",
+        url: "/v1/places",
+        payload: VALID_BODY,
+      });
       ids.push(res.json<{ id: string }>().id);
     }
 
-    const orderBefore = (await app.inject({ method: "GET", url: "/v1/places" }))
+    const orderBefore = (
+      await app.inject({
+        headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+        method: "GET",
+        url: "/v1/places",
+      })
+    )
       .json<{ data: { id: string }[] }>()
       .data.map((p) => p.id);
 
@@ -84,12 +105,19 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     // have jumped it to the front.
     const target = orderBefore[orderBefore.length - 1];
     await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${target}`,
       payload: { is_hosts_pick: true },
     });
 
-    const orderAfter = (await app.inject({ method: "GET", url: "/v1/places" }))
+    const orderAfter = (
+      await app.inject({
+        headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+        method: "GET",
+        url: "/v1/places",
+      })
+    )
       .json<{ data: { id: string }[] }>()
       .data.map((p) => p.id);
 
@@ -97,10 +125,16 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
   });
 
   it("PATCH updates fields + returns updated entity", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
 
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { address: "São Roque, Açores" },
@@ -110,16 +144,30 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
   });
 
   it("DELETE soft-archives + 404 on subsequent GET (default), 200 with include_archived", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
 
-    const del = await app.inject({ method: "DELETE", url: `/v1/places/${id}` });
+    const del = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "DELETE",
+      url: `/v1/places/${id}`,
+    });
     expect(del.statusCode).toBe(204);
 
-    const get404 = await app.inject({ method: "GET", url: `/v1/places/${id}` });
+    const get404 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${id}`,
+    });
     expect(get404.statusCode).toBe(404);
 
     const getArchived = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: `/v1/places/${id}?include_archived=true`,
     });
@@ -127,7 +175,11 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(getArchived.json<{ status: string }>().status).toBe("archived");
 
     // Idempotent re-delete returns 204.
-    const del2 = await app.inject({ method: "DELETE", url: `/v1/places/${id}` });
+    const del2 = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "DELETE",
+      url: `/v1/places/${id}`,
+    });
     expect(del2.statusCode).toBe(204);
   });
 
@@ -137,14 +189,28 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
   // its tags, its media and its coordinates all still existed and were simply
   // unreachable through the write API.
   it("an archived place can be restored, and the restore may carry other edits", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
-    expect((await app.inject({ method: "DELETE", url: `/v1/places/${id}` })).statusCode).toBe(204);
+    expect(
+      (
+        await app.inject({
+          headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+          method: "DELETE",
+          url: `/v1/places/${id}`,
+        })
+      ).statusCode,
+    ).toBe(204);
 
     // The console's form submits every field on save, so the restore request
     // is never status-only. A rule of "the body may change only status" would
     // reject the very request the restore path sends.
     const restore = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { status: "published", address: "Restaurado, Açores" },
@@ -154,20 +220,38 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(restore.json<{ address: string }>().address).toBe("Restaurado, Açores");
 
     // And it is genuinely back: reachable without include_archived.
-    const get = await app.inject({ method: "GET", url: `/v1/places/${id}` });
+    const get = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${id}`,
+    });
     expect(get.statusCode).toBe(200);
   });
 
   it("an archived place is still read-only for edits that leave it archived", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
-    await app.inject({ method: "DELETE", url: `/v1/places/${id}` });
+    await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "DELETE",
+      url: `/v1/places/${id}`,
+    });
 
     for (const payload of [
       { address: "Uma morada nova" }, // no status at all
       { status: "archived", address: "Outra" }, // explicitly staying archived
     ]) {
-      const res = await app.inject({ method: "PATCH", url: `/v1/places/${id}`, payload });
+      const res = await app.inject({
+        headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+        method: "PATCH",
+        url: `/v1/places/${id}`,
+        payload,
+      });
       expect(res.statusCode).toBe(409);
       // 409 `place_archived`, NOT 404. Answering "not found" for a row that
       // demonstrably exists left a caller unable to tell a bad id from an
@@ -178,6 +262,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("404 on unknown id", async () => {
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: "/v1/places/00000000-0000-4000-8000-000000000000",
     });
@@ -186,6 +271,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("400 on invalid body", async () => {
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, geom_lat: 999 },
@@ -195,6 +281,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("POST rejects is_hosts_pick=true on a non-published place (422)", async () => {
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, status: "draft" as const, is_hosts_pick: true },
@@ -205,6 +292,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("POST allows is_hosts_pick=true on a published place (201)", async () => {
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, status: "published" as const, is_hosts_pick: true },
@@ -215,6 +303,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("PATCH rejects flipping a draft place to a pick (422)", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, status: "draft" as const },
@@ -222,6 +311,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     const { id } = create.json<{ id: string }>();
 
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { is_hosts_pick: true },
@@ -232,6 +322,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("PATCH rejects un-publishing a pick without clearing it (422)", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, status: "published" as const, is_hosts_pick: true },
@@ -239,6 +330,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     const { id } = create.json<{ id: string }>();
 
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { status: "draft" },
@@ -249,6 +341,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
   it("PATCH allows marking a pick on a published place + un-publishing when also clearing the pick", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, status: "published" as const },
@@ -256,6 +349,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     const { id } = create.json<{ id: string }>();
 
     const mark = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { is_hosts_pick: true },
@@ -264,6 +358,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     expect(mark.json<{ is_hosts_pick: boolean }>().is_hosts_pick).toBe(true);
 
     const unpublish = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { status: "draft", is_hosts_pick: false },
@@ -284,7 +379,12 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
       [wishId, actionId],
     );
 
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     expect(create.statusCode).toBe(201);
     const { id: placeId } = create.json<{ id: string }>();
 
@@ -298,6 +398,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     await ctx.pool.query(`UPDATE catalog.place SET season = 'summer' WHERE id = $1`, [placeId]);
 
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: `/v1/places/${placeId}/hydrated`,
     });
@@ -342,11 +443,17 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
       [wishId, actionId],
     );
 
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     expect(create.statusCode).toBe(201);
     const { id: placeId } = create.json<{ id: string }>();
 
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: "/v1/places-by-action?action_slug=eat",
     });
@@ -371,6 +478,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
     // Place WITH image media.
     const createWithMedia = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: VALID_BODY,
@@ -388,6 +496,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
 
     // Place WITHOUT any media.
     const createNoMedia = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: VALID_BODY,
@@ -395,6 +504,7 @@ describe("POST/GET/PATCH/DELETE /v1/places", () => {
     const { id: placeNoMedia } = createNoMedia.json<{ id: string }>();
 
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: "/v1/places-by-action?action_slug=eat",
     });
@@ -444,6 +554,7 @@ describe("place media persistence", () => {
 
   it("persists the assets attached on create, in the order given", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
@@ -454,7 +565,12 @@ describe("place media persistence", () => {
     const rows = await mediaRows(id);
     // Control: a place created WITHOUT media has zero rows, so a non-empty
     // result here is the media argument's doing and not a fixture.
-    const bare = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const bare = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     expect(await mediaRows(bare.json<{ id: string }>().id)).toHaveLength(0);
 
     expect(rows).toHaveLength(2);
@@ -467,7 +583,12 @@ describe("place media persistence", () => {
   // in the app. A delete-all-then-reinsert implementation passes every other
   // test in this block and destroys it on the owner's first save.
   it("keeps attribution and alt on a row the owner did not remove", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
 
     const seededId = "33333333-3333-4333-8333-33333333aaaa";
@@ -483,6 +604,7 @@ describe("place media persistence", () => {
     // The owner adds a photo of their own and saves. The editor sends the
     // existing row back by its place_media id, alongside the new asset id.
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { media: [seededId, ASSET_A] },
@@ -506,6 +628,7 @@ describe("place media persistence", () => {
 
   it("re-orders a kept row without rewriting it, so the hero follows the array", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
@@ -515,6 +638,7 @@ describe("place media persistence", () => {
     const [rowA, rowB] = before;
 
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { media: [rowB!.id, rowA!.id] },
@@ -527,13 +651,18 @@ describe("place media persistence", () => {
     expect(after.map((r) => r.sort_order)).toEqual([0, 1]);
 
     // hero_image_url reads the lowest sort_order image, so the swap moved it.
-    const list = await app.inject({ method: "GET", url: "/v1/places-by-action?action_slug=eat" });
+    const list = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: "/v1/places-by-action?action_slug=eat",
+    });
     const items = list.json<{ items: { id: string; hero_image_url: string | null }[] }>().items;
     expect(items.find((i) => i.id === id)?.hero_image_url).toBe(`/v1/media/${ASSET_B}`);
   });
 
   it("removes exactly the row the owner took out", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
@@ -542,6 +671,7 @@ describe("place media persistence", () => {
     const [rowA, rowB] = await mediaRows(id);
 
     await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { media: [rowA!.id] },
@@ -557,6 +687,7 @@ describe("place media persistence", () => {
   // `.default([])` precisely so an absent key can never be read as "empty".
   it("leaves media untouched on a PATCH that does not mention it", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, media: [ASSET_A, ASSET_B] },
@@ -564,6 +695,7 @@ describe("place media persistence", () => {
     const { id } = create.json<{ id: string }>();
 
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { is_hosts_pick: true },
@@ -577,6 +709,7 @@ describe("place media persistence", () => {
 
   it("clears the photos when the owner explicitly sends an empty list", async () => {
     const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: { ...VALID_BODY, media: [ASSET_A] },
@@ -584,7 +717,12 @@ describe("place media persistence", () => {
     const { id } = create.json<{ id: string }>();
     expect(await mediaRows(id)).toHaveLength(1);
 
-    await app.inject({ method: "PATCH", url: `/v1/places/${id}`, payload: { media: [] } });
+    await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "PATCH",
+      url: `/v1/places/${id}`,
+      payload: { media: [] },
+    });
     expect(await mediaRows(id)).toHaveLength(0);
   });
 });
@@ -611,11 +749,17 @@ describe("place action tagging (S6b)", () => {
   // and every action-scoped discovery query INNER JOINs that table — so the place was
   // invisible to guests while looking perfectly fine in the owner console.
   it("a created place is immediately reachable by action-scoped discovery", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     expect(create.statusCode).toBe(201);
     const { id } = create.json<{ id: string }>();
 
     const byAction = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "GET",
       url: "/v1/places-by-action?action_slug=eat",
     });
@@ -627,10 +771,19 @@ describe("place action tagging (S6b)", () => {
   });
 
   it("hydrated view exposes the action + wish written at create time", async () => {
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
 
-    const res = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${id}/hydrated`,
+    });
     expect(res.statusCode).toBe(200);
     const body = res.json<{
       actions: { slug: string }[];
@@ -650,7 +803,12 @@ describe("place action tagging (S6b)", () => {
       { ...VALID_BODY, actions: [] },
       { ...VALID_BODY, actions: [{ action_slug: "eat", wish_slugs: [] }] },
     ]) {
-      const res = await app.inject({ method: "POST", url: "/v1/places", payload });
+      const res = await app.inject({
+        headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+        method: "POST",
+        url: "/v1/places",
+        payload,
+      });
       expect(res.statusCode).toBe(400);
       expect(res.json<{ error: string }>().error).toBe("validation_failed");
     }
@@ -662,6 +820,7 @@ describe("place action tagging (S6b)", () => {
       [{ action_slug: "eat", wish_slugs: ["moon-view"] }],
     ]) {
       const res = await app.inject({
+        headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
         method: "POST",
         url: "/v1/places",
         payload: { ...VALID_BODY, actions },
@@ -671,12 +830,17 @@ describe("place action tagging (S6b)", () => {
     }
 
     // The rejected creates must not have left orphan places behind.
-    const list = await app.inject({ method: "GET", url: "/v1/places" });
+    const list = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: "/v1/places",
+    });
     expect(list.json<{ data: unknown[] }>().data).toHaveLength(0);
   });
 
   it("de-duplicates a repeated action+wish pair instead of 409ing on the composite PK", async () => {
     const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "POST",
       url: "/v1/places",
       payload: {
@@ -690,7 +854,11 @@ describe("place action tagging (S6b)", () => {
     expect(res.statusCode).toBe(201);
 
     const { id } = res.json<{ id: string }>();
-    const hydrated = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    const hydrated = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${id}/hydrated`,
+    });
     expect(hydrated.json<{ wishes: unknown[] }>().wishes).toHaveLength(1);
   });
 
@@ -708,29 +876,44 @@ describe("place action tagging (S6b)", () => {
       ["44444444-4444-4444-8444-444444444444", drinkId],
     );
 
-    const create = await app.inject({ method: "POST", url: "/v1/places", payload: VALID_BODY });
+    const create = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "POST",
+      url: "/v1/places",
+      payload: VALID_BODY,
+    });
     const { id } = create.json<{ id: string }>();
 
     // An unrelated PATCH must not disturb the tags.
     await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { address: "Somewhere else" },
     });
-    let hydrated = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    let hydrated = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${id}/hydrated`,
+    });
     expect(hydrated.json<{ actions: { slug: string }[] }>().actions.map((a) => a.slug)).toEqual([
       "eat",
     ]);
 
     // Supplying actions replaces the set wholesale.
     const patch = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
       method: "PATCH",
       url: `/v1/places/${id}`,
       payload: { actions: [{ action_slug: "drink", wish_slugs: ["cafe"] }] },
     });
     expect(patch.statusCode).toBe(200);
 
-    hydrated = await app.inject({ method: "GET", url: `/v1/places/${id}/hydrated` });
+    hydrated = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: `/v1/places/${id}/hydrated`,
+    });
     const body = hydrated.json<{
       actions: { slug: string }[];
       wishes: { slug: string }[];
@@ -740,7 +923,11 @@ describe("place action tagging (S6b)", () => {
   });
 
   it("GET /v1/actions returns the taxonomy with wishes nested under their action", async () => {
-    const res = await app.inject({ method: "GET", url: "/v1/actions" });
+    const res = await app.inject({
+      headers: { "x-internal-token": TEST_INTERNAL_TOKEN },
+      method: "GET",
+      url: "/v1/actions",
+    });
     expect(res.statusCode).toBe(200);
     const { data } = res.json<{
       data: {

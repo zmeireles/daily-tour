@@ -118,4 +118,9 @@ export function setTestEnv(databaseUrl: string): void {
   process.env.NODE_ENV = "test";
   process.env.LOG_LEVEL = "warn";
   process.env.PORT = "8081";
+  process.env.CATALOG_SVC_INTERNAL_TOKEN = TEST_INTERNAL_TOKEN;
 }
+
+// Shared by every DB-backed suite AND the internal-auth suite, so the token a
+// test must send matches the one the app is configured with.
+export const TEST_INTERNAL_TOKEN = "test-catalog-internal-token-32-chars-ok";

@@ -107,6 +107,7 @@ SERVICE_DB_PASSWORD_N8N=$(gen_hex 24)
 # Shared app secrets.
 JWT_SIGNING_KEY=$(gen_hex 32)              # 64 chars (>=32; shared bff<->token).
 MEDIA_SVC_INTERNAL_TOKEN=$(gen_hex 24)     # 48 chars (>=32; shared bff<->media).
+CATALOG_SVC_INTERNAL_TOKEN=$(gen_hex 24) # 48 chars (>=32; shared bff<->catalog, dt-tests #36).
 
 # Authentik.
 AUTHENTIK_SECRET_KEY=$(gen_b64 60)         # 80 chars (>=50; Django SECRET_KEY).
@@ -130,6 +131,7 @@ RABBITMQ_URL="amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/"
 # ── assert minimum lengths (fail loud if openssl ever short-changes us) ────────
 assert_len JWT_SIGNING_KEY "$JWT_SIGNING_KEY" 32
 assert_len MEDIA_SVC_INTERNAL_TOKEN "$MEDIA_SVC_INTERNAL_TOKEN" 32
+assert_len CATALOG_SVC_INTERNAL_TOKEN "$CATALOG_SVC_INTERNAL_TOKEN" 32
 assert_len AUTHENTIK_SECRET_KEY "$AUTHENTIK_SECRET_KEY" 50
 for _svc in CATALOG CHAT PLANNER SEARCH INGEST NOTIF MEDIA TOKEN BFF N8N; do
   _var="SERVICE_DB_PASSWORD_${_svc}"
@@ -214,6 +216,8 @@ BACKUP_RETENTION_DAYS=7
 # ─────────────────────────────────────────────────────────────────────────
 # 32+ char secret shared between BFF and media-svc.
 MEDIA_SVC_INTERNAL_TOKEN=${MEDIA_SVC_INTERNAL_TOKEN}
+# 32+ char secret shared between BFF and catalog-svc (dt-tests #36).
+CATALOG_SVC_INTERNAL_TOKEN=${CATALOG_SVC_INTERNAL_TOKEN}
 MINIO_ENDPOINT=http://dt_minio:9000
 MINIO_ACCESS_KEY=dailytour
 MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
@@ -385,7 +389,7 @@ cat <<EOF
 Generated secrets:
   Infra        POSTGRES_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD MINIO_ROOT_PASSWORD (=MINIO_SECRET_KEY)
   Per-svc DB   SERVICE_DB_PASSWORD_{CATALOG,CHAT,PLANNER,SEARCH,INGEST,NOTIF,MEDIA,TOKEN,BFF,N8N}
-  Shared app   JWT_SIGNING_KEY MEDIA_SVC_INTERNAL_TOKEN
+  Shared app   JWT_SIGNING_KEY MEDIA_SVC_INTERNAL_TOKEN CATALOG_SVC_INTERNAL_TOKEN
   Authentik    AUTHENTIK_SECRET_KEY AUTHENTIK_PG_PASSWORD AUTHENTIK_BOOTSTRAP_PASSWORD
                AUTHENTIK_BOOTSTRAP_TOKEN AUTHENTIK_OWNER_APP_CLIENT_SECRET
   Traefik      TRAEFIK_DASHBOARD_PASSWORD

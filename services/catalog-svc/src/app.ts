@@ -4,6 +4,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { setupSentryFastifyErrorHandler } from "@daily-tour/shared-sentry";
 import { loadConfig } from "./config.js";
+import internalAuthPlugin from "./plugins/internal-auth.js";
 import { healthRoutes } from "./routes/health.js";
 import { placesRoutes } from "./routes/places.js";
 import { guesthousesRoutes } from "./routes/guesthouses.js";
@@ -29,6 +30,9 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(helmet);
   await app.register(cors, { origin: true, credentials: true });
   await app.register(rateLimit, { max: 200, timeWindow: "1 minute" });
+
+  // X-Internal-Token gate for every data route (/health + /ready stay open).
+  await app.register(internalAuthPlugin);
 
   await app.register(healthRoutes);
   await app.register(placesRoutes);
