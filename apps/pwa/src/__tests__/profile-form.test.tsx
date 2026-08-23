@@ -148,4 +148,56 @@ describe("ProfileForm", () => {
     fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "919999999" } });
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
+
+  // ── dt-tests #35: an owner can clear their photo ───────────────────────────
+  // Pre-fix the form sent `photo: values.photo || undefined`, and the server
+  // treats an ABSENT photo as "leave unchanged" — so "no photo" and "don't
+  // touch the photo" were the same message and removal was inexpressible.
+
+  const WITH_PHOTO: OwnerProfile = {
+    ...MOCK_PROFILE,
+    photo: "11111111-1111-4111-8111-111111111111",
+  };
+
+  it("offers a Remove control only when a photo is set", () => {
+    const { unmount } = render(<ProfileForm initialData={MOCK_PROFILE} />);
+    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
+    unmount();
+
+    render(<ProfileForm initialData={WITH_PHOTO} />);
+    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+  });
+
+  it("sends photo: null when the owner removes it — not undefined", async () => {
+    render(<ProfileForm initialData={WITH_PHOTO} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    const body = mutateAsync.mock.calls[0]![0] as { photo: unknown };
+    // null is the whole point: undefined would reach the server as "absent",
+    // which means leave unchanged.
+    expect(body.photo).toBeNull();
+    expect(body.photo).not.toBeUndefined();
+  });
+
+  it("still sends the photo id unchanged when it is NOT removed", async () => {
+    render(<ProfileForm initialData={WITH_PHOTO} />);
+
+    fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "919999999" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    const body = mutateAsync.mock.calls[0]![0] as { photo: unknown };
+    // control: the clear path must not fire on every save
+    expect(body.photo).toBe("11111111-1111-4111-8111-111111111111");
+  });
+
+  it("hides the avatar once removed", () => {
+    render(<ProfileForm initialData={WITH_PHOTO} />);
+    expect(screen.getByAltText("Owner avatar")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(screen.queryByAltText("Owner avatar")).not.toBeInTheDocument();
+  });
 });

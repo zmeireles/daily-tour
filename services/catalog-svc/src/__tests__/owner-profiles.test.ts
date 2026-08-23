@@ -129,4 +129,47 @@ describe("POST/GET/PATCH/DELETE /v1/owner-profiles", () => {
     });
     expect(del2.statusCode).toBe(204);
   });
+
+  // ── dt-tests #35: null clears the photo, absent leaves it ──────────────────
+
+  it("photo: null CLEARS a set photo, while omitting it leaves the photo alone", async () => {
+    const PHOTO = "11111111-1111-4111-8111-111111111111";
+    const hdr = { "x-internal-token": TEST_INTERNAL_TOKEN };
+
+    await app.inject({
+      headers: hdr,
+      method: "POST",
+      url: "/v1/owner-profiles",
+      payload: { ...VALID_BODY, photo: PHOTO },
+    });
+
+    // CONTROL: omitting photo must NOT clear it — otherwise a "cleared" result
+    // below would prove nothing, since every save would clear.
+    const omitted = await app.inject({
+      headers: hdr,
+      method: "PATCH",
+      url: `/v1/owner-profiles/${OWNER_ID}`,
+      payload: { phone: "+351911111111" },
+    });
+    expect(omitted.statusCode).toBe(200);
+    expect(omitted.json<{ photo: string | null }>().photo).toBe(PHOTO);
+
+    // the fix: an explicit null clears it
+    const cleared = await app.inject({
+      headers: hdr,
+      method: "PATCH",
+      url: `/v1/owner-profiles/${OWNER_ID}`,
+      payload: { photo: null },
+    });
+    expect(cleared.statusCode).toBe(200);
+    expect(cleared.json<{ photo: string | null }>().photo).toBeNull();
+
+    // and it persists, rather than only appearing in the PATCH response
+    const reread = await app.inject({
+      headers: hdr,
+      method: "GET",
+      url: `/v1/owner-profiles/${OWNER_ID}`,
+    });
+    expect(reread.json<{ photo: string | null }>().photo).toBeNull();
+  });
 });
