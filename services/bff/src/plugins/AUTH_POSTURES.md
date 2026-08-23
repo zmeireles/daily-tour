@@ -56,11 +56,31 @@ The mapping below is _intended_ state; not every route is implemented yet.
 > ⚠️ **`X-Internal-Token` is a shared secret on `dt_internal`, not a proof the caller is the BFF.**
 > It became load-bearing the day another product's containers (qr-bell) joined
 > `dt_internal` to reuse Traefik — network membership stopped implying "the BFF".
-> Both catalog-svc (`plugins/internal-auth.ts`, added dt-tests #36) and media-svc
-> now reject any non-health request without it. `/health` and `/ready` stay open
-> because Docker's healthcheck sends no headers.
+> Both catalog-svc (`plugins/internal-auth.ts`, dt-tests #36) and media-svc
+> (same filename, 2026-08-23) gate **every** route with a service-wide
+> `onRequest` hook. `/health` and `/ready` stay open because Docker's healthcheck
+> sends no headers.
 >
-> ⟲ **Falsifier:** from a container on `dt_internal` that is NOT the BFF, `curl`
-> `http://dt_catalog_svc:8081/v1/places` with no header. A 200 with data means the
-> gate regressed or was never wired; a 401 means it holds. (Measured 401 after
-> #36; measured 200 — full data — before it.)
+> 📌 **The posture that matters is the DEFAULT, not the list of guarded routes.**
+> Both services are **deny-by-default**: the hook runs for every request and an
+> explicit `OPEN_PATHS` set names the exemptions. media-svc was **allow**-by-default
+> until 2026-08-23 — auth was a `verifyInternal` preHandler each route had to opt
+> into, so `GET /v1/assets/:id` was unauthenticated (measured: 302 + a presigned
+> MinIO URL, to a non-BFF container), and any route added without the preHandler
+> would have been too, with no test failing. An earlier revision of this file
+> asserted media-svc "reject[ed] any non-health request"; it did not.
+> ⇒ When adding a service on `dt_internal`, copy the **hook**, never the preHandler.
+>
+> ⟲ **Falsifier — run it against BOTH services; one passing says nothing about the other:**
+> from a container on `dt_internal` that is NOT the BFF (e.g. `dt_notif_svc`), with no header:
+>
+> ```
+> GET http://dt_catalog_svc:8081/v1/places      → expect 401   (200 + data ⇒ regressed)
+> GET http://dt_media_svc:8087/v1/assets/<uuid> → expect 401   (302 ⇒ regressed)
+> GET http://dt_catalog_svc:8081/ready          → expect 200   (positive control)
+> ```
+>
+> The `/ready` line is not decoration: without it a 401 from an unreachable
+> service is indistinguishable from a working gate. (catalog-svc: measured 200
+> before #36, 401 after, re-measured 401 on 2026-08-23. media-svc: measured 302
+> before this change, 401 after.)

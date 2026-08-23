@@ -6,8 +6,12 @@ import { getS3Client, getPresignedGetUrl } from "../lib/s3.js";
 import { loadConfig } from "../config.js";
 
 export function assetsRoutes(app: FastifyInstance): void {
-  // Public: the pre-signed GET URL is the access control mechanism.
-  // Time-limited (15 min) so URL leaks are bounded. No auth header required.
+  // NOT public. The presigned GET URL this returns is time-limited (15 min),
+  // which bounds a leak — it does not decide who may ask for one. The BFF is
+  // the only caller (media-client.fetchAsset, behind routes/media-display.ts);
+  // media-svc has no Traefik router and publishes no port, so browsers never
+  // reach it. The service-wide gate in plugins/internal-auth.ts covers this
+  // route: without X-Internal-Token it is 401 before the handler runs.
   app.get("/v1/assets/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
     const { MINIO_BUCKET } = loadConfig();
