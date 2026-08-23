@@ -124,7 +124,10 @@ export function ProfileForm({ initialData }: Props) {
         { bio_en: values.bio_en, bio_pt: values.bio_pt, bio_es: values.bio_es },
         "bio",
       ),
-      photo: values.photo || undefined,
+      // "" is the owner having removed their photo — send null so the server
+      // clears it. `undefined` would mean "leave unchanged", which is why the
+      // photo could never be removed (dt-tests #35).
+      photo: values.photo === "" ? null : values.photo,
       phone: values.phone || undefined,
       call_enabled: values.call_enabled,
       dm_channels: {
@@ -277,11 +280,22 @@ export function ProfileForm({ initialData }: Props) {
                 <span className="text-sm font-medium">{t("profile.form.photo", "Photo")}</span>
                 <div className="flex items-start gap-4">
                   {photo ? (
-                    <img
-                      src={`/v1/media/${photo}`}
-                      alt={t("profile.form.photo_alt", "Owner avatar")}
-                      className="h-20 w-20 shrink-0 rounded-full border object-cover"
-                    />
+                    <div className="flex shrink-0 flex-col items-center gap-1">
+                      <img
+                        src={`/v1/media/${photo}`}
+                        alt={t("profile.form.photo_alt", "Owner avatar")}
+                        className="h-20 w-20 rounded-full border object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-destructive hover:text-destructive"
+                        onClick={() => setValue("photo", "", { shouldDirty: true })}
+                      >
+                        {t("profile.form.photo_remove", "Remove")}
+                      </Button>
+                    </div>
                   ) : (
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-dashed text-muted-foreground">
                       <User aria-hidden />

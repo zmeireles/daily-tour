@@ -19,7 +19,10 @@ const DmChannelsSchema = z.object({
 const UpsertOwnerProfileBodySchema = z.object({
   owner_id: z.string().uuid(),
   bio: I18nSchema.optional(),
-  photo: z.string().uuid().optional(),
+  // `null` clears the photo; ABSENT leaves it unchanged. The two used to be
+  // indistinguishable on the wire, so an owner could set and replace a photo
+  // but never remove one (dt-tests #35).
+  photo: z.string().uuid().nullable().optional(),
   phone: z.string().max(32).optional(),
   call_enabled: z.boolean().default(false),
   dm_channels: DmChannelsSchema,
