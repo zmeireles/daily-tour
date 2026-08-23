@@ -1,6 +1,97 @@
-# Session Handoff — … → 08-21 (**s742 — the two green PRs MERGED, qual DEPLOYED to `140520d`, and both blocked UAT cards RUN and PASSED. The guest-revocation security fix is finally live.**) · 08-21 (**s741 — the defect hunt's last three findings SETTLED**) · 08-21 (**s740 — three of four hunt findings fixed**) · 08-20 (**s739 — a defect hunt found FOUR pieces of inert machinery**) · 08-20 (s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 fully CLOSED**)
+# Session Handoff — … → 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-08-21 (LATEST — session `s742`, `dt:Furnas`. Cleared the whole owner queue that `s741` left: both green PRs merged, qual deployed, both blocked UAT cards run and passed. One new gap filed.)**
+> **UPDATE 2026-08-23 (LATEST — session `s742`, `dt:Furnas`. Ran a continuous implement→test→PR→merge→deploy→UAT loop under the owner's standing instruction. Seven PRs shipped and verified on qual; a defect hunt filed six findings; one product decision is written up and waiting.)**
+>
+> ### State
+>
+> `main` **`1b75101`** · **zero open pull requests** · tree clean · qual deployed and UAT'd through `1b75101` · local branches drained to `main` alone.
+>
+> ### ▶ WHAT NEEDS THE OWNER
+>
+> 1. **[`dt-tests #40`](https://tasks.codecomedy.dev/p/dt-tests/r/40) — the plan-sharing decision, now fully written up.** Asked across four sessions with no facts in one place; that card now holds every measurement and a recommendation (**option C**). One token answers it.
+> 2. **[`dt-tests #37`](https://tasks.codecomedy.dev/p/dt-tests/r/37) — consume the image variants, or delete the pipeline?** Genuinely opposite directions, so it was NOT picked unilaterally. See below.
+> 3. **[`dt-tests #36`](https://tasks.codecomedy.dev/p/dt-tests/r/36) stays OPEN on purpose** — the stop-gap shipped, the architectural fix (network split) touches the qr-bell repo.
+>
+> ---
+>
+> ## Shipped this loop — every one merged, deployed AND browser-UAT'd on qual
+>
+> | PR                                                         | what                                                      | UAT on qual                                                       |
+> | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- |
+> | [`#457`](https://github.com/zmeireles/daily-tour/pull/457) | an owner can remove **and reorder** a place's photos      | **7/7** — incl. a removed photo staying removed after save+reopen |
+> | [`#458`](https://github.com/zmeireles/daily-tour/pull/458) | 24-hour `TimeField` replaces `<input type="time">`        | ✅ `timeField=2 native=0`, value `09:00`, no AM/PM                |
+> | [`#459`](https://github.com/zmeireles/daily-tour/pull/459) | **catalog-svc requires `X-Internal-Token`**               | ✅ the exact leaking call now **401**                             |
+> | [`#460`](https://github.com/zmeireles/daily-tour/pull/460) | rail footer stops overflowing (locale codes + `shrink-0`) | ✅ overflow **0px**, toggle **36×36 inside** the rail             |
+> | [`#461`](https://github.com/zmeireles/daily-tour/pull/461) | the slug field explains itself instead of lying           | ✅ placeholder previews `casa-azul-do-mar` live                   |
+> | [`#462`](https://github.com/zmeireles/daily-tour/pull/462) | OSM raster capped at z19                                  | latent fix, no UAT possible                                       |
+> | [`#463`](https://github.com/zmeireles/daily-tour/pull/463) | an owner can clear their profile photo                    | server test re-reads via GET                                      |
+>
+> ### The security finding, and why it mattered
+>
+> `AUTH_POSTURES.md` claimed _"catalog-svc / media-svc use a separate `X-Internal-Token`"_. **Only media-svc did.** catalog-svc had **no auth of any kind** — no plugin, no `preHandler`, including on `POST`/`PATCH`/`DELETE`.
+>
+> The posture rested on `internal-auth.ts:8`: _"The BFF is the sole trusted caller on `dt_internal`."_ **Measured false.** 25 containers on that network, including **`qrb-api` — a different product, repo and CI runner**, which joined deliberately to reuse Daily Tour's Traefik. From inside it, no credential:
+>
+> ```
+> GET dt_catalog_svc:8081/v1/places → 200 + full data, incl. contacts.email
+> ```
+>
+> 📌 **The premise was true when written and rotted silently, because no test in this repo can fail when a _different repo_ adds a network.** `AUTH_POSTURES.md` now carries a **falsifier** — the one command that re-checks it.
+>
+> **Post-fix, measured:** that same call returns **401**; `/ready` still open (healthchecks send no header); catalog-svc **healthy**; the owner console still lists places and guesthouses with **no 4xx**. Both halves proven — a fix that only closed the hole would have taken the console down.
+>
+> ---
+>
+> ## 🪤 Three verification mistakes I made, all caught — read this before trusting a control
+>
+> This loop leaned on "neuter the fix, confirm exactly the right tests go red". **Three times that control was itself broken**, and each failure mode is reusable:
+>
+> | what happened                                                 | why it was silent                                                                                                                                                 |
+> | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | control reported **PASS** on the slug fix                     | prettier had wrapped the JSX; my single-line `str.replace` **matched nothing**, so the file never changed. A control that does not modify the file tests nothing. |
+> | control reported **PASS** again (2nd attempt)                 | same cause, different anchor — fixed only by `assert old in s` **before** writing                                                                                 |
+> | UAT reported the theme toggle at **40×32, right=52** — a PASS | the probe selected `button[aria-label][title]`, and **the fix itself had just added `title` to the locale buttons**. It measured `EN`, not the toggle.            |
+>
+> ⇒ **Two habits now non-negotiable here:** (a) assert the anchor exists before applying a control, and (b) after changing a component's attributes, re-check that any probe selecting on those attributes still selects the same element. The toggle numbers were right by luck for two checks.
+>
+> ---
+>
+> ## The defect hunt — six findings filed, four already fixed
+>
+> Method that worked: **take a claim the code makes about itself, then measure it.** `AUTH_POSTURES.md` and `internal-auth.ts` both asserted things that had quietly stopped being true.
+>
+> - [`#34`](https://tasks.codecomedy.dev/p/dt-tests/r/34) photos could be added, never removed → **fixed** (`#457`)
+> - [`#35`](https://tasks.codecomedy.dev/p/dt-tests/r/35) profile photo could not be cleared → **fixed** (`#463`)
+> - [`#36`](https://tasks.codecomedy.dev/p/dt-tests/r/36) catalog-svc unauthenticated → **stop-gap fixed** (`#459`), network split still open
+> - [`#37`](https://tasks.codecomedy.dev/p/dt-tests/r/37) **48 of 56 objects in the media bucket are derivatives nothing serves** — open, needs a decision
+> - [`#38`](https://tasks.codecomedy.dev/p/dt-tests/r/38) rail footer overflow → **fixed** (`#460`)
+> - [`#39`](https://tasks.codecomedy.dev/p/dt-tests/r/39) slug field lied → **fixed** (`#461`)
+>
+> ### `#37` in one line, because it is the sharpest of them
+>
+> Every uploaded image is transcoded into **6 derivatives** (200/600/1200 × avif/webp). **8/8 assets have them; 48 of 56 bucket objects are them; nothing reads them.** The tell: the worker writes `Record<string,string>` where the published contract declares objects — **a shape mismatch that has never thrown is itself proof nothing consumes the output.** Consume them (`?w=` + `srcset`) or delete the pipeline; they are opposite, so it waits.
+>
+> ---
+>
+> ## ⚠️ Unresolved: the blank map the owner reported
+>
+> **Not reproduced.** In real Chrome on the same page: **14 OSM tiles, all 200**, zero console errors, geocode 200.
+>
+> `#462` capped the raster source at z19 (OSM 404s above it) — a **real latent defect**, but **not shown to be the reported cause**. My zoom repro was _inconclusive, not negative_: the picker has no zoom control and synthetic wheel events produced **0 tile requests**, so the probe never fired.
+>
+> ⚠️ **The "blank map canvas is a headless-SwiftShader artifact" note in memory does NOT apply** — that covers headless screenshots; the owner was in real Chrome.
+>
+> **One datum settles it:** DevTools → Network → filter `tile.openstreetmap.org` in that modal. Requests-with-a-status vs no-requests-at-all point at completely different causes.
+>
+> ---
+>
+> ## Session-conduct notes
+>
+> - **Model switched mid-session** — Opus → Fable 5 (weekly Opus at 94%) → back to Opus 5 after the weekly reset, coordinated via a peer session. Context carried across both switches with no handoff needed.
+> - **`CATALOG_SVC_INTERNAL_TOKEN` was generated ON the VPS** into the gitignored `.env.qual` **before** the `#459` deploy — compose refuses to start without it and catalog-svc refuses to boot without it, so the ordering was load-bearing, not incidental.
+> - The `bash-secret-guard` hook correctly refused a heredoc containing compose's `${VAR:?...}` placeholder syntax. Worked around by writing the script to a file rather than piping it through the shell — **not** by weakening the hook.
+
+> **UPDATE 2026-08-21 (session `s742`, earlier phase, `dt:Furnas`. Cleared the whole owner queue that `s741` left: both green PRs merged, qual deployed, both blocked UAT cards run and passed. One new gap filed.)**
 >
 > ### State
 >
