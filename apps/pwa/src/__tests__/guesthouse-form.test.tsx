@@ -94,13 +94,11 @@ function nameInput() {
 function saveButton() {
   return screen.getByRole("button", { name: /^save$/i });
 }
-// Slug lives in the "Advanced" section. It's collapsed by default in create
-// mode but opens automatically in edit mode when a slug already exists, so only
-// toggle it when the Slug field isn't already visible.
+// The slug field ("Page address") sits in the Advanced card with no disclosure
+// (dt-tests #39). Kept as a named helper so the call sites still read intent.
+const SLUG_LABEL = "Page link";
 function openAdvanced() {
-  if (!screen.queryByLabelText("Slug")) {
-    fireEvent.click(screen.getByRole("button", { name: /slug/i }));
-  }
+  /* no-op: the field is always visible now */
 }
 
 // Fills the required English name + address so a create/edit submit passes.
@@ -188,9 +186,9 @@ describe("GuesthouseForm", () => {
     expect(screen.getByLabelText("Status")).toHaveValue("active");
     expect(screen.getByLabelText("Rooms")).toHaveValue(4);
 
-    // Slug is demoted into the Advanced collapsible.
+    // Slug lives in the Advanced card (no disclosure since dt-tests #39).
     openAdvanced();
-    expect(screen.getByLabelText("Slug")).toHaveValue("casa-das-furnas");
+    expect(screen.getByLabelText(SLUG_LABEL)).toHaveValue("casa-das-furnas");
   });
 
   it("exposes an editable Spanish tab that round-trips name_es in the submit body", async () => {
@@ -230,7 +228,7 @@ describe("GuesthouseForm", () => {
 
     fillRequired();
     openAdvanced();
-    fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "Not A Slug" } });
+    fireEvent.change(screen.getByLabelText(SLUG_LABEL), { target: { value: "Not A Slug" } });
 
     fireEvent.click(saveButton());
 
@@ -296,7 +294,7 @@ describe("GuesthouseForm", () => {
     render(<GuesthouseForm />);
     fillRequired();
     openAdvanced();
-    fireEvent.change(screen.getByLabelText("Slug"), { target: { value: "casa-furnas" } });
+    fireEvent.change(screen.getByLabelText(SLUG_LABEL), { target: { value: "casa-furnas" } });
 
     fireEvent.click(saveButton());
 
@@ -372,5 +370,26 @@ describe("GuesthouseForm", () => {
     await waitFor(() =>
       expect(updateMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ media: [heroId] })),
     );
+  });
+
+  // ── dt-tests #39: the slug field explains itself ───────────────────────────
+
+  it("shows the slug field with no disclosure and only ONE 'Page address' label", () => {
+    render(<GuesthouseForm />);
+    // pre-fix there were TWO elements named 'Slug' (trigger + label) behind a
+    // Collapsible; now the field is visible immediately with one label.
+    expect(screen.getByLabelText("Page link")).toBeInTheDocument();
+    expect(screen.queryByText("Slug")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^slug$/i })).not.toBeInTheDocument();
+  });
+
+  it("previews the slug the name would derive to, as the placeholder", () => {
+    render(<GuesthouseForm />);
+    fireEvent.click(tab("Portuguese"));
+    fireEvent.change(nameInput(), { target: { value: "Casa Azul do Mar" } });
+    // The hint used to PROMISE auto-generation that never appeared; now the
+    // derived value is visible as the placeholder, so the promise is real.
+    const slug = screen.getByLabelText("Page link");
+    expect(slug).toHaveAttribute("placeholder", "casa-azul-do-mar");
   });
 });

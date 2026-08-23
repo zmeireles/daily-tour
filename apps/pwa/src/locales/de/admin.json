@@ -69,7 +69,10 @@
       "tabs": {
         "en": "Englisch",
         "pt_PT": "Portugiesisch"
-      }
+      },
+      "slug_label": "Seitenadresse",
+      "slug_example": "meine-unterkunft",
+      "slug_hint": "Leer lassen — wird beim Speichern aus dem Namen erstellt."
     }
   },
   "places": {

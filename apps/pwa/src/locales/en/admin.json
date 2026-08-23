@@ -131,7 +131,7 @@
       "hero": "Hero photo",
       "hero_alt": "Guesthouse hero",
       "advanced": "Advanced",
-      "slug_hint": "Auto-generated from the name. Leave blank to derive it.",
+      "slug_hint": "Leave blank and it is created from the name when you save.",
       "status": "Status",
       "rooms": "Rooms",
       "save": "Save",
@@ -157,7 +157,9 @@
         "en": "English",
         "pt_PT": "Portuguese",
         "es": "Spanish"
-      }
+      },
+      "slug_label": "Page link",
+      "slug_example": "my-guesthouse"
     }
   },
   "places": {
