@@ -28,7 +28,7 @@ const CompleteBodySchema = z.object({
 });
 
 export function uploadsRoutes(app: FastifyInstance): void {
-  app.post("/v1/uploads/sign", { preHandler: [app.verifyInternal] }, async (req, reply) => {
+  app.post("/v1/uploads/sign", async (req, reply) => {
     const ownerId = req.headers["x-owner-id"] as string | undefined;
     if (!ownerId) {
       return reply.code(400).send({ error: "x-owner-id header is required" });
@@ -69,7 +69,7 @@ export function uploadsRoutes(app: FastifyInstance): void {
 
   // Called by the BFF after the client's direct PUT to MinIO succeeds.
   // Marks the asset as uploaded and enqueues it for transcoding.
-  app.post("/v1/uploads/complete", { preHandler: [app.verifyInternal] }, async (req, reply) => {
+  app.post("/v1/uploads/complete", async (req, reply) => {
     const parse = CompleteBodySchema.safeParse(req.body);
     if (!parse.success) {
       return reply.code(400).send({ error: "invalid body", details: parse.error.issues });

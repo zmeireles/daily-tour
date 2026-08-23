@@ -78,7 +78,11 @@ function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => voi
 
     async fetchAsset(assetId: string): Promise<MediaAsset> {
       // fetch follows media-svc's 302 → MinIO presigned GET automatically.
-      const res = await fetch(`${MEDIA_SVC_URL}/v1/assets/${assetId}`);
+      // The token is required here too: media-svc is deny-by-default, and this
+      // was the one call that omitted the header the BFF already holds.
+      const res = await fetch(`${MEDIA_SVC_URL}/v1/assets/${assetId}`, {
+        headers: { "x-internal-token": MEDIA_SVC_INTERNAL_TOKEN },
+      });
       if (!res.ok) {
         return { ok: false, status: res.status, contentType: null, body: null };
       }

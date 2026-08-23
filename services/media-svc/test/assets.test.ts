@@ -18,6 +18,9 @@ const VALID_TOKEN = "test-internal-token-32-chars-pad-here-ok";
 const OWNER_ID = "22222222-2222-4222-8222-222222222222";
 const ASSET_ID = "33333333-3333-4333-8333-333333333333";
 
+// This route is NOT public: media-svc is deny-by-default (src/plugins/internal-auth.ts),
+// so these requests carry X-Internal-Token like every other caller. The gate itself is
+// covered in src/__tests__/internal-auth.test.ts; here we test the route's behaviour.
 describe("GET /v1/assets/:id", () => {
   let app: Awaited<ReturnType<typeof createApp>>;
 
@@ -53,6 +56,7 @@ describe("GET /v1/assets/:id", () => {
     const res = await app.inject({
       method: "GET",
       url: `/v1/assets/${asset_id}`,
+      headers: { "x-internal-token": VALID_TOKEN },
     });
     expect(res.statusCode).toBe(302);
     const location = res.headers["location"] as string;
@@ -64,6 +68,7 @@ describe("GET /v1/assets/:id", () => {
     const res = await app.inject({
       method: "GET",
       url: `/v1/assets/${ASSET_ID}`,
+      headers: { "x-internal-token": VALID_TOKEN },
     });
     expect(res.statusCode).toBe(404);
     expect(res.json<{ error: string }>().error).toBe("asset not found");
