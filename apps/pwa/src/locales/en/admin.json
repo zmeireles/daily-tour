@@ -184,7 +184,6 @@
       "pick_update_error": "Could not update host's pick.",
       "pick_success": "Pick updated",
       "pick_cap_warning": "You already have {{count}} host's picks — guests see best results with around {{cap}}. Saved anyway.",
-      "sort_by": "Sort by {{column}}",
       "new": "New place",
       "visibility": "Visibility",
       "visibility_aria": "Toggle guest visibility for {{name}}",
@@ -197,12 +196,7 @@
       "filter_locale_aria": "Filter by language",
       "no_matches": "No places match your filters.",
       "count_one": "{{count}} place",
-      "count_other": "{{count}} places",
-      "pagination": {
-        "previous": "Previous",
-        "next": "Next",
-        "page": "Page {{page}} of {{total}}"
-      }
+      "count_other": "{{count}} places"
     },
     "form": {
       "loading": "Loading…",
@@ -479,5 +473,13 @@
     "remove": "Remove {{name}}",
     "move_earlier": "Move {{name}} earlier",
     "move_later": "Move {{name}} later"
+  },
+  "list": {
+    "sort_by": "Sort by {{column}}",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} of {{total}}"
+    }
   }
 }

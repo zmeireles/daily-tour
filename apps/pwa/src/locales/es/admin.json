@@ -184,7 +184,6 @@
       "pick_update_error": "No se pudo actualizar la elección del anfitrión.",
       "pick_success": "Elección actualizada",
       "pick_cap_warning": "Ya tienes {{count}} elecciones del anfitrión — los huéspedes ven mejores resultados con alrededor de {{cap}}. Guardado de todos modos.",
-      "sort_by": "Ordenar por {{column}}",
       "new": "Nuevo lugar",
       "visibility": "Visibilidad",
       "visibility_aria": "Alternar la visibilidad para huéspedes de {{name}}",
@@ -197,12 +196,7 @@
       "filter_locale_aria": "Filtrar por idioma",
       "no_matches": "Ningún lugar coincide con los filtros.",
       "count_one": "{{count}} lugar",
-      "count_other": "{{count}} lugares",
-      "pagination": {
-        "previous": "Anterior",
-        "next": "Siguiente",
-        "page": "Página {{page}} de {{total}}"
-      }
+      "count_other": "{{count}} lugares"
     },
     "form": {
       "loading": "Cargando…",
@@ -479,5 +473,13 @@
     "remove": "Eliminar {{name}}",
     "move_earlier": "Mover {{name}} antes",
     "move_later": "Mover {{name}} después"
+  },
+  "list": {
+    "sort_by": "Ordenar por {{column}}",
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {{page}} de {{total}}"
+    }
   }
 }
