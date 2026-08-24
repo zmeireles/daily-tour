@@ -74,7 +74,9 @@
       "copied": "¡Enlace copiado!",
       "title": "Mi Ruta del Día",
       "heading": "Ruta Compartida",
-      "not_found": "Este plan de visita no está disponible."
+      "not_found": "Este plan de visita no está disponible.",
+      "revoke": "Dejar de compartir",
+      "revoke_aria": "Dejar de compartir este plan"
     }
   }
 }

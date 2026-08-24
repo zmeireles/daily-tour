@@ -46,6 +46,10 @@ class TourPlanRow(Base):
     status: Mapped[str] = mapped_column(Text, nullable=False, default="queued")
     request_payload: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     plan_payload: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    # dt-tests #40 — NULL means the plan is private. Set when the guest taps
+    # "Partilhar", cleared when they revoke. The public read path gates on this;
+    # `status == "ready"` alone is NOT a grant.
+    shared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

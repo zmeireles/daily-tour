@@ -18,6 +18,8 @@ type IntakeProps = {
 type TimelineProps = {
   stage: "timeline";
   planId: string;
+  // dt-tests #40 — passed to the rail's ShareButton for the revoke affordance.
+  sharedAt?: string | null;
   stops: TourStop[];
   subline: string;
   weatherAware: boolean;
@@ -60,6 +62,7 @@ export function DailyTourDesktop(props: DailyTourDesktopProps) {
       rail={
         <TourItineraryRail
           planId={props.planId}
+          sharedAt={props.sharedAt}
           stops={props.stops}
           subline={props.subline}
           weatherAware={props.weatherAware}
