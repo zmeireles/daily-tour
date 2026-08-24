@@ -1,14 +1,40 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { formattingLocale } from "@/lib/i18n/formatting-locale";
-import { useGuesthouses } from "./use-guesthouses";
+import { useGuesthouses, type GuesthouseRow } from "./use-guesthouses";
 import { Fab } from "@/features/backoffice/fab";
 import { StatusBadge } from "@/features/backoffice/status";
+import {
+  ListPagination,
+  SortableHeader,
+  paginate,
+  sortRows,
+  useSortedPage,
+} from "@/features/backoffice/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
+
+const PAGE_SIZE = 10;
+
+type SortColumn = "name" | "status" | "updated_at";
+
+function guesthouseDisplayName(gh: GuesthouseRow): string {
+  return gh.name["en"] ?? Object.values(gh.name)[0] ?? gh.id;
+}
+
+function compareGuesthouses(a: GuesthouseRow, b: GuesthouseRow, column: SortColumn): number {
+  if (column === "updated_at") {
+    // Newest-changed first on the descending pass, which is the direction an
+    // owner actually wants; ascending stays chronological.
+    return a.updated_at.localeCompare(b.updated_at);
+  }
+  const av = column === "name" ? guesthouseDisplayName(a) : a.status;
+  const bv = column === "name" ? guesthouseDisplayName(b) : b.status;
+  return av.localeCompare(bv);
+}
 
 function CoverThumbnail({ mediaId, name }: { mediaId?: string; name: string }) {
   if (mediaId) {
@@ -30,6 +56,7 @@ function CoverThumbnail({ mediaId, name }: { mediaId?: string; name: string }) {
 export function GuesthouseList() {
   const { t, i18n } = useTranslation("admin");
   const { data, isLoading, isError, refetch } = useGuesthouses();
+  const { sort, page, setPage, handleSort } = useSortedPage<SortColumn>("name");
 
   if (isLoading) {
     return <LoadingState variant="table" />;
@@ -44,6 +71,11 @@ export function GuesthouseList() {
   }
 
   const guesthouses = data?.data ?? [];
+
+  // Sort → slice the current page. Shared with the places list (DAILY-TOUR-154);
+  // both collections are small enough to order client-side.
+  const sorted = sortRows(guesthouses, sort, compareGuesthouses);
+  const { totalPages, currentPage, pageRows } = paginate(sorted, page, PAGE_SIZE);
 
   const fmt = new Intl.DateTimeFormat(formattingLocale(i18n.language), {
     year: "numeric",
@@ -85,26 +117,35 @@ export function GuesthouseList() {
                   <th className="px-4 py-2 text-left font-medium w-12">
                     {t("guesthouses.list.cover", "Cover")}
                   </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {t("guesthouses.list.name", "Name")}
-                  </th>
+                  <SortableHeader
+                    column="name"
+                    label={t("guesthouses.list.name", "Name")}
+                    sort={sort}
+                    onSort={handleSort}
+                  />
                   <th className="px-4 py-2 text-left font-medium">
                     {t("guesthouses.list.address", "Address")}
                   </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {t("guesthouses.list.status", "Status")}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {t("guesthouses.list.last_updated", "Last updated")}
-                  </th>
+                  <SortableHeader
+                    column="status"
+                    label={t("guesthouses.list.status", "Status")}
+                    sort={sort}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    column="updated_at"
+                    label={t("guesthouses.list.last_updated", "Last updated")}
+                    sort={sort}
+                    onSort={handleSort}
+                  />
                   <th className="px-4 py-2 text-right font-medium">
                     {t("guesthouses.list.actions", "Actions")}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {guesthouses.map((gh) => {
-                  const name = gh.name["en"] ?? Object.values(gh.name)[0] ?? gh.id;
+                {pageRows.map((gh) => {
+                  const name = guesthouseDisplayName(gh);
                   return (
                     <tr key={gh.id} className="border-t hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
@@ -145,8 +186,8 @@ export function GuesthouseList() {
 
           {/* Mobile card list */}
           <div className="md:hidden flex flex-col gap-3">
-            {guesthouses.map((gh) => {
-              const name = gh.name["en"] ?? Object.values(gh.name)[0] ?? gh.id;
+            {pageRows.map((gh) => {
+              const name = guesthouseDisplayName(gh);
               return (
                 <Card key={gh.id} className="flex items-center gap-3 p-3">
                   <CoverThumbnail mediaId={gh.media[0]} name={name} />
@@ -176,6 +217,12 @@ export function GuesthouseList() {
               );
             })}
           </div>
+
+          <ListPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
 
