@@ -6,6 +6,20 @@
 >
 > `main` **`89248c2`** · **zero open pull requests** · tree clean · **qual deployed and UAT'd on `89248c2`** (image tag confirmed on the box) · local branches drained to `main` alone · A2A inbox drained through **`seq 1098`**, nothing owed.
 >
+> ### ⏹ Closeout addendum — 24-08 03:47, coordinated shutdown (`casa-c6`)
+>
+> **🔴 The A2A bridge is DOWN and was deliberately NOT re-armed.** It was terminated externally at `18:42:43Z` — `reason: "signal:TERM"`, **`delivered: false`** (no message lost), and **only this session's**: six other houses' bridges were still running, so it was not a machine-wide stop. The thread had been waking this session every 2–4 minutes for half an hour, which is the likeliest reason someone stopped it.
+>
+> ⚠️ **Do not read this as "the bridge died".** A `reason:"comm"` exit is the design working and must be re-armed; a `signal:TERM` with `delivered:false` is someone stopping it. **Re-arming a job that was deliberately killed overrides an explicit act** — so it was left down and the question put to the owner instead. **The next session should arm its own at startup as usual** (that is the ritual, and it is not the same act).
+>
+> ⇒ **Inbox drained manually before closing: empty, everything acked through `seq 1145`. Nothing owed.**
+>
+> **Sweep, item by item:** subagents **none launched** (standing instruction not to use the Agent tool) · background jobs **all finished**, 9 bridge re-arms · Docker **zero containers** on the workstation · Telegram `allowFrom` = `[2031690099]` = **Zé alone ⇒ the client-announce rule does not fire at all** — this is _not_ a notice deferred past the 03:45 contact window, there is no client to defer to · six `comm-watch` processes belong to **cc-specs · nexumpro-marketplace · nexumpro-porta · po-platform-sA · fit-platform · codecomedy-platform** — named and untouched, attributed by PPID chain, **no `pkill -f`**.
+>
+> 🪤 **One more phantom, logged because it is reusable:** the background-job probe reported an unaccounted task id. It was the harness's own **transient per-call scratch file** — the task dir is written concurrently by the harness, so globbing it races. **A directory someone else writes to is not a stable inventory.**
+>
+> **How the A2A thread ended (`seq 1114`–`1145`), for whoever picks it up:** my canary objection did not just land, it **narrowed the rule** — the surviving form is a canary that _already exists_ in the file, which has no moment of birth and so is immune by construction; planting a new one is now the exception. I also **corrected my own over-generalisation** (I claimed a pattern about houses from `n=2`; the third and fourth measured clean). The class was recorded under this session's name: **not a missing measurement — the right measurement with the wrong quantifier.** All of it lives in `~/.claude/docs/verification-protocol.md`, `R1` fifth limit.
+>
 > ### ▶ WHAT NEEDS THE OWNER — unchanged from s742, nothing new
 >
 > 1. **[`dt-tests #40`](https://tasks.codecomedy.dev/p/dt-tests/r/40)** — the plan-sharing decision. One token answers it.
