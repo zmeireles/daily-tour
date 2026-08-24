@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 // prop fork) plus a PINNED toolbar (Partilhar + Voltar) at the rail foot.
 export function TourItineraryRail({
   planId,
+  sharedAt,
   stops,
   subline,
   weatherAware,
@@ -22,6 +23,8 @@ export function TourItineraryRail({
   onActivate,
 }: {
   planId: string;
+  // dt-tests #40 — drives the revoke affordance; see ShareButton.
+  sharedAt?: string | null;
   stops: TourStop[];
   subline: string;
   weatherAware: boolean;
@@ -101,7 +104,7 @@ export function TourItineraryRail({
       {/* Pinned toolbar — fixes the buried-Voltar dead-end consistently at every
           desktop width. */}
       <div className="flex items-center justify-between gap-3 border-t border-outline-variant bg-surface-container-low px-6 py-4">
-        <ShareButton planId={planId} editorial />
+        <ShareButton planId={planId} sharedAt={sharedAt} editorial />
         <BackLink to="/">{t("tour.status.back")}</BackLink>
       </div>
     </div>

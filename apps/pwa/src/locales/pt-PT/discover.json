@@ -74,7 +74,9 @@
       "copied": "Ligação copiada!",
       "title": "O Meu Roteiro",
       "heading": "Roteiro Partilhado",
-      "not_found": "Este plano de visita não está disponível."
+      "not_found": "Este plano de visita não está disponível.",
+      "revoke": "Deixar de partilhar",
+      "revoke_aria": "Deixar de partilhar este plano"
     }
   }
 }

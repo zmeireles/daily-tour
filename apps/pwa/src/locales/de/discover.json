@@ -55,7 +55,9 @@
       "copied": "Link kopiert!",
       "title": "Meine Tagesroute",
       "heading": "Geteilte Route",
-      "not_found": "Dieser Reiseplan ist nicht verfügbar."
+      "not_found": "Dieser Reiseplan ist nicht verfügbar.",
+      "revoke": "Nicht mehr teilen",
+      "revoke_aria": "Diesen Plan nicht mehr teilen"
     }
   }
 }

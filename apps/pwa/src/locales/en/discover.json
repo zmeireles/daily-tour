@@ -74,7 +74,9 @@
       "copied": "Link copied!",
       "title": "My Daily Tour",
       "heading": "Shared Tour",
-      "not_found": "This tour plan is not available."
+      "not_found": "This tour plan is not available.",
+      "revoke": "Stop sharing",
+      "revoke_aria": "Stop sharing this plan"
     }
   }
 }

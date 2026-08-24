@@ -20,7 +20,11 @@ const publicTourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance
 
       try {
         const plan = await getTourPlan(parsed.data.planId);
-        if (!plan || plan.status !== "ready") {
+        // dt-tests #40 — `shared_at` is the grant; status only says the plan
+        // EXISTS to show. Before this gate every ready plan was world-readable
+        // to anyone holding the id, whether or not the guest ever shared it.
+        // A revoked plan lands here too (shared_at cleared) and 404s again.
+        if (!plan || plan.status !== "ready" || !plan.shared_at) {
           return reply.code(404).send({ error: "not_found" });
         }
         const enriched = await withStops(plan);
