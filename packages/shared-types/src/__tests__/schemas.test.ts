@@ -222,6 +222,48 @@ describe("MediaAssetSchema", () => {
       expect(result.error.issues[0]?.path).toContain("bytes");
     }
   });
+
+  // ── dt-tests #37 — the variants shape ──────────────────────────────────────
+  // `validMediaAsset.variants` is `{}`, so every assertion above passes no
+  // matter what shape the schema declares. That is precisely how the drift
+  // survived: the worker wrote strings, the contract declared objects, and the
+  // only test of the field exercised neither. These cases have a non-empty map.
+
+  it("accepts the string bucket-key map the transcode worker actually writes", () => {
+    const result = MediaAssetSchema.safeParse({
+      ...validMediaAsset,
+      variants: {
+        "200w_avif": "derived/abc/200w.avif",
+        "600w_webp": "derived/abc/600w.webp",
+        "1200w_avif": "derived/abc/1200w.avif",
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects the object shape the contract used to declare", () => {
+    // The discriminating case: this passed the OLD schema and must not pass
+    // now, otherwise the contract still fails to describe the stored data.
+    const result = MediaAssetSchema.safeParse({
+      ...validMediaAsset,
+      variants: {
+        "200w_avif": { key: "derived/abc/200w.avif", width: 200, height: 150, mime: "image/avif" },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a variant key that does not name a width and a supported format", () => {
+    // Guards the addressing convention itself — a worker that renames its keys
+    // would otherwise emit variants no consumer can ask for.
+    for (const badKey of ["thumbnail", "200_avif", "200w_gif", "w200_avif"]) {
+      const result = MediaAssetSchema.safeParse({
+        ...validMediaAsset,
+        variants: { [badKey]: "derived/abc/whatever" },
+      });
+      expect(result.success, `expected ${badKey} to be rejected`).toBe(false);
+    }
+  });
 });
 
 describe("ChatThreadSchema", () => {

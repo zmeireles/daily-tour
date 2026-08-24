@@ -14,6 +14,7 @@ export function assetsRoutes(app: FastifyInstance): void {
   // route: without X-Internal-Token it is 401 before the handler runs.
   app.get("/v1/assets/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
+    const { variant } = req.query as { variant?: string };
     const { MINIO_BUCKET } = loadConfig();
 
     const [asset] = await getDb().select().from(assetTable).where(eq(assetTable.id, id)).limit(1);
@@ -22,7 +23,21 @@ export function assetsRoutes(app: FastifyInstance): void {
       return reply.code(404).send({ error: "asset not found" });
     }
 
-    const getUrl = await getPresignedGetUrl(getS3Client(), MINIO_BUCKET, asset.bucketKey);
+    // dt-tests #37 — serve a derivative when one is asked for by NAME.
+    //
+    // 🔒 The caller names a variant ("600w_avif"); it never supplies a bucket
+    // key. The key comes from this asset's own `variants` map, so an arbitrary
+    // or traversed key cannot be presigned — a presigned URL for a
+    // caller-chosen key would hand out read access to anything in the bucket.
+    //
+    // Unknown or missing variant falls back to the original rather than 404ing:
+    // an asset uploaded before the transcode worker ran has no derivatives, and
+    // a missing thumbnail should degrade to a larger image, not a broken one.
+    const variants = asset.variants ?? {};
+    const candidate = variant ? variants[variant] : undefined;
+    const bucketKey = typeof candidate === "string" ? candidate : asset.bucketKey;
+
+    const getUrl = await getPresignedGetUrl(getS3Client(), MINIO_BUCKET, bucketKey);
     return reply.code(302).header("Location", getUrl).send();
   });
 }
