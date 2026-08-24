@@ -1,6 +1,73 @@
-# Session Handoff — … → 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-08-23 (LATEST — session `s743`, `dt:Furnas`. Resumed the standing implement→deploy→UAT loop. One security defect found by measuring a claim the docs made about themselves: shipped, deployed and verified. Separately, an A2A audit turned into a cross-house method finding.)**
+> **UPDATE 2026-08-24 (LATEST — session `s744`, `dt:Furnas`. Two merges, two PRs open awaiting the owner's call, and three owner decisions turned into code. The through-line of the day was **checks that could not fail**.)**
+>
+> ### State
+>
+> `main` **`3bc57b0`** · **two OPEN pull requests, both deliberately unmerged** · local branches drained to `main` + the two PR branches · A2A inbox drained and acked through **`seq 1196`** · Docker **zero containers** · bridge stopped at closeout (see the sweep).
+>
+> ### ▶ WHAT NEEDS THE OWNER — first thing next session
+>
+> 1. **[`#470`](https://github.com/zmeireles/daily-tour/pull/470) — plan sharing opt-in.** CI green, Fable-gated, one real gap found and closed. `BEHIND` (main moved) ⇒ needs `gh pr update-branch 470` then merge. **Not merged: privacy boundary = always-escalate.**
+> 2. **[`#471`](https://github.com/zmeireles/daily-tour/pull/471) — image variants.** CI green and `CLEAN`. **Not yet Fable-gated** — it carries a security-shaped change (the variant-key lookup), so gate it before merging.
+> 3. **Deploy-ordering blip on `#470`**, pre-existing: `deploy-qa.yml` starts containers **before** migrating, and the new ORM model selects `shared_at` ⇒ plan reads 5xx for the minutes until the migration lands. Acceptable on qual; decide before it ever reaches prod.
+> 4. Still unanswered from s742/s743: **[`dt-tests #36`](https://tasks.codecomedy.dev/p/dt-tests/r/36) option 2** — the network split (see below).
+>
+> ### Merged this session
+>
+> | PR                                                         | what                                                                                                                                                     |
+> | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [`#468`](https://github.com/zmeireles/daily-tour/pull/468) | guesthouse list gains sorting + pagination, on a new shared `backoffice/shared/data-table` primitive; places rewired onto it with its 17 tests untouched |
+> | [`#469`](https://github.com/zmeireles/daily-tour/pull/469) | one base-layer rule giving buttons and tab triggers a pointer cursor                                                                                     |
+>
+> ### Riff triage — two cards were stale, not open
+>
+> - **`daily-tour #156`** (no locale switcher in admin) — **already shipped**; closed with evidence. The backoffice switcher is a _separate component_ from the guest one, which is why a grep for the guest path missed it.
+> - **`daily-tour #158`** (`registerSW.js` 404/MIME on qual) — **fixed**; closed. Probed live _with a control_: a bogus `.js` 404s, so the 200 is real.
+> - Adjacent nit, filed not folded: `manifest.webmanifest` is served as `application/octet-stream`. Cosmetic — Chrome sniffs it.
+>
+> ### The owner's three decisions, and what each became
+>
+> - **`dt-tests #40` → C.** Shipped in `#470`. `shared_at` is the grant; public route 404s without it; revoke clears it; migration backfills so **none of the 47 existing links break**.
+> - **`dt-tests #37` → 1.** Shipped in `#471`. ⚠️ **The card's headline deliverable is impossible and this is measured:** guest place images are **external URLs** (14 Wikimedia Commons refs in the seed, **zero** `/v1/media/`), so `place-card` cannot gain a srcset — those images never touch media-svc. The pipeline only ever processed **owner uploads**. The guest-side waste the card describes is **real and still unfixed**; closing it means ingesting Commons images into media-svc, which is separate work and probably a licensing question.
+> - **`dt-tests #36` → 3 (both).** ⚠️ **Option 1 was ALREADY SHIPPED** (PR `#459`: service-wide `onRequest` + a `min(32)` boot config so catalog-svc cannot start token-less) — verified in code, not taken from the handoff. So "both" leaves **only option 2, the network split**: `dt_internal` across ~9 compose files here **plus the qr-bell repo**, a two-repo coordinated deploy where the ordering decides whether qr-bell loses TLS or Daily Tour loses its mesh. **Not started** — it needs a written plan first. `qr-bell` is at `my-projects/qr-bell` and had a live session (`qr-bell-5c`) on this machine.
+>
+> ### 🔺 New card filed: [`dt-tests #42`](https://tasks.codecomedy.dev/p/dt-tests/r/42)
+>
+> The **authed** `GET /v1/tour-plans/:planId` never checks ownership — any guest with a valid token can read any plan by id. Measured at all three layers, with a positive control (the same grep finds identity-scoping in 5 admin routes and in the new `set_shared`). **It is `#40`'s blind spot:** closing the public hole leaves this one open. ⚠️ Before fixing, **measure whether the guest JWT `sub` survives a re-redeem** — if it does not, scoping by `guest_id` would lock guests out of their own earlier plans, and the scope key must be the reservation instead.
+>
+> ---
+>
+> ## The pattern worth carrying forward: a check that cannot fail
+>
+> Four times today the defect was **an observable that could not have come out any other way**. None would have been caught by CI going green.
+>
+> | what read as fine                                                     | what it actually was                                                                                                                                                                                                           | what separated them                                                                                                                                                                                                   |
+> | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | migration re-runs with no error ⇒ "idempotent"                        | idempotent as **DDL**, corrupting as **data** — `dev-up.sh` re-applies every migration on every start, and a revoked share has `shared_at` NULL + status `ready`, so each run would **silently re-share every withdrawn link** | **diverge the data first** (revoke), _then_ re-run, and require the divergence to survive. Not "does it error" — "does it change what it must not"                                                                    |
+> | 184/184 BFF tests green ⇒ "the share route is covered"                | fully **swapping** POST↔DELETE also left 184/184 green. "Stop sharing" would have **granted** public access                                                                                                                    | only a **mutation** separates green-on-correct from green-on-inverted                                                                                                                                                 |
+> | schema contract test green                                            | the fixture was `variants: {}` — **empty** — so it passed identically under the string schema and the object schema, which is how the drift survived                                                                           | feed a **non-empty value of the wrong shape** and require rejection                                                                                                                                                   |
+> | `pgrep` finds `comm-watch` at this project's path ⇒ "I have a bridge" | it belonged to **po-platform-sA**                                                                                                                                                                                              | attribute by **principal** (walk PPID → read which `~/.secrets/tasks-*.env` the launcher sources), then prove liveness separately with `ss -tnp` → **`ESTAB`**. _Exists · is mine · is listening_ are three questions |
+>
+> 📌 **And the same shape in my own prose, twice.** `#469` shipped an acceptance criterion — "every console control shows a pointer" — that was **false**: four of nine selector arms are inert because shadcn sets `cursor-default` on menu and select items. `#470`'s body claimed the guest id is "never accepted from the body" and **that claim had no test** — a mutation reading `body.guest_id` passed the whole suite. **A claim written in a PR is not a control.** Both corrected before merge.
+>
+> ## The Fable-5 review gate earned its cost — on prose, not on code
+>
+> Neither gate found a code defect; **both found a false claim of mine**, which is the failure mode that survives green CI. Worth keeping:
+>
+> - It checked the **emitted bytes**, not my description — my PR text had line-wrapped a CSS selector **before `:not(`**, which in CSS is a **descendant combinator** and a completely different rule. The source was always right; only the prose wrapped. A rule that compiles to the wrong selector still ships green.
+> - It ran the `#470` migration against a **real Postgres 16**, including revoke-then-re-run-twice, and proved the resurrection scenario unreachable.
+> - 🪤 **Process hazard, measured:** its first `git fetch` + `git rev-parse FETCH_HEAD` in the shared checkout returned **the other PR's commit** — a concurrent fetch clobbered `FETCH_HEAD`. **With several agents on one repo, pin by OID.**
+>
+> ## Session-conduct notes
+>
+> - **Bridge:** the startup `pgrep` hit belonged to **po-platform-sA** (PPID chain + cwd). Armed my own, verified **`ESTAB`**. One supervisor exit with `reason:"comm"` mid-session ⇒ re-armed, as designed.
+> - 🪤 **At closeout the OTHER half of that trap fired:** `pgrep -f comm-watch` matched **my own probe shell**, whose PPID chain confirms it is _mine_ and which is _not a bridge_. **The PPID chain is necessary and not sufficient, and it fails toward the dangerous side.** The discriminator is `node …comm-watch.mjs` vs `/bin/bash -c`.
+> - **Telegram:** `allowFrom` = `[2031690099]` = **Zé alone ⇒ the client-announce rule is INERT.** Nothing sent; measured, not skipped.
+> - **Containers:** `docker ps -a` empty at both ends.
+> - **A2A:** answered `cs:Barra`'s spec-004 elicitation with four cases from this session — and said, against interest, that **three of the four share a cure that is already written** (`R1`'s positive control), so if the ten houses return mostly that family the spec should be **rejected as method, not saved**. The one that does _not_ reduce to it is the `pgrep` case, where the cure is not a negative control but **changing the attribution key**.
+
+> **UPDATE 2026-08-23 ( — session `s743`, `dt:Furnas`. Resumed the standing implement→deploy→UAT loop. One security defect found by measuring a claim the docs made about themselves: shipped, deployed and verified. Separately, an A2A audit turned into a cross-house method finding.)**
 >
 > ### State
 >
