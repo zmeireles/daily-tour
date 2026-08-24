@@ -31,6 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { mediaUrl } from "@/lib/media-url";
 
 // Bio is the only per-locale field; cap it so the profile card stays scannable.
 const BIO_MAX = 600;
@@ -282,7 +283,7 @@ export function ProfileForm({ initialData }: Props) {
                   {photo ? (
                     <div className="flex shrink-0 flex-col items-center gap-1">
                       <img
-                        src={`/v1/media/${photo}`}
+                        src={mediaUrl(photo, 200)}
                         alt={t("profile.form.photo_alt", "Owner avatar")}
                         className="h-20 w-20 rounded-full border object-cover"
                       />

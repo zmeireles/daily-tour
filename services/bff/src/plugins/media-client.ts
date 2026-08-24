@@ -24,7 +24,9 @@ export interface MediaSvc {
   // short-lived MinIO presigned URL on the internal `minio:9000` host (not
   // browser-reachable); the BFF follows that redirect server-side and buffers
   // the bytes so the public /v1/media/:id route can serve them same-origin.
-  fetchAsset(assetId: string): Promise<MediaAsset>;
+  // `variant` names a derivative from the asset's own map (dt-tests #37),
+  // e.g. "600w_avif". Omitted or unknown → media-svc serves the original.
+  fetchAsset(assetId: string, variant?: string): Promise<MediaAsset>;
   // Server-side upload: sign → PUT to MinIO → complete, all from the BFF.
   // The presigned PUT URL targets the internal `minio:9000` host, so the
   // browser can't PUT to it directly; the BFF proxies the bytes (same reason
@@ -76,11 +78,12 @@ function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => voi
       }
     },
 
-    async fetchAsset(assetId: string): Promise<MediaAsset> {
+    async fetchAsset(assetId: string, variant?: string): Promise<MediaAsset> {
       // fetch follows media-svc's 302 → MinIO presigned GET automatically.
       // The token is required here too: media-svc is deny-by-default, and this
       // was the one call that omitted the header the BFF already holds.
-      const res = await fetch(`${MEDIA_SVC_URL}/v1/assets/${assetId}`, {
+      const qs = variant ? `?variant=${encodeURIComponent(variant)}` : "";
+      const res = await fetch(`${MEDIA_SVC_URL}/v1/assets/${assetId}${qs}`, {
         headers: { "x-internal-token": MEDIA_SVC_INTERNAL_TOKEN },
       });
       if (!res.ok) {

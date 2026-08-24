@@ -77,7 +77,11 @@ describe("admin profile route", () => {
     render(ui);
 
     const img = await screen.findByRole("img", { name: "Owner avatar" });
-    expect(img.getAttribute("src")).toBe(`/v1/media/${photoId}`);
+    // dt-tests #37 — the avatar now requests a sized derivative rather than the
+    // full-size original. Asserting the width is the point: dropping the `?w=`
+    // would silently go back to downloading a multi-megabyte original for an
+    // 80 px circle, and a bare-id assertion could not tell the difference.
+    expect(img.getAttribute("src")).toBe(`/v1/media/${photoId}?w=200`);
   });
 
   it("renders no avatar image when the profile has no photo", async () => {

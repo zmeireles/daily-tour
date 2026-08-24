@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { mediaUrl } from "@/lib/media-url";
 
 const PAGE_SIZE = 10;
 
@@ -40,7 +41,7 @@ function CoverThumbnail({ mediaId, name }: { mediaId?: string; name: string }) {
   if (mediaId) {
     return (
       <img
-        src={`/v1/media/${mediaId}`}
+        src={mediaUrl(mediaId, 200)}
         alt={name}
         className="h-10 w-10 rounded object-cover shrink-0"
       />

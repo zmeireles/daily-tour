@@ -86,11 +86,14 @@ test.describe("owner avatar upload + display", () => {
       buffer: PNG,
     });
 
-    // The avatar <img src="/v1/media/:id"> renders once the upload completes.
+    // The avatar <img src="/v1/media/:id?w=200"> renders once the upload
+    // completes. The width is part of the assertion on purpose: the avatar is a
+    // 40 px thumbnail, so dropping `?w=` would silently go back to downloading
+    // the full-size original and this spec would still pass.
     await page.getByRole("img", { name: "Owner avatar" }).waitFor({ timeout: 20_000 });
     await page.waitForFunction(avatarLoaded, { timeout: 20_000 });
     const src = await page.getByRole("img", { name: "Owner avatar" }).getAttribute("src");
-    expect(src).toMatch(/^\/v1\/media\/[0-9a-f-]{36}$/);
+    expect(src).toMatch(/^\/v1\/media\/[0-9a-f-]{36}\?w=200$/);
 
     // Persist, reload, and confirm the persisted avatar still loads.
     await page.getByRole("button", { name: "Save" }).click();

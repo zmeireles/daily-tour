@@ -45,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { mediaUrl } from "@/lib/media-url";
 
 // Hosts author in Portuguese; the machine-translate helper fills en/es from PT.
 const SOURCE_LOCALE: ContentLocale = "pt-PT";
@@ -131,7 +132,9 @@ const selectClassName =
 // Guesthouse media is an array of media-svc asset UUIDs; resolve each to the
 // same-origin display route so the editor shows + preserves existing media.
 function toUploadedAssets(media: string[] | undefined): UploadedAsset[] {
-  return (media ?? []).map((id) => ({ assetId: id, previewUrl: `/v1/media/${id}`, name: id }));
+  // Uploader previews fill a grid cell; 600w covers them at 2x without
+  // pulling the original.
+  return (media ?? []).map((id) => ({ assetId: id, previewUrl: mediaUrl(id, 600), name: id }));
 }
 
 export function GuesthouseForm({ initialData, id }: Props) {
