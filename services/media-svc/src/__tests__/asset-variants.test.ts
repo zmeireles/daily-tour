@@ -93,6 +93,13 @@ describe("GET /v1/assets/:id — variant selection", () => {
       "../../secrets/dump.sql",
       "media/someone-elses-original.jpg",
       "derived/abc/200w.avif", // a real key, but supplied as the selector
+      // Prototype-chain keys. These pin the `typeof candidate === "string"`
+      // guard: without it, the variant map's inherited members resolve and the
+      // stringified value reaches the presigner as a bucket key. Every other
+      // attack above still passes with the guard removed, so these two are what
+      // make it testable at all.
+      "constructor",
+      "__proto__",
     ]) {
       const res = await get(`/v1/assets/${ASSET_ID}?variant=${encodeURIComponent(attack)}`);
       expect(res.statusCode).toBe(302);
