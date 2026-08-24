@@ -2,8 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, ChevronsUpDown, MoreVertical, Search } from "lucide-react";
+import { MoreVertical, Search } from "lucide-react";
 import { Fab } from "@/features/backoffice/fab";
+import {
+  ListPagination,
+  SortableHeader,
+  paginate,
+  sortRows,
+  useSortedPage,
+} from "@/features/backoffice/shared/data-table";
 import type { PlaceStatus } from "@daily-tour/shared-types";
 import { usePlaces, useArchivePlace, useUpdatePlace, type PlaceRow } from "./use-places";
 import {
@@ -50,11 +57,6 @@ const STATUS_ORDER: PlaceStatus[] = ["published", "owner_approved", "draft", "ar
 const LOCALES = ["en", "pt-PT", "es"] as const;
 
 type SortColumn = "name" | "status" | "hosts_pick";
-type SortDirection = "asc" | "desc";
-interface SortState {
-  column: SortColumn;
-  direction: SortDirection;
-}
 type StatusFilter = PlaceStatus | "all";
 type LocaleFilter = (typeof LOCALES)[number] | "all";
 
@@ -69,15 +71,6 @@ function comparePlaces(a: PlaceRow, b: PlaceRow, column: SortColumn): number {
   const av = column === "name" ? placeDisplayName(a) : a.status;
   const bv = column === "name" ? placeDisplayName(b) : b.status;
   return av.localeCompare(bv);
-}
-
-function sortPlaces(places: PlaceRow[], sort: SortState): PlaceRow[] {
-  return [...places].sort((a, b) => {
-    const primary = comparePlaces(a, b, sort.column);
-    const ordered = sort.direction === "asc" ? primary : -primary;
-    // Stable secondary sort by id so equal keys don't jitter across renders.
-    return ordered !== 0 ? ordered : a.id.localeCompare(b.id);
-  });
 }
 
 function placeDisplayName(place: PlaceRow): string {
@@ -266,42 +259,6 @@ function PlaceRowActions({
   );
 }
 
-function SortableHeader({
-  column,
-  label,
-  sort,
-  onSort,
-  className = "",
-}: {
-  column: SortColumn;
-  label: string;
-  sort: SortState;
-  onSort: (column: SortColumn) => void;
-  className?: string;
-}) {
-  const { t } = useTranslation("admin");
-  const active = sort.column === column;
-  const ariaSort = active ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
-  const Icon = active ? (sort.direction === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
-
-  return (
-    <th className={`px-4 py-2 text-left font-medium ${className}`} aria-sort={ariaSort}>
-      <button
-        type="button"
-        className="flex items-center gap-1 font-medium hover:text-foreground"
-        aria-label={t("places.list.sort_by", "Sort by {{column}}", { column: label })}
-        onClick={() => onSort(column)}
-      >
-        {label}
-        <Icon
-          className={active ? "size-3.5" : "size-3.5 text-muted-foreground"}
-          aria-hidden="true"
-        />
-      </button>
-    </th>
-  );
-}
-
 export function PlaceList() {
   const { t } = useTranslation("admin");
   const navigate = useNavigate();
@@ -309,8 +266,7 @@ export function PlaceList() {
   const { data: ghData } = useGuesthouses();
   const gh = ghData?.data?.[0];
   const archiveMutation = useArchivePlace();
-  const [sort, setSort] = useState<SortState>({ column: "name", direction: "asc" });
-  const [page, setPage] = useState(1);
+  const { sort, page, setPage, handleSort } = useSortedPage<SortColumn>("name");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [localeFilter, setLocaleFilter] = useState<LocaleFilter>("all");
   const [query, setQuery] = useState("");
@@ -337,19 +293,8 @@ export function PlaceList() {
 
   // Filter → sort → slice the current page.
   const filtered = places.filter((p) => matchesFilters(p, statusFilter, localeFilter, query));
-  const sorted = sortPlaces(filtered, sort);
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageRows = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const handleSort = (column: SortColumn) => {
-    setPage(1); // sort change resets to page 1
-    setSort((prev) =>
-      prev.column === column
-        ? { column, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { column, direction: "asc" },
-    );
-  };
+  const sorted = sortRows(filtered, sort, comparePlaces);
+  const { totalPages, currentPage, pageRows } = paginate(sorted, page, PAGE_SIZE);
 
   // Filter/search changes reset to page 1 so the current page stays in range.
   const onStatusChange = (v: string) => {
@@ -558,32 +503,11 @@ export function PlaceList() {
             </>
           )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end gap-3 text-sm">
-              <span className="text-muted-foreground">
-                {t("places.list.pagination.page", "Page {{page}} of {{total}}", {
-                  page: currentPage,
-                  total: totalPages,
-                })}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                {t("places.list.pagination.previous", "Previous")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                {t("places.list.pagination.next", "Next")}
-              </Button>
-            </div>
-          )}
+          <ListPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
 

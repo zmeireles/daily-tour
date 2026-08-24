@@ -91,13 +91,7 @@
       "edit": "Bearbeiten",
       "pick_requires_published": "Nur veröffentlichte Orte können als Gastgeberempfehlung markiert werden.",
       "pick_update_error": "Gastgeberempfehlung konnte nicht aktualisiert werden.",
-      "pick_cap_warning": "Sie haben bereits {{count}} Gastgeberempfehlungen — Gäste sehen die besten Ergebnisse mit etwa {{cap}}. Trotzdem gespeichert.",
-      "sort_by": "Nach {{column}} sortieren",
-      "pagination": {
-        "previous": "Zurück",
-        "next": "Weiter",
-        "page": "Seite {{page}} von {{total}}"
-      }
+      "pick_cap_warning": "Sie haben bereits {{count}} Gastgeberempfehlungen — Gäste sehen die besten Ergebnisse mit etwa {{cap}}. Trotzdem gespeichert."
     },
     "form": {
       "loading": "Wird geladen…",
@@ -142,5 +136,13 @@
     "remove": "{{name}} entfernen",
     "move_earlier": "{{name}} nach vorne",
     "move_later": "{{name}} nach hinten"
+  },
+  "list": {
+    "sort_by": "Nach {{column}} sortieren",
+    "pagination": {
+      "previous": "Zurück",
+      "next": "Weiter",
+      "page": "Seite {{page}} von {{total}}"
+    }
   }
 }

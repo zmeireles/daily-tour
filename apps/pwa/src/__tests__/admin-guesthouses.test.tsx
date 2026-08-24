@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -169,5 +169,113 @@ describe("admin guesthouses route", () => {
       configurable: true,
     });
     await i18n.changeLanguage("en");
+  });
+});
+
+// ── DAILY-TOUR-154: sorting + pagination, the half of the card guesthouses
+// never got. The list previously rendered the fetched array verbatim.
+// Guesthouse name is the SECOND cell (the first is the cover thumbnail).
+function ghTableNames(container: HTMLElement): (string | null)[] {
+  const table = container.querySelector("table") as HTMLElement;
+  return Array.from(table.querySelectorAll("tbody tr")).map(
+    (tr) => tr.querySelectorAll("td")[1]?.textContent ?? null,
+  );
+}
+
+function ghFixture(name: string, i: number, overrides: Partial<typeof MOCK_GH> = {}) {
+  return {
+    ...MOCK_GH,
+    id: `00000000-0000-0000-0000-0000000000${String(i).padStart(2, "0")}`,
+    name: { en: name },
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+    ...overrides,
+  };
+}
+
+function renderGuesthouses(rows: unknown[]) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: rows, nextCursor: null }),
+    }),
+  );
+  const { ui } = makeRouter();
+  return render(ui);
+}
+
+describe("admin guesthouses — sorting + pagination (DAILY-TOUR-154)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    useOwnerSessionStore.getState().setOwnerSession("test-jwt", {
+      sub: "owner-uuid-1",
+      email: "owner@example.com",
+      name: "Owner",
+    });
+  });
+
+  it("sorts by name ascending by default and toggles to descending on click", async () => {
+    // Deliberately fetched out of order, so a pass cannot come from the API
+    // order happening to match.
+    const { container } = renderGuesthouses([
+      ghFixture("Zulu House", 3),
+      ghFixture("Alpha House", 1),
+      ghFixture("Mike House", 2),
+    ]);
+
+    await waitFor(() => expect(container.querySelector("tbody tr")).not.toBeNull());
+    expect(ghTableNames(container)).toEqual(["Alpha House", "Mike House", "Zulu House"]);
+
+    fireEvent.click(
+      within(container.querySelector("table") as HTMLElement).getByLabelText("Sort by Name"),
+    );
+    expect(ghTableNames(container)).toEqual(["Zulu House", "Mike House", "Alpha House"]);
+  });
+
+  it("paginates at 10 per page, advancing with Next", async () => {
+    // 12 rows named G00..G11 so the ascending order is unambiguous.
+    const many = Array.from({ length: 12 }, (_, i) =>
+      ghFixture(`G${String(i).padStart(2, "0")} House`, i),
+    );
+    const { container } = renderGuesthouses(many);
+
+    await waitFor(() => expect(container.querySelector("tbody tr")).not.toBeNull());
+    expect(ghTableNames(container)).toHaveLength(10);
+    expect(ghTableNames(container)[0]).toBe("G00 House");
+    expect(screen.getByText("Page 1 of 2")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(ghTableNames(container)).toEqual(["G10 House", "G11 House"]);
+    expect(screen.getByText("Page 2 of 2")).toBeDefined();
+  });
+
+  it("returns to page 1 when the sort changes, so the visible slice matches the click", async () => {
+    const many = Array.from({ length: 12 }, (_, i) =>
+      ghFixture(`G${String(i).padStart(2, "0")} House`, i),
+    );
+    const { container } = renderGuesthouses(many);
+
+    await waitFor(() => expect(container.querySelector("tbody tr")).not.toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Page 2 of 2")).toBeDefined();
+
+    fireEvent.click(
+      within(container.querySelector("table") as HTMLElement).getByLabelText("Sort by Name"),
+    );
+    expect(screen.getByText("Page 1 of 2")).toBeDefined();
+    // Descending now, from page 1.
+    expect(ghTableNames(container)[0]).toBe("G11 House");
+  });
+
+  it("shows no pagination controls when a single page holds everything", async () => {
+    const { container } = renderGuesthouses([ghFixture("Only House", 1)]);
+
+    await waitFor(() => expect(container.querySelector("tbody tr")).not.toBeNull());
+    // Control: the Next button exists in the 12-row case above, so its absence
+    // here is a real difference and not a query that never matches.
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+    expect(screen.queryByText(/^Page \d+ of \d+$/)).toBeNull();
   });
 });
