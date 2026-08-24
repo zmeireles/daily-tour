@@ -313,6 +313,27 @@
     font-family: var(--font-display);
     text-wrap: balance;
   }
+  /* Tailwind v4's Preflight carries no cursor rule for buttons, so they fall
+     back to the UA default (`cursor: default`) and every control in the app
+     reads as non-interactive (DAILY-TOUR-155). One base rule beats a
+     `cursor-pointer` utility on ~30 call sites: it also covers controls added
+     later, which an audit of today's call sites structurally cannot.
+     Disabled controls are excluded — they keep the arrow, because they are not
+     clickable. Radix marks disabled state with `aria-disabled` / `data-disabled`
+     as well as the native attribute, so all three forms are excluded. */
+  :is(
+    button,
+    summary,
+    [role="button"],
+    [role="menuitem"],
+    [role="menuitemcheckbox"],
+    [role="menuitemradio"],
+    [role="option"],
+    [role="switch"],
+    [role="tab"]
+  ):not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: pointer;
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
