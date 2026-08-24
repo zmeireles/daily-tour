@@ -74,7 +74,9 @@
       "copied": "Lien copié !",
       "title": "Mon Daily Tour",
       "heading": "Parcours partagé",
-      "not_found": "Ce plan de parcours n'est pas disponible."
+      "not_found": "Ce plan de parcours n'est pas disponible.",
+      "revoke": "Ne plus partager",
+      "revoke_aria": "Ne plus partager ce plan"
     }
   }
 }

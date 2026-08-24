@@ -1,6 +1,11 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { createTourPlan, getTourPlan, PlannerError } from "../lib/planner-client.js";
+import {
+  createTourPlan,
+  getTourPlan,
+  setTourPlanShared,
+  PlannerError,
+} from "../lib/planner-client.js";
 import { guestKeyGenerator } from "../lib/rate-limit-keys.js";
 import { withStops } from "../lib/tour-plan-view.js";
 
@@ -83,6 +88,42 @@ const tourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       throw err;
     }
   });
+
+  // dt-tests #40 — sharing is an explicit, revocable act.
+  //
+  // POST grants public readability, DELETE withdraws it. The guest id comes
+  // from the JWT `sub` and is NEVER accepted from the body: planner-svc scopes
+  // its UPDATE by that id, so one guest cannot share or revoke another's plan
+  // even if this route were wrong.
+  //
+  // Both return 404 for "not yours" as well as "no such plan", so the endpoint
+  // cannot be used to discover which plan ids exist.
+  for (const [method, shared] of [
+    ["post", true],
+    ["delete", false],
+  ] as const) {
+    fastify[method](`/v1/tour-plans/:planId/share`, async (req, reply) => {
+      const parsed = UUIDParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "invalid_plan_id" });
+      }
+      const { sub: guestId } = req.user as { sub: string };
+
+      try {
+        const plan = await setTourPlanShared(parsed.data.planId, guestId, shared);
+        if (!plan) {
+          return reply.code(404).send({ error: "not_found" });
+        }
+        return { id: plan.id, status: plan.status, shared_at: plan.shared_at ?? null };
+      } catch (err) {
+        if (err instanceof PlannerError) {
+          req.log.error({ err }, "[bff:tour-plans] planner-svc error on share");
+          return reply.code(503).send({ error: "planner_unavailable" });
+        }
+        throw err;
+      }
+    });
+  }
 };
 
 export default tourPlansRoute;
