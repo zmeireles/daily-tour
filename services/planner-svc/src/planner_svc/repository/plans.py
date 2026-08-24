@@ -9,6 +9,10 @@ Three operations cover the async flow:
   `{error: "…"}` JSON payload so the GET endpoint can surface the reason
   without a separate column.
 - `get_by_id` — read-side for GET /v1/tour-plans/{id}.
+- `set_shared` — dt-tests #40. Grants or withdraws public readability by
+  writing/clearing `shared_at`. Scoped by guest_id in the WHERE clause so a
+  caller can only ever change a plan it owns, independent of what the BFF
+  checked first.
 
 State transitions are intentionally one-way (queued → ready|rejected); no
 retry/back-to-queued path until Phase 3 wires it. Updates use SQL `now()`
@@ -17,10 +21,11 @@ on updated_at so the DB clock is the source of truth.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import TourPlanRow
@@ -57,6 +62,40 @@ async def get_by_id(session: AsyncSession, plan_id: UUID) -> TourPlanRow | None:
     return result.scalar_one_or_none()
 
 
+async def set_shared(
+    session: AsyncSession,
+    plan_id: UUID,
+    *,
+    guest_id: UUID,
+    shared: bool,
+) -> bool:
+    """Grant or withdraw public readability. Returns False when nothing matched.
+
+    `guest_id` is part of the WHERE clause rather than a precondition checked
+    beforehand: a read-then-write would let a plan change hands between the two
+    statements, and it would make this function depend on every caller
+    remembering the check. A wrong guest updates zero rows and gets False,
+    which the route turns into a 404 — the same answer a missing plan gives, so
+    the endpoint cannot be used to probe which plan ids exist.
+
+    Only a `ready` plan can be shared; there is nothing to show otherwise. The
+    guard is omitted on UNSHARE so a guest can always withdraw a link, whatever
+    state the plan has drifted into.
+    """
+    stmt = (
+        update(TourPlanRow)
+        .where(TourPlanRow.id == plan_id, TourPlanRow.guest_id == guest_id)
+        .values(shared_at=func.now() if shared else None, updated_at=func.now())
+    )
+    if shared:
+        stmt = stmt.where(TourPlanRow.status == "ready")
+    # session.execute() is typed as Result, which does not declare rowcount;
+    # an UPDATE always yields a CursorResult, which does. Cast rather than
+    # ignore, so a future change of statement type fails the typecheck.
+    result = cast("CursorResult[Any]", await session.execute(stmt))
+    return result.rowcount > 0
+
+
 async def mark_ready(
     session: AsyncSession,
     plan_id: UUID,
@@ -90,4 +129,4 @@ async def _set_terminal(
     await session.execute(stmt)
 
 
-__all__ = ["get_by_id", "insert_queued", "mark_ready", "mark_rejected"]
+__all__ = ["get_by_id", "insert_queued", "mark_ready", "mark_rejected", "set_shared"]

@@ -37,6 +37,7 @@ vi.mock("@/components/map-view", () => ({
   ),
 }));
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DailyTourDesktop } from "@/features/tour/daily-tour-desktop";
 
 const STOPS: TourStop[] = [
@@ -77,16 +78,21 @@ function renderIntake(override: Partial<React.ComponentProps<typeof DailyTourDes
 }
 
 function renderTimeline(stops: TourStop[] = STOPS) {
+  // The rail's ShareButton issues a share/revoke mutation (dt-tests #40), so it
+  // needs a QueryClient — the app root always provides one.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter>
-      <DailyTourDesktop
-        stage="timeline"
-        planId="plan-1"
-        stops={stops}
-        subline="3 paragens"
-        weatherAware
-      />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <DailyTourDesktop
+          stage="timeline"
+          planId="plan-1"
+          stops={stops}
+          subline="3 paragens"
+          weatherAware
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

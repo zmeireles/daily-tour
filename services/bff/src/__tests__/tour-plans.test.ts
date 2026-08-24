@@ -24,6 +24,7 @@ vi.mock("../lib/planner-client.js", () => ({
   },
   createTourPlan: vi.fn(),
   getTourPlan: vi.fn(),
+  setTourPlanShared: vi.fn(),
 }));
 
 vi.mock("../lib/catalog-client.js", () => ({
@@ -42,6 +43,7 @@ vi.mock("../lib/catalog-client.js", () => ({
 const plannerClient = await import("../lib/planner-client.js");
 const createMock = plannerClient.createTourPlan as ReturnType<typeof vi.fn>;
 const getMock = plannerClient.getTourPlan as ReturnType<typeof vi.fn>;
+const shareMock = plannerClient.setTourPlanShared as ReturnType<typeof vi.fn>;
 const catalogClient = await import("../lib/catalog-client.js");
 const fetchPlaceMock = catalogClient.fetchPlaceHydrated as ReturnType<typeof vi.fn>;
 const { createApp } = await import("../app.js");
@@ -77,6 +79,7 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
     await flushRedis(ctx.client);
     createMock.mockReset();
     getMock.mockReset();
+    shareMock.mockReset();
     fetchPlaceMock.mockReset();
   });
 
@@ -256,5 +259,113 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
 
     expect(res.statusCode).toBe(503);
     expect(res.json()).toMatchObject({ error: "planner_unavailable" });
+  });
+
+  // ── dt-tests #40 — the BFF share seam ─────────────────────────────────────
+  // Added after a review gate proved this glue had ZERO discrimination: fully
+  // SWAPPING the method mapping (POST→revoke, DELETE→share) left all 184 BFF
+  // tests green. On a privacy boundary that is the worst kind of silent
+  // failure — "Stop sharing" would GRANT public access. The client tests pin
+  // the client's end of the contract and the planner tests pin the SQL;
+  // nothing pinned the middle. These do.
+  async function authed(method: "POST" | "DELETE", jwt: string) {
+    return app.inject({
+      method,
+      url: `/v1/tour-plans/${PLAN_ID}/share`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+  }
+
+  async function guestJwt(): Promise<string> {
+    return signJwt(
+      { sub: GUEST_ID, rid: "res-1", gh: "gh-1", locale: "pt-PT" },
+      Math.floor(Date.now() / 1000) + 3600,
+    );
+  }
+
+  it("POST grants — passes shared=true and the JWT sub, never a body value", async () => {
+    shareMock.mockResolvedValueOnce({
+      id: PLAN_ID,
+      status: "ready",
+      shared_at: "2026-08-24T09:00:00.000Z",
+    });
+
+    const res = await authed("POST", await guestJwt());
+
+    expect(res.statusCode).toBe(200);
+    expect(shareMock).toHaveBeenCalledWith(PLAN_ID, GUEST_ID, true);
+    expect(res.json<{ shared_at: string | null }>().shared_at).toBe("2026-08-24T09:00:00.000Z");
+  });
+
+  it("DELETE revokes — passes shared=false", async () => {
+    // The paired half of the mutation that went undetected: if these two ever
+    // swap, this assertion and the one above both fail.
+    shareMock.mockResolvedValueOnce({ id: PLAN_ID, status: "ready", shared_at: null });
+
+    const res = await authed("DELETE", await guestJwt());
+
+    expect(res.statusCode).toBe(200);
+    expect(shareMock).toHaveBeenCalledWith(PLAN_ID, GUEST_ID, false);
+    expect(res.json<{ shared_at: string | null }>().shared_at).toBeNull();
+  });
+
+  it("ignores a guest_id in the request body — identity comes only from the JWT", async () => {
+    // The PR claims the guest id is "never accepted from the body". That claim
+    // had no test: a mutation forwarding `body.guest_id` when present passed
+    // the whole suite. Without this, one guest could revoke another's share by
+    // posting their id.
+    shareMock.mockResolvedValueOnce({ id: PLAN_ID, status: "ready", shared_at: null });
+
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tour-plans/${PLAN_ID}/share`,
+      headers: { authorization: `Bearer ${await guestJwt()}` },
+      payload: { guest_id: "99999999-9999-4999-8999-999999999999" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(shareMock).toHaveBeenCalledWith(PLAN_ID, GUEST_ID, true);
+  });
+
+  it("404 when planner-svc reports no such plan (or not this guest's)", async () => {
+    shareMock.mockResolvedValueOnce(null);
+
+    const res = await authed("POST", await guestJwt());
+
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toMatchObject({ error: "not_found" });
+  });
+
+  it("503 when planner-svc is unreachable", async () => {
+    shareMock.mockRejectedValueOnce(new plannerClient.PlannerError(500, "planner-svc 500"));
+
+    const res = await authed("POST", await guestJwt());
+
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({ error: "planner_unavailable" });
+  });
+
+  it("rejects an unauthenticated caller and never reaches planner-svc", async () => {
+    // The route carries no `config.auth`, so it inherits the secure-by-default
+    // guest gate. Asserting the mock stayed untouched proves the request was
+    // stopped BEFORE any state could change, not merely that the status was 401.
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tour-plans/${PLAN_ID}/share`,
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(shareMock).not.toHaveBeenCalled();
+  });
+
+  it("400 on a malformed plan id, without calling planner-svc", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/v1/tour-plans/not-a-uuid/share",
+      headers: { authorization: `Bearer ${await guestJwt()}` },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(shareMock).not.toHaveBeenCalled();
   });
 });

@@ -160,7 +160,7 @@ export default function TourPlanRoute() {
         <DailyTourTimeline stops={stops} />
 
         <div className="mt-8 flex justify-center">
-          <ShareButton planId={planId!} editorial />
+          <ShareButton planId={planId!} sharedAt={plan?.shared_at} editorial />
         </div>
 
         <div className="mt-6 flex justify-center">
@@ -179,6 +179,7 @@ export default function TourPlanRoute() {
           <DailyTourDesktop
             stage="timeline"
             planId={planId!}
+            sharedAt={plan?.shared_at}
             stops={stops}
             subline={subline}
             weatherAware={weatherAware}
