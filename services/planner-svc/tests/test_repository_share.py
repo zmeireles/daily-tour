@@ -14,7 +14,6 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from sqlalchemy.dialects import postgresql
 
 from planner_svc.repository.plans import set_shared
 
@@ -37,7 +36,11 @@ class _CapturingSession:
 
 
 def _sql(stmt: Any) -> str:
-    return str(stmt.compile(dialect=postgresql.dialect()))
+    # The default compile is enough: it renders the WHERE predicates with their
+    # fully-qualified column names, which is all these assertions inspect. It
+    # also avoids `postgresql.dialect()`, which is untyped in SQLAlchemy's stubs
+    # and would need an ignore under `mypy src tests`.
+    return str(stmt)
 
 
 @pytest.mark.asyncio
