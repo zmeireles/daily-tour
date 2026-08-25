@@ -1,4 +1,70 @@
-# Session Handoff — … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+
+> **UPDATE 2026-08-25 (LATEST — session `s745`, `dt:Furnas`. Three PRs merged and the board emptied; the network split turned from an open question into a written plan; and a peer's research question forced two admissions about the limits of my own evidence. Closed by coordinated `/close-all`.)**
+>
+> ### State
+>
+> `main` **`6dc0c5c`** · **zero open pull requests** · local branches drained to `main` alone · tree clean · A2A inbox drained and acked through **`seq 1252`** · Docker **zero containers** · Telegram **no client** (`allowFrom` = Zé alone ⇒ rule inert, nothing sent) · bridge **stopped deliberately** at closeout.
+>
+> ### ▶ FIRST TASK NEXT SESSION
+>
+> **Fix the plan-ownership hole — [`dt-tests #42`](https://tasks.codecomedy.dev/p/dt-tests/r/42). It is fully unblocked and the design is settled.** The authed `GET /v1/tour-plans/:planId` never checks ownership: any guest with a valid token reads any plan by id.
+>
+> 🔑 **The prerequisite measurement is DONE, and it inverted the card's own advice** — do not redo it, and do not follow the fallback the card suggested:
+>
+> - **`sub` is stable.** `token-svc/src/routes/exchange.ts:72` sets `sub: row.guestId` via a join; the route is a pure read and mints nothing. The only `insert(guestTable)` in the tree is the seed — with a positive control, since the same grep finds `insert(reservationTable)` one line below. So the same person keeps one id across a re-redeem _and_ across a new grant.
+> - ⚠️ **The card's fallback (scope by reservation) was the WRONG key.** On the plan model (`planner_svc/models.py:44-45`) `guest_id` is NOT NULL but `reservation_id` is **nullable**, and `plan_worker.py:285` fills it with `reservation_id or plan_id` — substituting the plan's own id. Reservation-scoping would compare the plan against itself exactly where the reservation is missing: a check that cannot fail, in the dangerous direction.
+>
+> ⇒ **Scope by `guest_id` from the JWT `sub`.** The test must demand **404/403 for a non-owner `sub`** — "the owner can read their own plan" passes before and after and proves nothing.
+>
+> ### Merged this session
+>
+> | PR                                                         | what                                                                                                                                                              |
+> | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [`#470`](https://github.com/zmeireles/daily-tour/pull/470) | plan sharing made explicit and revocable — `shared_at` is the grant, public route 404s without it, migration backfills so **none of the 47 existing links broke** |
+> | [`#471`](https://github.com/zmeireles/daily-tour/pull/471) | the transcoded derivatives are finally served (backoffice surfaces), plus the two gate fixes below                                                                |
+> | [`#473`](https://github.com/zmeireles/daily-tour/pull/473) | **Plan-009** — the ingress/mesh network split, docs only                                                                                                          |
+>
+> ### Plan-009 — the network split is written, not started
+>
+> [`docs/implementation-plans/009-network-split/`](../implementation-plans/009-network-split/README.md) closes option 2 of [`dt-tests #36`](https://tasks.codecomedy.dev/p/dt-tests/r/36). Option 1 (the catalog-svc token gate, `#459`) **shipped and stays** — two independent controls.
+>
+> 📌 **The topology read shrank the job.** Measured across both repos: **only five services carry Traefik router labels** (`bff`, `pwa-static`, `authentik-server`, `n8n`, the Traefik dashboard); the other **seventeen** on `dt_internal` have no ingress role. So `dt_edge` takes the proxy fabric, `dt_internal` **keeps its name** as the mesh, and seventeen services need no edit. qr-bell joins only for `traefik.docker.network` — it already has `qrb_internal` for real work — so moving it costs it nothing.
+>
+> ⚠️ **The ordering is load-bearing and asymmetric:** qr-bell first ⇒ its `external: true` names a network that does not exist and **it will not start**; Daily Tour's cleanup first ⇒ Traefik has left `dt_internal` while qr-bell is still only on it ⇒ **502s behind a valid certificate**, which reads as a TLS fault and is not. Slices 1–2 are additive and revert independently; slice 3 subtracts and is gated on slice 2 being **deployed and verified**, never merged.
+>
+> 🔴 **Stated against interest in the plan itself:** the split does **not** fully solve `n8n`. Direct container access on `dt_edge` bypasses every Traefik middleware, so anything protected by a middleware rather than its own auth keeps its exposure to co-tenants. Slice 3 checks n8n's own auth; if it leans on the proxy the answer is a third `dt_ops` network — **flagged, left out of scope**, not folded in to make the plan look complete.
+>
+> ### The Fable gate earned its cost again — and again on things CI cannot see
+>
+> Verdict on `#471` was **merge with fixes**, and the 🟠 was the house signature:
+>
+> - **The owner-avatar e2e spec asserted `/^\/v1\/media\/[0-9a-f-]{36}$/`** — anchored, no query. The avatar now renders `?w=200`, so it breaks — and `playwright.config.ts:8` `testIgnore`s `**/owner-*.spec.ts`, so **CI structurally could not see it**. Fixed keeping the width in the assertion deliberately: without it, dropping `?w=` would silently revert to full-size originals and the spec would still pass.
+> - **The `typeof candidate === "string"` guard** (`media-svc/src/routes/assets.ts:38`) was load-bearing but untested — mutating it to `candidate ?? asset.bucketKey` survived all 4 tests. Added `constructor` / `__proto__` to the attack list; **measured** the mutant now presigns `[Function Object]` and fails, then restored the guard and reconfirmed green.
+> - The gate's third finding was **filed, not folded**: [`dt-tests #43`](https://tasks.codecomedy.dev/p/dt-tests/r/43) — the guest catalog and place editor still render `place_media.url` verbatim, so the heaviest consumers still pull originals. Non-trivial because that stored URL is sometimes an external Commons link, so it needs a prefix check.
+>
+> ### 🪤 Two ritual traps that fired this session
+>
+> - **The startup `pgrep` hit was po-platform-sA's**, again — PPID chain to its daemon, cwd confirms. Armed my own, verified `ESTAB`.
+> - **My first arming attempt failed and reported exit code 0.** The ritual's command uses the supervisor path **relative to cc-platform**, so from this repo it hits `No such file or directory`, and the pipe to `tail` swallowed the status. ⇒ **Use the absolute path**, and never read a piped exit code as the command's. A check that could not fail, inside the ritual meant to prevent them.
+>
+> ### Riff control tower — updated before closing
+>
+> `#40` and `#37` **closed** with evidence; `#36` and `#42` commented (the plan link, and the measurement above); `#43` **filed**. Nothing left claiming a state it does not have.
+>
+> ### A2A — `cs:Barra`, spec-004 round 2, and two admissions against my own answer
+>
+> Asked for the **oldest** case in this house of "read an observable, concluded X, truth was Y" — searched, not recalled. Answer sent (`seq 1261`) and the question acked.
+>
+> - **Oldest found: `384c4ab`, 2026-05-15** — an agent's autocommit existed for T-0.3.0, so the task read as delivered; **~30% of scope had shipped** and the central deliverable, the compose file itself, was absent. What separated them: reading the diff's file list rather than the commit's existence.
+> - ⚠️ **My date is a CEILING, not an age.** The commit it describes (`3aa88c0`) was discarded by the squash-merge — `git log` returns `unknown revision`. The event is provably older and undatable. **In squash-merging repos the description of a mistake survives while the mistake loses its date** — I flagged this as likely distorting his whole sample.
+> - ⚠️ **My "nothing older" is one day deep.** This repo's first commit is 2026-05-14. That is the floor of the house, not a negative about the world — my sample cannot falsify a multi-year recency hypothesis.
+> - 📌 **The find worth keeping:** `docs/ai/lessons/L021` (2026-05-28) — _the tasks MCP shows its schemas reconnected while the SSH tunnel underneath is down; check `ss -tlnp`_. **Identical shape and identical cure** to this week's bridge finding (`pgrep` says covered, no `ESTAB`), three months earlier and independently discovered. Evidence the class is structural rather than ten agents reciting one document — though it is one pair in one house.
+> - Language control run rather than assumed: commits **0 PT / 1090 EN**, docs **5 / 952**. An English grep here measures defects, not idiom.
+>
+> ### Sessions — investigated on request, no anomaly
+>
+> Zé asked why more than one session existed. **Measured two independent ways** (`ListAgents`, and `ps` + `/proc/<pid>/cwd`): **12 sessions, 12 distinct working directories, zero duplicates** — one per project. All 12 share an identical command line and started inside an 18-second window, launched by his own `~/.local/bin/cc-open-all` with the prompt "Lets resume work" — **this session among them**. Nothing was killed and no peer was pinged. The question was overtaken by the coordinated `/close-all`.
 
 > **UPDATE 2026-08-24 (LATEST — session `s744`, `dt:Furnas`. Two merges, two PRs open awaiting the owner's call, and three owner decisions turned into code. The through-line of the day was **checks that could not fail**.)**
 >
