@@ -24,6 +24,7 @@ vi.mock("../lib/planner-client.js", () => ({
   },
   createTourPlan: vi.fn(),
   getTourPlan: vi.fn(),
+  getPublicTourPlan: vi.fn(),
   setTourPlanShared: vi.fn(),
 }));
 
@@ -234,6 +235,59 @@ describe("POST /v1/tour-plans + GET /v1/tour-plans/:planId", () => {
     const futureExp = Math.floor(Date.now() / 1000) + 3600;
     const jwt = await signJwt({ sub: GUEST_ID, rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
     getMock.mockResolvedValueOnce(null);
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/v1/tour-plans/${PLAN_ID}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toMatchObject({ error: "not_found" });
+  });
+
+  // dt-tests #42 — the authed read was scoped by nothing: any valid token read
+  // any plan by id. The two tests below are the ones that discriminate; "a guest
+  // reads their own plan" above passed before the fix too, so it is a control.
+  it("GET forwards the caller's JWT sub as the owner of the read", async () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt({ sub: GUEST_ID, rid: "res-1", gh: "gh-1", locale: "en" }, futureExp);
+    getMock.mockResolvedValueOnce({ id: PLAN_ID, status: "queued", plan_payload: null });
+
+    await app.inject({
+      method: "GET",
+      url: `/v1/tour-plans/${PLAN_ID}`,
+      headers: { authorization: `Bearer ${jwt}` },
+    });
+
+    expect(getMock).toHaveBeenCalledOnce();
+    // Positional, because that is what planner-client's signature demands — a
+    // caller that omits it does not compile.
+    expect(getMock.mock.calls[0]).toEqual([PLAN_ID, GUEST_ID]);
+  });
+
+  it("GET another guest's plan — 404, not the plan", async () => {
+    const OTHER_GUEST = "aaaabbbb-0000-4000-8000-00000000dead";
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const jwt = await signJwt(
+      { sub: OTHER_GUEST, rid: "res-9", gh: "gh-1", locale: "en" },
+      futureExp,
+    );
+    // The fake answers like the planner-svc this card replaced: with NO scope
+    // it serves the row to anyone. That asymmetry is deliberate and is what
+    // makes this test discriminate — a BFF that drops the guest id gets a 200
+    // here and turns it red. Measured: returning null for an absent scope
+    // instead makes the test pass with the fix reverted, which is how the
+    // first draft of it was inert.
+    getMock.mockImplementation((planId: string, guestId?: string) => {
+      if (planId !== PLAN_ID) return Promise.resolve(null);
+      const servesEveryone = guestId === undefined;
+      return Promise.resolve(
+        servesEveryone || guestId === GUEST_ID
+          ? { id: PLAN_ID, status: "queued", plan_payload: null }
+          : null,
+      );
+    });
 
     const res = await app.inject({
       method: "GET",
