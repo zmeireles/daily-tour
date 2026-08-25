@@ -14,6 +14,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+from conftest import INTERNAL_HEADERS
 from fastapi.testclient import TestClient
 
 from chat_hub import chat_persistence
@@ -74,7 +75,7 @@ def test_reply_persists_outbound_and_delivers_online(monkeypatch) -> None:
 
     app.dependency_overrides[get_host_reply_sender] = lambda: sender
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers=INTERNAL_HEADERS)
         resp = client.post(f"/v1/reply/{guest_id}", json={"body": "see you at 7"})
     finally:
         app.dependency_overrides.pop(get_host_reply_sender, None)
@@ -116,7 +117,7 @@ def test_reply_offline_guest_returns_200_and_not_delivered(monkeypatch) -> None:
 
     app.dependency_overrides[get_host_reply_sender] = lambda: sender
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers=INTERNAL_HEADERS)
         resp = client.post(f"/v1/reply/{guest_id}", json={"body": "offline"})
     finally:
         app.dependency_overrides.pop(get_host_reply_sender, None)
@@ -128,14 +129,14 @@ def test_reply_offline_guest_returns_200_and_not_delivered(monkeypatch) -> None:
 
 
 def test_reply_rejects_non_uuid_guest() -> None:
-    client = TestClient(app)
+    client = TestClient(app, headers=INTERNAL_HEADERS)
     resp = client.post("/v1/reply/not-a-uuid", json={"body": "hi"})
     assert resp.status_code == 400
 
 
 @pytest.mark.parametrize("payload", [{"body": ""}, {}])
 def test_reply_rejects_invalid_body(payload) -> None:
-    client = TestClient(app)
+    client = TestClient(app, headers=INTERNAL_HEADERS)
     resp = client.post(f"/v1/reply/{uuid4()}", json=payload)
     assert resp.status_code == 422
 
@@ -155,7 +156,7 @@ def test_threads_returns_owner_inbox_shape() -> None:
 
     app.dependency_overrides[get_thread_list_provider] = lambda: fake_provider
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers=INTERNAL_HEADERS)
         resp = client.get("/v1/threads")
     finally:
         app.dependency_overrides.pop(get_thread_list_provider, None)

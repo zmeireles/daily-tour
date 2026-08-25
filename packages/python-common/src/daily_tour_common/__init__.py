@@ -1,4 +1,5 @@
 from .app import create_app
+from .internal_auth import InternalAuthMiddleware
 from .logging import configure_logging
 from .models import (
     Action,
@@ -23,6 +24,7 @@ __all__ = [
     "Action",
     "Geom",
     "I18nText",
+    "InternalAuthMiddleware",
     "Locale",
     "OtelConfig",
     "Place",

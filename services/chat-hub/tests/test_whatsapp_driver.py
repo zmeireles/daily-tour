@@ -6,6 +6,7 @@ import hmac as hmac_mod
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from conftest import INTERNAL_HEADERS
 from httpx import ASGITransport, AsyncClient
 
 from chat_hub.drivers import InboundMessage, OutboundMessage
@@ -34,6 +35,7 @@ async def test_draft_endpoint_returns_url() -> None:
         resp = await client.get(
             "/v1/chat/whatsapp/draft",
             params={"phone": "15551234567", "text": "Hello World"},
+            headers=INTERNAL_HEADERS,
         )
     assert resp.status_code == 200
     assert resp.json() == {"url": build_wa_me_url("15551234567", "Hello World")}

@@ -42,14 +42,16 @@ async def test_send_delivers_message_and_returns_id() -> None:
 
 async def test_process_update_fires_callback() -> None:
     """process_update() parses a Telegram update and invokes all on_receive callbacks."""
-    driver = TelegramDriver(bot_token=None)
+    # A secret is configured and presented: this endpoint is exempt from the
+    # internal-token gate, so its own secret is the ONLY thing authenticating it.
+    driver = TelegramDriver(bot_token=None, webhook_secret="correct-secret")
     received: list[InboundMessage] = []
 
     async def capture(msg: InboundMessage) -> None:
         received.append(msg)
 
     driver.on_receive(capture)
-    await driver.process_update(_SAMPLE_UPDATE)
+    await driver.process_update(_SAMPLE_UPDATE, secret_token="correct-secret")
 
     assert len(received) == 1
     msg = received[0]
@@ -65,3 +67,25 @@ async def test_process_update_rejects_wrong_secret() -> None:
 
     with pytest.raises(PermissionError, match="invalid webhook secret"):
         await driver.process_update(_SAMPLE_UPDATE, secret_token="wrong-secret")
+
+
+async def test_process_update_rejects_when_no_secret_configured() -> None:
+    """With no webhook secret configured, EVERY caller is refused — fail closed.
+
+    This is the regression test for a fail-open guard: the check used to read
+    `if self._webhook_secret and secret_token != self._webhook_secret`, which
+    skipped verification entirely whenever the secret was unset. An unconfigured
+    deployment therefore accepted anyone's "inbound guest message" as real.
+
+    It matters more than it looks: `/v1/webhook/telegram` is exempt from the
+    service-wide internal-token gate (see `main.create_app`), because an external
+    provider cannot present an internal token. That exemption makes THIS check the
+    only authentication on the route. Fail-open here means no auth at all.
+    """
+    driver = TelegramDriver(bot_token=None)
+
+    with pytest.raises(PermissionError, match="invalid webhook secret"):
+        await driver.process_update(_SAMPLE_UPDATE)
+
+    with pytest.raises(PermissionError, match="invalid webhook secret"):
+        await driver.process_update(_SAMPLE_UPDATE, secret_token="any-guess")

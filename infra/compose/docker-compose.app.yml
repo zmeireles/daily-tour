@@ -107,6 +107,9 @@ services:
       MEDIA_SVC_URL: http://dt_media_svc:8087
       CATALOG_SVC_INTERNAL_TOKEN: ${CATALOG_SVC_INTERNAL_TOKEN:?CATALOG_SVC_INTERNAL_TOKEN missing in .env}
       MEDIA_SVC_INTERNAL_TOKEN: ${MEDIA_SVC_INTERNAL_TOKEN:?MEDIA_SVC_INTERNAL_TOKEN missing in .env}
+      PLANNER_SVC_INTERNAL_TOKEN: ${PLANNER_SVC_INTERNAL_TOKEN:?PLANNER_SVC_INTERNAL_TOKEN missing in .env}
+      SEARCH_SVC_INTERNAL_TOKEN: ${SEARCH_SVC_INTERNAL_TOKEN:?SEARCH_SVC_INTERNAL_TOKEN missing in .env}
+      CHAT_HUB_INTERNAL_TOKEN: ${CHAT_HUB_INTERNAL_TOKEN:?CHAT_HUB_INTERNAL_TOKEN missing in .env}
       # Analytics writes (T-3.4.1) — the bff role's INSERT into analytics.tour_event.
       # Built from SERVICE_DB_PASSWORD_BFF so rotated envs (qual) authenticate; the
       # dev placeholder keeps dev byte-for-byte (config.ts has the same default).
@@ -304,6 +307,9 @@ services:
       HOST: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
       OTEL_SERVICE_NAME: planner-svc
+      PLANNER_SVC_INTERNAL_TOKEN: ${PLANNER_SVC_INTERNAL_TOKEN:?PLANNER_SVC_INTERNAL_TOKEN missing in .env}
+      # planner-svc is also a CALLER of search-svc, which denies by default.
+      SEARCH_SVC_INTERNAL_TOKEN: ${SEARCH_SVC_INTERNAL_TOKEN:?SEARCH_SVC_INTERNAL_TOKEN missing in .env}
       DATABASE_URL: postgresql://planner_svc:${SERVICE_DB_PASSWORD_PLANNER}@dt_postgres:5432/dailytour
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
       SEARCH_SVC_URL: http://dt_search_svc:8082
@@ -352,6 +358,7 @@ services:
       HOST: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
       OTEL_SERVICE_NAME: notif-svc
+      NOTIF_SVC_INTERNAL_TOKEN: ${NOTIF_SVC_INTERNAL_TOKEN:?NOTIF_SVC_INTERNAL_TOKEN missing in .env}
       SMTP_URL: ${SMTP_URL:-smtp://localhost:1025}
       SMTP_FROM: ${SMTP_FROM:-no-reply@daily-tour.example.local}
     healthcheck:
@@ -397,6 +404,7 @@ services:
       HOST: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
       OTEL_SERVICE_NAME: search-svc
+      SEARCH_SVC_INTERNAL_TOKEN: ${SEARCH_SVC_INTERNAL_TOKEN:?SEARCH_SVC_INTERNAL_TOKEN missing in .env}
       DATABASE_URL: postgresql+asyncpg://search_svc:${SERVICE_DB_PASSWORD_SEARCH}@dt_postgres:5432/dailytour
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/}
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
@@ -436,6 +444,7 @@ services:
       HOST: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://dt_otel_collector:4318
       OTEL_SERVICE_NAME: chat-hub
+      CHAT_HUB_INTERNAL_TOKEN: ${CHAT_HUB_INTERNAL_TOKEN:?CHAT_HUB_INTERNAL_TOKEN missing in .env}
       # Persistence DB (T-4.0.1) — chat_svc owns the `chat` schema. Built from
       # SERVICE_DB_PASSWORD_CHAT so rotated envs (qual) authenticate; the dev
       # placeholder keeps dev byte-for-byte (config.py has the same default).

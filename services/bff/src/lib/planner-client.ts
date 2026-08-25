@@ -1,4 +1,5 @@
 import { loadConfig } from "../config.js";
+import { plannerHeaders } from "./internal-headers.js";
 
 export class PlannerError extends Error {
   constructor(
@@ -33,7 +34,7 @@ export async function createTourPlan(params: CreatePlanParams): Promise<TourPlan
   const { PLANNER_SVC_URL } = loadConfig();
   const res = await fetch(`${PLANNER_SVC_URL}/v1/tour-plans`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: plannerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       guest_id: params.guestId,
       reservation_id: params.reservationId ?? null,
@@ -48,7 +49,9 @@ export async function createTourPlan(params: CreatePlanParams): Promise<TourPlan
 
 export async function getTourPlan(planId: string): Promise<TourPlanResponse | null> {
   const { PLANNER_SVC_URL } = loadConfig();
-  const res = await fetch(`${PLANNER_SVC_URL}/v1/tour-plans/${encodeURIComponent(planId)}`);
+  const res = await fetch(`${PLANNER_SVC_URL}/v1/tour-plans/${encodeURIComponent(planId)}`, {
+    headers: plannerHeaders(),
+  });
   if (res.status === 404) return null;
   if (!res.ok) {
     throw new PlannerError(res.status, `planner-svc ${res.status}`);
@@ -72,7 +75,7 @@ export async function setTourPlanShared(
   const { PLANNER_SVC_URL } = loadConfig();
   const res = await fetch(`${PLANNER_SVC_URL}/v1/tour-plans/${encodeURIComponent(planId)}/share`, {
     method: shared ? "POST" : "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers: plannerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ guest_id: guestId }),
   });
   if (res.status === 404) return null;

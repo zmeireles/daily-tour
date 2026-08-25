@@ -1,4 +1,5 @@
 import { loadConfig } from "../config.js";
+import { chatHubHeaders } from "./internal-headers.js";
 
 export class ChatHubError extends Error {
   constructor(
@@ -32,7 +33,9 @@ export interface ChatHistoryResponse {
  */
 export async function getChatHistory(guestId: string): Promise<ChatHistoryResponse> {
   const { CHAT_HUB_URL } = loadConfig();
-  const res = await fetch(`${CHAT_HUB_URL}/v1/history/${encodeURIComponent(guestId)}`);
+  const res = await fetch(`${CHAT_HUB_URL}/v1/history/${encodeURIComponent(guestId)}`, {
+    headers: chatHubHeaders(),
+  });
   if (!res.ok) {
     throw new ChatHubError(res.status, `chat-hub ${res.status}`);
   }
@@ -61,7 +64,7 @@ export async function postHostReply(guestId: string, body: string): Promise<Host
   const { CHAT_HUB_URL } = loadConfig();
   const res = await fetch(`${CHAT_HUB_URL}/v1/reply/${encodeURIComponent(guestId)}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: chatHubHeaders({ "content-type": "application/json" }),
     body: JSON.stringify({ body }),
   });
   if (!res.ok) {
@@ -77,7 +80,7 @@ export async function postHostReply(guestId: string, body: string): Promise<Host
  */
 export async function listChatThreads(): Promise<ChatThread[]> {
   const { CHAT_HUB_URL } = loadConfig();
-  const res = await fetch(`${CHAT_HUB_URL}/v1/threads`);
+  const res = await fetch(`${CHAT_HUB_URL}/v1/threads`, { headers: chatHubHeaders() });
   if (!res.ok) {
     throw new ChatHubError(res.status, `chat-hub ${res.status}`);
   }
@@ -100,7 +103,10 @@ export async function getMessageCount(
   signal?: AbortSignal,
 ): Promise<MessageCountResponse> {
   const { CHAT_HUB_URL } = loadConfig();
-  const res = await fetch(`${CHAT_HUB_URL}/v1/messages/count?range_days=${rangeDays}`, { signal });
+  const res = await fetch(`${CHAT_HUB_URL}/v1/messages/count?range_days=${rangeDays}`, {
+    signal,
+    headers: chatHubHeaders(),
+  });
   if (!res.ok) {
     throw new ChatHubError(res.status, `chat-hub ${res.status}`);
   }
