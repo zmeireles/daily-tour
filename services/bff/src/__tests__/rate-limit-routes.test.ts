@@ -27,6 +27,7 @@ vi.mock("../lib/planner-client.js", () => ({
   },
   createTourPlan: vi.fn(),
   getTourPlan: vi.fn(),
+  getPublicTourPlan: vi.fn(),
 }));
 
 vi.mock("../lib/catalog-client.js", () => ({
