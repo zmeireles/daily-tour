@@ -1,4 +1,74 @@
-# Session Handoff — 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+
+> **UPDATE 2026-08-25 (LATEST — session `s746`, `dt:Furnas`. One PR: the authed tour-plan read is finally scoped to its owner. A third service found answering anyone on the mesh. And the mutation run caught a test of mine that could not have failed. Closed by coordinated `/close-all`.)**
+>
+> ### State
+>
+> `main` **`8100b87`** · **one OPEN pull request, deliberately unmerged** — [`#475`](https://github.com/zmeireles/daily-tour/pull/475), 11/11 CI green, `MERGEABLE / CLEAN` · local branches: `main` + the PR branch + this closeout · A2A inbox **empty**, drained through **`seq 1252`**, nothing owed · Docker **zero containers** at both ends · Telegram `allowFrom` = Zé alone ⇒ **rule INERT, nothing sent** (measured; 11:30 local, window open, so this is not a deferral) · bridge stopped at closeout.
+>
+> ### ▶ FIRST TASK NEXT SESSION
+>
+> **Decide [`#475`](https://github.com/zmeireles/daily-tour/pull/475) — the plan-ownership fix.** It is finished and green; it is unmerged only because a privacy boundary is always-escalate. Two things the owner may want first:
+>
+> - **The Fable review gate has NOT been run on it.** House doctrine wants it on a security-shaped PR. This session was under a standing instruction not to spawn agents, so it was surfaced rather than run.
+> - **`gh pr update-branch 475` is not needed** — it was `CLEAN` at closeout, but `main` may have moved since.
+>
+> Then: **planner-svc has no auth gate at all — [`dt-tests #44`](https://tasks.codecomedy.dev/p/dt-tests/r/44)**, filed this session, and it is the LLM-spend path.
+>
+> ### Shipped: [`#475`](https://github.com/zmeireles/daily-tour/pull/475) — any guest could read any guest's plan
+>
+> **[`dt-tests #42`](https://tasks.codecomedy.dev/p/dt-tests/r/42)** — the authed `GET /v1/tour-plans/:planId` demanded a valid guest JWT and then never checked whose plan it served.
+>
+> 🔑 **The card's own fallback was the wrong key, and the handoff before this one already said so — it was re-confirmed, not re-derived.** `sub` is stable (`token-svc/src/routes/exchange.ts:72` mints it from a join on the existing reservation). Reservation-scoping would have compared a plan against **itself** wherever `reservation_id` is null, because `plan_worker.py:285` fills it with `reservation_id or plan_id`. **Do not revive it.**
+>
+> 📌 **The fix is not "add the parameter", and this is the part worth carrying.** One planner-svc endpoint served BOTH the owner's read and the public shared read, so scoping it in place would have broken every shared link. The obvious repair — one route, optional `guest_id` — was rejected:
+>
+> > An optional scope is applied by whoever remembers to pass it. The next caller that forgets gets an unscoped read, and **nothing fails.**
+>
+> That is exactly the defect `#465` took out of media-svc. So the audience is chosen by **which URL you call**:
+>
+> | route                               | audience  | predicate                          | scope omitted           |
+> | ----------------------------------- | --------- | ---------------------------------- | ----------------------- |
+> | `GET /v1/tour-plans/{id}?guest_id=` | the owner | `id = … AND guest_id = …`          | **422** — no default    |
+> | `GET /v1/public/tour-plans/{id}`    | the world | `id = … AND shared_at IS NOT NULL` | n/a — takes no identity |
+>
+> The BFF signature makes the scope a required argument, so a forgetful caller **does not compile**. 404 never 403, and a stranger's plan is asserted byte-identical to a missing one. **No schema change, no migration; public BFF URLs unchanged**, so the PWA, the k6 scenario, `dev-smoke.sh` and the 2D e2e spec needed no edit (verified by grep: nothing but the BFF calls planner-svc).
+>
+> ### 🪤 The mutation run caught one of MY tests being inert — the fourth time this house has found this shape
+>
+> Four mutations were applied, run, reverted and re-confirmed green. The fourth is the one to read:
+>
+> | mutation                                                                | result                                                |
+> | ----------------------------------------------------------------------- | ----------------------------------------------------- |
+> | drop `guest_id` from `get_owned`'s WHERE (the original defect)          | **1 failed** / 3 passed                               |
+> | route calls the unscoped `get_by_id` (what the code did before)         | **3 failed** / 3 passed                               |
+> | give `guest_id` a default + fall back to unscoped (the fail-open shape) | **1 failed** / 5 passed                               |
+> | BFF stops passing the caller's identity                                 | **2 failed** / 14 passed — _on the first run, only 1_ |
+>
+> My test **"GET another guest's plan — 404" passed with the fix reverted.** Its fake planner returned `null` for an omitted scope, so the 404 arrived for the _wrong reason_ and the test could not fail. ⇒ **A fake that is safer than the system it stands in for cannot detect the system being unsafe.** The fake now answers like the pre-fix planner-svc — with no scope it serves the row to anyone — and the reason is written into the test so nobody simplifies it back.
+>
+> ### 🔺 Filed, not folded: [`dt-tests #44`](https://tasks.codecomedy.dev/p/dt-tests/r/44) — planner-svc has NO auth gate at all
+>
+> Not an opt-in `preHandler` some routes forget (media-svc before `#465`) — **there is nothing to opt into.** `grep -rni "internal_token|verify_internal|Depends("` over `planner_svc/` returns nothing, while the same grep finds catalog-svc's: **a positive control, so this is a real absence.**
+>
+> ⚠️ **The exposure is not reads.** Plan ids are unguessable. It is `POST /v1/tour-plans` — **unauthenticated, unmetered LLM spend**, because the 5/min per-guest cap lives in the BFF and a direct caller on `dt_internal` bypasses it — plus the ability to share or revoke somebody's plan. Third service in the same class as `#36` and `#41`. **Plan-009 shrinks who can reach it and does not close it.**
+>
+> ### ⚠️ I corrected a false claim in my own PR body
+>
+> I wrote that the pre-existing `test_provenance.py` mypy errors survive because planner-svc is not gated in CI. **It is gated** — a dedicated Python matrix, and it passed. The real reason is that `ci.yml:277` runs **`uv run mypy src`, not `src tests`**, so `tests/` is never typechecked in CI. The code assumes otherwise: `test_repository_share.py` carries a comment about a `cast` that exists to pass _"under `mypy src tests`"_.
+>
+> ⇒ **The local command is stricter than the gate, and a test file can drift red with nothing failing.** Left alone — CI config is always-escalate — but it is the same shape this repo keeps finding: **a check narrower than the code believes it to be.** The 3 errors are untouched since `#71`.
+>
+> ### 🪤 Ritual: the `pgrep` trap fired again, and the child pid rotated
+>
+> - The startup `pgrep` hit was **po-platform-sA's** — again, third session running. PPID chain to its daemon, cwd confirms. Armed my own, `ESTAB` verified.
+> - **At closeout the child pid had rotated**, 30229 → **266891**, while the supervisor stayed 30204. The `armed` line prints the SUPERVISOR pid, so probing `ESTAB` on that number finds nothing and reads as "no bridge" on a live one. `pgrep -P <supervisor>` is the only way to the node pid, and it must be read in the same breath as the probe.
+> - **A supervisor log line saying `comm-watch: terminated` is NOT a dead bridge.** Mine said exactly that and was `ESTAB` throughout — it is the re-arm cycle working.
+> - 🔴 **I armed from cc-platform's live checkout**, which the global instructions were amended _during this session_ to forbid — the pinned launcher at `cc-mcp-launcher` is now the required path. Nothing went wrong here, but **the next session must use the launcher path.**
+>
+> ### Riff control tower — updated, nothing claiming a state it lacks
+>
+> [`#42`](https://tasks.codecomedy.dev/p/dt-tests/r/42) commented with the PR, the two inverted measurements and the inert-test finding — **left open**, since the PR is unmerged. [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44) filed. Board: 5 open, **none at `review`**. No pending item lives only in a local file.
 
 > **UPDATE 2026-08-25 (LATEST — session `s745`, `dt:Furnas`. Three PRs merged and the board emptied; the network split turned from an open question into a written plan; and a peer's research question forced two admissions about the limits of my own evidence. Closed by coordinated `/close-all`.)**
 >
