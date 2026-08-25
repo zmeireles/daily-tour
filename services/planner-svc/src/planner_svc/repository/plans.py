@@ -8,11 +8,17 @@ Three operations cover the async flow:
   worker once the LLM + validators finish. `mark_rejected` stores an
   `{error: "…"}` JSON payload so the GET endpoint can surface the reason
   without a separate column.
-- `get_by_id` — read-side for GET /v1/tour-plans/{id}.
+- `get_by_id` — UNSCOPED read. Internal callers only (the worker, and the
+  re-read after an already-scoped UPDATE). Never reachable from a request.
+- `get_owned` / `get_shared` — dt-tests #42. The two request-facing reads,
+  one per audience: the owning guest, and the world once the plan is shared.
 - `set_shared` — dt-tests #40. Grants or withdraws public readability by
   writing/clearing `shared_at`. Scoped by guest_id in the WHERE clause so a
   caller can only ever change a plan it owns, independent of what the BFF
   checked first.
+
+Every request-facing read carries its audience predicate in the WHERE clause
+rather than as a precondition checked afterwards — see `get_owned` for why.
 
 State transitions are intentionally one-way (queued → ready|rejected); no
 retry/back-to-queued path until Phase 3 wires it. Updates use SQL `now()`
@@ -57,7 +63,51 @@ async def insert_queued(
 
 
 async def get_by_id(session: AsyncSession, plan_id: UUID) -> TourPlanRow | None:
+    """Read a plan by id alone, with NO audience check.
+
+    ⚠️ Not for a request handler. This is the worker's read (mq.py) and the
+    re-read inside `_set_share`, which runs after an UPDATE that was already
+    scoped to the owner. A route that calls this serves any plan to any
+    caller — which is exactly what dt-tests #42 was. Use `get_owned` or
+    `get_shared` from a route.
+    """
     stmt = select(TourPlanRow).where(TourPlanRow.id == plan_id)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_owned(
+    session: AsyncSession, plan_id: UUID, *, guest_id: UUID
+) -> TourPlanRow | None:
+    """Read a plan on behalf of the guest who owns it (dt-tests #42).
+
+    `guest_id` is a WHERE predicate rather than a check the caller performs
+    afterwards, for the same reason `set_shared` puts it there: a read-then-
+    compare makes the guarantee depend on every caller remembering it, and
+    this function is the last layer that can enforce it.
+
+    A non-owner matches zero rows and gets None, which the route turns into a
+    404 — the same answer a missing plan gives, so the endpoint cannot be used
+    to learn which plan ids exist.
+    """
+    stmt = select(TourPlanRow).where(
+        TourPlanRow.id == plan_id, TourPlanRow.guest_id == guest_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_shared(session: AsyncSession, plan_id: UUID) -> TourPlanRow | None:
+    """Read a plan its owner has published, for the unauthenticated path.
+
+    `shared_at IS NOT NULL` is the grant (dt-tests #40) and it lives here, in
+    the WHERE clause, as well as in the BFF route that calls this. Two
+    independent controls: a BFF that stopped checking would still not be able
+    to obtain an unshared plan through this function.
+    """
+    stmt = select(TourPlanRow).where(
+        TourPlanRow.id == plan_id, TourPlanRow.shared_at.is_not(None)
+    )
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
@@ -129,4 +179,12 @@ async def _set_terminal(
     await session.execute(stmt)
 
 
-__all__ = ["get_by_id", "insert_queued", "mark_ready", "mark_rejected", "set_shared"]
+__all__ = [
+    "get_by_id",
+    "get_owned",
+    "get_shared",
+    "insert_queued",
+    "mark_ready",
+    "mark_rejected",
+    "set_shared",
+]

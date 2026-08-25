@@ -21,11 +21,15 @@ vi.mock("../lib/planner-client.js", () => ({
     }
   },
   createTourPlan: vi.fn(),
-  getTourPlan: vi.fn(),
+  getPublicTourPlan: vi.fn(),
 }));
 
 const plannerClient = await import("../lib/planner-client.js");
-const getMock = plannerClient.getTourPlan as ReturnType<typeof vi.fn>;
+// dt-tests #42 — the public route now calls a planner-svc route of its own,
+// which enforces the `shared_at` grant in SQL. Mocking the client keeps these
+// tests on the BFF's own gate; the planner-svc side is pinned by
+// tests/test_repository_read_scope.py.
+const getMock = plannerClient.getPublicTourPlan as ReturnType<typeof vi.fn>;
 const { createApp } = await import("../app.js");
 const { resetConfigCache } = await import("../config.js");
 const { setRedisForTest, closeRedis } = await import("../lib/redis.js");

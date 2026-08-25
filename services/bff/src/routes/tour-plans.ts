@@ -73,12 +73,16 @@ const tourPlansRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.code(400).send({ error: "invalid_plan_id" });
     }
 
+    // dt-tests #42 — the read is scoped to the caller. `sub` is the guest id
+    // (token-svc mints it from the reservation row, so it survives a re-redeem)
+    // and planner-svc puts it in the WHERE clause: another guest's plan 404s.
+    const { sub: guestId, locale } = req.user as { sub: string; locale?: string };
+
     try {
-      const plan = await getTourPlan(parsed.data.planId);
+      const plan = await getTourPlan(parsed.data.planId, guestId);
       if (!plan) {
         return reply.code(404).send({ error: "not_found" });
       }
-      const { locale } = req.user as { locale?: string };
       return plan.status === "ready" ? await withStops(plan, locale) : plan;
     } catch (err) {
       if (err instanceof PlannerError) {
