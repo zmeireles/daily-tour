@@ -1,4 +1,73 @@
-# Session Handoff — 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+
+> **UPDATE 2026-08-26 (LATEST — session `s748`, `dt:Furnas`. One PR: the Python package every service imports was never in CI. The one-line fix described in the last handoff would have blocked every PR in the repo. Closed by coordinated `/close-all` at 11:10.)**
+>
+> ### State
+>
+> `main` **`33b95f8`** · **TWO open pull requests, both green, both deliberately unmerged** — [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (11/11, `MERGEABLE / CLEAN`) and [`#479`](https://github.com/zmeireles/daily-tour/pull/479) (12/12, `MERGEABLE / CLEAN`) · A2A inbox **empty** at both ends, drained through **`seq 1364`** · dt-tests `review` queue **empty** · Docker **zero containers** at both ends · Telegram `allowFrom` = Zé alone ⇒ **rule INERT, nothing sent** (measured, not skipped) · **no subagents spawned** — standing no-agents instruction · bridge stopped at closeout · Riff board **conferida e alterada** — [`dt-tests #45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) updated.
+>
+> ### ▶ FIRST TASK NEXT SESSION — the same two decisions, now asked a FOURTH time, plus one new
+>
+> **Nothing in this handoff is approval.** The owner's only message this session was "Lets resume work"; every other input was a peer session's closeout order.
+>
+> 1. **Merge [`#477`](https://github.com/zmeireles/daily-tour/pull/477)** — the four-service auth gate. Re-verified this session: 11/11 green, `MERGEABLE / CLEAN`. It closes [`dt-tests #45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) (`critical`) and [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44). Recommendation unchanged: **Fable gate first, then merge if clean.**
+> 2. **Merge [`#479`](https://github.com/zmeireles/daily-tour/pull/479)** — the CI gap below. Docs/CI category, but `.github/workflows/*` is always-escalate.
+> 3. 🔴 **THEN, and only then, add `Python (ruff + mypy + pytest) (python-common)` to the `protect-main` ruleset (`16458194`).** **The order is load-bearing.** Adding it while `main` still lacks the job means the ruleset waits on a check that never reports — **every PR blocks**. This is the same failure as the trap below, reached from the other side.
+>
+> ### Shipped: [`#479`](https://github.com/zmeireles/daily-tour/pull/479) — the package every service imports was verified on one laptop
+>
+> `ci.yml`'s Python matrix ran the four services. **`packages/python-common` was absent** — the one Python package every service imports at runtime (`init_otel` ×4, `init_sentry` ×4, shared models, weather, OSRM). Same shape as the finding that created the matrix: work CI structurally could not see.
+>
+> Measured on `main` **before** changing anything, with the matrix's exact commands: ruff clean · `mypy src` clean (19 files) · **39 tests pass**. ⇒ The gate it was missing is one it already passes. What was missing was anyone running it.
+>
+> ### 🪤 The finding of the session — the fix the last handoff called "one line" would have bricked the repo
+>
+> The matrix hardcodes `working-directory: services/${{ matrix.service }}`; this package lives under `packages/`. **The natural fix is to key the matrix on the path.** That renames all four existing jobs — and the **`protect-main` ruleset (`16458194`) pins those four check names verbatim**:
+>
+> ```
+> Python (ruff + mypy + pytest) (chat-hub)   … (notif-svc) … (planner-svc) … (search-svc)
+> ```
+>
+> Renamed required checks **never report**. The ruleset then waits on them forever ⇒ **every PR in the repo blocks — and it presents as CI hanging, not as CI failing**, so the cause is nowhere near the symptom.
+>
+> ⇒ Matrix key stays a bare package name; the directory moves to a separate `dir`; the job `name:` is written out explicitly. Generated names diffed against the live ruleset: **four byte-identical, one added, no `<` lines.**
+>
+> ### 📌 The one thing I refused to assert from memory — and it is the transferable part
+>
+> Whether GitHub **appends** the matrix suffix to a `name:` that already contains a matrix expression. If it appends, the names become `… (chat-hub) (chat-hub, services/chat-hub)` and all four required checks die. I could argue it either way from memory, and four required checks depended on the answer.
+>
+> **Measured instead of predicted, and the measurement was nearly free:** the ruleset binds `main` only, so a branch is a consequence-free place to ask GitHub directly. Pushed, read the names GitHub actually reported. **It does not append.** Four byte-identical, `(python-common)` added, 21s, pass.
+>
+> > **A branch is an instrument.** When the cost of being wrong is repo-wide and the cost of measuring is one push, memory is never the cheaper option.
+>
+> **And the diff carries a positive control**, because a name comparison that cannot fail reads exactly like a pass: mutating one reported name to the path form (`(chat-hub)` → `(services/chat-hub)`) makes the diff fire. Verified. Fifth instance of this house's recurring class, and the first where the probe was controlled _before_ being trusted rather than after.
+>
+> ### Sized, deliberately not fixed: `mypy src` vs `mypy src tests`
+>
+> The sibling narrowness in the same job — the type checker never sees the tests. Measured across all five so the next session need not re-derive it:
+>
+> | package                  | errors under `mypy src tests` |
+> | ------------------------ | ----------------------------- |
+> | `chat-hub`               | **32**, in 6 files            |
+> | `planner-svc`            | 3                             |
+> | `packages/python-common` | 2                             |
+> | `notif-svc`              | 0                             |
+> | `search-svc`             | 0                             |
+>
+> **37 total.** Real work, and it does not belong in a PR about coverage.
+>
+> ### 🪤 A ritual trap that has now fired FIVE consecutive sessions
+>
+> The startup `pgrep` hit belonged to **po-platform-sA** again — its detached daemon (`comm-bridge-daemon.sh`) runs the shared script and sources its own token. Read as "a bridge is up", this session would have run **with no wake bridge at all** while looking correctly armed.
+>
+> ⚠️ **The node pid rotated within the session** (`28079` → `193724`) while the supervisor held at `28021`. Probing `ESTAB` on the number the `armed` line prints finds nothing on a live bridge.
+>
+> ⚠️ **The global count is not a signal in either direction during a coordinated closeout** — 12 nodes were up at closeout with houses stopping and re-arming in the same minute. Ownership was settled by PPID chain to this session's own claude pid (`17275`), never by count.
+>
+> ### ⚠️ Unchanged and still owed from `s747`
+>
+> - `get_shared` still lacks a `status == "ready"` predicate — unreachable today, belongs in the Phase-3 plan if a back-to-queued transition is ever added.
+> - `docs/ai/incidents/` still has **zero entries** in 104 days. Not fixed; nobody asked.
 
 > **UPDATE 2026-08-26 (LATEST — session `s747`, `dt:Furnas`. The plan-ownership fix merged after a clean Fable gate; the missing auth gate on ALL FOUR Python services built and green but NOT merged; and two corrections of my own claims, one of which would have shipped a gate that gated nothing. Closed by coordinated `/close-all` at 04:17.)**
 >
