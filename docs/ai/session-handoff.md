@@ -1,4 +1,81 @@
-# Session Handoff — 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+
+> **UPDATE 2026-08-27 (LATEST — session `s749`, `dt:Furnas`. One task: answer `cs:Barra`'s spec-005 elicitation. The archaeology it needed turned into a measurement of this house's own record — and of a probe of mine that was wrong by 101 days. No code changed; the two PRs still wait on the owner. Closed on the owner's "do the closeout and park".)**
+>
+> ### State
+>
+> `main` **`c9f62b3`**, tree clean · **the SAME TWO open pull requests, both green, both still deliberately unmerged** — [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (11/11) and [`#479`](https://github.com/zmeireles/daily-tour/pull/479) (12/12) · A2A drained and acked through **`seq 1440`** · dt-tests `review` queue **empty** (polled at start) · Docker **zero containers** at both ends · Telegram `allowFrom` = Zé alone ⇒ **rule INERT, nothing sent** (measured, not skipped) · **no subagents spawned** — standing no-agents instruction · bridge armed, `ESTAB` verified twice, stopped at closeout.
+>
+> ### ▶ FIRST TASK NEXT SESSION — the same two decisions, now asked a FIFTH time
+>
+> **Nothing in this handoff is approval.** The owner's only instruction this session was _"read the A2A comms and answer cs:Barra's elicitation, then close out and park"_ — it authorised neither merge, and I did not treat the silence as consent.
+>
+> 1. **Merge [`#477`](https://github.com/zmeireles/daily-tour/pull/477)** — the four-service auth gate. Closes [`dt-tests #45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) (`critical`) and [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44). Recommendation unchanged: **Fable gate first, then merge if clean.**
+> 2. **Merge [`#479`](https://github.com/zmeireles/daily-tour/pull/479)** — the `python-common` CI gap. `.github/workflows/*` is always-escalate.
+> 3. 🔴 **THEN, and only then**, add `Python (ruff + mypy + pytest) (python-common)` to the `protect-main` ruleset (`16458194`). **The order is load-bearing** — adding it while `main` lacks the job blocks every PR in the repo, and it presents as CI hanging, not failing.
+>
+> ### The work: `cs:Barra`'s spec-005 elicitation, round 1 — answered (`seq 1439`), plus a barrier note (`seq 1440`)
+>
+> He asked one question — _"what problem has your house solved MORE THAN ONCE, where the second time cost again?"_ — and attached a methodological separator he asked not to be skipped: date the words your probe used · if the result is empty, say **which** of «there was no repetition» / «my probe cannot reach repetitions» · give the denominator **in records, not days**.
+>
+> **Two cases went back, both over his bar.** But the separator is what produced the finding.
+>
+> ### 🪤 The finding of the session — my first probe was clean, and wrong by 101 days
+>
+> I searched the house's records with the vocabulary the house uses **today**. It returned a tidy result. Then I dated the vocabulary itself, with `git log -S` over all 467 commits:
+>
+> | probe term                                | born       | age        | history it can reach |
+> | ----------------------------------------- | ---------- | ---------- | -------------------- |
+> | `"recurring class"`                       | 2026-08-26 | **1 day**  | 1%                   |
+> | `"auth gate"`                             | 2026-08-23 | **4 days** | 3.8%                 |
+> | `"could not fail"` · `"positive control"` | 2026-08-17 | 10 days    | 9.5%                 |
+> | `"cannot fail"`                           | 2026-07-30 | 28 days    | 27%                  |
+> | `"unauthenticated"`                       | 2026-05-16 | 103 days   | 98%                  |
+>
+> ⇒ **The natural vocabulary for my strongest case is four days old in a 105-day house.** The lexical probe's earliest hit was 2026-07-30 and it found **zero** before that. A structural probe — citation chains through `docs/ai/lessons/`, which use none of those words — finds the same form at **2026-05-30** (`L022`) and, following `L022`'s own _Related_ line, at **2026-04-20** (`L016`, global playbook) — **24 days before this repo's first commit.**
+>
+> > **The zero was the instrument, not the world.** Distance between what the probe reached and what exists: **101 days.**
+>
+> **And the innocent explanation for the zero is false, which is the part worth keeping.** «Nobody was writing in May» — May wrote **1979 lines** of handoff (the densest month) across **199 commits** (the busiest), and the lexical probe finds nothing there. What hides it is not silence, it is **the voice**: May's lines are written confidently (`✅ Resolved 2026-05-17 via PR #83`). `L022` is an instance of the class **filed as an accounting problem**, with no error vocabulary anywhere in it. No pain-shaped probe will ever reach it.
+>
+> ### 🔴 A correction of this house's own count, and it is the useful number
+>
+> Yesterday's handoff reads _"**Fifth** instance of this house's recurring class."_ Counted against the whole record: **at least 22** distinct instances of a check/probe/instrument structurally unable to fail, plus 3 of the same shape in prose. The undercount is not carelessness — **every session counts from what it can reach, and no session has ever counted the whole record.**
+>
+> ⇒ That gap (5 vs 22) is the only leak estimate this house has, and it is a lower bound on the **undercount**, not on the class. The class's true denominator is unmeasurable by construction: an instance that is never caught reads as green in CI, in the PR body **and in this file**.
+>
+> ### The second case: the auth boundary was solved FOUR times in FOUR days
+>
+> | #   | service                  | card                                                  | fix                                      | date  |
+> | --- | ------------------------ | ----------------------------------------------------- | ---------------------------------------- | ----- |
+> | 1   | catalog-svc              | [`#36`](https://tasks.codecomedy.dev/p/dt-tests/r/36) | PR `#459` service-wide `onRequest`       | 08-23 |
+> | 2   | media-svc                | [`#41`](https://tasks.codecomedy.dev/p/dt-tests/r/41) | PR `#465` deny-by-default                | 08-23 |
+> | 3   | planner-svc              | [`#43`](https://tasks.codecomedy.dev/p/dt-tests/r/43) | unauthenticated, **unmetered LLM spend** | 08-24 |
+> | 4   | all four Python services | [`#45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) | PR `#477` — **still open**               | 08-26 |
+>
+> **Discovery was paid at full price four times; the implementation was nearly free** — the two TS gates are near-copies whose headers each say "mirrors the other's". ⇒ **The cost is not building the thing, it is learning that the thing is missing here too.**
+>
+> 🔑 **And the sharpest datum: the artefact produced by solve #1 is what made solve #2 cost full price.** `services/bff/src/plugins/AUTH_POSTURES.md` asserted media-svc _"reject[ed] any non-health request"_. It did not — `GET /v1/assets/:id` answered a non-BFF container with a 302 and a presigned MinIO URL. Anyone consulting the document to check got a confident, false _"already covered"_.
+>
+> ### 🪤 The bridge trap fired a SIXTH consecutive session — in a new guise
+>
+> Not "a `pgrep` hit that isn't mine" this time. **Eight bridges were live and not one was daily-tour's** — joraa, Casa, po-platform-sA, eventos-judo, cc-platform, fin-po-management, cc-specs, nexumpro. A session reading the count would have concluded it was covered and run with **no wake bridge at all**.
+>
+> ⚠️ **And the pid trap fired twice, both times as documented:** the `armed` line printed `740899` / `771092` (the supervisors) while the sockets were on `740924` / `771117` (the children). Probing `ESTAB` on the number `armed` prints finds nothing on a live bridge. Both were verified `ESTAB` against `185.166.39.210:443` by reading the child pid and probing **in the same breath**.
+>
+> 📌 The supervisor exited mid-session with `{"reason":"comm","action":"rearm"}` — that is the design working (a message had arrived), not a death. Re-armed, re-verified.
+>
+> ### ⚠️ Incidental findings — filed here, nobody asked for them
+>
+> - **The lesson codes collide.** `L019`–`L021` exist **both** in `docs/ai/lessons/` and in `~/.claude/docs/agent-playbook.md`, naming **different lessons**, while the local README states the two sequences are shared. Any future `L0NN` reference is ambiguous without saying which file.
+> - **`L023` was predicted in writing and never written.** `L019`'s _Related_ section, 2026-05-29: _"L023 (future) — should formalize 'dispatcher-pattern route audit checklist' once we hit this again."_ Ninety days later it does not exist.
+> - **`docs/ai/backlog.md` is stale.** It still describes Plan-001 Phase 0 as the next executable wave and has an empty _Done_ section, while the repo is at Plan-009. Anything reading it for current state is reading May.
+>
+> ### ⚠️ Unchanged and still owed
+>
+> - `mypy src` vs `mypy src tests` — **37 errors** across five packages (chat-hub 32, planner-svc 3, python-common 2). Real work, sized, deliberately not bundled.
+> - `get_shared` still lacks a `status == "ready"` predicate — unreachable today, belongs in Phase-3 if a back-to-queued transition is added.
+> - `docs/ai/incidents/` still has **zero entries** in 105 days.
 
 > **UPDATE 2026-08-26 (LATEST — session `s748`, `dt:Furnas`. One PR: the Python package every service imports was never in CI. The one-line fix described in the last handoff would have blocked every PR in the repo. Closed by coordinated `/close-all` at 11:10.)**
 >
