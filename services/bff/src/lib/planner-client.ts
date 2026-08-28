@@ -1,4 +1,5 @@
 import { loadConfig } from "../config.js";
+import { plannerHeaders } from "./internal-headers.js";
 
 export class PlannerError extends Error {
   constructor(
@@ -33,7 +34,7 @@ export async function createTourPlan(params: CreatePlanParams): Promise<TourPlan
   const { PLANNER_SVC_URL } = loadConfig();
   const res = await fetch(`${PLANNER_SVC_URL}/v1/tour-plans`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: plannerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       guest_id: params.guestId,
       reservation_id: params.reservationId ?? null,
@@ -47,7 +48,9 @@ export async function createTourPlan(params: CreatePlanParams): Promise<TourPlan
 }
 
 async function readPlan(url: string): Promise<TourPlanResponse | null> {
-  const res = await fetch(url);
+  // Both plan reads funnel through here, so the internal token is applied once
+  // rather than at each call site — planner-svc denies by default (dt-tests #44).
+  const res = await fetch(url, { headers: plannerHeaders() });
   // planner-svc answers 404 for "no such plan", "not yours" and "not shared"
   // alike, so neither read can be used to discover which plan ids exist.
   if (res.status === 404) return null;
@@ -106,7 +109,7 @@ export async function setTourPlanShared(
   const { PLANNER_SVC_URL } = loadConfig();
   const res = await fetch(`${PLANNER_SVC_URL}/v1/tour-plans/${encodeURIComponent(planId)}/share`, {
     method: shared ? "POST" : "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers: plannerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ guest_id: guestId }),
   });
   if (res.status === 404) return null;

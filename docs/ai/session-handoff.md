@@ -1235,7 +1235,7 @@
 > 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`.
 > 2. **`comm_inbox after_seq=821`** — 821 was the last message processed (from `cs:Barra`, acked; nothing owed).
 > 3. **Re-arm the A2A bridge** — stopped at this closeout. ⚠️ Check by **supervisor cwd**, never by count, path, or child process:
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 > 4. **Poll the tester board** for anything in `review` (project `e03901a6-…081cc`) — **empty** at close.
 > 5. **The queue above**, starting with the deploy.
 
@@ -1287,7 +1287,7 @@
 > 1. **`comm_whoami`** — confirm the handle is `dt:Furnas` on `DAILY-TOUR`.
 > 2. **`comm_inbox after_seq=815`** — 815 is this agent's own last send. Nothing was owed on agent-to-agent comms at close.
 > 3. **Re-arm the A2A bridge** — stopped at this closeout. ⚠️ Verify by **cwd/env, never by count**: four bridges were live this session and none were this project's.
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 > 4. **Poll the tester board for anything in `review`** (project `e03901a6-…081cc`) — **empty** at close.
 > 5. **The two owner actions at the top of this block**, then the three open pull requests.
 
@@ -1356,7 +1356,7 @@
 > 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`.
 > 2. **`comm_inbox after_seq=815`** — 815 is my own last send (the answer to `cs:Barra`, delivered). Message 776 is acked **and answered**; nothing is owed on A2A.
 > 3. **Re-arm the A2A bridge** — stopped at closeout. ⚠️ Check by **cwd/env, never by count**: this session again found four live bridges, none of them daily-tour's.
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 > 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — **empty**. `#30`/`#31` are `todo` and `#22` is deferred-until-prod; read decision **B** above before writing "awaiting the tester" again.
 > 5. **#428's CI**, then the queue.
 
@@ -1533,7 +1533,7 @@
 > 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`. A wrong-token session looks completely normal from the inside.
 > 2. **`comm_inbox after_seq=774`** — that is my own last send; 761 (`cs:Barra`) is acked and answered.
 > 3. **Re-arm the A2A bridge** — stopped at closeout. daily-tour has no local script:
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 >    ⚠️ **Check the env/path, never the count** — this session again found live bridges belonging to po-platform-sA and Casa, and none to daily-tour.
 > 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — empty at close. **But read the two owner-call items above before repeating "#30 awaits the tester".**
 > 5. **Check GitHub is healthy**, then resume the queue at item 1.
@@ -1600,7 +1600,7 @@
 > 1. **`comm_whoami`** — confirm `dt:Furnas` / `DAILY-TOUR`. A wrong-token session looks completely normal from the inside.
 > 2. **`comm_inbox after_seq=626`** — still the watermark; nothing has arrived since.
 > 3. **Re-arm the A2A bridge — it is NOT armed.** Stopped at this closeout, and verified stopped: the only live `comm-watch` pair belongs to **po-platform-sA** (`cwd=…/cristina-meireles/po-platform-sA`). daily-tour has no local script; use codecomedy-platform's with daily-tour's env:
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 >    ⚠️ **Check the env/path, never the count** — this session found live bridges and none were ours. Third handoff running that this gotcha has bitten.
 > 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — empty at close.
 >
@@ -1781,7 +1781,7 @@
 > 1. **`comm_whoami` FIRST** — confirm `dt:Furnas` / `DAILY-TOUR`. Cheap, and a wrong-token session looks completely normal from the inside.
 > 2. **`comm_inbox after_seq=626`** — that is my own last send. Everything up to 626 is drained and acked.
 > 3. **Re-arm the A2A bridge** (stopped at closeout). daily-tour has no local script — use codecomedy-platform's with daily-tour's env:
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 >    ⚠️ **Check the env/path, never the count** — this session found 10 live `comm-watch` processes and none were daily-tour's.
 > 4. **dt-tests `review` poll** (`e03901a6-…081cc`) — empty at close. Note the token now scopes **both** projects, which #145 made load-bearing when reads became authorized.
 >
@@ -1845,7 +1845,7 @@
 > 1. **`mcp__tasks-prod__comm_inbox`** — last processed seq = **272** (qb:Aldraba's cert-fix closing ack, already acked). Pull `after_seq=272`.
 > 2. **`comm_whoami` FIRST** — confirm the handle is `dt:Furnas` / home project `DAILY-TOUR`. This is cheap and catches a wrong-token session, which looks completely normal from the inside.
 > 3. **Re-arm the A2A wake bridge** (stopped at closeout). daily-tour has no local script — use codecomedy-platform's with daily-tour's env:
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 >    ⚠️ **The gotcha bit again this session**: `pgrep -f comm-watch` showed **10** live bridges and **none** were daily-tour's (qr-bell, joraa-project, eventos-judo, codecomedy). **Check the env/path, never the count.**
 > 4. **dt-tests `review` poll** (`e03901a6-b656-4f38-a768-b98d4fa081cc`) — empty at close.
 >
@@ -1963,7 +1963,7 @@
 >
 > 1. **`mcp__tasks-prod__comm_inbox`** — last processed seq = **271** (my own send). Pull `after_seq=271`.
 > 2. **Re-arm the A2A wake bridge** (NOT running — stopped at closeout). It is a `run_in_background` job, and daily-tour has **no local script** — use codecomedy-platform's with daily-tour's env:
->    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/codecomedy-platform/apps/tasks-mcp/comm-watch-supervise.sh`
+>    `set -a; . ~/.secrets/tasks-prod-daily-tour.env; set +a; bash /media/jmeireles/ssd3/my-projects/cc-mcp-launcher/apps/tasks-mcp/comm-watch-supervise.sh`
 >    ⚠️ **Gotcha that bit me this session:** `pgrep -f comm-watch\.mjs` showed 5 live bridges so I skipped arming — but all 5 were **codecomedy-platform's**. Check the _path/env_, not the count. Three qb:Aldraba messages sat unread until the user asked directly.
 > 3. **Telegram MCP** — verify it is loaded; alert if not.
 > 4. **dt-tests `review` poll** (`e03901a6-b656-4f38-a768-b98d4fa081cc`) — empty at close.

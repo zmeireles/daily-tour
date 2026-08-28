@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+from daily_tour_common.internal_auth import InternalAuthMiddleware
 from daily_tour_common.otel import init_otel
 from daily_tour_common.sentry import init_sentry
 from fastapi import FastAPI, Query
@@ -42,6 +43,26 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
         allow_credentials=False,
+    )
+
+    # Deny-by-default internal-token gate (dt-tests #44/#45). Middleware, not a
+    # per-route Depends(...): a dependency guards only the routes that remember
+    # to list it, so a route added later would be born open. Applied last so it
+    # runs OUTERMOST — an unauthenticated caller is turned away before CORS or
+    # any handler sees the request.
+    # The two provider webhooks are exempt: WhatsApp and Telegram are EXTERNAL
+    # callers by design and cannot present an internal token. Each verifies its own
+    # caller instead — WhatsApp by `x-hub-signature-256` HMAC and the `hub.verify_token`
+    # challenge, Telegram by `x-telegram-bot-api-secret-token`.
+    #
+    # ⚠️ Telegram's check was fail-open when this landed (`if self._webhook_secret
+    # and ...` — skipped entirely with the secret unset). Exempting the path is what
+    # would have made that reachable, so it was closed in the same change; see
+    # `drivers/telegram.py::process_update`. Do not re-open one without the other.
+    app.add_middleware(
+        InternalAuthMiddleware,
+        token=settings.internal_token,
+        extra_open_paths={"/v1/webhook/telegram", "/v1/webhook/whatsapp"},
     )
 
     app.include_router(health_router)

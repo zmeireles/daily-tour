@@ -5,6 +5,7 @@ the repo's route-with-dependency-override test posture (see test_history_route).
 """
 from __future__ import annotations
 
+from conftest import INTERNAL_HEADERS
 from fastapi.testclient import TestClient
 
 from chat_hub.chat_persistence import get_message_count_provider
@@ -18,7 +19,7 @@ def test_message_count_returns_windowed_counts() -> None:
 
     app.dependency_overrides[get_message_count_provider] = lambda: fake_provider
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers=INTERNAL_HEADERS)
         resp = client.get("/v1/messages/count?range_days=7")
     finally:
         app.dependency_overrides.pop(get_message_count_provider, None)
@@ -36,7 +37,7 @@ def test_message_count_defaults_range_to_30() -> None:
 
     app.dependency_overrides[get_message_count_provider] = lambda: fake_provider
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers=INTERNAL_HEADERS)
         resp = client.get("/v1/messages/count")
     finally:
         app.dependency_overrides.pop(get_message_count_provider, None)
@@ -46,6 +47,6 @@ def test_message_count_defaults_range_to_30() -> None:
 
 
 def test_message_count_rejects_out_of_range() -> None:
-    client = TestClient(app)
+    client = TestClient(app, headers=INTERNAL_HEADERS)
     assert client.get("/v1/messages/count?range_days=0").status_code == 422
     assert client.get("/v1/messages/count?range_days=999").status_code == 422

@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +11,12 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"  # noqa: S104 — container bind
     port: int = 8083
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+
+    # Deny-by-default gate for every route (dt-tests #44/#45). No default and a
+    # 32-char floor, so the service CANNOT BOOT without a real token — the same
+    # posture as catalog-svc's `z.string().min(32)`. A default here would be a
+    # gate that silently admits everyone in any environment that forgot the var.
+    internal_token: str = Field(min_length=32, validation_alias="PLANNER_SVC_INTERNAL_TOKEN")
 
     database_url: str = (
         "postgresql://planner_svc:change-me-please-planner"
@@ -27,6 +34,15 @@ class Settings(BaseSettings):
     # Internal URL of the search-svc — planner uses it for RAG retrieval
     # (T-3.0.1 adds the actual /v1/query call; the skeleton just carries the URL).
     search_svc_url: str = "http://dt_search_svc:8082"
+
+    # Token presented TO search-svc, which denies by default (dt-tests #44).
+    # Distinct from `internal_token` above: that one authenticates callers coming
+    # IN to planner-svc, this one authenticates planner-svc going OUT. Caller-side
+    # posture matches the BFF's — a dev/CI default so local work is unaffected,
+    # a real value injected in qual.
+    search_svc_internal_token: str = (
+        "change-me-please-search-svc-internal-token-min-32c"  # noqa: S105 — dev default, overridden in every deployment
+    )
 
     osrm_url: str = "http://osrm-routed:5000"
 

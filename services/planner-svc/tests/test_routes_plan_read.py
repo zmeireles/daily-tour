@@ -19,6 +19,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
+from conftest import INTERNAL_HEADERS
 from fastapi.testclient import TestClient
 
 from planner_svc.main import app
@@ -60,7 +61,10 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setattr(plans, "session_scope", _scope)
     monkeypatch.setattr(plans, "get_owned", _get_owned)
     monkeypatch.setattr(plans, "get_shared", _get_shared)
-    return TestClient(app)
+    # planner-svc denies by default (dt-tests #44), so this client presents the
+    # internal token. These tests are about OWNERSHIP scoping, not about the
+    # transport gate — the gate has its own tests in test_internal_auth_wiring.py.
+    return TestClient(app, headers=INTERNAL_HEADERS)
 
 
 def test_the_owner_reads_their_own_plan(client: TestClient) -> None:
@@ -84,6 +88,14 @@ def test_a_missing_plan_answers_exactly_like_a_stranger_s_plan(client: TestClien
     stranger = client.get(f"/v1/tour-plans/{PLAN_ID}", params={"guest_id": str(STRANGER)})
     absent = client.get(f"/v1/tour-plans/{uuid4()}", params={"guest_id": str(OWNER)})
 
+    # ⚠️ The status is pinned to 404 as well as compared, and that is deliberate.
+    # Equality ALONE is satisfied by any pair of identical responses — including
+    # two 401s. When the internal-token gate (dt-tests #44) first landed and this
+    # fixture was still unauthenticated, the other five tests in this file failed
+    # loudly and THIS one kept passing, on `401 == 401`, while proving nothing
+    # about the 404-vs-404 behaviour it exists to guarantee. Measured, not feared.
+    # Do not reduce this back to a bare equality assertion.
+    assert stranger.status_code == 404
     assert (stranger.status_code, stranger.json()) == (absent.status_code, absent.json())
 
 

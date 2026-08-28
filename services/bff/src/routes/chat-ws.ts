@@ -3,6 +3,7 @@ import { jwtVerify, type JWTPayload } from "jose";
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import { WebSocket as WSocket, type RawData } from "ws";
 import { loadConfig } from "../config.js";
+import { chatHubHeaders } from "../lib/internal-headers.js";
 import { isJtiRevoked } from "../lib/redis.js";
 
 // `socket` from @fastify/websocket is a `ws.WebSocket` instance — Node-style
@@ -97,7 +98,12 @@ const chatWsRoute: FastifyPluginAsync = (fastify: FastifyInstance) => {
       const url = chatHubWsUrlFor(config.CHAT_HUB_URL, claims.sub);
       req.log.info({ clientId: claims.sub }, "[bff:chat-ws] opening upstream connection");
 
-      const upstream = new WSocket(url);
+      // The upstream handshake carries the internal token too. chat-hub's gate
+      // answers the `websocket` scope as well as `http` (dt-tests #45) — an
+      // HTTP-only gate would have left `/ws/{client_id}`, which streams a named
+      // guest's live messages, open to the whole mesh. A browser cannot set
+      // headers on a WebSocket, but this hop is server-to-server, so it can.
+      const upstream = new WSocket(url, { headers: chatHubHeaders() });
       bridgeFrames(socket, upstream, req.log);
     })();
   });
