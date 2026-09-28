@@ -1,6 +1,66 @@
-# Session Handoff — 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 09-28 (**s752 — first session on the tower: post-move check (one SSH gap open), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-09-28 (LATEST — session `s751`, `dt:Furnas`. A one-time read-only first reopening after 31 days idle (skill `resume-untouched-cc`), then a closeout on the owner's instruction. No code changed. Two A2A messages drained; a co-tenant's VPS question answered. The owner deferred the two PRs to the NEXT session, explicitly.)**
+> **UPDATE 2026-09-28 (LATEST — session `s752`, `dt:Furnas`, the first session on the TOWER `jcmeireles-ASUS-S501MER` after the laptop→tower move. Post-move check done; the CVE bump (s751's "step 0") opened as PR `#483`. Nothing merged.)**
+>
+> ### State (measured ~18:10Z)
+>
+> - `origin/main` = `c7609db` (unchanged). The local checkout is on branch `docs/s751-closeout`; this handoff is committed there and pushed (compare `git ls-remote origin refs/heads/docs/s751-closeout` with `git rev-parse docs/s751-closeout`). Untracked `.codex/` is not ours; leave it.
+> - **Open PRs:**
+>   - [`#483`](https://github.com/zmeireles/daily-tour/pull/483), branch `fix/s752-cve-bump` @ `b077723`: NEW; CI was running at close.
+>   - [`#477`](https://github.com/zmeireles/daily-tour/pull/477), the four-Python-service auth gate: 11/11 green, but on the audit from before the new advisories.
+>   - [`#479`](https://github.com/zmeireles/daily-tour/pull/479), the python-common CI job: 12/12, also on the old audit.
+>   - The docs PR for this branch (`gh pr list`).
+> - `#483` holds three commits:
+>   1. `.gitleaks/central.toml` resynced with `~/.claude/config/gitleaks.toml`. The change is comment-only, but the `gitleaks-central-in-sync` pre-commit hook was blocking EVERY commit on `main`.
+>   2. Prod advisories: maplibre-gl 5.24.0→6.11.2 (critical XSS), fast-uri →3.1.8, sharp →0.35.5. `@types/maplibre-gl` is removed, and a new entry module `apps/pwa/src/lib/map/maplibre.ts` is added (v6 is ESM-only and needs `setWorkerUrl`).
+>   3. Dev-only: js-yaml and browserslist overrides. **`GHSA-7pqw-9j4j-h8q3` (extract-zip, no patched release, dev-only via `@lhci/cli`) is added to `auditConfig.ignoreGhsas`. That is a risk acceptance Zé must confirm when he merges.**
+> - Local verification of `#483`:
+>   - The prod audit and the full audit both exit 0.
+>   - turbo typecheck/lint/test: 28/28.
+>   - The pwa build passes.
+>   - The headless map smoke test PASSES, with a positive control that makes it fail.
+>   - Not verified: the backoffice LocationPicker in a browser, and the media-svc Docker image (watch `publish-images` after merge).
+> - Runtime:
+>   - The dt-tests `review` queue was empty at 18:05Z.
+>   - No containers are ours; the exited `infra-postgres-1` is qr-bell's.
+>   - No A2A bridge of ours: it exited when `vm:Miradouro`'s message arrived and was deliberately not re-armed at closeout.
+>   - No subagents running.
+>   - Telegram `allowFrom` = Zé alone, so nothing was sent.
+>
+> ### Post-move (tower): checked / fixed / open
+>
+> - **Fixed here:** Node `22.22.3` installed via nvm (the pre-push hooks need it, so run `nvm use` first), and pnpm `9.14.2` via corepack under Node 22.
+> - **Fine:**
+>   - `comm_whoami` = `dt:Furnas`.
+>   - The Telegram reply tool is loaded.
+>   - The project root `.env` and `.mcp.json` are present, and so is `~/.secrets/tasks-prod-daily-tour.env`.
+>   - The comm-watch launcher path is present.
+>   - The lefthook hooks are installed.
+>   - `uv` finds Python 3.12.
+>   - No crontab or timers are expected.
+> - **`.env.qual` is absent, and that is not a move loss.** `vm:Miradouro` confirmed (A2A `seq 2866`) that it did not exist on the laptop either (only `.env.qual.example`).
+> - 🔴 **OPEN — SSH to the qual VPS fails from the tower.**
+>   - `ssh root@77.37.86.126` gives _Host key verification failed_.
+>   - The tower's key `SHA256:hRICutr9…` is not in root's `authorized_keys`; the laptop logged in with its own `id_ed25519`.
+>   - `vm:Miradouro` is asking Zé to append the tower's PUBLIC key to root's `authorized_keys`; no private key moves.
+>   - **The laptop's known ECDSA host key is `SHA256:AcrkI/gPb2lmvBvZmetZn9TqLwIuJHsEGFFCj5/L/gg`.** Before adding the host to `known_hosts`, run `ssh-keyscan -t ecdsa 77.37.86.126 | ssh-keygen -lf -` and accept ONLY if it matches.
+>   - It blocks `make qual-token`, backups and anything else over SSH. GitHub Actions deploys (`deploy-qa.yml`) are unaffected.
+>
+> ### ▶ FIRST SAFE STEP NEXT SESSION
+>
+> Run `gh pr checks 483`.
+>
+> - **All green:** tell Zé that `#483` is ready for **his** merge. CVE-response bumps are always-escalate, and the extract-zip ignore needs his explicit OK.
+> - **After he merges:**
+>   1. Run `gh pr update-branch 477` and `gh pr update-branch 479` (or rebase), and wait for green.
+>   2. Continue s751's plan below from its step 1: Fable gate on `#477` → merge `#477` → merge `#479` → only then add the python-common check to ruleset `16458194`.
+> - **`#483` CI red:** read the failing job; do not bypass the hooks.
+>
+> ### Live clocks
+>
+> None with money or legal consequence.
+>
+> **UPDATE 2026-09-28 (session `s751`, `dt:Furnas`. A one-time read-only first reopening after 31 days idle (skill `resume-untouched-cc`), then a closeout on the owner's instruction. No code changed. Two A2A messages drained; a co-tenant's VPS question answered. The owner deferred the two PRs to the NEXT session, explicitly.)**
 >
 > ### State (measured 2026-09-28 ~17:35Z)
 >
