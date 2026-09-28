@@ -188,7 +188,7 @@ export function LocationPicker({ lat, lng, onConfirm }: LocationPickerProps) {
     let cancelled = false;
     let resizeObserver: ResizeObserver | null = null;
 
-    void import("maplibre-gl")
+    void import("@/lib/map/maplibre")
       .then(({ default: maplibregl }) => {
         const container = containerRef.current;
         if (cancelled || !container) return;

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useRef, useEffect } from "react";
-import maplibregl from "maplibre-gl";
+import maplibregl from "@/lib/map/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
@@ -10,6 +10,7 @@ import { buildStyle } from "@/lib/map/style";
 import { SAO_MIGUEL_CENTER, clampZoom } from "@/lib/map/center";
 import { cn } from "@/lib/utils";
 import type { Map as MaplibreMap, Marker } from "maplibre-gl";
+import type { Feature, LineString } from "geojson";
 
 export type MapViewPin = {
   id: string;
@@ -161,7 +162,7 @@ export function MapView({
       const m = mapRef.current;
       if (!m) return;
       const coords = (route ?? []).map((p) => [p.lng, p.lat] as [number, number]);
-      const data: GeoJSON.Feature<GeoJSON.LineString> = {
+      const data: Feature<LineString> = {
         type: "Feature",
         properties: {},
         geometry: { type: "LineString", coordinates: coords },
@@ -178,7 +179,9 @@ export function MapView({
       }
 
       if (existing) {
-        existing.setData(data);
+        // maplibre-gl v6: setData returns Promise<void> (was `this`). Fire-and-forget
+        // as before; `void` (not a swallowing .catch) keeps a rejection visible.
+        void existing.setData(data);
         return;
       }
       m.addSource(ROUTE_SOURCE_ID, { type: "geojson", data });
