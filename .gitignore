@@ -62,3 +62,6 @@ dev-environment.*
 # it (#395), so nothing would flag a stray one; without this, autocommit could
 # quietly commit it.
 tsup.config.bundled_*
+
+# Codex native instructions file (written by the ChatGPT desktop app's Codex, not by us)
+/AGENTS.md
