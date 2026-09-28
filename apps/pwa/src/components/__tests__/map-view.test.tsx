@@ -9,12 +9,13 @@ const { addProtocolSpy, MockMapConstructor, MockMarkerConstructor } = vi.hoisted
   MockMarkerConstructor: vi.fn(),
 }));
 
+// maplibre-gl v6 is ESM-only with named exports (no default); the app reaches it
+// through @/lib/map/maplibre, which also calls setWorkerUrl at import time.
 vi.mock("maplibre-gl", () => ({
-  default: {
-    Map: MockMapConstructor,
-    Marker: MockMarkerConstructor,
-    addProtocol: addProtocolSpy,
-  },
+  Map: MockMapConstructor,
+  Marker: MockMarkerConstructor,
+  addProtocol: addProtocolSpy,
+  setWorkerUrl: vi.fn(),
 }));
 
 // Allow ensurePmtilesProtocol to run without a real Protocol implementation
