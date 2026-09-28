@@ -4,7 +4,7 @@
 >
 > ### State (measured ~18:10Z)
 >
-> - `origin/main` = `c7609db` (unchanged). The local checkout is on branch `docs/s751-closeout`; this handoff is committed there and pushed (compare `git ls-remote origin refs/heads/docs/s751-closeout` with `git rev-parse docs/s751-closeout`). Untracked `.codex/` is not ours; leave it.
+> - `origin/main` = `c7609db` (unchanged). The local checkout is on branch `docs/s751-closeout`; this handoff is **committed there LOCALLY ONLY, not pushed**. The pre-push `audit` hook refuses any push from a branch based on current `main` until `#483` merges; the hooks were NOT bypassed. Remote `docs/s751-closeout` = `964c9ef` (s751 content), and docs PR [`#484`](https://github.com/zmeireles/daily-tour/pull/484) is open on it. **After `#483` merges:** `git rebase origin/main` on this branch, then `git push --force-with-lease`. It is our own unmerged docs branch; the force-push is needed only because of the rebase. Untracked `.codex/` is not ours; leave it.
 > - **Open PRs:**
 >   - [`#483`](https://github.com/zmeireles/daily-tour/pull/483), branch `fix/s752-cve-bump` @ `b077723`: NEW; CI was running at close.
 >   - [`#477`](https://github.com/zmeireles/daily-tour/pull/477), the four-Python-service auth gate: 11/11 green, but on the audit from before the new advisories.
