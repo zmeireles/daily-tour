@@ -10,7 +10,11 @@
 >
 > This is an **authorisation for the next session**, not a proposal:
 >
-> 1. Run a **Fable review gate** on [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (a fresh agent with `model:"fable"`, never a fork). Re-check that CI is still green first; `main` has only moved by docs closeouts since.
+> 🔴 **Step 0, found at closeout, and it will block step 2:** `pnpm audit --prod --audit-level=high` now fails on `main`. These are advisories published since 08-28, not a code change. They are `maplibre-gl@5.24.0` **critical** (XSS, fixed in >=6.4.1, reached via `apps/pwa > @types/maplibre-gl`), `fast-uri@3.1.5` high (fixed in >=3.1.6, via `services/bff > fastify > ajv`) and `sharp@0.35.3` high (fixed in >=0.35.4, `services/media-svc`). CI's audit job will therefore go red when `#477`/`#479` re-run. Fix it first in its own PR (a CVE-response bump, which is **always-escalate**, so it needs Zé's merge), rebase the two PRs, then continue. `maplibre-gl` 5→6 is a major version; check the pwa map still renders. Also: **Node `22.22.3` (`.nvmrc`) is not installed on this machine** (`nvm install` first). Without it the pre-push `typecheck` hook fails with `ERR_PNPM_UNSUPPORTED_ENGINE`. The s751 closeout push skipped `typecheck` + `audit` for that reason (docs-only commit), and said so.
+>
+> ⚠️ **This handoff lives on branch `docs/s751-closeout`** (pushed, not merged, as of s751's close), and the local checkout was left on that branch. If you are on `main` and do not see this block, `git fetch && git log origin/docs/s751-closeout -1`.
+>
+> 1. After step 0: run a **Fable review gate** on [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (a fresh agent with `model:"fable"`, never a fork). Re-check that CI is still green first; `main` has only moved by docs closeouts since.
 > 2. If the gate is clean → merge `#477` (`gh pr merge 477 --squash --delete-branch`), then merge [`#479`](https://github.com/zmeireles/daily-tour/pull/479) the same way.
 > 3. 🔴 **Only after `#479` is on `main`**, add the check `Python (ruff + mypy + pytest) (python-common)` to the `protect-main` ruleset (`16458194`). Reversing the order blocks every PR in the repo, and it looks like CI hanging rather than failing.
 > 4. If Fable finds a 🔴 → fix it on the PR branch, re-gate, and only then merge. Do not merge through a red finding.
