@@ -9,7 +9,7 @@
 # per-project copy, which fails silent. (SoT Fase 1 v3 §2.1, central-singleton.)
 #
 # Provenance / genesis:
-#   - 2026-07-17 SoT Fase 1 P0 "gitleaks centralization" (closes weakness ⑤).
+#   - 2026-07-17 SoT Fase 1 P0 "gitleaks centralization" (closes weakness 5).
 #     Consolidates the 5 drifted shapes across 7 per-project .gitleaks.toml
 #     copies. Universal rules + allowlists live HERE; genuinely per-project
 #     allowlists survive as small Class-B *extension* configs that chain after
@@ -82,7 +82,7 @@ regex = '''(?i)(?:secret[_-]?(?:access[_-]?)?key|s3[_-]?secret[_-]?key|minio[_-]
 tags = ["minio", "s3", "aws", "secret-key"]
 
 # ============================================================================
-# NEW central rules — 2026-07-17 SoT Fase 1 P0 (weakness ⑤)
+# NEW central rules — 2026-07-17 SoT Fase 1 P0 (weakness 5)
 # These close the exact classes of the real leak incident (a filled .mcp.json
 # swap file carrying a live POSTGRES_PASSWORD + a RIFF_AGENT_TOKEN in .env).
 # ============================================================================
