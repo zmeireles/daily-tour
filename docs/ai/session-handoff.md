@@ -1,6 +1,25 @@
 # Session Handoff — 09-28 (**s752 — first session on the tower: post-move check (all closed), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-09-28 (LATEST — session `s752`, `dt:Furnas`, the first session on the TOWER `jcmeireles-ASUS-S501MER` after the laptop→tower move. Post-move check done, nothing left open; the CVE bump (s751's "step 0") opened as PR `#483`. Nothing merged.)**
+> **UPDATE 2026-10-10 (LATEST — session `s753`, `dt:Furnas`, on the tower. The s751/s752 merge sequence is FINISHED: `#483`, `#485`, `#477` and `#479` are merged, and python-common is a required check. Nothing is deployed to qual.)**
+>
+> ### State (measured ~17:30Z)
+>
+> - `origin/main` = `8ffed19`. The ruleset `protect-main` (`16458194`) now has 12 required checks, including `Python (ruff + mypy + pytest) (python-common)`. Before adding it, I confirmed `ci.yml` runs that job on every PR, with no path filter and no job `if:`.
+> - Merged:
+>   - `#483` (maplibre/fast-uri/sharp), merged by Zé.
+>   - `#485`, merged by Zé. It is a second CVE bump, because new advisories (fast-jwt, fastify, shell-quote and more) turned the prod audit red again. 🔴 It also carries a **code change**: fastify ≥ 5.12 makes a numeric `trustProxy` fail closed, so the bff's `trustProxy: 1` would have put every client into one rate-limit bucket. `services/bff/src/lib/trust-proxy.ts` now trusts one hop, and only from a private or loopback peer. The Fable gate found no 🔴.
+>   - `#477`. The Fable gate found no 🔴 and three 🟡, all fixed on the branch: the WhatsApp webhook now fails closed when its secret is unset, `gen-env-qual.sh` emits the four new `*_INTERNAL_TOKEN`s, and `dev-smoke.sh` sends the ws header.
+>   - `#479`.
+> - A2A: the systemd bridge `riff-comm-bridge@daily-tour` is installed and enabled (`cc:Bicho`'s recipe). The probe gave `receiver=up estab=yes`, acked through `seq 3925`.
+>
+> ### ▶ OPEN (owner's call)
+>
+> 1. **Deploy to qual.** 🔴 First append the four new keys (`CHAT_HUB_`, `NOTIF_SVC_`, `PLANNER_SVC_`, `SEARCH_SVC_INTERNAL_TOKEN`, each ≥ 32 characters) to the VPS `.env.qual`. Otherwise `deploy-qa` fails at compose interpolation, and so does its rollback. Re-import the n8n post-stay workflow afterwards (`docs/operations/hotfix-rollback-playbook.md`). Then check that two different public clients get separate rate-limit buckets.
+> 2. **qr-bell (`qb:Aldraba`, A2A `seq 3925`) disclosed that `qrb-api`/`qrb-web` are ALREADY on `dt_internal`.** `#477` closes the unauthenticated Python access once it is deployed. What is left: any container on `dt_internal` can choose its own bff `req.ip` (Fable 🟡 on `#485`; not a regression). The fix is to pin `dt_internal`'s subnet, or to give qr-bell a separate edge network. Zé decides the network name.
+> 3. **qr-bell's TURN plan.** Zé decides whether to allow a host-network coturn and who runs the ufw/iptables change. I answered at `seq 3927` and promised the read-only box facts after the merge sequence; those are still owed.
+> 4. dt-tests `#44`/`#45` move forward once qual is deployed.
+>
+> **UPDATE 2026-09-28 (session `s752`, `dt:Furnas`, the first session on the TOWER `jcmeireles-ASUS-S501MER` after the laptop→tower move. Post-move check done, nothing left open; the CVE bump (s751's "step 0") opened as PR `#483`. Nothing merged.)**
 >
 > ### State (measured ~18:10Z)
 >
