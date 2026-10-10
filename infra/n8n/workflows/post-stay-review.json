@@ -31,8 +31,14 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "min_days_ago", "value": "2" },
-            { "name": "max_days_ago", "value": "3" }
+            {
+              "name": "min_days_ago",
+              "value": "2"
+            },
+            {
+              "name": "max_days_ago",
+              "value": "3"
+            }
           ]
         }
       },
@@ -66,6 +72,15 @@
           "guesthouse_name": "={{ $json.guesthouse_name }}",
           "review_url": "={{ $env.PUBLIC_APP_URL }}/review/{{ $json.reservation_id }}",
           "locale": "={{ $json.locale ?? 'en' }}"
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-token",
+              "value": "={{ $env.NOTIF_SVC_INTERNAL_TOKEN }}"
+            }
+          ]
         }
       }
     }
@@ -73,17 +88,35 @@
   "connections": {
     "Daily Schedule": {
       "main": [
-        [{ "node": "Fetch Expired Tokens (2-3 days)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Fetch Expired Tokens (2-3 days)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fetch Expired Tokens (2-3 days)": {
       "main": [
-        [{ "node": "Split Tokens", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Split Tokens",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Split Tokens": {
       "main": [
-        [{ "node": "POST notif-svc", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "POST notif-svc",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },

@@ -33,6 +33,18 @@ const ConfigSchema = z.object({
   // Shared secret forwarded as X-Internal-Token to media-svc. Temporary auth
   // posture until T-1.6.x wires Authentik OIDC (see media-svc/src/plugins/internal-auth.ts).
   MEDIA_SVC_INTERNAL_TOKEN: z.string().default("change-me-please-media-svc-internal-token-min-32c"),
+  // Shared secrets for the three Python services, which gained a deny-by-default
+  // gate in dt-tests #44/#45. Same posture as the two above: a dev/CI default here
+  // so local work is unaffected, a real value injected in qual. Each SERVICE
+  // requires its token with no default and a 32-char floor, so a deployment that
+  // forgets one fails loudly at boot rather than quietly serving everyone.
+  PLANNER_SVC_INTERNAL_TOKEN: z
+    .string()
+    .default("change-me-please-planner-svc-internal-token-min-32c"),
+  SEARCH_SVC_INTERNAL_TOKEN: z
+    .string()
+    .default("change-me-please-search-svc-internal-token-min-32c"),
+  CHAT_HUB_INTERNAL_TOKEN: z.string().default("change-me-please-chat-hub-internal-token-min-32c"),
   // ioredis-compatible connection URL. Used for the JTI revocation cache —
   // the BFF reads `jti:revoked:<jti>` on every authed request.
   REDIS_URL: z.string().default("redis://dt_redis:6379/0"),

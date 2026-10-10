@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 
+from conftest import INTERNAL_HEADERS
 from fastapi.testclient import TestClient
 
 from chat_hub.drivers import (
@@ -45,7 +46,7 @@ def test_in_app_websocket_inbound_triggers_outbound() -> None:
 
     driver.on_receive(echo)
     try:
-        with TestClient(app) as client:
+        with TestClient(app, headers=INTERNAL_HEADERS) as client:
             with client.websocket_connect("/ws/guest-42") as ws:
                 ws.send_text("ping")
                 frame = ws.receive_text()

@@ -1,4 +1,5 @@
 import { loadConfig } from "../config.js";
+import { searchHeaders } from "./internal-headers.js";
 
 export class SearchError extends Error {
   constructor(
@@ -34,7 +35,7 @@ export async function queryPlaces(params: {
   const { SEARCH_SVC_URL } = loadConfig();
   const res = await fetch(`${SEARCH_SVC_URL}/v1/query`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: searchHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       action: params.action,
       loc: { lat: params.lat, lng: params.lng },

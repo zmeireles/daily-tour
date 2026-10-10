@@ -6,6 +6,7 @@ import hmac as hmac_mod
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from conftest import INTERNAL_HEADERS
 from httpx import ASGITransport, AsyncClient
 
 from chat_hub.drivers import InboundMessage, OutboundMessage
@@ -34,6 +35,7 @@ async def test_draft_endpoint_returns_url() -> None:
         resp = await client.get(
             "/v1/chat/whatsapp/draft",
             params={"phone": "15551234567", "text": "Hello World"},
+            headers=INTERNAL_HEADERS,
         )
     assert resp.status_code == 200
     assert resp.json() == {"url": build_wa_me_url("15551234567", "Hello World")}
@@ -195,5 +197,22 @@ async def test_webhook_receive_rejects_bad_signature() -> None:
                     "x-hub-signature-256": "sha256=badhash",
                     "content-type": "application/json",
                 },
+            )
+    assert resp.status_code == 403
+
+
+async def test_webhook_receive_rejects_when_app_secret_unset() -> None:
+    """With no app secret configured, an inbound POST is refused, not trusted."""
+    reset_whatsapp_driver()
+    driver = WhatsAppDriver(phone_number_id=None, access_token=None, app_secret=None)
+    app = create_app()
+    with patch("chat_hub.drivers.whatsapp.get_whatsapp_driver", return_value=driver):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.post(
+                "/v1/webhook/whatsapp",
+                content=b'{"entry": []}',
+                headers={"content-type": "application/json"},
             )
     assert resp.status_code == 403

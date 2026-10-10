@@ -4,6 +4,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+from conftest import INTERNAL_HEADERS
 from fastapi.testclient import TestClient
 
 from chat_hub.config import Settings, reset_settings_cache
@@ -107,7 +108,7 @@ def test_post_reservation_draft_route_returns_fallback_when_key_unset(
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     reset_settings_cache()
 
-    client = TestClient(app)
+    client = TestClient(app, headers=INTERNAL_HEADERS)
     resp = client.post(
         "/v1/draft/reservation",
         json={

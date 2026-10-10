@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from conftest import INTERNAL_HEADERS
 from fastapi.testclient import TestClient
 
 from chat_hub.chat_persistence import get_history_provider
@@ -30,7 +31,7 @@ def test_history_returns_messages_for_valid_guest() -> None:
 
     app.dependency_overrides[get_history_provider] = lambda: fake_provider
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers=INTERNAL_HEADERS)
         resp = client.get(f"/v1/history/{guest_id}")
     finally:
         app.dependency_overrides.pop(get_history_provider, None)
@@ -40,6 +41,6 @@ def test_history_returns_messages_for_valid_guest() -> None:
 
 
 def test_history_rejects_non_uuid_guest() -> None:
-    client = TestClient(app)
+    client = TestClient(app, headers=INTERNAL_HEADERS)
     resp = client.get("/v1/history/not-a-uuid")
     assert resp.status_code == 400

@@ -73,11 +73,16 @@ async def retrieve(
     if free_text is not None:
         payload["free_text"] = free_text
 
+    # search-svc denies by default (dt-tests #44), so every retrieval call must
+    # present its token — including this service-to-service hop, which is not
+    # exempt just because both ends are ours. Network membership is not identity.
+    headers = {"x-internal-token": settings.search_svc_internal_token}
+
     if client is not None:
-        response = await client.post(url, json=payload)
+        response = await client.post(url, json=payload, headers=headers)
     else:
         async with httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT_SECONDS) as owned:
-            response = await owned.post(url, json=payload)
+            response = await owned.post(url, json=payload, headers=headers)
 
     if response.status_code != httpx.codes.OK:
         raise RetrievalError(
