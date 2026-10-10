@@ -26,6 +26,7 @@ PROXY_NETWORKS.addSubnet("fe80::", 10, "ipv6");
 const IPV4_MAPPED_PREFIX = "::ffff:";
 
 function isProxyNetworkAddress(address: string): boolean {
+  if (typeof address !== "string") return false;
   const unmapped = address.toLowerCase().startsWith(IPV4_MAPPED_PREFIX)
     ? address.slice(IPV4_MAPPED_PREFIX.length)
     : address;
