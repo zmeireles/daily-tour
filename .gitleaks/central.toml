@@ -27,6 +27,8 @@
 #   minio-s3-secret-key             [carried, INC-009/016]
 #   riff-agent-token-assignment     [NEW 2026-07-17]
 #   riff-agent-token-value          [NEW 2026-07-17]
+#   riff-comms-token-assignment     [NEW 2026-10-06, #265 M1]
+#   riff-comms-token-value          [NEW 2026-10-06, #265 M1]
 #   postgres-password-assignment    [NEW 2026-07-17]
 #   mcp-json-inline-secret          [NEW 2026-07-17, generalized from po-platform]
 #   editor-swap-of-secret-file      [NEW 2026-07-17]
@@ -118,6 +120,32 @@ tags = ["riff", "a2a", "agent-token"]
   regexTarget = "match"
   regexes = [
     '''(?i)riff_(paste|placeholder|your|example|dummy|redacted|token|xxxx)''',
+  ]
+
+# --- RIFF_COMMS_TOKEN / rcm_ comms-gateway token [NEW 2026-10-06, #265 M1] --
+# The comms-audience token (migration 115) a cloud session holds as
+# RIFF_COMMS_TOKEN. Same generator as riff_ (rcm_ + 43 base62), same two forms
+# (adversarial review L1: the rules knew riff_ only).
+[[rules]]
+id = "riff-comms-token-assignment"
+description = "RIFF_COMMS_TOKEN assigned a literal value — the comms-gateway token lives only in the cloud environment's secrets, never in a file"
+regex = '''(?i)RIFF_COMMS_TOKEN['"]?\s*[:=]\s*['"]?([A-Za-z0-9._+/=\-]{12,})['"]?'''
+tags = ["riff", "a2a", "comms-token"]
+  [rules.allowlist]
+  regexTarget = "match"
+  regexes = [
+    '''(?i)RIFF_COMMS_TOKEN['"]?\s*[:=]\s*['"]?(\$\{?[A-Z_]|<|paste|placeholder|your[_-]?|replace|changeme|example|dummy|redacted|token[_-]?here|xxxx)''',
+  ]
+
+[[rules]]
+id = "riff-comms-token-value"
+description = "Bare comms-gateway token (rcm_ prefix) — never commit a live comms token"
+regex = '''\brcm_[A-Za-z0-9]{20,}\b'''
+tags = ["riff", "a2a", "comms-token"]
+  [rules.allowlist]
+  regexTarget = "match"
+  regexes = [
+    '''(?i)rcm_(paste|placeholder|your|example|dummy|redacted|token|xxxx)''',
   ]
 
 # --- POSTGRES_PASSWORD, assignment form ------------------------------------
