@@ -8,6 +8,7 @@ import { CHAT_JWT_SUBPROTOCOL } from "@daily-tour/shared-types";
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./plugins/auth.js";
 import mediaSvcPlugin from "./plugins/media-client.js";
+import { isTrustedProxyHop } from "./lib/trust-proxy.js";
 import ownerAuthPlugin from "./plugins/owner-auth.js";
 import adminBetaMetricsRoute from "./routes/admin-beta-metrics.js";
 import adminChatRoute from "./routes/admin-chat.js";
@@ -69,13 +70,6 @@ export function redactUrlForLog(url: string | undefined): string {
 }
 
 /**
- * Number of reverse-proxy hops in front of this service whose
- * `X-Forwarded-For` contribution may be believed. Deployments put exactly one
- * (Traefik) in the path; see infra/compose/docker-compose.traefik.yml.
- */
-const TRUSTED_PROXY_HOPS = 1;
-
-/**
  * The request serializer Fastify is actually given, exported so a test can
  * assert the redaction is WIRED and not merely available: a redactor that no
  * serializer calls reads exactly like one that works.
@@ -107,10 +101,9 @@ export async function createApp(): Promise<FastifyInstance> {
     // rate-limiter keys on `req.ip`, that hands callers control of their own
     // limiter bucket. Covered by __tests__/proxy-trust.test.ts.
     //
-    // A CIDR would be stricter still, but `dt_internal`'s subnet is assigned
-    // by Docker and is not pinned in the compose files, so it drifts between
-    // hosts; a stale CIDR fails closed into "every client shares one bucket".
-    trustProxy: TRUSTED_PROXY_HOPS,
+    // The hop must also come from a private/loopback peer: a bare hop count
+    // fails closed on Fastify >= 5.12 (see lib/trust-proxy.ts).
+    trustProxy: isTrustedProxyHop,
   });
 
   // Security headers. CSP is relaxed for dev; Phase 5 tightens it once
