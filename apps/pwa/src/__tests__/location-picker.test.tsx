@@ -12,7 +12,9 @@ import esAdmin from "@/locales/es/admin.json";
 const { MockMapConstructor } = vi.hoisted(() => ({ MockMapConstructor: vi.fn() }));
 
 vi.mock("maplibre-gl", () => ({
-  default: { Map: MockMapConstructor, addProtocol: vi.fn() },
+  Map: MockMapConstructor,
+  addProtocol: vi.fn(),
+  setWorkerUrl: vi.fn(),
 }));
 
 let mapState: {
