@@ -243,20 +243,42 @@ jobs:
   # Python services are NOT in the turbo graph (no package.json), so the
   # `quality` job above never touched them — the Plan-001 accounting retro's
   # root cause (false-resolves shipped because CI never exercised chat-hub /
-  # planner-svc / search-svc). This matrix runs each service's own gate
-  # (ruff + mypy --strict + pytest) on every PR. Suites are tiny (~64 tests
-  # total), so all four run unconditionally rather than path-scoped.
+  # planner-svc / search-svc). This matrix runs each package's own gate
+  # (ruff + mypy --strict + pytest) on every PR. Suites are tiny, so every
+  # entry runs unconditionally rather than path-scoped.
+  #
+  # `packages/python-common` is in this matrix for the same reason the four
+  # services are: it is Python, so `quality` cannot see it either — and it is
+  # the ONLY entry whose code every service imports at runtime. It sat
+  # uncovered until 2026-08-26.
+  #
+  # ⚠️ The `name:` below is written out explicitly, and the matrix key stays a
+  # bare package name, because the `protect-main` ruleset pins these check
+  # names verbatim ("Python (ruff + mypy + pytest) (chat-hub)", …). A matrix
+  # keyed on the PATH would rename all four; the required checks would then
+  # never report and every PR would block. Directory lives in `dir`, which the
+  # explicit `name:` keeps out of the check name.
   python:
-    name: Python (ruff + mypy + pytest)
+    name: Python (ruff + mypy + pytest) (${{ matrix.package }})
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        service: [chat-hub, notif-svc, planner-svc, search-svc]
+        include:
+          - package: chat-hub
+            dir: services/chat-hub
+          - package: notif-svc
+            dir: services/notif-svc
+          - package: planner-svc
+            dir: services/planner-svc
+          - package: search-svc
+            dir: services/search-svc
+          - package: python-common
+            dir: packages/python-common
     defaults:
       run:
-        working-directory: services/${{ matrix.service }}
+        working-directory: ${{ matrix.dir }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -265,7 +287,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "services/${{ matrix.service }}/uv.lock"
+          cache-dependency-glob: "${{ matrix.dir }}/uv.lock"
 
       - name: Sync dependencies (frozen)
         run: uv sync --frozen
