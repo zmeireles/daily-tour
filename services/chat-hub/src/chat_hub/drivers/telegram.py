@@ -73,7 +73,12 @@ class TelegramDriver:
         secret_token: str | None = None,
     ) -> None:
         """Parse a Telegram webhook payload and fire registered callbacks."""
-        if self._webhook_secret and secret_token != self._webhook_secret:
+        # Fail CLOSED. This previously read `if self._webhook_secret and ...`,
+        # which skipped the check whenever the secret was unset — so an
+        # unconfigured deployment accepted any caller's "inbound guest message".
+        # It is load-bearing now that the internal-token gate exempts this path
+        # (see main.create_app): this check is the only thing authenticating it.
+        if self._webhook_secret is None or secret_token != self._webhook_secret:
             raise PermissionError("invalid webhook secret")
         update = Update.model_validate(update_data)
         msg = update.message or update.channel_post

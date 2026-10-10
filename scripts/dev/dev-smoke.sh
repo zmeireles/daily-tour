@@ -177,7 +177,8 @@ WS_OK=$(docker compose $COMPOSE_ALL exec -T -e GID="$GUEST_ID" -e MSG="$SMOKE_MS
 import asyncio, os, websockets
 async def main():
     uri = "ws://localhost:8084/ws/" + os.environ["GID"]
-    async with websockets.connect(uri) as ws:
+    headers = {"x-internal-token": os.environ["CHAT_HUB_INTERNAL_TOKEN"]}
+    async with websockets.connect(uri, extra_headers=headers) as ws:
         await ws.send(os.environ["MSG"])
         await asyncio.wait_for(ws.recv(), timeout=5)  # the ack frame
     print("ok")

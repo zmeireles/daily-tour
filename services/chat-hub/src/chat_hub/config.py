@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"  # noqa: S104 — container bind
     port: int = 8084
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+
+    # Deny-by-default gate for every route (dt-tests #44/#45). No default and a
+    # 32-char floor, so the service CANNOT BOOT without a real token — the same
+    # posture as catalog-svc's `z.string().min(32)`. A default here would be a
+    # gate that silently admits everyone in any environment that forgot the var.
+    internal_token: str = Field(min_length=32, validation_alias="CHAT_HUB_INTERNAL_TOKEN")
 
     database_url: str = (
         "postgresql://chat_svc:change-me-please-chat"

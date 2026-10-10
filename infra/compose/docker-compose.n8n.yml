@@ -59,6 +59,15 @@ services:
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
       N8N_RUNNERS_ENABLED: "true"
+      # The post-stay-review workflow POSTs to notif-svc. Both vars are consumed
+      # by that workflow's HTTP node as `$env.*`.
+      #
+      # ⚠️ NOTIF_SVC_URL was referenced by the workflow but never passed into this
+      # container — so `$env.NOTIF_SVC_URL` resolved to nothing and the node posted
+      # to a hostless URL. Pre-existing, found while adding the token below; the
+      # token would have been just as undefined, which is why both are set here.
+      NOTIF_SVC_URL: ${NOTIF_SVC_URL:-http://dt_notif_svc:8085}
+      NOTIF_SVC_INTERNAL_TOKEN: ${NOTIF_SVC_INTERNAL_TOKEN:?NOTIF_SVC_INTERNAL_TOKEN missing in .env}
     volumes:
       - dt_n8n_data:/home/node/.n8n
     healthcheck:

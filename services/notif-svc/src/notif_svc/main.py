@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+from daily_tour_common.internal_auth import InternalAuthMiddleware
 from daily_tour_common.otel import init_otel
 from daily_tour_common.sentry import init_sentry
 from fastapi import FastAPI
@@ -32,6 +33,13 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         allow_credentials=False,
     )
+
+    # Deny-by-default internal-token gate (dt-tests #44/#45). Middleware, not a
+    # per-route Depends(...): a dependency guards only the routes that remember
+    # to list it, so a route added later would be born open. Applied last so it
+    # runs OUTERMOST — an unauthenticated caller is turned away before CORS or
+    # any handler sees the request.
+    app.add_middleware(InternalAuthMiddleware, token=settings.internal_token)
 
     app.include_router(health_router)
     app.include_router(notify_router)
