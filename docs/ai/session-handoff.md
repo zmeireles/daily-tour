@@ -1,4 +1,184 @@
-# Session Handoff — 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+
+> **UPDATE 2026-08-28 (session `s750`, `dt:Furnas`. `cs:Barra`'s spec-005 round 2 answered; the Riff board corrected so two open security cards stop looking like untouched work; and a card number of mine corrected after checking the board instead of my own prose. Closed by coordinated `/close-all` at 07:5x.)**
+>
+> ### State
+>
+> `main` **`d2fdd24`** · **the same TWO open PRs, both green, both still unmerged and unauthorised** — [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (11/11) and [`#479`](https://github.com/zmeireles/daily-tour/pull/479) (12/12) · A2A drained and acked through **`seq 1471`** · Docker **zero containers** · Telegram `allowFrom` = Zé alone ⇒ **state 1, rule inert, nothing sent** (measured) · **no subagents** · **zero bridges of mine** (PPID chain to this session's claude pid `737658`; 5 live bridges all belong to other houses) · ⚠️ `.codex/` and `AGENTS.md` appeared untracked since yesterday's clean closeout — **not this session's**, left alone.
+>
+> ### ▶ FIRST TASK NEXT SESSION — unchanged, now a FIFTH ask
+>
+> Merge [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (Fable gate first), then [`#479`](https://github.com/zmeireles/daily-tour/pull/479), and **only then** add `Python (ruff + mypy + pytest) (python-common)` to the `protect-main` ruleset — that order is load-bearing.
+>
+> ### 🔴 The finding: the fix I wrote for the class was itself an instance of the class
+>
+> Round 2 asked what would have to exist so the second time did not cost, and what I would have to **stop doing**. Answering it forced me to look at why the July rule never took. Two reasons, and the second is the one worth carrying:
+>
+> **(a)** The rule and the house standard are **indexed by topic ("verification"), and the instances arrive by activity** — cleaning data, starting a session, deploying, writing a PR body. A rule whose domain I must recognise does not fire in the domains I do not label.
+>
+> **(b)** The 07-30 house standard — _"that is now the house standard; a guard never seen failing is not a guard"_ — **was never wired to anything.** Nothing measures compliance.
+>
+> > **A standard that cannot fail is indistinguishable from one that is being met. The cure I wrote for "a verification that cannot fail" was, itself, another one — written in the confident voice in July and unfalsifiable ever since.**
+>
+> **What I classified, and it is against my own interest:** `LOCAL`, but honestly _one third `LOCAL`, two thirds `NENHUMA`_. Walking all ~22 instances and asking "what machine would have caught this?": **≈8 are mechanisable** (mutation testing catches the test that passes with the fix reverted, the swapped POST/DELETE, the i18n mock; `no-empty-catch`; `set -o pipefail`), **≈14 are not**. And the mechanisable third is not something to _build_ — mutation testing exists, this house does it **by hand** whenever it happens to remember. 105 days of doing it manually and never wiring it up.
+>
+> **The price named:** stop reporting a green as a result. No PR body, handoff line or A2A message asserts something works without naming the red produced to prove the check could fail — otherwise it is written "unverified". Cost, from our own record: the Fable gate ran on `#469` and `#470` and found **no code defect and a false claim of mine on both**. A large share of what I currently write as fact would become "unverified".
+>
+> ### 🪤 And I re-offended within the hour, which is the useful part
+>
+> The volta-1 table I sent named planner-svc as card `#43`. **It is [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44)** — `#43` is an unrelated image-derivatives card. I read the number **from my own handoff**, where a previous session wrote "`#43` filed" in the same passage that recorded the third service: two different things in one sentence, and I took the number that was nearby.
+>
+> The house rule (_a server-assigned number is read from the receipt, never inferred from what is around it_) was filed in my head as **"do not do arithmetic on sequences"**. This was not arithmetic, it was **proximity** — so it did not fire. **Same shape as (a) above, committed one hour after writing (a).** Corrected to `cs:Barra` before he transcribes.
+>
+> ### 🗼 Riff board — CHANGED, and the change is the point
+>
+> [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44) and [`#45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) (`critical`) sat in `todo`, unassigned, **with nothing saying the fix already exists**. From the board they read as untouched work; the real state — built, 11/11 green, blocked on one decision — lived **only in this file**. Both now carry a `blocker` comment with the PR link, `awaiting: José`. ⇒ **A card that omits the built-and-blocked state is indistinguishable from a card nobody has started.**
+
+> **UPDATE 2026-08-27 (LATEST — session `s749`, `dt:Furnas`. One task: answer `cs:Barra`'s spec-005 elicitation. The archaeology it needed turned into a measurement of this house's own record — and of a probe of mine that was wrong by 101 days. No code changed; the two PRs still wait on the owner. Closed on the owner's "do the closeout and park".)**
+>
+> ### State
+>
+> `main` **`c9f62b3`**, tree clean · **the SAME TWO open pull requests, both green, both still deliberately unmerged** — [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (11/11) and [`#479`](https://github.com/zmeireles/daily-tour/pull/479) (12/12) · A2A drained and acked through **`seq 1440`** · dt-tests `review` queue **empty** (polled at start) · Docker **zero containers** at both ends · Telegram `allowFrom` = Zé alone ⇒ **rule INERT, nothing sent** (measured, not skipped) · **no subagents spawned** — standing no-agents instruction · bridge armed, `ESTAB` verified twice, stopped at closeout.
+>
+> ### ▶ FIRST TASK NEXT SESSION — the same two decisions, now asked a FIFTH time
+>
+> **Nothing in this handoff is approval.** The owner's only instruction this session was _"read the A2A comms and answer cs:Barra's elicitation, then close out and park"_ — it authorised neither merge, and I did not treat the silence as consent.
+>
+> 1. **Merge [`#477`](https://github.com/zmeireles/daily-tour/pull/477)** — the four-service auth gate. Closes [`dt-tests #45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) (`critical`) and [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44). Recommendation unchanged: **Fable gate first, then merge if clean.**
+> 2. **Merge [`#479`](https://github.com/zmeireles/daily-tour/pull/479)** — the `python-common` CI gap. `.github/workflows/*` is always-escalate.
+> 3. 🔴 **THEN, and only then**, add `Python (ruff + mypy + pytest) (python-common)` to the `protect-main` ruleset (`16458194`). **The order is load-bearing** — adding it while `main` lacks the job blocks every PR in the repo, and it presents as CI hanging, not failing.
+>
+> ### The work: `cs:Barra`'s spec-005 elicitation, round 1 — answered (`seq 1439`), plus a barrier note (`seq 1440`)
+>
+> He asked one question — _"what problem has your house solved MORE THAN ONCE, where the second time cost again?"_ — and attached a methodological separator he asked not to be skipped: date the words your probe used · if the result is empty, say **which** of «there was no repetition» / «my probe cannot reach repetitions» · give the denominator **in records, not days**.
+>
+> **Two cases went back, both over his bar.** But the separator is what produced the finding.
+>
+> ### 🪤 The finding of the session — my first probe was clean, and wrong by 101 days
+>
+> I searched the house's records with the vocabulary the house uses **today**. It returned a tidy result. Then I dated the vocabulary itself, with `git log -S` over all 467 commits:
+>
+> | probe term                                | born       | age        | history it can reach |
+> | ----------------------------------------- | ---------- | ---------- | -------------------- |
+> | `"recurring class"`                       | 2026-08-26 | **1 day**  | 1%                   |
+> | `"auth gate"`                             | 2026-08-23 | **4 days** | 3.8%                 |
+> | `"could not fail"` · `"positive control"` | 2026-08-17 | 10 days    | 9.5%                 |
+> | `"cannot fail"`                           | 2026-07-30 | 28 days    | 27%                  |
+> | `"unauthenticated"`                       | 2026-05-16 | 103 days   | 98%                  |
+>
+> ⇒ **The natural vocabulary for my strongest case is four days old in a 105-day house.** The lexical probe's earliest hit was 2026-07-30 and it found **zero** before that. A structural probe — citation chains through `docs/ai/lessons/`, which use none of those words — finds the same form at **2026-05-30** (`L022`) and, following `L022`'s own _Related_ line, at **2026-04-20** (`L016`, global playbook) — **24 days before this repo's first commit.**
+>
+> > **The zero was the instrument, not the world.** Distance between what the probe reached and what exists: **101 days.**
+>
+> **And the innocent explanation for the zero is false, which is the part worth keeping.** «Nobody was writing in May» — May wrote **1979 lines** of handoff (the densest month) across **199 commits** (the busiest), and the lexical probe finds nothing there. What hides it is not silence, it is **the voice**: May's lines are written confidently (`✅ Resolved 2026-05-17 via PR #83`). `L022` is an instance of the class **filed as an accounting problem**, with no error vocabulary anywhere in it. No pain-shaped probe will ever reach it.
+>
+> ### 🔴 A correction of this house's own count, and it is the useful number
+>
+> Yesterday's handoff reads _"**Fifth** instance of this house's recurring class."_ Counted against the whole record: **at least 22** distinct instances of a check/probe/instrument structurally unable to fail, plus 3 of the same shape in prose. The undercount is not carelessness — **every session counts from what it can reach, and no session has ever counted the whole record.**
+>
+> ⇒ That gap (5 vs 22) is the only leak estimate this house has, and it is a lower bound on the **undercount**, not on the class. The class's true denominator is unmeasurable by construction: an instance that is never caught reads as green in CI, in the PR body **and in this file**.
+>
+> ### The second case: the auth boundary was solved FOUR times in FOUR days
+>
+> | #   | service                  | card                                                  | fix                                      | date  |
+> | --- | ------------------------ | ----------------------------------------------------- | ---------------------------------------- | ----- |
+> | 1   | catalog-svc              | [`#36`](https://tasks.codecomedy.dev/p/dt-tests/r/36) | PR `#459` service-wide `onRequest`       | 08-23 |
+> | 2   | media-svc                | [`#41`](https://tasks.codecomedy.dev/p/dt-tests/r/41) | PR `#465` deny-by-default                | 08-23 |
+> | 3   | planner-svc              | [`#43`](https://tasks.codecomedy.dev/p/dt-tests/r/43) | unauthenticated, **unmetered LLM spend** | 08-24 |
+> | 4   | all four Python services | [`#45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) | PR `#477` — **still open**               | 08-26 |
+>
+> **Discovery was paid at full price four times; the implementation was nearly free** — the two TS gates are near-copies whose headers each say "mirrors the other's". ⇒ **The cost is not building the thing, it is learning that the thing is missing here too.**
+>
+> 🔑 **And the sharpest datum: the artefact produced by solve #1 is what made solve #2 cost full price.** `services/bff/src/plugins/AUTH_POSTURES.md` asserted media-svc _"reject[ed] any non-health request"_. It did not — `GET /v1/assets/:id` answered a non-BFF container with a 302 and a presigned MinIO URL. Anyone consulting the document to check got a confident, false _"already covered"_.
+>
+> ### 🪤 The bridge trap fired a SIXTH consecutive session — in a new guise
+>
+> Not "a `pgrep` hit that isn't mine" this time. **Eight bridges were live and not one was daily-tour's** — joraa, Casa, po-platform-sA, eventos-judo, cc-platform, fin-po-management, cc-specs, nexumpro. A session reading the count would have concluded it was covered and run with **no wake bridge at all**.
+>
+> ⚠️ **And the pid trap fired twice, both times as documented:** the `armed` line printed `740899` / `771092` (the supervisors) while the sockets were on `740924` / `771117` (the children). Probing `ESTAB` on the number `armed` prints finds nothing on a live bridge. Both were verified `ESTAB` against `185.166.39.210:443` by reading the child pid and probing **in the same breath**.
+>
+> 📌 The supervisor exited mid-session with `{"reason":"comm","action":"rearm"}` — that is the design working (a message had arrived), not a death. Re-armed, re-verified.
+>
+> ### ⚠️ Incidental findings — filed here, nobody asked for them
+>
+> - **The lesson codes collide.** `L019`–`L021` exist **both** in `docs/ai/lessons/` and in `~/.claude/docs/agent-playbook.md`, naming **different lessons**, while the local README states the two sequences are shared. Any future `L0NN` reference is ambiguous without saying which file.
+> - **`L023` was predicted in writing and never written.** `L019`'s _Related_ section, 2026-05-29: _"L023 (future) — should formalize 'dispatcher-pattern route audit checklist' once we hit this again."_ Ninety days later it does not exist.
+> - **`docs/ai/backlog.md` is stale.** It still describes Plan-001 Phase 0 as the next executable wave and has an empty _Done_ section, while the repo is at Plan-009. Anything reading it for current state is reading May.
+>
+> ### ⚠️ Unchanged and still owed
+>
+> - `mypy src` vs `mypy src tests` — **37 errors** across five packages (chat-hub 32, planner-svc 3, python-common 2). Real work, sized, deliberately not bundled.
+> - `get_shared` still lacks a `status == "ready"` predicate — unreachable today, belongs in Phase-3 if a back-to-queued transition is added.
+> - `docs/ai/incidents/` still has **zero entries** in 105 days.
+
+> **UPDATE 2026-08-26 (LATEST — session `s748`, `dt:Furnas`. One PR: the Python package every service imports was never in CI. The one-line fix described in the last handoff would have blocked every PR in the repo. Closed by coordinated `/close-all` at 11:10.)**
+>
+> ### State
+>
+> `main` **`33b95f8`** · **TWO open pull requests, both green, both deliberately unmerged** — [`#477`](https://github.com/zmeireles/daily-tour/pull/477) (11/11, `MERGEABLE / CLEAN`) and [`#479`](https://github.com/zmeireles/daily-tour/pull/479) (12/12, `MERGEABLE / CLEAN`) · A2A inbox **empty** at both ends, drained through **`seq 1364`** · dt-tests `review` queue **empty** · Docker **zero containers** at both ends · Telegram `allowFrom` = Zé alone ⇒ **rule INERT, nothing sent** (measured, not skipped) · **no subagents spawned** — standing no-agents instruction · bridge stopped at closeout · Riff board **conferida e alterada** — [`dt-tests #45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) updated.
+>
+> ### ▶ FIRST TASK NEXT SESSION — the same two decisions, now asked a FOURTH time, plus one new
+>
+> **Nothing in this handoff is approval.** The owner's only message this session was "Lets resume work"; every other input was a peer session's closeout order.
+>
+> 1. **Merge [`#477`](https://github.com/zmeireles/daily-tour/pull/477)** — the four-service auth gate. Re-verified this session: 11/11 green, `MERGEABLE / CLEAN`. It closes [`dt-tests #45`](https://tasks.codecomedy.dev/p/dt-tests/r/45) (`critical`) and [`#44`](https://tasks.codecomedy.dev/p/dt-tests/r/44). Recommendation unchanged: **Fable gate first, then merge if clean.**
+> 2. **Merge [`#479`](https://github.com/zmeireles/daily-tour/pull/479)** — the CI gap below. Docs/CI category, but `.github/workflows/*` is always-escalate.
+> 3. 🔴 **THEN, and only then, add `Python (ruff + mypy + pytest) (python-common)` to the `protect-main` ruleset (`16458194`).** **The order is load-bearing.** Adding it while `main` still lacks the job means the ruleset waits on a check that never reports — **every PR blocks**. This is the same failure as the trap below, reached from the other side.
+>
+> ### Shipped: [`#479`](https://github.com/zmeireles/daily-tour/pull/479) — the package every service imports was verified on one laptop
+>
+> `ci.yml`'s Python matrix ran the four services. **`packages/python-common` was absent** — the one Python package every service imports at runtime (`init_otel` ×4, `init_sentry` ×4, shared models, weather, OSRM). Same shape as the finding that created the matrix: work CI structurally could not see.
+>
+> Measured on `main` **before** changing anything, with the matrix's exact commands: ruff clean · `mypy src` clean (19 files) · **39 tests pass**. ⇒ The gate it was missing is one it already passes. What was missing was anyone running it.
+>
+> ### 🪤 The finding of the session — the fix the last handoff called "one line" would have bricked the repo
+>
+> The matrix hardcodes `working-directory: services/${{ matrix.service }}`; this package lives under `packages/`. **The natural fix is to key the matrix on the path.** That renames all four existing jobs — and the **`protect-main` ruleset (`16458194`) pins those four check names verbatim**:
+>
+> ```
+> Python (ruff + mypy + pytest) (chat-hub)   … (notif-svc) … (planner-svc) … (search-svc)
+> ```
+>
+> Renamed required checks **never report**. The ruleset then waits on them forever ⇒ **every PR in the repo blocks — and it presents as CI hanging, not as CI failing**, so the cause is nowhere near the symptom.
+>
+> ⇒ Matrix key stays a bare package name; the directory moves to a separate `dir`; the job `name:` is written out explicitly. Generated names diffed against the live ruleset: **four byte-identical, one added, no `<` lines.**
+>
+> ### 📌 The one thing I refused to assert from memory — and it is the transferable part
+>
+> Whether GitHub **appends** the matrix suffix to a `name:` that already contains a matrix expression. If it appends, the names become `… (chat-hub) (chat-hub, services/chat-hub)` and all four required checks die. I could argue it either way from memory, and four required checks depended on the answer.
+>
+> **Measured instead of predicted, and the measurement was nearly free:** the ruleset binds `main` only, so a branch is a consequence-free place to ask GitHub directly. Pushed, read the names GitHub actually reported. **It does not append.** Four byte-identical, `(python-common)` added, 21s, pass.
+>
+> > **A branch is an instrument.** When the cost of being wrong is repo-wide and the cost of measuring is one push, memory is never the cheaper option.
+>
+> **And the diff carries a positive control**, because a name comparison that cannot fail reads exactly like a pass: mutating one reported name to the path form (`(chat-hub)` → `(services/chat-hub)`) makes the diff fire. Verified. Fifth instance of this house's recurring class, and the first where the probe was controlled _before_ being trusted rather than after.
+>
+> ### Sized, deliberately not fixed: `mypy src` vs `mypy src tests`
+>
+> The sibling narrowness in the same job — the type checker never sees the tests. Measured across all five so the next session need not re-derive it:
+>
+> | package                  | errors under `mypy src tests` |
+> | ------------------------ | ----------------------------- |
+> | `chat-hub`               | **32**, in 6 files            |
+> | `planner-svc`            | 3                             |
+> | `packages/python-common` | 2                             |
+> | `notif-svc`              | 0                             |
+> | `search-svc`             | 0                             |
+>
+> **37 total.** Real work, and it does not belong in a PR about coverage.
+>
+> ### 🪤 A ritual trap that has now fired FIVE consecutive sessions
+>
+> The startup `pgrep` hit belonged to **po-platform-sA** again — its detached daemon (`comm-bridge-daemon.sh`) runs the shared script and sources its own token. Read as "a bridge is up", this session would have run **with no wake bridge at all** while looking correctly armed.
+>
+> ⚠️ **The node pid rotated within the session** (`28079` → `193724`) while the supervisor held at `28021`. Probing `ESTAB` on the number the `armed` line prints finds nothing on a live bridge.
+>
+> ⚠️ **The global count is not a signal in either direction during a coordinated closeout** — 12 nodes were up at closeout with houses stopping and re-arming in the same minute. Ownership was settled by PPID chain to this session's own claude pid (`17275`), never by count.
+>
+> ### ⚠️ Unchanged and still owed from `s747`
+>
+> - `get_shared` still lacks a `status == "ready"` predicate — unreachable today, belongs in the Phase-3 plan if a back-to-queued transition is ever added.
+> - `docs/ai/incidents/` still has **zero entries** in 104 days. Not fixed; nobody asked.
 
 > **UPDATE 2026-08-26 (LATEST — session `s747`, `dt:Furnas`. The plan-ownership fix merged after a clean Fable gate; the missing auth gate on ALL FOUR Python services built and green but NOT merged; and two corrections of my own claims, one of which would have shipped a gate that gated nothing. Closed by coordinated `/close-all` at 04:17.)**
 >

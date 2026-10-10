@@ -1,4 +1,4 @@
-import maplibregl from "maplibre-gl";
+import maplibregl from "@/lib/map/maplibre";
 import { Protocol } from "pmtiles";
 
 let registered = false;
