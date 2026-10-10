@@ -100,9 +100,9 @@ class WhatsAppDriver:
 
     def _verify_signature(self, body: bytes, signature_header: str | None) -> bool:
         """Return True if the body matches the X-Hub-Signature-256 header."""
-        if self._app_secret is None:
-            return True  # no secret configured — skip verification
-        if signature_header is None:
+        # Fail CLOSED, as telegram.py does: the internal-token gate exempts this
+        # path (see main.create_app), so the signature is its only authentication.
+        if self._app_secret is None or signature_header is None:
             return False
         expected = hmac.new(
             self._app_secret.encode(),

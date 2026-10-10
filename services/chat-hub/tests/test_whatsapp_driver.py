@@ -199,3 +199,20 @@ async def test_webhook_receive_rejects_bad_signature() -> None:
                 },
             )
     assert resp.status_code == 403
+
+
+async def test_webhook_receive_rejects_when_app_secret_unset() -> None:
+    """With no app secret configured, an inbound POST is refused, not trusted."""
+    reset_whatsapp_driver()
+    driver = WhatsAppDriver(phone_number_id=None, access_token=None, app_secret=None)
+    app = create_app()
+    with patch("chat_hub.drivers.whatsapp.get_whatsapp_driver", return_value=driver):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.post(
+                "/v1/webhook/whatsapp",
+                content=b'{"entry": []}',
+                headers={"content-type": "application/json"},
+            )
+    assert resp.status_code == 403
