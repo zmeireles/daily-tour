@@ -14,8 +14,14 @@
 >
 > ### ▶ OPEN (owner's call)
 >
-> 1. **Deploy to qual.** 🔴 First append the four new keys (`CHAT_HUB_`, `NOTIF_SVC_`, `PLANNER_SVC_`, `SEARCH_SVC_INTERNAL_TOKEN`, each ≥ 32 characters) to the VPS `.env.qual`. Otherwise `deploy-qa` fails at compose interpolation, and so does its rollback. Re-import the n8n post-stay workflow afterwards (`docs/operations/hotfix-rollback-playbook.md`). Then check that two different public clients get separate rate-limit buckets.
-> 2. **qr-bell (`qb:Aldraba`, A2A `seq 3925`) disclosed that `qrb-api`/`qrb-web` are ALREADY on `dt_internal`.** `#477` closes the unauthenticated Python access once it is deployed. What is left: any container on `dt_internal` can choose its own bff `req.ip` (Fable 🟡 on `#485`; not a regression). The fix is to pin `dt_internal`'s subnet, or to give qr-bell a separate edge network. Zé decides the network name.
+> 1. **Deploy to qual (Zé: A1).**
+>    - ✅ **Done on the VPS at 23:29Z:** the four new keys were appended to `/opt/daily-tour/.env.qual`, generated on the box, never printed, 48 characters each. Backup: `.env.qual.bak-s753-20261010T232929Z`.
+>    - ❌ **Deploy run `38095207796` (`image_tag` `df2a16d…`) FAILED** at "Pull images". quay.io now answers `unauthorized` for the pinned MinIO images (`minio`, `mc`). The auto-rollback to `89248c2` worked, and every container is healthy on the old images. So **`#477` is NOT live yet.**
+>    - The fix is PR [`#486`](https://github.com/zmeireles/daily-tour/pull/486): `pull --policy missing`. I tested it on the VPS as `ghrunner` (exit 0, our 10 images pulled, third-party images reused from the cache). Testing as root is invalid: root gets `denied` from GHCR, likely a stale credential, while the images are public.
+>    - After `#486` (and `#487`) merge, re-dispatch with the SAME `image_tag=df2a16d686bf64ad1242d46844364ad594f0ac83`. The deploy checks out `main` for tracked files; only images come from the tag.
+>    - Then: re-import the n8n post-stay workflow (use the n8n CLI in the container; the API route needs a key), check two public clients get separate rate-limit buckets, and check a request from inside `dt_internal` without the token gets 401.
+>    - ⚠️ **A fresh host cannot get MinIO at all.** The images exist only in this box's cache. Replacing the image source is a follow-up decision.
+> 2. **qr-bell is on `dt_internal` (Zé: B2, a separate edge network).** PR [`#487`](https://github.com/zmeireles/daily-tour/pull/487) adds `dt_edge` (created by our qual project) and attaches Traefik to it. qr-bell was told (A2A `seq 3960`) to switch `qrb-api`/`qrb-web` to `dt_edge` and drop `dt_internal`, **only after I confirm the deploy**. That confirmation is still owed.
 > 3. **qr-bell's TURN plan.** Zé decides whether to allow a host-network coturn and who runs the ufw/iptables change. I answered at `seq 3927` and promised the read-only box facts after the merge sequence; those are still owed.
 > 4. dt-tests `#44`/`#45` move forward once qual is deployed.
 >
