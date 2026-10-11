@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# restore-drill-postgres.sh — prove the latest MinIO dump is restorable.
+# restore-drill-postgres.sh — prove the latest Garage dump is restorable.
 # (T-3.B.2-lite)
 #
-# Pulls the most-recent postgres/main/*.dump from MinIO, restores it into a
+# Pulls the most-recent postgres/main/*.dump from Garage, restores it into a
 # THROWAWAY postgres:17 container (never the live cluster), runs a few row-count
 # checks, prints the measured RTO, then tears the throwaway container down.
 #
@@ -17,8 +17,9 @@
 #   scripts/ops/restore-drill-postgres.sh
 #
 # Config (env, with defaults):
-#   BACKUP_BUCKET   MinIO bucket name        (default: backups)
-#   MC_IMAGE        pinned mc client image   (default: see below)
+#   BACKUP_BUCKET   bucket name              (default: backups)
+#   AWS_CLI_IMAGE   pinned aws-cli image      (default: see below)
+#   S3_ENDPOINT     S3 endpoint in dt_internal (default: http://minio:3900)
 #   PG_IMAGE        restore engine image     (default: the live pgvector image, so
 #                   the search.place_embedding vector table restores faithfully;
 #                   override to stock postgres:17 for a portable, no-extension drill)
@@ -28,10 +29,11 @@
 set -euo pipefail
 
 BACKUP_BUCKET="${BACKUP_BUCKET:-backups}"
-MC_IMAGE="${MC_IMAGE:-quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z}"
+AWS_CLI_IMAGE="${AWS_CLI_IMAGE:-amazon/aws-cli:2.34.0@sha256:97cc5f847898f54432492c128408c62e0df2153d9ad36573be8e5a03826123b0}"
+S3_ENDPOINT="${S3_ENDPOINT:-http://minio:3900}"
 PG_IMAGE="${PG_IMAGE:-ghcr.io/zmeireles/daily-tour/postgres:qual}"
 ENV_FILE="${ENV_FILE:-/opt/daily-tour/.env.qual}"
-MINIO_NETWORK="${MINIO_NETWORK:-dt_internal}"
+S3_NETWORK="${S3_NETWORK:-dt_internal}"
 
 # Throwaway resources — these are the ONLY things this script may create/destroy.
 DRILL_CONTAINER="dt_pg_restore_drill"
@@ -65,31 +67,35 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ── 1. fetch the latest main dump from MinIO ──────────────────────────────────
-# Only the MINIO_ROOT_* creds cross via a 0600 --env-file (MinIO host = `minio`,
-# never the `dt_minio` container name — mc rejects underscore hostnames). The mc
-# image has no grep/awk, so we list with `mc ls --json` and select the newest
-# .dump on the HOST (full tools), then cp it by key.
-MC_CREDS="$WORKDIR/mc-creds"
-grep -E '^(MINIO_ROOT_USER|MINIO_ROOT_PASSWORD)=' "$ENV_FILE" > "$MC_CREDS"
-chmod 600 "$MC_CREDS"
-[ -s "$MC_CREDS" ] || die "MINIO_ROOT_USER/PASSWORD not found in $ENV_FILE"
+# ── 1. fetch the latest main dump from Garage ─────────────────────────────────
+# Only the S3 key pair crosses via a 0600 --env-file, renamed to AWS_* (endpoint
+# host = `minio`, the network alias — never the `dt_garage` container name,
+# underscores are invalid hostnames). We list keys with the pinned aws-cli and
+# select the newest .dump on the HOST (the key embeds a UTC timestamp, so a
+# plain sort is chronological), then cp it by key.
+S3_ENV="$WORKDIR/s3-env"
+sed -n -e 's/^MINIO_ACCESS_KEY=/AWS_ACCESS_KEY_ID=/p' \
+       -e 's/^MINIO_SECRET_KEY=/AWS_SECRET_ACCESS_KEY=/p' "$ENV_FILE" > "$S3_ENV"
+chmod 600 "$S3_ENV"
+[ "$(wc -l < "$S3_ENV")" -eq 2 ] || die "MINIO_ACCESS_KEY/MINIO_SECRET_KEY not found in $ENV_FILE"
+{
+  echo "AWS_DEFAULT_REGION=us-east-1"
+  echo "AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED"
+  echo "AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED"
+} >> "$S3_ENV"
 
 log "finding latest postgres/main dump in ${BACKUP_BUCKET} ..."
-latest=$(docker run --rm --network "$MINIO_NETWORK" --env-file "$MC_CREDS" \
-  -e BUCKET="$BACKUP_BUCKET" --entrypoint sh "$MC_IMAGE" -c '
-    mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
-    mc ls --json "local/$BUCKET/postgres/main/"
-  ' | grep -o "\"key\":\"[^\"]*\.dump\"" | cut -d'"' -f4 | sort | tail -n1)
+latest=$(docker run --rm --network "$S3_NETWORK" --env-file "$S3_ENV" "$AWS_CLI_IMAGE" \
+  --endpoint-url "$S3_ENDPOINT" s3api list-objects-v2 \
+  --bucket "$BACKUP_BUCKET" --prefix postgres/main/ \
+  --query 'Contents[].Key' --output text \
+  | tr '\t' '\n' | grep '\.dump$' | sort | tail -n1)
 [ -n "$latest" ] || die "no dumps under postgres/main/"
 log "latest = $latest"
 
-docker run --rm --network "$MINIO_NETWORK" --env-file "$MC_CREDS" \
-  -e BUCKET="$BACKUP_BUCKET" -e LATEST="$latest" -v "$WORKDIR:/out" \
-  --entrypoint sh "$MC_IMAGE" -c '
-    mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
-    mc cp "local/$BUCKET/postgres/main/$LATEST" /out/latest.dump
-  '
+docker run --rm --network "$S3_NETWORK" --env-file "$S3_ENV" -v "$WORKDIR:/out" \
+  "$AWS_CLI_IMAGE" --endpoint-url "$S3_ENDPOINT" \
+  s3 cp "s3://${BACKUP_BUCKET}/${latest}" /out/latest.dump
 [ -s "$WORKDIR/latest.dump" ] || die "no dump downloaded"
 log "downloaded dump: $(du -h "$WORKDIR/latest.dump" | cut -f1)"
 
@@ -97,7 +103,7 @@ log "downloaded dump: $(du -h "$WORKDIR/latest.dump" | cut -f1)"
 log "starting throwaway ${PG_IMAGE} container '${DRILL_CONTAINER}' ..."
 docker rm -f "$DRILL_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$DRILL_CONTAINER" \
-  --network "$MINIO_NETWORK" \
+  --network "$S3_NETWORK" \
   -e POSTGRES_PASSWORD=drill \
   "$PG_IMAGE" >/dev/null
 
