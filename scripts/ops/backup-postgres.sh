@@ -111,10 +111,13 @@ docker run --rm \
     # creates it; the fallback keeps a hand-rolled store working.
     aws --endpoint-url "$ENDPOINT" s3api head-bucket --bucket "$BUCKET" >/dev/null 2>&1 \
       || aws --endpoint-url "$ENDPOINT" s3 mb "s3://$BUCKET"
+    # An empty dump uploads "successfully"; refuse it so the run fails loudly.
     for f in /dumps/dailytour-*.dump; do
+      [ -s "$f" ] || { echo "[backup-postgres] FAIL: empty or missing dump: $f" >&2; exit 1; }
       aws --endpoint-url "$ENDPOINT" s3 cp "$f" "s3://$BUCKET/postgres/main/$(basename "$f")"
     done
     for f in /dumps/authentik-*.dump; do
+      [ -s "$f" ] || { echo "[backup-postgres] FAIL: empty or missing dump: $f" >&2; exit 1; }
       aws --endpoint-url "$ENDPOINT" s3 cp "$f" "s3://$BUCKET/postgres/authentik/$(basename "$f")"
     done
     echo "[backup-postgres] uploaded objects:"

@@ -32,6 +32,9 @@ export function getS3Client(): S3Client {
 }
 
 // Creates the bucket if it does not already exist. Idempotent — safe to call on every boot.
+// On Garage the media-svc key cannot create buckets (garage-init does), so the
+// CreateBucket fallback answers AccessDenied and boot fails loudly — intended:
+// a missing bucket means garage-init did not run.
 export async function ensureBucket(client: S3Client, bucket: string): Promise<void> {
   try {
     await client.send(new HeadBucketCommand({ Bucket: bucket }));

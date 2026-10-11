@@ -300,13 +300,33 @@ so `media-svc` and presigned-URL hosts keep working; new volumes
 
 ### 0. Before the deploy
 
-1. Add the two new values to `.env.qual` (do not print them). Generate each with
-   `openssl rand -hex 32` and append `GARAGE_RPC_SECRET=<64 hex>` and
+Merging the PR does **not** deploy it: `deploy-qa.yml` runs only on a manual
+dispatch (or a `[deploy-qa]` commit). Do every step of §0 before the dispatch.
+
+All commands below run in `/opt/daily-tour` with the deploy's own file list,
+copied from `deploy-qa.yml` `env.COMPOSE` (if that list changes, re-copy it):
+
+```bash
+export COMPOSE="-p dt-qual --env-file .env.qual -f infra/compose/docker-compose.base.yml -f infra/compose/docker-compose.app.yml -f infra/compose/docker-compose.traefik.yml -f infra/compose/docker-compose.authentik.yml -f infra/compose/overlay.qual.yml -f infra/compose/overlay.qual-authentik.yml -f infra/compose/docker-compose.n8n.yml -f infra/compose/overlay.qual-n8n.yml -f infra/compose/overlay.observability.yml"
+RCLONE=rclone/rclone:1.74.0@sha256:d2e0e88359d0b2e67cfcd2c43d5405185eb8adfc207079df27c42da82c5207bc
+BUCKETS="media-place media-owner media-tour daily-tour-media backups"
+```
+
+1. Add the two new values to the qual env file (do not print them). Generate each
+   with `openssl rand -hex 32` and append `GARAGE_RPC_SECRET=<64 hex>` and
    `GARAGE_ADMIN_TOKEN=<64 hex>`. `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` already
    exist and are reused unchanged. Set `MINIO_ENDPOINT=http://minio:3900`.
    (`scripts/qual/gen-env-qual.sh` produces all of this for a fresh host;
    `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` are no longer read by anything.)
-2. Free the `minio` DNS alias for Garage. The old container also answers to
+2. Pre-pull the new images as the deploy user, so the deploy does not depend on
+   Docker Hub at that moment. Use the exact `image:` references pinned in
+   `infra/compose/docker-compose.base.yml` (`garage`, `garage-init`) plus:
+
+   ```bash
+   docker pull "$RCLONE"
+   ```
+
+3. Free the `minio` DNS alias for Garage. The old container also answers to
    `minio` on `dt_internal`, so two containers would share the name. Give the old
    one a different alias and keep it running as the copy source:
 
@@ -316,69 +336,84 @@ so `media-svc` and presigned-URL hosts keep working; new volumes
    ```
 
    The old MinIO keeps host ports 27900/27901; Garage publishes 27902, so there is
-   no port clash. (`media-svc` cannot reach an object store until the deploy
-   below recreates it; plan for that short window.)
+   no port clash. ⚠️ From here until the end of §1's copy, media on qual answers
+   404/502: media-svc either cannot reach a store or reaches an empty one.
 
 ### 1. Deploy the PR, then copy per bucket
 
+Dispatch `deploy-qa.yml`. `up -d` runs without `--remove-orphans`, so `dt_minio`
+survives as the copy source (check: `docker ps -a --filter name=dt_minio`).
 After the deploy, `dt_garage` is healthy and `dt_garage_init` has exited 0 (five
 empty buckets). Run rclone from a container on `dt_internal`, passing the key pair
 by `--env-file` (never on the command line). Source = old MinIO (`minio-old:9000`),
 destination = Garage (`minio:3900`). The same key pair is valid on both sides.
 
 ```bash
-RCLONE=rclone/rclone:1.74.0@sha256:d2e0e88359d0b2e67cfcd2c43d5405185eb8adfc207079df27c42da82c5207bc
 # /tmp/rclone.vars (0600) holds RCLONE_CONFIG_OLD_* and RCLONE_CONFIG_NEW_* lines:
 #   TYPE=s3 PROVIDER=Other REGION=us-east-1 ACCESS_KEY_ID SECRET_ACCESS_KEY
 #   ENDPOINT=http://minio-old:9000 (OLD) / http://minio:3900 (NEW)
 rc() { docker run --rm --network dt_internal --env-file /tmp/rclone.vars "$RCLONE" "$@"; }
 
-for b in media-place media-owner media-tour daily-tour-media backups; do
-  rc copy --checksum --transfers 4 "old:$b" "new:$b"
+for b in $BUCKETS; do
+  rc copy --checksum --transfers 4 "old:$b" "new:$b" || { echo "COPY FAILED: $b"; break; }
 done
 ```
 
 ### 2. Verify (all must pass before cutover)
 
+The function stops at the first failure; a mismatch is never left for a human to
+spot by eye.
+
 ```bash
-for b in media-place media-owner media-tour daily-tour-media backups; do
-  rc check --download --one-way "old:$b" "new:$b"    # byte-for-byte, exit 0 required
-  rc size "old:$b"; rc size "new:$b"                 # object count and bytes must match
-done
+verify() {
+  for b in $BUCKETS; do
+    rc check --download --one-way "old:$b" "new:$b" || { echo "CHECK FAILED: $b"; return 1; }
+    o=$(rc size --json "old:$b"); n=$(rc size --json "new:$b")
+    [ "$o" = "$n" ] || { echo "SIZE MISMATCH: $b old=$o new=$n"; return 1; }
+    echo "OK $b $o"
+  done
+}
+verify
 ```
+
+`--one-way` checks that every OLD object exists in NEW with identical bytes.
+Extra objects in NEW do not fail it, but they do fail the size comparison, so run
+§2 while writers are stopped (§3) for the final word.
 
 ### 3. Cutover: delta pass
 
-Stop writers, copy what changed since step 1, re-verify, then bring the app up:
+Stop writers, copy what changed since §1, re-verify, then bring the app up:
 
 ```bash
 docker compose $COMPOSE stop bff media-svc          # no uploads during the delta
-for b in media-place media-owner media-tour daily-tour-media backups; do
-  rc copy --checksum "old:$b" "new:$b"
-  rc check --download --one-way "old:$b" "new:$b"
-done
-docker compose $COMPOSE up -d bff media-svc
+for b in $BUCKETS; do rc copy --checksum "old:$b" "new:$b" || { echo "DELTA FAILED: $b"; break; }; done
+verify && docker compose $COMPOSE up -d bff media-svc
 ```
 
-Then check a known asset end to end through the BFF (`/v1/media/<id>` returns
-200 with the expected bytes) and run `scripts/ops/backup-postgres.sh` once
-followed by `scripts/ops/restore-drill-postgres.sh`.
+If `verify` fails, the app stays stopped: fix it or go to §4. Then check a known
+asset end to end through the BFF (`/v1/media/<id>` returns 200 with the expected
+bytes) and run `scripts/ops/backup-postgres.sh` once followed by
+`scripts/ops/restore-drill-postgres.sh`.
 
 ### 4. Rollback
 
-Nothing on the old side was changed. Revert the image lines (the commit
-`feat(infra): replace minio with garage`), reconnect the old container under its
-original alias and redeploy:
+Nothing on the old side was changed. **Stop Garage first**, so it releases the
+`minio` alias. Otherwise Docker DNS returns both containers and the old media-svc
+(`minio:9000`) intermittently lands on Garage, where 9000 is closed:
 
 ```bash
+docker stop dt_garage
 docker network disconnect dt_internal dt_minio
 docker network connect --alias minio dt_internal dt_minio
-docker compose $COMPOSE up -d minio minio-init media-svc bff   # old compose file revision
+docker run --rm --network dt_internal alpine:3.20 nslookup minio   # must return ONE address
 ```
 
-The old MinIO image is in the host cache and `dt_minio_data` still holds every
-object up to the cutover. Objects written to Garage after the cutover must be
-copied back with the same `rc copy` in the opposite direction before rolling back.
+Then revert the PR on `main` (the commit `feat(infra): replace minio with
+garage`) and redeploy with the previous image tag. The old MinIO image is in the
+host cache, and `dt_minio_data` still holds every object up to the cutover.
+Objects written to Garage after the cutover must be copied back first: start
+`dt_garage` again under a different alias, then run the same `rc copy` in the
+opposite direction.
 
 ### 5. Clean-up (only after a quiet week)
 

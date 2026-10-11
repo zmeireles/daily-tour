@@ -19,6 +19,8 @@ CAP_BYTES=$(( ${GARAGE_CAPACITY_GB:-20} * 1000000000 ))
 BUCKETS="media-place media-owner media-tour daily-tour-media backups"
 AUTH="Authorization: Bearer ${GARAGE_ADMIN_TOKEN}"
 BODY=/tmp/body.json
+# The ImportKey body carries the S3 secret; never leave it in the container.
+trap 'rm -f "$BODY" /tmp/wget.err' EXIT
 log() { echo "[garage-init] $*"; }
 
 # GET <path> → stdout; non-zero exit on any non-2xx.
@@ -39,11 +41,18 @@ json_num() { sed -n "s/^ *\"$1\": *\([0-9][0-9]*\).*/\1/p" | head -n 1; }
 
 log "waiting for the admin API at ${API} ..."
 i=0
-until status=$(api_get GetClusterStatus 2>/dev/null); do
+until status=$(api_get GetClusterStatus 2>/tmp/wget.err); do
+  # A rejected token is not "unreachable": fail at once and say which it is,
+  # so a mistyped GARAGE_ADMIN_TOKEN is not chased as a networking problem.
+  if grep -qE ' (401|403) ' /tmp/wget.err; then
+    echo "[garage-init] FAIL: admin API rejected GARAGE_ADMIN_TOKEN ($(grep -oE 'HTTP/[0-9.]+ [0-9]{3}' /tmp/wget.err | head -n 1))" >&2
+    exit 1
+  fi
   i=$((i + 1))
-  [ "$i" -le 60 ] || { echo "[garage-init] FAIL: Garage admin API not reachable after 60s" >&2; exit 1; }
+  [ "$i" -le 60 ] || { echo "[garage-init] FAIL: Garage admin API not reachable after 60s: $(head -c 200 /tmp/wget.err)" >&2; exit 1; }
   sleep 1
 done
+rm -f /tmp/wget.err
 
 # ── 1. cluster layout (single node, zone dc1) ────────────────────────────────
 layout_version=$(printf '%s\n' "$status" | json_num layoutVersion)
