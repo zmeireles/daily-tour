@@ -15,12 +15,17 @@ export function getS3Client(): S3Client {
     const config = loadConfig();
     cachedClient = new S3Client({
       endpoint: config.MINIO_ENDPOINT,
-      region: "us-east-1", // MinIO ignores region but SDK requires a value
+      region: "us-east-1", // must equal Garage's s3_region (infra/garage/garage.toml)
       credentials: {
         accessKeyId: config.MINIO_ACCESS_KEY,
         secretAccessKey: config.MINIO_SECRET_KEY,
       },
-      forcePathStyle: true, // required for MinIO; host-style URLs need DNS magic MinIO doesn't provide
+      forcePathStyle: true, // path-style: host-style URLs need wildcard DNS the object store doesn't have
+      // REQUIRED for Garage. SDK v3 defaults both to WHEN_SUPPORTED, which adds a
+      // CRC32 checksum to presigned PUTs that Garage answers with 400
+      // InvalidDigest. Do not remove (guarded by test/s3-client.test.ts).
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
   }
   return cachedClient;
