@@ -4,7 +4,7 @@ Docker Compose definitions for the Daily Tour platform. Per-environment overlays
 
 | File                                                                   | Purpose                                                                          |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [`compose/docker-compose.base.yml`](./compose/docker-compose.base.yml) | Postgres 17 + pgvector · Redis 7 · RabbitMQ 4.3 · MinIO · MinIO bucket bootstrap |
+| [`compose/docker-compose.base.yml`](./compose/docker-compose.base.yml) | Postgres 17 + pgvector · Redis 7 · RabbitMQ 4.3 · Garage (S3) · Garage bootstrap |
 | `compose/docker-compose.traefik.yml`                                   | Traefik v3 + ACME (lands in T-0.3.1)                                             |
 | `compose/docker-compose.authentik.yml`                                 | Authentik 2026.2.2+ behind Traefik forward-auth (T-0.3.2)                        |
 | `compose/docker-compose.n8n.yml`                                       | n8n LTS behind Authentik (T-0.3.3)                                               |
@@ -12,11 +12,11 @@ Docker Compose definitions for the Daily Tour platform. Per-environment overlays
 | `postgres/`                                                            | Dockerfile + init SQL (extensions, schemas, roles)                               |
 | `rabbitmq/`                                                            | Server config + declarative exchanges/queues                                     |
 | `redis/`                                                               | Server config (password passed via Compose argv)                                 |
-| `minio/`                                                               | Bucket bootstrap script                                                          |
+| `garage/`                                                              | `garage.toml` + idempotent bootstrap (`init.sh`: layout, key, buckets)           |
 
 ## Quick start
 
-**Base stack only** (Postgres, Redis, RabbitMQ, MinIO):
+**Base stack only** (Postgres, Redis, RabbitMQ, Garage):
 
 ```bash
 cp .env.example .env       # then edit
@@ -55,10 +55,11 @@ curl -s -u dailytour:"$RABBITMQ_PASSWORD" \
   "http://localhost:${DT_HOST_PORT_RABBITMQ_MGMT:-27673}/api/exchanges/%2F" | jq -r '.[].name'
 # → ... dt.dlx, dt.events, ...
 
-# MinIO — buckets created
-curl -s "http://localhost:${DT_HOST_PORT_MINIO_API:-27900}/minio/health/live"
-docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc ls dailytour/
-# → media-owner, media-place, media-tour
+# Garage — containers healthy, bootstrap exited 0, buckets present
+docker inspect dt_garage_init --format '{{.State.Status}} {{.State.ExitCode}}'   # → exited 0
+docker logs dt_garage_init | tail -3   # → [garage-init] ready: media-place media-owner media-tour daily-tour-media backups
+docker exec dt_garage /garage bucket list
+# → media-place, media-owner, media-tour, daily-tour-media, backups
 ```
 
 ## What each service does
@@ -66,7 +67,7 @@ docker compose -f infra/compose/docker-compose.base.yml run --rm minio-init mc l
 - **Postgres** — single cluster, single logical DB `dailytour`, nine schemas (one per service plus `audit`). pgvector + pg_trgm + unaccent + pgcrypto extensions enabled. Each service has its own DB role with least-privilege grants on its own schema.
 - **Redis** — session cache, JTI revocation, future WS pub/sub fan-out. AOF persistence on (everysec), 256 MB ceiling, allkeys-lru eviction.
 - **RabbitMQ** — `dt.events` topic exchange with day-1 queues (`place.*`, `tour.*`, `message.*`, `notification.*`, `reservation.*`). `dt.dlx` dead-letter exchange. Definitions loaded declaratively from `rabbitmq/definitions.json`.
-- **MinIO** — object storage for media. Three buckets seeded by `minio-init` one-shot service: `media-place`, `media-owner`, `media-tour`. The `public/` prefix is anonymously readable so the PWA can pull place hero images without signed URLs.
+- **Garage** — S3-compatible object storage for media and backups (replaced MinIO, whose images are no longer published). Single node, LMDB, `replication_factor=1`; config in `garage/garage.toml`. Five buckets created by the `garage-init` one-shot (`media-place`, `media-owner`, `media-tour`, `daily-tour-media`, `backups`); the S3 key is the existing `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY` pair, imported unchanged. Reachable inside `dt_internal` as `minio:3900` (network alias kept so presigned-URL hosts did not change). All buckets are private and served via presigned URLs — Garage has no per-prefix anonymous policy, so the old `public/` anonymous-read rule is gone (nothing consumed it). Admin API (3903) is internal only.
 - **Traefik** — reverse proxy and TLS terminator (v3.2). Routes incoming HTTP/HTTPS traffic to application services by hostname (e.g. `app.dt.localhost`) using Docker label discovery (`traefik.enable=true`). ACME staging issuer handles certificate provisioning in dev/QA; the live issuer activates in Phase 5 with a real public domain. The dashboard is protected by basic-auth and is **dev/QA only — never expose it in production**. Host ports default to `${DT_HOST_PORT_TRAEFIK_HTTP:-27080}` / `${DT_HOST_PORT_TRAEFIK_HTTPS:-27443}` / `${DT_HOST_PORT_TRAEFIK_DASHBOARD:-27088}` to avoid collisions with sibling dev stacks. Future services opt in by adding `traefik.http.*` labels; existing base-stack services (Postgres, Redis, RabbitMQ, MinIO) stay internal-only.
 - **Authentik** — OIDC identity provider for the owner backoffice. Has its own dedicated Postgres container (`dt_authentik_postgres`) for clean separation from the project's main cluster. Server + worker containers share the same image (`ghcr.io/goauthentik/server:2026.2.2`). Reachable via Traefik at `http://auth.dt.localhost`. The `authentik-forward-auth@file` middleware is **defined-but-commented** in Traefik's dynamic config — it activates when T-0.3.4 or T-1.6.x creates the required Proxy Provider binding on the embedded outpost (the bare server returns 404 on `/outpost.goauthentik.io/auth/traefik` until that binding exists).
 - **n8n** — workflow automation. Owns the ingest scheduling, owner-approval reminders, daily digests, and low-code integrations described in [`03-architecture.md §2`](../docs/exploration/03-architecture.md). Pinned to LTS line `>=1.123.26` per the CVE floor in [`04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md). Runs SQLite-backed in dev/QA (single container, no separate DB). Reachable via Traefik at `http://n8n.dt.localhost`. **Auth via n8n's built-in User Management** — first boot serves the owner-setup wizard at `http://n8n.dt.localhost/setup` where the first user becomes the instance owner (`N8N_BASIC_AUTH_*` env vars were removed upstream in v0.184 and are silently ignored). Authentik forward-auth integration lands in a follow-up task once the Authentik Proxy Provider is wired to the embedded outpost. Never expose n8n's UI to the public internet — even with Authentik, keep host bindings on `127.0.0.1`.
@@ -88,8 +89,7 @@ Daily-tour reserves the **27xxx** host-port block to avoid collisions with sibli
 | Redis               | 6379            | 127.0.0.1:`$DT_HOST_PORT_REDIS` (27379)             | requires password                                                                     |
 | RabbitMQ AMQP       | 5672            | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_AMQP` (27672)     | clients                                                                               |
 | RabbitMQ Management | 15672           | 127.0.0.1:`$DT_HOST_PORT_RABBITMQ_MGMT` (27673)     | admin UI                                                                              |
-| MinIO S3 API        | 9000            | 127.0.0.1:`$DT_HOST_PORT_MINIO_API` (27900)         | service-to-service                                                                    |
-| MinIO Console       | 9001            | 127.0.0.1:`$DT_HOST_PORT_MINIO_CONSOLE` (27901)     | admin UI                                                                              |
+| Garage S3 API       | 3900            | 127.0.0.1:`$DT_HOST_PORT_GARAGE_S3` (27902)         | service-to-service                                                                    |
 | Authentik           | 9000 (internal) | —                                                   | No host bind; Traefik routes `http://auth.dt.localhost` → `authentik-server:9000`     |
 | authentik-postgres  | 5432 (internal) | —                                                   | No host bind; internal to `dt_internal` network only                                  |
 | n8n                 | 5678 (internal) | —                                                   | No host bind; Traefik routes `http://n8n.dt.localhost` → `dt_n8n:5678`                |
@@ -199,7 +199,7 @@ On qual, Traefik publishes `0.0.0.0:443`, so unlike dev (loopback-only) the n8n 
 
 Two ways to run the app locally:
 
-**Native dev (hot-reload, recommended for feature work)** — Vite serves the PWA with HMR; tsx watches the BFF. Compose still runs the infra (PG, Redis, Rabbit, MinIO, Traefik, Authentik, n8n) — drop the app overlay from the chain.
+**Native dev (hot-reload, recommended for feature work)** — Vite serves the PWA with HMR; tsx watches the BFF. Compose still runs the infra (PG, Redis, Rabbit, Garage, Traefik, Authentik, n8n) — drop the app overlay from the chain.
 
 ```bash
 # In one terminal
@@ -241,7 +241,7 @@ docker compose -f infra/compose/docker-compose.base.yml down -v
 docker compose -f infra/compose/docker-compose.base.yml up -d
 ```
 
-Postgres init scripts (`postgres/init/*.sql`) only run on first boot of an empty `dt_postgres_data` volume — `down -v` wipes the volume, the next `up` re-runs them. MinIO bucket creation is idempotent and runs on every `up`.
+Postgres init scripts (`postgres/init/*.sql`) only run on first boot of an empty `dt_postgres_data` volume — `down -v` wipes the volume, the next `up` re-runs them. Garage bootstrap (`garage-init`) is idempotent and runs on every `up`; the Garage volumes (`dt_garage_meta`, `dt_garage_data`) are wiped by `down -v` too.
 
 ## Restore from `pg_dump`
 
@@ -263,30 +263,131 @@ Phase 5 (T-5.4.x observability + sizing) introduces a secrets-manager bootstrap 
 
 ## Troubleshooting
 
-| Symptom                                                            | Likely cause                                                               | Fix                                                                                                                                                                                                                                                                                  |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Traefik dashboard `401`                                            | `TRAEFIK_DASHBOARD_PASSWORD` doesn't match the bcrypt in `dashboard-users` | Regenerate: `htpasswd -nbB admin "<new>"` → update `infra/traefik/dashboard-users` and `.env`.                                                                                                                                                                                       |
-| Traefik ACME certificate denied                                    | Let's Encrypt staging rate limit hit, or challenge not reachable           | Wait for rate-limit window, or switch to a real public domain + the live ACME server in Phase 5.                                                                                                                                                                                     |
-| Service not routable through Traefik                               | Missing opt-in label on target container                                   | Add `traefik.enable=true` and `traefik.http.routers.<name>.rule=Host(...)` labels to the service.                                                                                                                                                                                    |
-| Postgres healthcheck fails                                         | First-boot init scripts erroring (check `docker logs dt_postgres`)         | Most often a syntax issue in `02-roles.sql`. `down -v` to wipe and retry.                                                                                                                                                                                                            |
-| `definitions didn't load` (RabbitMQ)                               | Missing volume mount or invalid JSON                                       | `curl -u dailytour:$RABBITMQ_PASSWORD "http://localhost:${DT_HOST_PORT_RABBITMQ_MGMT:-27673}/api/overview"` to inspect; `docker logs dt_rabbitmq` to see load errors.                                                                                                                |
-| MinIO bucket-init fails after a clean install                      | Container reached `up` before MinIO was healthy                            | The `depends_on: condition: service_healthy` guard should prevent this. If it slips, re-run `docker compose up minio-init`.                                                                                                                                                          |
-| pt_PT.UTF-8 collation missing                                      | `locale-gen` failed in postgres Dockerfile build                           | Set `LANG=en_US.UTF-8` in `.env` and accept the slightly weaker sort for now. Re-attempt the build with `--no-cache` if you have apt-get connectivity.                                                                                                                               |
-| Containers fight for the same port                                 | Sibling dev stack bound the same host port                                 | Override the matching `DT_HOST_PORT_*` env var in `.env` (e.g. `DT_HOST_PORT_POSTGRES=27532`) and re-`up`. To disable host exposure entirely, drop the host side of the binding (use `:5432` instead of `127.0.0.1:5432:5432`) — then services on `dt_internal` can still reach it.  |
-| n8n first-time access                                              | First boot serves the owner-setup wizard at `/setup`                       | Open `http://n8n.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}/setup`, create the owner account. The first user becomes the instance admin and unlocks the UI. `N8N_BASIC_AUTH_*` env vars are silently ignored (removed upstream in v0.184).                                     |
-| n8n owner password lost                                            | n8n stores users in its SQLite DB                                          | Wipe the volume to start over: `docker compose down -v && docker compose up -d`; then re-do the setup wizard.                                                                                                                                                                        |
-| n8n cannot save credentials                                        | `N8N_ENCRYPTION_KEY` changed between runs                                  | Restore the same key in `dev-environment`, or wipe the volume: `docker compose down -v` + `up -d`.                                                                                                                                                                                   |
-| n8n workflow state lost after restart                              | Volume `dt_n8n_data` was removed                                           | Workflow state persists via named volume `/home/node/.n8n`. Ensure you use `down` not `down -v`. Backups are operator's responsibility (Phase 5 adds automated backup).                                                                                                              |
-| `http://app.dt.localhost` returns 404 / nginx default page         | `apps/pwa/dist/` is empty or missing                                       | Run `pnpm --filter @daily-tour/pwa build` first, then `docker compose ... restart pwa-static` (or just refresh — the bind mount is live).                                                                                                                                            |
-| `http://app.dt.localhost/some-route` returns 404 on hard refresh   | SPA fallback broken in `infra/nginx/pwa.conf`                              | Confirm the catch-all `location /` block has `try_files $uri $uri/ /index.html;`. If you added a custom location ahead of it, make sure unknown URIs still fall through to the SPA.                                                                                                  |
-| `http://api.dt.localhost/health` returns 502                       | BFF container not healthy                                                  | `docker compose --env-file dev-environment -f ... logs bff` — check OTel init or env-var validation. Verify the BFF binds to `0.0.0.0:8080` (the overlay sets `HOST=0.0.0.0`); a `127.0.0.1` bind isn't reachable from Traefik.                                                      |
-| PWA fetch to BFF returns CORS error                                | Mixed origin between Traefik-routed and native-port URLs                   | `@fastify/cors` already echoes `origin: true` and `credentials: true` in dev. Confirm the PWA uses one consistent base URL: `http://api.dt.localhost` in Compose mode, `http://localhost:8080` in native mode — never both. Cookies need `credentials: "include"` on the fetch call. |
-| `docker compose up` fails: `no such file: services/bff/Dockerfile` | Ran compose from the wrong directory                                       | The `build.context: ../..` in `docker-compose.app.yml` is relative to `infra/compose/`. Always invoke `docker compose` from the repo root.                                                                                                                                           |
-| BFF rebuild slow on every `up --build`                             | pnpm deps layer wasn't cached                                              | Don't `--no-cache`; let Docker reuse the `deps` layer. The first build is unavoidable (~1 min for pnpm fetch + tsup bundle); incremental rebuilds only re-run the `build`/`deploy`/`runtime` stages.                                                                                 |
+| Symptom                                                            | Likely cause                                                                 | Fix                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Traefik dashboard `401`                                            | `TRAEFIK_DASHBOARD_PASSWORD` doesn't match the bcrypt in `dashboard-users`   | Regenerate: `htpasswd -nbB admin "<new>"` → update `infra/traefik/dashboard-users` and `.env`.                                                                                                                                                                                       |
+| Traefik ACME certificate denied                                    | Let's Encrypt staging rate limit hit, or challenge not reachable             | Wait for rate-limit window, or switch to a real public domain + the live ACME server in Phase 5.                                                                                                                                                                                     |
+| Service not routable through Traefik                               | Missing opt-in label on target container                                     | Add `traefik.enable=true` and `traefik.http.routers.<name>.rule=Host(...)` labels to the service.                                                                                                                                                                                    |
+| Postgres healthcheck fails                                         | First-boot init scripts erroring (check `docker logs dt_postgres`)           | Most often a syntax issue in `02-roles.sql`. `down -v` to wipe and retry.                                                                                                                                                                                                            |
+| `definitions didn't load` (RabbitMQ)                               | Missing volume mount or invalid JSON                                         | `curl -u dailytour:$RABBITMQ_PASSWORD "http://localhost:${DT_HOST_PORT_RABBITMQ_MGMT:-27673}/api/overview"` to inspect; `docker logs dt_rabbitmq` to see load errors.                                                                                                                |
+| `garage-init` fails after a clean install                          | Garage not yet healthy, or `GARAGE_ADMIN_TOKEN` / `MINIO_SECRET_KEY` missing | `docker logs dt_garage_init`; the script retries the admin API for 60 s. Re-run: `docker compose up garage-init`.                                                                                                                                                                    |
+| pt_PT.UTF-8 collation missing                                      | `locale-gen` failed in postgres Dockerfile build                             | Set `LANG=en_US.UTF-8` in `.env` and accept the slightly weaker sort for now. Re-attempt the build with `--no-cache` if you have apt-get connectivity.                                                                                                                               |
+| Containers fight for the same port                                 | Sibling dev stack bound the same host port                                   | Override the matching `DT_HOST_PORT_*` env var in `.env` (e.g. `DT_HOST_PORT_POSTGRES=27532`) and re-`up`. To disable host exposure entirely, drop the host side of the binding (use `:5432` instead of `127.0.0.1:5432:5432`) — then services on `dt_internal` can still reach it.  |
+| n8n first-time access                                              | First boot serves the owner-setup wizard at `/setup`                         | Open `http://n8n.dt.localhost:${DT_HOST_PORT_TRAEFIK_HTTP:-27080}/setup`, create the owner account. The first user becomes the instance admin and unlocks the UI. `N8N_BASIC_AUTH_*` env vars are silently ignored (removed upstream in v0.184).                                     |
+| n8n owner password lost                                            | n8n stores users in its SQLite DB                                            | Wipe the volume to start over: `docker compose down -v && docker compose up -d`; then re-do the setup wizard.                                                                                                                                                                        |
+| n8n cannot save credentials                                        | `N8N_ENCRYPTION_KEY` changed between runs                                    | Restore the same key in `dev-environment`, or wipe the volume: `docker compose down -v` + `up -d`.                                                                                                                                                                                   |
+| n8n workflow state lost after restart                              | Volume `dt_n8n_data` was removed                                             | Workflow state persists via named volume `/home/node/.n8n`. Ensure you use `down` not `down -v`. Backups are operator's responsibility (Phase 5 adds automated backup).                                                                                                              |
+| `http://app.dt.localhost` returns 404 / nginx default page         | `apps/pwa/dist/` is empty or missing                                         | Run `pnpm --filter @daily-tour/pwa build` first, then `docker compose ... restart pwa-static` (or just refresh — the bind mount is live).                                                                                                                                            |
+| `http://app.dt.localhost/some-route` returns 404 on hard refresh   | SPA fallback broken in `infra/nginx/pwa.conf`                                | Confirm the catch-all `location /` block has `try_files $uri $uri/ /index.html;`. If you added a custom location ahead of it, make sure unknown URIs still fall through to the SPA.                                                                                                  |
+| `http://api.dt.localhost/health` returns 502                       | BFF container not healthy                                                    | `docker compose --env-file dev-environment -f ... logs bff` — check OTel init or env-var validation. Verify the BFF binds to `0.0.0.0:8080` (the overlay sets `HOST=0.0.0.0`); a `127.0.0.1` bind isn't reachable from Traefik.                                                      |
+| PWA fetch to BFF returns CORS error                                | Mixed origin between Traefik-routed and native-port URLs                     | `@fastify/cors` already echoes `origin: true` and `credentials: true` in dev. Confirm the PWA uses one consistent base URL: `http://api.dt.localhost` in Compose mode, `http://localhost:8080` in native mode — never both. Cookies need `credentials: "include"` on the fetch call. |
+| `docker compose up` fails: `no such file: services/bff/Dockerfile` | Ran compose from the wrong directory                                         | The `build.context: ../..` in `docker-compose.app.yml` is relative to `infra/compose/`. Always invoke `docker compose` from the repo root.                                                                                                                                           |
+| BFF rebuild slow on every `up --build`                             | pnpm deps layer wasn't cached                                                | Don't `--no-cache`; let Docker reuse the `deps` layer. The first build is unavoidable (~1 min for pnpm fetch + tsup bundle); incremental rebuilds only re-run the `build`/`deploy`/`runtime` stages.                                                                                 |
+
+## Object store: MinIO to Garage migration (qual)
+
+MinIO no longer publishes images (quay.io and Docker Hub refuse pulls), so qual
+only ran from the local image cache. The object store is now Garage
+(`dxflrs/garage`, pinned by digest in `compose/docker-compose.base.yml`). The
+code change is in PR `feat/s753-garage-object-store`; the **data move below is an
+operator procedure, not part of that PR**. Run it on the qual host
+(`/opt/daily-tour`). Nothing below deletes the old volume.
+
+What changes for the stack: service `minio` is replaced by `garage` + one-shot
+`garage-init`; the S3 port is 3900 (was 9000); `minio` stays as a network alias
+so `media-svc` and presigned-URL hosts keep working; new volumes
+`dt_garage_meta` / `dt_garage_data`; the old `dt_minio_data` is untouched.
+
+### 0. Before the deploy
+
+1. Add the two new values to `.env.qual` (do not print them). Generate each with
+   `openssl rand -hex 32` and append `GARAGE_RPC_SECRET=<64 hex>` and
+   `GARAGE_ADMIN_TOKEN=<64 hex>`. `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` already
+   exist and are reused unchanged. Set `MINIO_ENDPOINT=http://minio:3900`.
+   (`scripts/qual/gen-env-qual.sh` produces all of this for a fresh host;
+   `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` are no longer read by anything.)
+2. Free the `minio` DNS alias for Garage. The old container also answers to
+   `minio` on `dt_internal`, so two containers would share the name. Give the old
+   one a different alias and keep it running as the copy source:
+
+   ```bash
+   docker network disconnect dt_internal dt_minio
+   docker network connect --alias minio-old dt_internal dt_minio
+   ```
+
+   The old MinIO keeps host ports 27900/27901; Garage publishes 27902, so there is
+   no port clash. (`media-svc` cannot reach an object store until the deploy
+   below recreates it; plan for that short window.)
+
+### 1. Deploy the PR, then copy per bucket
+
+After the deploy, `dt_garage` is healthy and `dt_garage_init` has exited 0 (five
+empty buckets). Run rclone from a container on `dt_internal`, passing the key pair
+by `--env-file` (never on the command line). Source = old MinIO (`minio-old:9000`),
+destination = Garage (`minio:3900`). The same key pair is valid on both sides.
+
+```bash
+RCLONE=rclone/rclone:1.74.0@sha256:d2e0e88359d0b2e67cfcd2c43d5405185eb8adfc207079df27c42da82c5207bc
+# /tmp/rclone.vars (0600) holds RCLONE_CONFIG_OLD_* and RCLONE_CONFIG_NEW_* lines:
+#   TYPE=s3 PROVIDER=Other REGION=us-east-1 ACCESS_KEY_ID SECRET_ACCESS_KEY
+#   ENDPOINT=http://minio-old:9000 (OLD) / http://minio:3900 (NEW)
+rc() { docker run --rm --network dt_internal --env-file /tmp/rclone.vars "$RCLONE" "$@"; }
+
+for b in media-place media-owner media-tour daily-tour-media backups; do
+  rc copy --checksum --transfers 4 "old:$b" "new:$b"
+done
+```
+
+### 2. Verify (all must pass before cutover)
+
+```bash
+for b in media-place media-owner media-tour daily-tour-media backups; do
+  rc check --download --one-way "old:$b" "new:$b"    # byte-for-byte, exit 0 required
+  rc size "old:$b"; rc size "new:$b"                 # object count and bytes must match
+done
+```
+
+### 3. Cutover: delta pass
+
+Stop writers, copy what changed since step 1, re-verify, then bring the app up:
+
+```bash
+docker compose $COMPOSE stop bff media-svc          # no uploads during the delta
+for b in media-place media-owner media-tour daily-tour-media backups; do
+  rc copy --checksum "old:$b" "new:$b"
+  rc check --download --one-way "old:$b" "new:$b"
+done
+docker compose $COMPOSE up -d bff media-svc
+```
+
+Then check a known asset end to end through the BFF (`/v1/media/<id>` returns
+200 with the expected bytes) and run `scripts/ops/backup-postgres.sh` once
+followed by `scripts/ops/restore-drill-postgres.sh`.
+
+### 4. Rollback
+
+Nothing on the old side was changed. Revert the image lines (the commit
+`feat(infra): replace minio with garage`), reconnect the old container under its
+original alias and redeploy:
+
+```bash
+docker network disconnect dt_internal dt_minio
+docker network connect --alias minio dt_internal dt_minio
+docker compose $COMPOSE up -d minio minio-init media-svc bff   # old compose file revision
+```
+
+The old MinIO image is in the host cache and `dt_minio_data` still holds every
+object up to the cutover. Objects written to Garage after the cutover must be
+copied back with the same `rc copy` in the opposite direction before rolling back.
+
+### 5. Clean-up (only after a quiet week)
+
+`docker rm dt_minio` then `docker volume rm dt_minio_data`, and remove the
+`MINIO_ROOT_*` lines from `.env.qual`. Until then they cost nothing.
 
 ## See also
 
 - [`docs/exploration/03-architecture.md`](../docs/exploration/03-architecture.md) — service decomposition + RabbitMQ exchange design rationale
 - [`docs/REQUIREMENTS.md §6-§7`](../docs/REQUIREMENTS.md#6-architecture-summary) — locked stack picks + version pins
-- [`docs/exploration/04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md) — the MinIO upstream-archived risk note that motivated the pinned RELEASE tag
+- [`docs/exploration/04-tech-stack.md §6`](../docs/exploration/04-tech-stack.md) — the MinIO upstream-archived risk note (the risk materialised; see the Garage migration section below)
 - [`docs/operations/auto-merge-doctrine.md`](../docs/operations/auto-merge-doctrine.md) — what the orchestrator may auto-merge

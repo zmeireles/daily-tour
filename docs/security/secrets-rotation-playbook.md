@@ -5,24 +5,24 @@
 
 ## Overview
 
-| # | Secret(s) | Tier | Hands-on | Service downtime |
-|---|-----------|------|----------|-----------------|
-| 1 | `JWT_SIGNING_KEY` | 2 | ~5 min | ~5 s rolling |
-| 2 | `AUTHENTIK_OWNER_APP_CLIENT_SECRET` | 3 | ~20 min | ~30 s |
-| 3 | `AUTHENTIK_BOOTSTRAP_PASSWORD` / `_TOKEN` | 1 | ~2 min | 0 |
-| 4 | `AUTHENTIK_SECRET_KEY` | 3 | ~30 min | ~2 min |
-| 5 | `ANTHROPIC_API_KEY` | 2 | ~5 min | 0 (warn-and-skip) |
-| 6 | `EMBEDDING_API_KEY` (OpenAI) | 2 | ~5 min | 0 (warn-and-skip) |
-| 7 | WhatsApp (`ACCESS_TOKEN`, `VERIFY_TOKEN`, `APP_SECRET`) | 2 | ~15 min | ~30 s |
-| 8 | Telegram (`BOT_TOKEN`, `WEBHOOK_SECRET`) | 2 | ~10 min | ~30 s |
-| 9 | `MEDIA_SVC_INTERNAL_TOKEN` | 2 | ~5 min | ~5 s |
-| 10 | `MINIO_ROOT_PASSWORD` / `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | 2 | ~10 min | ~30 s |
-| 11 | PostgreSQL passwords (per-service roles) | 2 | ~20 min | ~10 s per service |
-| 12 | `RABBITMQ_PASSWORD` | 2 | ~5 min | ~10 s |
-| 13 | `N8N_ENCRYPTION_KEY` | 3 | 2–4 h | ~10 min |
-| 14 | SMTP credentials (`SMTP_URL`) | 2 | ~5 min | 0 (retry queue) |
-| 15 | `REDIS_PASSWORD` | 2 | ~5 min | ~5 s |
-| 16 | Orchestrator `ANTHROPIC_API_KEY` | 2 | ~2 min | 0 |
+| #   | Secret(s)                                                                                            | Tier | Hands-on | Service downtime  |
+| --- | ---------------------------------------------------------------------------------------------------- | ---- | -------- | ----------------- |
+| 1   | `JWT_SIGNING_KEY`                                                                                    | 2    | ~5 min   | ~5 s rolling      |
+| 2   | `AUTHENTIK_OWNER_APP_CLIENT_SECRET`                                                                  | 3    | ~20 min  | ~30 s             |
+| 3   | `AUTHENTIK_BOOTSTRAP_PASSWORD` / `_TOKEN`                                                            | 1    | ~2 min   | 0                 |
+| 4   | `AUTHENTIK_SECRET_KEY`                                                                               | 3    | ~30 min  | ~2 min            |
+| 5   | `ANTHROPIC_API_KEY`                                                                                  | 2    | ~5 min   | 0 (warn-and-skip) |
+| 6   | `EMBEDDING_API_KEY` (OpenAI)                                                                         | 2    | ~5 min   | 0 (warn-and-skip) |
+| 7   | WhatsApp (`ACCESS_TOKEN`, `VERIFY_TOKEN`, `APP_SECRET`)                                              | 2    | ~15 min  | ~30 s             |
+| 8   | Telegram (`BOT_TOKEN`, `WEBHOOK_SECRET`)                                                             | 2    | ~10 min  | ~30 s             |
+| 9   | `MEDIA_SVC_INTERNAL_TOKEN`                                                                           | 2    | ~5 min   | ~5 s              |
+| 10  | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` (Garage S3 key) · `GARAGE_ADMIN_TOKEN` · `GARAGE_RPC_SECRET` | 2    | ~10 min  | ~30 s             |
+| 11  | PostgreSQL passwords (per-service roles)                                                             | 2    | ~20 min  | ~10 s per service |
+| 12  | `RABBITMQ_PASSWORD`                                                                                  | 2    | ~5 min   | ~10 s             |
+| 13  | `N8N_ENCRYPTION_KEY`                                                                                 | 3    | 2–4 h    | ~10 min           |
+| 14  | SMTP credentials (`SMTP_URL`)                                                                        | 2    | ~5 min   | 0 (retry queue)   |
+| 15  | `REDIS_PASSWORD`                                                                                     | 2    | ~5 min   | ~5 s              |
+| 16  | Orchestrator `ANTHROPIC_API_KEY`                                                                     | 2    | ~2 min   | 0                 |
 
 ---
 
@@ -397,23 +397,28 @@ Restore `.env.bak.*` values; re-enter the old `VERIFY_TOKEN` in Meta Console if 
 ### Rotation procedure
 
 1. In Telegram, message `@BotFather`:
+
    ```
    /token <bot_username>
    ```
+
    Select the bot and confirm revocation. BotFather issues a new token immediately (the old one is dead as of this moment).
 
 2. Generate a new webhook secret:
+
    ```bash
    openssl rand -hex 32
    ```
 
 3. Update `.env`:
+
    ```
    TELEGRAM_BOT_TOKEN=<new-token>
    TELEGRAM_WEBHOOK_SECRET=<new-secret>
    ```
 
 4. Restart `chat-hub`:
+
    ```bash
    docker compose -f infra/compose/docker-compose.app.yml \
      --env-file .env \
@@ -494,58 +499,48 @@ Restore `.env.bak.*`, restart `media-svc` and `bff` together.
 
 ---
 
-## 10. `MINIO_ROOT_PASSWORD` / `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`
+## 10. Object store: `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` (S3 key), `GARAGE_ADMIN_TOKEN`, `GARAGE_RPC_SECRET`
 
-**Used by**: MinIO container root user; `media-svc` (reads MinIO root creds via `MINIO_ROOT_PASSWORD` mapped to `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` in compose)
-**Stored in**: `.env` → `MINIO_ROOT_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`
-**Consumed by**: `infra/compose/docker-compose.base.yml` (MinIO container), `infra/compose/docker-compose.app.yml` (media-svc reads `MINIO_SECRET_KEY`)
-**Tier**: 2 — MinIO admin credentials; leak grants full bucket read/write/delete access.
+**Used by**: Garage (S3 key imported by `garage-init`); `media-svc` and `scripts/ops/backup-postgres.sh` / `restore-drill-postgres.sh` (read the key pair from `.env.qual`)
+**Stored in**: `.env` / `.env.qual` → `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `GARAGE_ADMIN_TOKEN`, `GARAGE_RPC_SECRET` (the `MINIO_` prefix is historical; `MINIO_ROOT_*` no longer exist)
+**Consumed by**: `infra/compose/docker-compose.base.yml` (`garage`, `garage-init`), `infra/compose/docker-compose.app.yml` (media-svc)
+**Tier**: 2 — the S3 key grants read/write/delete on every bucket (incl. `backups`); the admin token grants full cluster administration; the RPC secret authenticates cluster nodes (single node today).
 
-> Note: In this stack `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY` are aliases for the MinIO root credentials. Update all three to the same new values.
+> Garage imports the key only when it does not exist (`garage-init` is idempotent), so changing `MINIO_SECRET_KEY` in the env file alone does NOT change the stored secret. The old key must be deleted first.
 
-### Rotation procedure
+### Rotation procedure (S3 key secret)
 
-1. Generate a new password (16–32 chars, printable):
+1. Generate: `openssl rand -hex 24`.
+2. Put it in `MINIO_SECRET_KEY` in the env file (do not print it).
+3. Delete the stored key, then let the bootstrap re-import it with the new secret and re-grant the buckets:
    ```bash
-   openssl rand -base64 24 | tr -d '+/=' | cut -c1-32
+   docker exec dt_garage /garage key delete --yes dailytour
+   docker compose $COMPOSE up -d garage-init
+   docker inspect dt_garage_init --format '{{.State.Status}} {{.State.ExitCode}}'   # → exited 0
    ```
-2. Update `.env`:
-   ```
-   MINIO_ROOT_PASSWORD=<new-value>
-   MINIO_SECRET_KEY=<new-value>
-   ```
-   (`MINIO_ACCESS_KEY` is the username; leave it as `dailytour` unless renaming the root user.)
-3. Restart MinIO:
-   ```bash
-   docker compose -f infra/compose/docker-compose.base.yml \
-     --env-file .env \
-     up -d --no-deps minio
-   ```
-4. Restart `media-svc` (it reads `MINIO_SECRET_KEY` at startup):
-   ```bash
-   docker compose -f infra/compose/docker-compose.app.yml \
-     --env-file .env \
-     up -d --no-deps media-svc
-   ```
+4. Recreate `media-svc` (it reads the secret at startup): `docker compose $COMPOSE up -d --force-recreate --no-deps media-svc`. Backup scripts read the env file on each run — nothing to restart.
+
+### Rotation procedure (admin token / RPC secret)
+
+Change the value in the env file, then `docker compose $COMPOSE up -d --force-recreate garage` and re-run `garage-init` (it authenticates with the admin token). The RPC secret must stay exactly 64 hex chars (`openssl rand -hex 32`); rotation of it has not been exercised on a populated volume — test on a copy first.
 
 ### Verification
 
 ```bash
-docker inspect --format='{{.State.Health.Status}}' dt_minio dt_media_svc
+docker inspect --format='{{.State.Health.Status}}' dt_garage dt_media_svc
 # → healthy healthy
-
-# Confirm MinIO console login at http://localhost:27901 with new credentials.
-# Confirm media-svc can issue a presigned URL via the BFF.
+# Confirm media-svc can issue a presigned URL and the PUT/GET round-trips via the BFF.
+docker exec dt_garage /garage key info dailytour | head -5   # key present, five buckets granted
 ```
 
 ### Rollback
 
-Restore `.env.bak.*`, restart MinIO and media-svc.
+Restore the previous env file, delete the key again (`garage key delete --yes dailytour`), re-run `garage-init`, recreate media-svc.
 
 ### Estimated rotation time
 
 - Hands-on: ~10 minutes
-- Service downtime: ~30 seconds (MinIO + media-svc restarts)
+- Service downtime: ~30 seconds (media-svc restart; uploads fail between key deletion and re-import)
 
 ---
 
@@ -563,11 +558,13 @@ Restore `.env.bak.*`, restart MinIO and media-svc.
 Replace `<ROLE>` with the role name (e.g. `catalog_svc`) and `<ENV_VAR>` with the matching env var (e.g. `SERVICE_DB_PASSWORD_CATALOG`):
 
 1. Generate a new password:
+
    ```bash
    openssl rand -base64 32
    ```
 
 2. Apply the new password in Postgres:
+
    ```bash
    # Use psql from outside the container; never echo the password in the command
    docker exec -i dt_postgres psql -U postgres -c \
@@ -575,6 +572,7 @@ Replace `<ROLE>` with the role name (e.g. `catalog_svc`) and `<ENV_VAR>` with th
    ```
 
 3. Update `.env`:
+
    ```
    <ENV_VAR>=<new-value>
    ```
@@ -588,20 +586,20 @@ Replace `<ROLE>` with the role name (e.g. `catalog_svc`) and `<ENV_VAR>` with th
 
 #### Role → env var → service mapping
 
-| Role | Env var | Service |
-|------|---------|---------|
-| `catalog_svc` | `SERVICE_DB_PASSWORD_CATALOG` | `catalog-svc` |
-| `chat_svc` | `SERVICE_DB_PASSWORD_CHAT` | `chat-hub` |
-| `planner_svc` | `SERVICE_DB_PASSWORD_PLANNER` | `planner-svc` |
-| `search_svc` | `SERVICE_DB_PASSWORD_SEARCH` | `search-svc` |
-| `ingest_svc` | `SERVICE_DB_PASSWORD_INGEST` | *(no service yet — ingest schema only)* |
-| `notif_svc` | `SERVICE_DB_PASSWORD_NOTIF` | `notif-svc` |
-| `media_svc` | `SERVICE_DB_PASSWORD_MEDIA` | `media-svc` |
-| `token_svc` | `SERVICE_DB_PASSWORD_TOKEN` | `token-svc` |
-| `bff` | `SERVICE_DB_PASSWORD_BFF` | `bff` |
-| `n8n` | `SERVICE_DB_PASSWORD_N8N` | `n8n` (audit read only) |
-| `postgres` (superuser) | `POSTGRES_PASSWORD` | no direct service — admin access |
-| `authentik` | `AUTHENTIK_PG_PASSWORD` | `authentik-server`, `authentik-worker` |
+| Role                   | Env var                       | Service                                 |
+| ---------------------- | ----------------------------- | --------------------------------------- |
+| `catalog_svc`          | `SERVICE_DB_PASSWORD_CATALOG` | `catalog-svc`                           |
+| `chat_svc`             | `SERVICE_DB_PASSWORD_CHAT`    | `chat-hub`                              |
+| `planner_svc`          | `SERVICE_DB_PASSWORD_PLANNER` | `planner-svc`                           |
+| `search_svc`           | `SERVICE_DB_PASSWORD_SEARCH`  | `search-svc`                            |
+| `ingest_svc`           | `SERVICE_DB_PASSWORD_INGEST`  | _(no service yet — ingest schema only)_ |
+| `notif_svc`            | `SERVICE_DB_PASSWORD_NOTIF`   | `notif-svc`                             |
+| `media_svc`            | `SERVICE_DB_PASSWORD_MEDIA`   | `media-svc`                             |
+| `token_svc`            | `SERVICE_DB_PASSWORD_TOKEN`   | `token-svc`                             |
+| `bff`                  | `SERVICE_DB_PASSWORD_BFF`     | `bff`                                   |
+| `n8n`                  | `SERVICE_DB_PASSWORD_N8N`     | `n8n` (audit read only)                 |
+| `postgres` (superuser) | `POSTGRES_PASSWORD`           | no direct service — admin access        |
+| `authentik`            | `AUTHENTIK_PG_PASSWORD`       | `authentik-server`, `authentik-worker`  |
 
 #### Superuser (`POSTGRES_PASSWORD`) rotation
 
@@ -609,6 +607,7 @@ Replace `<ROLE>` with the role name (e.g. `catalog_svc`) and `<ENV_VAR>` with th
 docker exec -i dt_postgres psql -U postgres -c \
   "ALTER ROLE postgres WITH PASSWORD '<NEW_PASSWORD>';"
 ```
+
 Update `.env` → `POSTGRES_PASSWORD`. No service restarts needed (only `psql` admin sessions use the superuser; services use dedicated roles).
 
 #### Authentik PG password (`AUTHENTIK_PG_PASSWORD`) rotation
@@ -617,7 +616,9 @@ Update `.env` → `POSTGRES_PASSWORD`. No service restarts needed (only `psql` a
 docker exec -i dt_authentik_postgres psql -U postgres -c \
   "ALTER ROLE authentik WITH PASSWORD '<NEW_PASSWORD>';"
 ```
+
 Update `.env` → `AUTHENTIK_PG_PASSWORD`, then restart:
+
 ```bash
 docker compose -f infra/compose/docker-compose.authentik.yml \
   --env-file .env up -d --no-deps authentik-server authentik-worker
@@ -892,10 +893,10 @@ Restore the old key via the same editing path, restart Claude Code. Delay old-ke
 
 ## Emergency contacts and escalation
 
-| Scenario | Action |
-|----------|--------|
-| Tier-3 secret confirmed leaked | Stop the session. Rotate immediately (no async). Notify the project owner. File `~/.claude/incidents/INC-NNN.md`. |
-| Tier-2 secret leaked in production | Rotate within the hour. File an incident row. |
-| Tier-1 secret leaked | Rotate at next convenient time. Log in session memory if it shows a recurrence pattern. |
-| n8n encryption key lost (no backup) | All stored credentials are permanently unreadable. Re-enter every credential manually. Estimated recovery: 4+ hours. |
-| Postgres superuser password lost | `docker exec -it dt_postgres psql -U postgres` still works if the container has no `pg_hba.conf` restriction on local sockets. Reset via `ALTER ROLE postgres WITH PASSWORD '...'`. |
+| Scenario                            | Action                                                                                                                                                                              |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tier-3 secret confirmed leaked      | Stop the session. Rotate immediately (no async). Notify the project owner. File `~/.claude/incidents/INC-NNN.md`.                                                                   |
+| Tier-2 secret leaked in production  | Rotate within the hour. File an incident row.                                                                                                                                       |
+| Tier-1 secret leaked                | Rotate at next convenient time. Log in session memory if it shows a recurrence pattern.                                                                                             |
+| n8n encryption key lost (no backup) | All stored credentials are permanently unreadable. Re-enter every credential manually. Estimated recovery: 4+ hours.                                                                |
+| Postgres superuser password lost    | `docker exec -it dt_postgres psql -U postgres` still works if the container has no `pg_hba.conf` restriction on local sockets. Reset via `ALTER ROLE postgres WITH PASSWORD '...'`. |
