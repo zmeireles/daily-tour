@@ -67,6 +67,12 @@ networks:
   dt_internal:
     external: true
     name: dt_internal
+  # Ingress-only network for CO-TENANT projects on this VPS (qr-bell first).
+  # Their containers join dt_edge with `traefik.docker.network=dt_edge` and
+  # NOT dt_internal, so they reach our Traefik and nothing else of ours.
+  # Created by this compose project; co-tenants declare it `external: true`.
+  dt_edge:
+    name: dt_edge
 
 services:
   # ───────────────────────────────────────────────────────────────────────────
@@ -274,6 +280,10 @@ services:
     ports: !override
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"
+    # Also on dt_edge, the co-tenant ingress network declared above.
+    networks:
+      - dt_internal
+      - dt_edge
     # Append-merges with the base traefik volumes: a qual-only dynamic config
     # mounted into the watched /etc/traefik/dynamic dir, providing the HTTP→HTTPS
     # redirect (catch-all router + redirectScheme middleware). dev doesn't get
