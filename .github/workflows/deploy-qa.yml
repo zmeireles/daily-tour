@@ -97,7 +97,12 @@ jobs:
           # base declares dt_internal as creatable but every overlay marks it
           # external, so an all-at-once `up` can't create it — pre-create it.
           docker network create dt_internal 2>/dev/null || true
-          docker compose $COMPOSE pull
+          # `--policy missing`: our images are tagged per commit SHA, so a new
+          # deploy's tags are never present and are always pulled. Third-party
+          # images are pinned to exact tags and reused from the local cache.
+          # Needed since quay.io stopped serving the pinned MinIO images
+          # (`unauthorized`, 2026-10-10): a plain `pull` failed the whole deploy.
+          docker compose $COMPOSE pull --policy missing
           # No --wait yet: the app services crash-loop until migrations create
           # their tables. They go healthy after the migrate + reconcile below.
           docker compose $COMPOSE up -d
