@@ -1,29 +1,37 @@
-# Session Handoff — 09-28 (**s752 — first session on the tower: post-move check (all closed), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 10-11 (**s753 — the whole security backlog merged and live on qual, measured before/after; co-tenant moving to `dt_edge`.**) · 09-28 (**s752 — first session on the tower: post-move check (all closed), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-10-10 (LATEST — session `s753`, `dt:Furnas`, on the tower. The s751/s752 merge sequence is FINISHED: `#483`, `#485`, `#477` and `#479` are merged, and python-common is a required check. Nothing is deployed to qual.)**
+> **UPDATE 2026-10-11 (LATEST — session `s753`, `dt:Furnas`, on the tower. Everything merged AND LIVE on qual: the dependency CVEs, the Python auth gate, the bff proxy-trust fix and the `dt_edge` network. Measured on the box, with before/after controls.)**
 >
-> ### State (measured ~17:30Z)
+> ### State (measured ~01:35Z 10-11)
 >
-> - `origin/main` = `8ffed19`. The ruleset `protect-main` (`16458194`) now has 12 required checks, including `Python (ruff + mypy + pytest) (python-common)`. Before adding it, I confirmed `ci.yml` runs that job on every PR, with no path filter and no job `if:`.
-> - Merged:
->   - `#483` (maplibre/fast-uri/sharp), merged by Zé.
->   - `#485`, merged by Zé. It is a second CVE bump, because new advisories (fast-jwt, fastify, shell-quote and more) turned the prod audit red again. 🔴 It also carries a **code change**: fastify ≥ 5.12 makes a numeric `trustProxy` fail closed, so the bff's `trustProxy: 1` would have put every client into one rate-limit bucket. `services/bff/src/lib/trust-proxy.ts` now trusts one hop, and only from a private or loopback peer. The Fable gate found no 🔴.
->   - `#477`. The Fable gate found no 🔴 and three 🟡, all fixed on the branch: the WhatsApp webhook now fails closed when its secret is unset, `gen-env-qual.sh` emits the four new `*_INTERNAL_TOKEN`s, and `dev-smoke.sh` sends the ws header.
->   - `#479`.
-> - A2A: the systemd bridge `riff-comm-bridge@daily-tour` is installed and enabled (`cc:Bicho`'s recipe). The probe gave `receiver=up estab=yes`, acked through `seq 3925`.
+> - `origin/main` = `dffb7f7`. qual runs images `df2a16d` (deploy run `38101617214`, success), and every container with a healthcheck is healthy. `otel-collector` has no healthcheck, as before.
+> - **Merged this session:**
+>   - `#483` and `#485`: two CVE bumps. `#485` carries the bff `trustProxy` code change, because fastify >= 5.12 makes a numeric value fail closed.
+>   - `#477`: the Python auth gate. The Fable gate found no red, and its three yellow findings were fixed on the branch.
+>   - `#479`: the python-common CI job.
+>   - `#486`: deploy `pull --policy missing`. quay.io now refuses the pinned MinIO images.
+>   - `#487`: the `dt_edge` network.
+>   - The ruleset `16458194` now requires `python-common` (12 checks). I confirmed it runs on every PR; the docs PR `#484` reported it.
+> - **Measured on qual after the deploy:**
+>   - A throwaway container on `dt_internal` without the token gets **401** from planner, notif, search and chat-hub. Before the deploy the same probe got **404**. `/health` stays 200. catalog-svc gives 401 too.
+>   - The bff logs the real client IP (`85.242.64.85`, the tower), not Traefik's. So each client has its own rate-limit bucket.
+>   - `dt_edge` is `172.23.0.0/16`, and only `dt_traefik` is on it.
+> - **VPS env file:** the four `*_INTERNAL_TOKEN` keys were added at 23:29Z 10-10, generated on the box and never printed. The backup is `/opt/daily-tour/` + `.bak-s753-20261010T232929Z` suffix.
+> - **n8n:** no re-import needed. The live n8n has 4 survey workflows and none calls notif-svc. The repo's "Post-Stay Review Nudge" was never imported, and importing it would be a new feature, not a restore.
+> - **dt-tests:** `#36`, `#44` and `#45` are now `done`, each with the measured evidence.
+> - **A2A:** systemd bridge `riff-comm-bridge@daily-tour` (installed this session, `cc:Bicho`'s recipe), acked through `seq 4002`.
 >
-> ### ▶ OPEN (owner's call)
+> ### OPEN
 >
-> 1. **Deploy to qual (Zé: A1).**
->    - ✅ **Done on the VPS at 23:29Z:** the four new keys were appended to `/opt/daily-tour/.env.qual`, generated on the box, never printed, 48 characters each. Backup: `.env.qual.bak-s753-20261010T232929Z`.
->    - ❌ **Deploy run `38095207796` (`image_tag` `df2a16d…`) FAILED** at "Pull images". quay.io now answers `unauthorized` for the pinned MinIO images (`minio`, `mc`). The auto-rollback to `89248c2` worked, and every container is healthy on the old images. So **`#477` is NOT live yet.**
->    - The fix is PR [`#486`](https://github.com/zmeireles/daily-tour/pull/486): `pull --policy missing`. I tested it on the VPS as `ghrunner` (exit 0, our 10 images pulled, third-party images reused from the cache). Testing as root is invalid: root gets `denied` from GHCR, likely a stale credential, while the images are public.
->    - After `#486` (and `#487`) merge, re-dispatch with the SAME `image_tag=df2a16d686bf64ad1242d46844364ad594f0ac83`. The deploy checks out `main` for tracked files; only images come from the tag.
->    - Then: re-import the n8n post-stay workflow (use the n8n CLI in the container; the API route needs a key), check two public clients get separate rate-limit buckets, and check a request from inside `dt_internal` without the token gets 401.
->    - ⚠️ **A fresh host cannot get MinIO at all.** The images exist only in this box's cache. Replacing the image source is a follow-up decision.
-> 2. **qr-bell is on `dt_internal` (Zé: B2, a separate edge network).** PR [`#487`](https://github.com/zmeireles/daily-tour/pull/487) adds `dt_edge` (created by our qual project) and attaches Traefik to it. qr-bell was told (A2A `seq 3960`) to switch `qrb-api`/`qrb-web` to `dt_edge` and drop `dt_internal`, **only after I confirm the deploy**. That confirmation is still owed.
-> 3. **qr-bell's TURN plan.** Zé decides whether to allow a host-network coturn and who runs the ufw/iptables change. I answered at `seq 3927` and promised the read-only box facts after the merge sequence; those are still owed.
-> 4. dt-tests `#44`/`#45` move forward once qual is deployed.
+> 1. **qr-bell's `dt_edge` switch.** They got the GO at `seq 4017`. They move `qrb-api`/`qrb-web` to `dt_edge` and off `dt_internal`, then send their `docker inspect`. **Owed by me after that:** check that their routes still answer through Traefik and that `docker network inspect dt_internal` lists no `qrb-*`.
+> 2. **qr-bell's TURN plan: Zé decides** whether to accept a host-network coturn and who runs the ufw change for 3478 and the relay range. The read-only box facts were sent at `seq 4018`.
+> 3. **The MinIO image source (Zé decides).** quay.io refuses `quay.io/minio/minio` and `quay.io/minio/mc`, and the qual box has them only in its cache. A fresh host, or a pruned cache, cannot deploy.
+> 4. **`cs:Barra` spec-005 conciliation:** 18 rows (`seq 3980` + `3982`). Answer with quotes from my own `asks/005-*` answers by **2026-10-19 09:00 Lisbon**. I promised to answer both parts together.
+> 5. `AUTH_POSTURES.md` still claims the BFF is the "sole trusted caller" on `dt_internal`. Update it once qr-bell has left (`#36`'s ask).
+>
+> ### Live clocks
+>
+> - 2026-10-19 09:00 Lisbon: the `cs:Barra` round closes. Unanswered rows become `SILÊNCIO`. No money or legal consequence.
 >
 > **UPDATE 2026-09-28 (session `s752`, `dt:Furnas`, the first session on the TOWER `jcmeireles-ASUS-S501MER` after the laptop→tower move. Post-move check done, nothing left open; the CVE bump (s751's "step 0") opened as PR `#483`. Nothing merged.)**
 >
