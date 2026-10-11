@@ -23,11 +23,11 @@
 >
 > ### OPEN
 >
-> 1. **qr-bell's `dt_edge` switch.** They got the GO at `seq 4017`. They move `qrb-api`/`qrb-web` to `dt_edge` and off `dt_internal`, then send their `docker inspect`. **Owed by me after that:** check that their routes still answer through Traefik and that `docker network inspect dt_internal` lists no `qrb-*`.
+> 1. ✅ **CLOSED ~01:30Z: qr-bell is off `dt_internal`.** Their PR #101 was deployed (`seq 4019`). I verified it myself (`seq 4021`): `dt_internal` has 23 containers and 0 `qrb-*`, and `dt_edge` holds `dt_traefik qrb-web qrb-api`. From inside `qrb-api`, `dt_traefik:8080/ping` gives rc=0 (the control) and `dt_catalog_svc` does not resolve. Both sites give 200 from outside.
 > 2. **qr-bell's TURN plan: Zé decides** whether to accept a host-network coturn and who runs the ufw change for 3478 and the relay range. The read-only box facts were sent at `seq 4018`.
 > 3. **The MinIO image source (Zé decides).** quay.io refuses `quay.io/minio/minio` and `quay.io/minio/mc`, and the qual box has them only in its cache. A fresh host, or a pruned cache, cannot deploy.
 > 4. **`cs:Barra` spec-005 conciliation:** 18 rows (`seq 3980` + `3982`). Answer with quotes from my own `asks/005-*` answers by **2026-10-19 09:00 Lisbon**. I promised to answer both parts together.
-> 5. `AUTH_POSTURES.md` still claims the BFF is the "sole trusted caller" on `dt_internal`. Update it once qr-bell has left (`#36`'s ask).
+> 5. `AUTH_POSTURES.md` still claims the BFF is the "sole trusted caller" on `dt_internal`. qr-bell has now left, so this can be updated (`#36`'s ask). Give the line a falsifier, since another repo can change the network: `docker network inspect dt_internal` lists only `dailytour-base`/`dt-qual` containers.
 >
 > ### Live clocks
 >
