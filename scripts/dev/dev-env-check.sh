@@ -137,7 +137,7 @@ fi
 # ─── CONTAINERS ────────────────────────────────────────────────────────────
 section "CONTAINERS"
 
-EXPECTED=(dt_postgres dt_redis dt_rabbitmq dt_minio dt_token_svc dt_catalog_svc dt_media_svc dt_bff dt_search_svc dt_planner_svc dt_chat_hub dt_notif_svc)
+EXPECTED=(dt_postgres dt_redis dt_rabbitmq dt_garage dt_token_svc dt_catalog_svc dt_media_svc dt_bff dt_search_svc dt_planner_svc dt_chat_hub dt_notif_svc)
 if [[ $QUAL -eq 1 ]]; then
   # Qual runs every dev service PLUS the edge/auth/routing tier the dev compose
   # omits: Traefik (TLS ingress), Authentik (server+worker+its own postgres),

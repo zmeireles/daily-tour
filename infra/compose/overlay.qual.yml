@@ -108,12 +108,12 @@ services:
     mem_limit: 512m
     cpus: 0.75
 
-  minio:
+  garage:
     deploy: !reset null
     mem_limit: 256m
     cpus: 0.5
 
-  minio-init:
+  garage-init:
     # One-shot bootstrap (restart: "no"); small cap is plenty.
     mem_limit: 128m
     cpus: 0.25

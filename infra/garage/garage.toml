@@ -1,0 +1,25 @@
+# Garage (S3-compatible object store) — single-node config for Daily Tour.
+# Replaces MinIO (upstream stopped publishing images; see infra/README.md).
+#
+# Secrets are NOT in this file: Garage reads GARAGE_RPC_SECRET and
+# GARAGE_ADMIN_TOKEN from the environment (set by docker-compose.base.yml from
+# .env / .env.qual); the env values are the only source.
+
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "lmdb"
+
+# Single node: no replication. Losing the volume loses the data; Postgres
+# dumps in the `backups` bucket are covered by the off-site copy policy.
+replication_factor = 1
+
+rpc_bind_addr = "0.0.0.0:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+s3_region = "us-east-1"
+api_bind_addr = "0.0.0.0:3900"
+
+[admin]
+# Internal-only (never published to the host): used by garage-init and the healthcheck.
+api_bind_addr = "0.0.0.0:3903"

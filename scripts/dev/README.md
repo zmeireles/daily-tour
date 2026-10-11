@@ -43,7 +43,7 @@ Re-running `dev-up.sh` after a fix is the **fast path**. Each stage detects whet
 | --- | ----------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
 | 1   | PREFLIGHT         | Node 22, pnpm 9, Docker daemon, `.env` exists, JWT key ≥32 chars | Missing `.env` (copies from example), JWT too short             |
 | 2   | INSTALL           | `pnpm install --frozen-lockfile` (or skip if cached)             | Lockfile drift → re-run without `--frozen-lockfile`             |
-| 3   | INFRA             | postgres + redis + rabbitmq + minio via Compose base             | Port already in use → adjust `DT_HOST_PORT_*` in .env           |
+| 3   | INFRA             | postgres + redis + rabbitmq + garage via Compose base            | Port already in use → adjust `DT_HOST_PORT_*` in .env           |
 | 4   | MIGRATIONS        | catalog-svc → token-svc → media-svc Drizzle migrations           | Schema mismatch from old volumes → `dev-down --clean`           |
 | 5   | SEED              | 28 São Miguel places into catalog                                | Catalog migration not applied yet                               |
 | 6   | REQUIRED SERVICES | bff + token-svc + catalog-svc + media-svc with `/health` probes  | Build failure → `pnpm --filter @daily-tour/<svc> run typecheck` |
@@ -91,11 +91,11 @@ If it returns 0, the full guest journey works.
 
 ## Teardown (`dev-down.sh`)
 
-| Flag      | Behavior                                                                  |
-| --------- | ------------------------------------------------------------------------- |
-| (none)    | Stops containers; volumes retained (postgres + minio data persists)       |
-| `--clean` | Stops containers + drops volumes (postgres + minio + rabbitmq state LOST) |
-| `--hard`  | All of `--clean` + removes `node_modules`, `dist`, `.turbo` directories   |
+| Flag      | Behavior                                                                   |
+| --------- | -------------------------------------------------------------------------- |
+| (none)    | Stops containers; volumes retained (postgres + garage data persists)       |
+| `--clean` | Stops containers + drops volumes (postgres + garage + rabbitmq state LOST) |
+| `--hard`  | All of `--clean` + removes `node_modules`, `dist`, `.turbo` directories    |
 
 ## When to commit fixes
 

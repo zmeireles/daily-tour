@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Daily Tour dev teardown — clean reset.
-# Drops Docker volumes (postgres data, redis cache, minio media gone).
+# Drops Docker volumes (postgres data, redis cache, garage media gone).
 # Leaves git working tree alone.
 #
 # Usage:
@@ -33,7 +33,7 @@ COMPOSE_APP="-f infra/compose/docker-compose.app.yml"
 
 info "stopping containers…"
 if [[ $CLEAN -eq 1 ]]; then
-  warn "dropping volumes — postgres + minio + rabbitmq state will be LOST"
+  warn "dropping volumes — postgres + garage + rabbitmq state will be LOST"
   docker compose $COMPOSE_BASE $COMPOSE_APP down -v 2>&1 | tail -5
   pass "containers + volumes removed"
 else

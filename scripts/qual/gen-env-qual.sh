@@ -90,7 +90,11 @@ assert_len() { # name value min
 POSTGRES_PASSWORD=$(gen_hex 24)
 REDIS_PASSWORD=$(gen_hex 24)
 RABBITMQ_PASSWORD=$(gen_hex 24)
-MINIO_ROOT_PASSWORD=$(gen_hex 24)
+MINIO_SECRET_KEY=$(gen_hex 24)             # S3 secret key (historical MINIO_ prefix); garage-init imports it.
+
+# Garage object store: rpc_secret must be EXACTLY 64 hex chars; admin token is a bearer.
+GARAGE_RPC_SECRET=$(gen_hex 32)
+GARAGE_ADMIN_TOKEN=$(gen_hex 32)
 
 # Per-service DB passwords (hex 24 -> 48 chars; sed-safe for the roles rotation).
 SERVICE_DB_PASSWORD_CATALOG=$(gen_hex 24)
@@ -129,11 +133,13 @@ WHATSAPP_VERIFY_TOKEN=$(gen_hex 16)        # arbitrary challenge token.
 N8N_ENCRYPTION_KEY=$(gen_hex 24)           # encrypts n8n stored credentials.
 
 # Derived / coupled values.
-MINIO_SECRET_KEY="$MINIO_ROOT_PASSWORD"    # MINIO_SECRET_KEY mirrors the root pw.
 RABBITMQ_URL="amqp://dailytour:${RABBITMQ_PASSWORD}@dt_rabbitmq:5672/"
 
 # ── assert minimum lengths (fail loud if openssl ever short-changes us) ────────
 assert_len JWT_SIGNING_KEY "$JWT_SIGNING_KEY" 32
+assert_len MINIO_SECRET_KEY "$MINIO_SECRET_KEY" 32
+assert_len GARAGE_ADMIN_TOKEN "$GARAGE_ADMIN_TOKEN" 32
+(( ${#GARAGE_RPC_SECRET} == 64 )) || die "GARAGE_RPC_SECRET length ${#GARAGE_RPC_SECRET} != 64 (Garage requires exactly 64 hex chars)"
 assert_len MEDIA_SVC_INTERNAL_TOKEN "$MEDIA_SVC_INTERNAL_TOKEN" 32
 assert_len CATALOG_SVC_INTERNAL_TOKEN "$CATALOG_SVC_INTERNAL_TOKEN" 32
 for _tok in CHAT_HUB NOTIF_SVC PLANNER_SVC SEARCH_SVC; do
@@ -209,12 +215,13 @@ RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
 RABBITMQ_URL=${RABBITMQ_URL}
 
 # ─────────────────────────────────────────────────────────────────────────
-# MinIO
+# Garage (S3-compatible object store; replaced MinIO). The S3 key pair is
+# MINIO_ACCESS_KEY / MINIO_SECRET_KEY below (historical prefix).
 # ─────────────────────────────────────────────────────────────────────────
-MINIO_ROOT_USER=dailytour
-MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+GARAGE_RPC_SECRET=${GARAGE_RPC_SECRET}
+GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN}
 
-# Nightly Postgres backup → MinIO (T-3.B.0, scripts/ops/backup-postgres.sh).
+# Nightly Postgres backup → Garage S3 (T-3.B.0, scripts/ops/backup-postgres.sh).
 # Plain config (not secrets): target bucket + local retention window in days.
 BACKUP_BUCKET=backups
 BACKUP_RETENTION_DAYS=7
@@ -231,7 +238,7 @@ CHAT_HUB_INTERNAL_TOKEN=${CHAT_HUB_INTERNAL_TOKEN}
 NOTIF_SVC_INTERNAL_TOKEN=${NOTIF_SVC_INTERNAL_TOKEN}
 PLANNER_SVC_INTERNAL_TOKEN=${PLANNER_SVC_INTERNAL_TOKEN}
 SEARCH_SVC_INTERNAL_TOKEN=${SEARCH_SVC_INTERNAL_TOKEN}
-MINIO_ENDPOINT=http://dt_minio:9000
+MINIO_ENDPOINT=http://minio:3900
 MINIO_ACCESS_KEY=dailytour
 MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
 
@@ -285,8 +292,7 @@ DT_HOST_PORT_POSTGRES=27432
 DT_HOST_PORT_REDIS=27379
 DT_HOST_PORT_RABBITMQ_AMQP=27672
 DT_HOST_PORT_RABBITMQ_MGMT=27673
-DT_HOST_PORT_MINIO_API=27900
-DT_HOST_PORT_MINIO_CONSOLE=27901
+DT_HOST_PORT_GARAGE_S3=27902
 DT_HOST_PORT_TRAEFIK_HTTP=27080
 DT_HOST_PORT_TRAEFIK_HTTPS=27443
 DT_HOST_PORT_TRAEFIK_DASHBOARD=27088
@@ -400,7 +406,7 @@ cat <<EOF
 ✓ Wrote $INIT_QUAL/{00-extensions,01-schemas,02-roles}.sql  (02 rotated, 0 placeholders left)
 
 Generated secrets:
-  Infra        POSTGRES_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD MINIO_ROOT_PASSWORD (=MINIO_SECRET_KEY)
+  Infra        POSTGRES_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD MINIO_SECRET_KEY (S3 key) GARAGE_RPC_SECRET GARAGE_ADMIN_TOKEN
   Per-svc DB   SERVICE_DB_PASSWORD_{CATALOG,CHAT,PLANNER,SEARCH,INGEST,NOTIF,MEDIA,TOKEN,BFF,N8N}
   Shared app   JWT_SIGNING_KEY MEDIA_SVC_INTERNAL_TOKEN CATALOG_SVC_INTERNAL_TOKEN
                {CHAT_HUB,NOTIF_SVC,PLANNER_SVC,SEARCH_SVC}_INTERNAL_TOKEN
