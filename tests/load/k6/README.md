@@ -113,7 +113,7 @@ gh pr edit <number> --add-label load-test
 
 ### How the CI stack works
 
-1. Base infrastructure starts first (postgres, redis, rabbitmq, minio).
+1. Base infrastructure starts first (postgres, redis, rabbitmq, garage + garage-init).
 2. App services start next — only `bff`, `token-svc`, `media-svc`, `catalog-svc`.
 3. Seeds populate reservations (token-svc) and places (catalog-svc).
 4. k6 runs inside the `dt_internal` Docker network, reaching services by their

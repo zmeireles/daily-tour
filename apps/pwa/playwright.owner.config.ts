@@ -19,7 +19,7 @@ export default defineConfig({
   // Authentik whose flow executor can slow under rapid back-to-back logins.
   timeout: 120_000,
   fullyParallel: false,
-  // Shared backend state (Authentik, catalog, MinIO) as the same owner — run
+  // Shared backend state (Authentik, catalog, Garage) as the same owner — run
   // serially so the specs don't race each other.
   workers: 1,
   retries: 1,

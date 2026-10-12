@@ -1,28 +1,31 @@
 #!/usr/bin/env bash
-# backup-postgres.sh — nightly logical backup of both Postgres clusters → MinIO.
+# backup-postgres.sh — nightly logical backup of both Postgres clusters → Garage (S3).
 # (T-3.B.0)
 #
 # Runs ON THE QUAL HOST from /opt/daily-tour (needs docker access). Dumps the
 # main cluster (dt_postgres / dailytour — one logical DB, all 11 schemas) and the
 # Authentik cluster (dt_authentik_postgres / authentik) with `pg_dump -Fc -Z 9`,
-# then uploads both into the private `backups` bucket on the in-cluster MinIO and
-# prunes anything older than the retention window.
+# then uploads both into the private `backups` bucket on the in-cluster Garage
+# (pinned amazon/aws-cli) and prunes anything older than the retention window
+# (pinned rclone).
 #
-# Secret handling: the 48-char MINIO_ROOT_PASSWORD is NEVER interpolated onto a
-# command line. Only the two MINIO_ROOT_* lines are extracted into a 0600 temp
-# file inside $WORKDIR and handed to the mc container via `docker run --env-file`
-# (docker parses KEY=VALUE directly — no shell sourcing, robust to special chars,
-# and no other .env.qual secret reaches the container). The MinIO host must be
-# `minio` (NOT the `dt_minio` container name — underscores are invalid hostnames
-# and mc rejects them with "invalid hostname").
+# Secret handling: the S3 secret key is NEVER interpolated onto a command line.
+# Only the MINIO_ACCESS_KEY / MINIO_SECRET_KEY lines are extracted into 0600 temp
+# files inside $WORKDIR (renamed to AWS_* / RCLONE_CONFIG_GARAGE_*) and handed to
+# the tool containers via `docker run --env-file` (docker parses KEY=VALUE
+# directly — no shell sourcing, robust to special chars, and no other .env.qual
+# secret reaches the container). The endpoint host must be `minio` (the network
+# alias; NOT the `dt_garage` container name — underscores are invalid hostnames).
 #
 # Usage:
 #   scripts/ops/backup-postgres.sh
 #
 # Config (env, with defaults):
-#   BACKUP_BUCKET           MinIO bucket name           (default: backups)
+#   BACKUP_BUCKET           bucket name                 (default: backups)
 #   BACKUP_RETENTION_DAYS   prune objects older than N  (default: 7)
-#   MC_IMAGE                pinned mc client image      (default: see below)
+#   AWS_CLI_IMAGE           pinned aws-cli image        (default: see below)
+#   RCLONE_IMAGE            pinned rclone image         (default: see below)
+#   S3_ENDPOINT             S3 endpoint inside dt_internal (default: http://minio:3900)
 #   ENV_FILE                path to the qual env file   (default: /opt/daily-tour/.env.qual)
 #
 # Exits non-zero on ANY failure so a scheduler/alert wrapper can catch it.
@@ -32,9 +35,11 @@ TS=$(date -u +%Y%m%dT%H%M%SZ)
 
 BACKUP_BUCKET="${BACKUP_BUCKET:-backups}"
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
-MC_IMAGE="${MC_IMAGE:-quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z}"
+AWS_CLI_IMAGE="${AWS_CLI_IMAGE:-amazon/aws-cli:2.34.0@sha256:97cc5f847898f54432492c128408c62e0df2153d9ad36573be8e5a03826123b0}"
+RCLONE_IMAGE="${RCLONE_IMAGE:-rclone/rclone:1.74.0@sha256:d2e0e88359d0b2e67cfcd2c43d5405185eb8adfc207079df27c42da82c5207bc}"
+S3_ENDPOINT="${S3_ENDPOINT:-http://minio:3900}"
 ENV_FILE="${ENV_FILE:-/opt/daily-tour/.env.qual}"
-MINIO_NETWORK="${MINIO_NETWORK:-dt_internal}"
+S3_NETWORK="${S3_NETWORK:-dt_internal}"
 
 # Container + DB coordinates (fixed by the qual compose stack).
 MAIN_CONTAINER="dt_postgres"
@@ -73,35 +78,68 @@ dump_cluster "$AUTHENTIK_CONTAINER" "$AUTHENTIK_USER" "$AUTHENTIK_DB" "authentik
 log "local dumps ready:"
 ls -lh "$WORKDIR"
 
-# ── upload + retention, inside one mc container ───────────────────────────────
-# Only the MINIO_ROOT_* creds cross the boundary, via a 0600 --env-file; $BUCKET/
-# $RET cross as plain (non-secret) env vars. Everything below `-c` runs in mc.
-MC_CREDS="$WORKDIR/mc-creds"
-grep -E '^(MINIO_ROOT_USER|MINIO_ROOT_PASSWORD)=' "$ENV_FILE" > "$MC_CREDS"
-chmod 600 "$MC_CREDS"
-[ -s "$MC_CREDS" ] || die "MINIO_ROOT_USER/PASSWORD not found in $ENV_FILE"
-log "uploading to ${BACKUP_BUCKET} via ${MC_IMAGE} ..."
+# ── upload (aws-cli) + retention (rclone) ─────────────────────────────────────
+# Only the S3 key pair crosses the boundary, via a 0600 --env-file whose lines
+# are renamed to what each tool reads; $BUCKET/$RET cross as plain (non-secret)
+# env vars. The two tools are separate pinned images on purpose: aws-cli has no
+# age-based delete, rclone has `delete --min-age`.
+#   WHEN_REQUIRED checksums: Garage rejects the CRC32 trailer aws-cli v2 adds by
+#   default (400 InvalidDigest) — same cause as media-svc's S3Client option.
+S3_ENV="$WORKDIR/s3-env"
+sed -n -e 's/^MINIO_ACCESS_KEY=/AWS_ACCESS_KEY_ID=/p' \
+       -e 's/^MINIO_SECRET_KEY=/AWS_SECRET_ACCESS_KEY=/p' "$ENV_FILE" > "$S3_ENV"
+chmod 600 "$S3_ENV"
+[ "$(wc -l < "$S3_ENV")" -eq 2 ] || die "MINIO_ACCESS_KEY/MINIO_SECRET_KEY not found in $ENV_FILE"
+{
+  echo "AWS_DEFAULT_REGION=us-east-1"
+  echo "AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED"
+  echo "AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED"
+} >> "$S3_ENV"
+
+log "uploading to ${BACKUP_BUCKET} via ${AWS_CLI_IMAGE} ..."
 docker run --rm \
-  --network "$MINIO_NETWORK" \
+  --network "$S3_NETWORK" \
   -v "$WORKDIR:/dumps:ro" \
-  --env-file "$MC_CREDS" \
+  --env-file "$S3_ENV" \
   -e BUCKET="$BACKUP_BUCKET" \
-  -e RET="$BACKUP_RETENTION_DAYS" \
+  -e ENDPOINT="$S3_ENDPOINT" \
   --entrypoint sh \
-  "$MC_IMAGE" \
+  "$AWS_CLI_IMAGE" \
   -c '
     set -eu
-    mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
-    # Private bucket — deliberately NO `mc anonymous set`; backups stay closed.
-    mc mb --ignore-existing "local/$BUCKET"
-    mc cp /dumps/dailytour-*.dump "local/$BUCKET/postgres/main/"
-    mc cp /dumps/authentik-*.dump "local/$BUCKET/postgres/authentik/"
+    # Private bucket — nothing here ever grants public access. garage-init
+    # creates it; the fallback keeps a hand-rolled store working.
+    aws --endpoint-url "$ENDPOINT" s3api head-bucket --bucket "$BUCKET" >/dev/null 2>&1 \
+      || aws --endpoint-url "$ENDPOINT" s3 mb "s3://$BUCKET"
+    # An empty dump uploads "successfully"; refuse it so the run fails loudly.
+    for f in /dumps/dailytour-*.dump; do
+      [ -s "$f" ] || { echo "[backup-postgres] FAIL: empty or missing dump: $f" >&2; exit 1; }
+      aws --endpoint-url "$ENDPOINT" s3 cp "$f" "s3://$BUCKET/postgres/main/$(basename "$f")"
+    done
+    for f in /dumps/authentik-*.dump; do
+      [ -s "$f" ] || { echo "[backup-postgres] FAIL: empty or missing dump: $f" >&2; exit 1; }
+      aws --endpoint-url "$ENDPOINT" s3 cp "$f" "s3://$BUCKET/postgres/authentik/$(basename "$f")"
+    done
     echo "[backup-postgres] uploaded objects:"
-    mc ls --recursive "local/$BUCKET/postgres/"
-    # Retention: prune dumps older than the window. `|| true` so an empty/young
-    # prefix never fails the whole run.
-    mc rm --recursive --force --older-than "${RET}d" "local/$BUCKET/postgres/main/" || true
-    mc rm --recursive --force --older-than "${RET}d" "local/$BUCKET/postgres/authentik/" || true
+    aws --endpoint-url "$ENDPOINT" s3 ls --recursive "s3://$BUCKET/postgres/"
   '
+
+# Retention: prune dumps older than the window. `|| true` so an empty/young
+# prefix never fails the whole run (same as the old `mc rm ... || true`).
+log "pruning dumps older than ${BACKUP_RETENTION_DAYS}d via ${RCLONE_IMAGE} ..."
+RCLONE_ENV="$WORKDIR/rclone-env"
+sed -n -e 's/^MINIO_ACCESS_KEY=/RCLONE_CONFIG_GARAGE_ACCESS_KEY_ID=/p' \
+       -e 's/^MINIO_SECRET_KEY=/RCLONE_CONFIG_GARAGE_SECRET_ACCESS_KEY=/p' "$ENV_FILE" > "$RCLONE_ENV"
+chmod 600 "$RCLONE_ENV"
+{
+  echo "RCLONE_CONFIG_GARAGE_TYPE=s3"
+  echo "RCLONE_CONFIG_GARAGE_PROVIDER=Other"
+  echo "RCLONE_CONFIG_GARAGE_REGION=us-east-1"
+  echo "RCLONE_CONFIG_GARAGE_ENDPOINT=${S3_ENDPOINT}"
+} >> "$RCLONE_ENV"
+for prefix in postgres/main postgres/authentik; do
+  docker run --rm --network "$S3_NETWORK" --env-file "$RCLONE_ENV" "$RCLONE_IMAGE" \
+    delete --min-age "${BACKUP_RETENTION_DAYS}d" "garage:${BACKUP_BUCKET}/${prefix}/" || true
+done
 
 log "backup complete: postgres/main/dailytour-${TS}.dump + postgres/authentik/authentik-${TS}.dump"

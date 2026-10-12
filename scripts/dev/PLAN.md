@@ -15,7 +15,7 @@ Don't manually progress through stages. Instead:
 
 1. **PREFLIGHT** — Node 22 via nvm? pnpm 9? Docker daemon? `.env` exists + has required keys? Stop with explicit instructions on any missing piece.
 2. **INSTALL** — `pnpm install --frozen-lockfile`. Skip if `node_modules/.pnpm` newer than `pnpm-lock.yaml`.
-3. **INFRA** — `docker compose -f infra/compose/docker-compose.base.yml up -d`. Wait for postgres `pg_isready`, redis `PING`, rabbitmq `rabbitmqctl status`, minio `mc alias set` probe.
+3. **INFRA** — `docker compose -f infra/compose/docker-compose.base.yml up -d`. Wait for postgres `pg_isready`, redis `PING`, rabbitmq `rabbitmqctl status`, garage `garage status` + garage-init exit 0.
 4. **MIGRATIONS** — `pnpm --filter @daily-tour/catalog-svc run migrate`, then token-svc, then media-svc. Each is idempotent (drizzle tracks applied migrations).
 5. **SEED** — `pnpm --filter @daily-tour/catalog-svc run seed` (28 places). Idempotent.
 6. **SERVICES** — `docker compose -f base.yml -f app.yml up -d --build bff token-svc catalog-svc media-svc`. Wait for `/health` 200 on each.
@@ -28,18 +28,18 @@ After all stages pass, run `temp/dev-smoke.sh` for the guest-journey check.
 
 Ordered by probability:
 
-| Likely-issue | Stage | Fix |
-|---|---|---|
-| `.env` missing or `JWT_SIGNING_KEY` too short | 1 | Copy `.env.example` to `.env`, edit |
-| `docker compose ports already in use` | 3 | Adjust `DT_HOST_PORT_*` in `.env` |
-| `pg_isready` times out (postgres init slow) | 3 | Increase timeout, document |
-| Migration order wrong / missing service init | 4 | Document correct order |
-| OSRM PBF download hangs | 6/7 | Document → skip OSRM for first bring-up |
-| `ANTHROPIC_API_KEY` empty → planner-svc crashes | 7 | Skip planner-svc if key missing |
-| `@types/pg` / `@fastify/websocket` lockfile drift | 2 | `pnpm install` (without `--frozen-lockfile`) |
-| Build failures from agent-introduced lint/type issues | 6/7 | `pnpm --filter X run typecheck` for diagnosis |
-| Authentik realm not imported → owner routes 401 | 7 | Documented as expected; skip /admin smoke for v1 |
-| PWA dev server port collision with Vite default 5173 | 8 | `--port` flag override |
+| Likely-issue                                          | Stage | Fix                                              |
+| ----------------------------------------------------- | ----- | ------------------------------------------------ |
+| `.env` missing or `JWT_SIGNING_KEY` too short         | 1     | Copy `.env.example` to `.env`, edit              |
+| `docker compose ports already in use`                 | 3     | Adjust `DT_HOST_PORT_*` in `.env`                |
+| `pg_isready` times out (postgres init slow)           | 3     | Increase timeout, document                       |
+| Migration order wrong / missing service init          | 4     | Document correct order                           |
+| OSRM PBF download hangs                               | 6/7   | Document → skip OSRM for first bring-up          |
+| `ANTHROPIC_API_KEY` empty → planner-svc crashes       | 7     | Skip planner-svc if key missing                  |
+| `@types/pg` / `@fastify/websocket` lockfile drift     | 2     | `pnpm install` (without `--frozen-lockfile`)     |
+| Build failures from agent-introduced lint/type issues | 6/7   | `pnpm --filter X run typecheck` for diagnosis    |
+| Authentik realm not imported → owner routes 401       | 7     | Documented as expected; skip /admin smoke for v1 |
+| PWA dev server port collision with Vite default 5173  | 8     | `--port` flag override                           |
 
 ## Decision tree when something fails
 
@@ -58,6 +58,7 @@ dev-up.sh fails at stage N
 ## After dev-up passes
 
 Run `temp/dev-smoke.sh` — exercises:
+
 1. Mint a test token via token-svc CLI
 2. Exchange via BFF `/r/:token` (asserts 200 + Set-Cookie)
 3. GET `/v1/discover?action=eat` (asserts ≥1 wish group)

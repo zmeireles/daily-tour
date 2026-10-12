@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — object storage moves from MinIO to Garage (2026-10-11)
+
+- **MinIO no longer publishes images** (quay.io and Docker Hub refuse pulls), so qual ran only from cache. Compose now runs Garage (`dxflrs/garage`, pinned by digest) plus an idempotent `garage-init` that applies the layout, imports the existing S3 key unchanged and creates the five buckets. The service stays reachable as `minio` on the internal network (port 3900). media-svc's S3 client sets `requestChecksumCalculation`/`responseChecksumValidation` to `WHEN_REQUIRED` (Garage rejects the SDK's default checksum with 400 InvalidDigest). Nightly backup and restore-drill scripts use pinned aws-cli and rclone. Operator data migration: `infra/README.md` ("Object store: MinIO to Garage migration").
+
 ### Fixed — a guest's first tap could record a consent choice, and other phone-screen damage (2026-08-03)
 
 - **The consent banner covered the app (#380).** On a phone, on a guest's very first visit, it sat on top of **all four navigation tabs** and the **Send button** in chat — so there was no working navigation and no way to message the host until the banner was dismissed. Worse, a thumb aimed at the lower half of a place card landed on **Accept/Decline** and silently recorded a GDPR consent choice the guest never intended to make. Bottom-pinned surfaces now measure the banner and lift clear of it.

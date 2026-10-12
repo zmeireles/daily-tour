@@ -48,7 +48,7 @@ When in doubt → spawn one. Cheap to skip, expensive to miss.
 **What the gate checks:**
 
 - **REPO**: git HEAD short SHA + commit subject; current branch + upstream; working-tree cleanliness; ahead/behind state vs upstream.
-- **CONTAINERS**: every expected service (postgres, redis, rabbitmq, minio, token-svc, catalog-svc, media-svc, bff, search-svc, planner-svc, chat-hub, notif-svc) is `(healthy)`.
+- **CONTAINERS**: every expected service (postgres, redis, rabbitmq, garage, token-svc, catalog-svc, media-svc, bff, search-svc, planner-svc, chat-hub, notif-svc) is `(healthy)`.
 - **BFF ENDPOINTS**: `/health` returns 200; `/r/:token` route registered (302/401/404 for an invalid path-segment); `/v1/auth/refresh` returns `401 no_refresh_cookie` for a cold call. The third probe catches "BFF wasn't rebuilt" — the single highest-payoff check.
 - **PWA**: vite dev server bound on :5173; key files for the latest change actually exist on disk (file-presence assertions catch stale local checkouts that no health probe would detect).
 - **SMOKE**: catalog has 28 seeded places. Fast (one DB query); skippable with `--skip-smoke` when iterating.

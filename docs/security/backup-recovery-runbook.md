@@ -4,15 +4,15 @@
 
 ## Quick-reference table
 
-| Component              | Volume / path                 | RPO             | RTO    | Strategy                                                                                        |
-| ---------------------- | ----------------------------- | --------------- | ------ | ----------------------------------------------------------------------------------------------- |
-| PostgreSQL (main)      | `dt_postgres_data`            | 15 min          | 30 min | Nightly logical `pg_dump` → MinIO (automated, T-3.B.0); WAL+base PITR deferred (Plan-004/3.B.1) |
-| PostgreSQL (Authentik) | `dt_authentik_postgres_data`  | 24 h            | 45 min | Nightly logical `pg_dump` → MinIO (automated, T-3.B.0)                                          |
-| MinIO (media)          | `dt_minio_data`               | 24 h            | 60 min | Nightly `mc mirror` to B2                                                                       |
-| n8n workflows          | `dt_n8n_data`                 | 24 h            | 30 min | Nightly pg_dump (Phase 5) / volume snapshot (Phase 0–4)                                         |
-| Authentik blueprints   | `infra/authentik/blueprints/` | N/A             | 10 min | In git — restore from branch                                                                    |
-| Redis                  | `dt_redis_data`               | N/A (ephemeral) | 0 min  | No backup; reconstructed from upstream on restart                                               |
-| RabbitMQ               | `dt_rabbitmq_data`            | N/A (ephemeral) | 5 min  | Definitions file in git; in-flight messages accepted as lost                                    |
+| Component              | Volume / path                 | RPO             | RTO    | Strategy                                                                                              |
+| ---------------------- | ----------------------------- | --------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| PostgreSQL (main)      | `dt_postgres_data`            | 15 min          | 30 min | Nightly logical `pg_dump` → Garage (S3) (automated, T-3.B.0); WAL+base PITR deferred (Plan-004/3.B.1) |
+| PostgreSQL (Authentik) | `dt_authentik_postgres_data`  | 24 h            | 45 min | Nightly logical `pg_dump` → Garage (S3) (automated, T-3.B.0)                                          |
+| Garage (media)         | `dt_garage_data` + `_meta`    | 24 h            | 60 min | Nightly `rclone sync` to B2                                                                           |
+| n8n workflows          | `dt_n8n_data`                 | 24 h            | 30 min | Nightly pg_dump (Phase 5) / volume snapshot (Phase 0–4)                                               |
+| Authentik blueprints   | `infra/authentik/blueprints/` | N/A             | 10 min | In git — restore from branch                                                                          |
+| Redis                  | `dt_redis_data`               | N/A (ephemeral) | 0 min  | No backup; reconstructed from upstream on restart                                                     |
+| RabbitMQ               | `dt_rabbitmq_data`            | N/A (ephemeral) | 5 min  | Definitions file in git; in-flight messages accepted as lost                                          |
 
 ---
 
@@ -33,7 +33,7 @@
 b2://daily-tour-backups/
   postgres/main/          # WAL archives + base backups
   postgres/authentik/     # pg_dump .sql.gz files
-  minio-mirror/           # mc mirror output (all buckets)
+  garage-mirror/          # rclone sync output (all buckets)
   n8n/                    # volume snapshots or pg_dump
 ```
 
@@ -48,16 +48,16 @@ b2://daily-tour-backups/
 
 ### Backup schedule
 
-| Job           | Frequency                    | Method                                              | Retention                       |
-| ------------- | ---------------------------- | --------------------------------------------------- | ------------------------------- |
-| Base backup   | Nightly 02:00 UTC            | `pg_basebackup`                                     | 7 days local, 30 days B2        |
-| WAL archiving | Continuous (15-min segments) | `archive_command` → rclone                          | 48 h local, 30 days B2          |
-| Logical dump  | Nightly                      | `pg_dump -Fc -Z 9` → MinIO **(automated, T-3.B.0)** | 7 days, `BACKUP_RETENTION_DAYS` |
+| Job           | Frequency                    | Method                                                    | Retention                       |
+| ------------- | ---------------------------- | --------------------------------------------------------- | ------------------------------- |
+| Base backup   | Nightly 02:00 UTC            | `pg_basebackup`                                           | 7 days local, 30 days B2        |
+| WAL archiving | Continuous (15-min segments) | `archive_command` → rclone                                | 48 h local, 30 days B2          |
+| Logical dump  | Nightly                      | `pg_dump -Fc -Z 9` → Garage (S3) **(automated, T-3.B.0)** | 7 days, `BACKUP_RETENTION_DAYS` |
 
-> The logical dump is **automated** via `scripts/ops/backup-postgres.sh` (uploads `postgres/main/` to the private `backups` bucket on the in-cluster MinIO; pruned by `BACKUP_RETENTION_DAYS`). Restorability is proven by `scripts/ops/restore-drill-postgres.sh`.
-> **Deferred (Plan-004 / T-3.B.1):** WAL+base PITR (15-min RPO) and Backblaze-B2 off-site replication are not yet wired — the MinIO logical dump is the current automated path.
+> The logical dump is **automated** via `scripts/ops/backup-postgres.sh` (uploads `postgres/main/` to the private `backups` bucket on the in-cluster Garage; pruned by `BACKUP_RETENTION_DAYS`). Restorability is proven by `scripts/ops/restore-drill-postgres.sh`.
+> **Deferred (Plan-004 / T-3.B.1):** WAL+base PITR (15-min RPO) and Backblaze-B2 off-site replication are not yet wired — the Garage logical dump is the current automated path.
 >
-> **⚠️ Signed DR disposition (F&F beta, 2026-06-22):** the nightly dump lands in the **same-box** MinIO, on the same disk as the live data. This protects against logical corruption / bad migrations / accidental deletes, but **NOT box loss / disk failure / VPS termination**. On-box-only is **explicitly accepted for the friends-and-family beta** (tiny DBs, no real prod users yet); the off-site (Backblaze-B2) leg that closes the disk-loss-DR gap is deferred to T-3.B.1 / Plan-004. — accepted by the project owner.
+> **⚠️ Signed DR disposition (F&F beta, 2026-06-22):** the nightly dump lands in the **same-box** Garage, on the same disk as the live data. This protects against logical corruption / bad migrations / accidental deletes, but **NOT box loss / disk failure / VPS termination**. On-box-only is **explicitly accepted for the friends-and-family beta** (tiny DBs, no real prod users yet); the off-site (Backblaze-B2) leg that closes the disk-loss-DR gap is deferred to T-3.B.1 / Plan-004. — accepted by the project owner.
 
 #### Scheduling (systemd timer)
 
@@ -231,9 +231,9 @@ docker exec dt_postgres psql -U postgres -c "SELECT pg_last_wal_replay_lsn(), no
 
 ### Backup schedule
 
-| Job          | Frequency | Method                                              | Retention                       |
-| ------------ | --------- | --------------------------------------------------- | ------------------------------- |
-| Logical dump | Nightly   | `pg_dump -Fc -Z 9` → MinIO **(automated, T-3.B.0)** | 7 days, `BACKUP_RETENTION_DAYS` |
+| Job          | Frequency | Method                                                    | Retention                       |
+| ------------ | --------- | --------------------------------------------------------- | ------------------------------- |
+| Logical dump | Nightly   | `pg_dump -Fc -Z 9` → Garage (S3) **(automated, T-3.B.0)** | 7 days, `BACKUP_RETENTION_DAYS` |
 
 > The Authentik dump is **automated** via `scripts/ops/backup-postgres.sh` (same run as the main cluster; uploads `postgres/authentik/` to the private `backups` bucket). Backblaze-B2 off-site replication remains **deferred** (Plan-004 / T-3.B.1).
 
@@ -329,36 +329,39 @@ The OIDC client secret (`AUTHENTIK_OWNER_APP_CLIENT_SECRET`) is in `.env` and th
 
 ---
 
-## 3. MinIO (media assets — `dt_minio`)
+## 3. Object store (media assets — Garage, `dt_garage`)
 
-**Volume**: `dt_minio_data`  
-**Buckets**: managed by `infra/minio/init.sh` — all under `/data` in the container.
+**Volumes**: `dt_garage_meta` (LMDB metadata) + `dt_garage_data` (objects). Replaced MinIO
+(`dt_minio_data`, kept untouched until the cut-over is signed off — see
+[`infra/README.md`](../../infra/README.md) "Object store: MinIO to Garage migration").
+**Buckets**: created by `infra/garage/init.sh` (`garage-init` one-shot): `media-place`, `media-owner`,
+`media-tour`, `daily-tour-media`, `backups`. All private; media is served through presigned URLs.
 
 ### Backup schedule
 
-| Job          | Frequency         | Method                           | Retention                          |
-| ------------ | ----------------- | -------------------------------- | ---------------------------------- |
-| Mirror to B2 | Nightly 03:00 UTC | `mc mirror --overwrite --remove` | 30 days B2 (B2 file versioning on) |
+| Job        | Frequency         | Method                                  | Retention                          |
+| ---------- | ----------------- | --------------------------------------- | ---------------------------------- |
+| Sync to B2 | Nightly 03:00 UTC | pinned `rclone sync` per bucket (below) | 30 days B2 (B2 file versioning on) |
 
-Turn on B2 file versioning for the `minio-mirror/` prefix so accidental deletes survive.
+Turn on B2 file versioning for the `garage-mirror/` prefix so accidental deletes survive.
+(Still the deferred off-site leg — see the DR disposition above.)
 
-#### Script (`/opt/dt-backup/minio-mirror.sh`)
+#### Script (`/opt/dt-backup/garage-mirror.sh`)
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-# mc alias must be configured: mc alias set local http://localhost:27900 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
-# mc alias set b2backup https://s3.us-west-004.backblazeb2.com $B2_KEY_ID $B2_APP_KEY
+RCLONE=rclone/rclone:1.74.0@sha256:d2e0e88359d0b2e67cfcd2c43d5405185eb8adfc207079df27c42da82c5207bc
+# /opt/dt-backup/rclone.vars (0600): RCLONE_CONFIG_GARAGE_* (TYPE=s3 PROVIDER=Other REGION=us-east-1
+# ENDPOINT=http://minio:3900 + the MINIO_ACCESS_KEY/SECRET_KEY pair) and RCLONE_CONFIG_B2_* (Backblaze).
+rc() { docker run --rm --network dt_internal --env-file /opt/dt-backup/rclone.vars "$RCLONE" "$@"; }
 
-mc mirror \
-  --overwrite \
-  --remove \
-  --preserve \
-  local/ \
-  b2backup/daily-tour-backups/minio-mirror/
+for b in media-place media-owner media-tour daily-tour-media; do
+  rc sync --checksum "garage:$b" "b2:daily-tour-backups/garage-mirror/$b"
+done
 
-echo "MinIO mirror complete: $(date -u)"
+echo "Garage mirror complete: $(date -u)"
 ```
 
 ### Recovery procedure
@@ -366,51 +369,40 @@ echo "MinIO mirror complete: $(date -u)"
 **RPO**: 24 h | **RTO**: 60 min
 
 ```bash
-# 1. Start MinIO (fresh volume is fine — mc mirror restores all objects)
-docker volume rm dt_minio_data
-docker volume create dt_minio_data
-docker compose -f infra/compose/docker-compose.base.yml up -d minio minio-init
+# 1. Start Garage on fresh volumes (garage-init recreates layout, key and buckets)
+docker compose -f infra/compose/docker-compose.base.yml up -d garage garage-init
+docker inspect dt_garage_init --format '{{.State.Status}} {{.State.ExitCode}}'   # → exited 0
 
-# 2. Wait for MinIO healthy
-docker compose -f infra/compose/docker-compose.base.yml \
-  exec minio mc ready local
+# 2. Copy from B2 back into Garage, bucket by bucket
+for b in media-place media-owner media-tour daily-tour-media; do
+  rc copy --checksum "b2:daily-tour-backups/garage-mirror/$b" "garage:$b"
+done
 
-# 3. Configure mc alias against the new instance
-docker exec dt_minio_init mc alias set local \
-  http://minio:9000 "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}"
-
-# 4. Mirror from B2 back to local
-docker exec dt_minio_init mc mirror \
-  --overwrite \
-  b2backup/daily-tour-backups/minio-mirror/ \
-  local/
-
-echo "MinIO restore complete"
+echo "Garage restore complete"
 ```
 
 #### Point-in-time object recovery (B2 versioning)
 
 ```bash
 # List versions of a specific object
-mc ls --versions b2backup/daily-tour-backups/minio-mirror/media/tours/<place-id>/hero.jpg
+rc lsf --b2-versions b2:daily-tour-backups/garage-mirror/media-tour/<place-id>/hero.jpg
 
-# Restore a specific version
-mc cp --version-id <version-id> \
-  b2backup/daily-tour-backups/minio-mirror/media/tours/<place-id>/hero.jpg \
-  local/media/tours/<place-id>/hero.jpg
+# Restore a specific version (rclone addresses versions by their timestamped name)
+rc copyto "b2:daily-tour-backups/garage-mirror/media-tour/<place-id>/hero-v<timestamp>.jpg" \
+  "garage:media-tour/<place-id>/hero.jpg"
 ```
 
 #### Verification steps
 
 ```bash
-# Object count before and after
-mc ls --recursive local/ | wc -l
+# Object count and bytes before and after
+rc size garage:media-tour
 
-# Spot-check a known asset is accessible
-curl -fsI "http://localhost:27900/media/tours/<known-id>/hero.jpg"
+# Byte-for-byte check against the source
+rc check --download --one-way "b2:daily-tour-backups/garage-mirror/media-tour" garage:media-tour
 
-# Confirm public/ prefix policy
-mc policy get local/media
+# Spot-check a known asset through the BFF (presigned URL is followed server-side)
+curl -fsI "http://localhost:${DT_HOST_PORT_BFF:-28080}/v1/media/<known-asset-id>"
 ```
 
 ---
@@ -579,8 +571,8 @@ Add the following crontab on the production VPS (`crontab -e` as the ops user):
 # PostgreSQL main — base backup at 02:00
 0 2 * * * /opt/dt-backup/postgres-base.sh >> /var/log/dt-backup/postgres-base.log 2>&1
 
-# MinIO mirror at 03:00 (after DB jobs complete to avoid CPU contention)
-0 3 * * * /opt/dt-backup/minio-mirror.sh >> /var/log/dt-backup/minio-mirror.log 2>&1
+# Garage mirror at 03:00 (after DB jobs complete to avoid CPU contention)
+0 3 * * * /opt/dt-backup/garage-mirror.sh >> /var/log/dt-backup/garage-mirror.log 2>&1
 ```
 
 Create log dirs: `mkdir -p /var/log/dt-backup && chmod 750 /var/log/dt-backup`
@@ -607,14 +599,14 @@ Alert on backup failure: pipe each script's exit code into a health-check ping s
 3. Run the full restore sequence for each component:
    - PostgreSQL main (Option A WAL restore to yesterday's checkpoint)
    - Authentik Postgres (latest dump)
-   - MinIO (full mirror restore)
+   - Garage (full copy back from B2)
    - n8n (latest snapshot)
 
 4. Smoke-test against the drill VPS:
    a. GET /api/health on all BFF services → 200
    b. Guest JWT flow: /api/auth/guest → valid JWT with exp
    c. Tour listing: /api/tours?lat=38.7&lng=-9.1 → >0 results
-   d. Media asset: GET a known MinIO URL → 200
+   d. Media asset: GET a known media URL via the BFF → 200
    e. n8n UI accessible and workflows count matches production snapshot
 
 5. Document results in docs/operations/drill-log-<YYYY-QN>.md:
@@ -640,7 +632,7 @@ Run this after each backup cycle (or automate via cron + alerting):
 mc ls b2backup/daily-tour-backups/postgres/main/dumps/ | tail -1   # < 25h ago
 mc ls b2backup/daily-tour-backups/postgres/authentik/ | tail -1    # < 25h ago
 mc ls b2backup/daily-tour-backups/n8n/ | tail -1                   # < 25h ago
-mc ls b2backup/daily-tour-backups/minio-mirror/ | tail -5          # < 25h ago
+mc ls b2backup/daily-tour-backups/garage-mirror/ | tail -5         # < 25h ago
 
 # Postgres WAL gap check
 docker exec dt_postgres psql -U postgres -c \
@@ -655,10 +647,10 @@ ls -lh /var/backups/dt/postgres/dumps/ | tail -5
 
 ## 10. Related documents
 
-| Document                               | Location                                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------------- |
-| Secrets rotation (MINIO, PG passwords) | [`secrets-rotation-playbook.md`](./secrets-rotation-playbook.md)                 |
-| PII erasure / GDPR DSR                 | [`pii-inventory-gdpr.md`](./pii-inventory-gdpr.md)                               |
-| Threat model                           | [`threat-model-2026-05-18.md`](./threat-model-2026-05-18.md)                     |
-| Infra operator runbook                 | [`infra/README.md`](../../infra/README.md)                                       |
-| Auto-merge doctrine                    | [`docs/operations/auto-merge-doctrine.md`](../operations/auto-merge-doctrine.md) |
+| Document                                                       | Location                                                                         |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Secrets rotation (MINIO key pair, Garage tokens, PG passwords) | [`secrets-rotation-playbook.md`](./secrets-rotation-playbook.md)                 |
+| PII erasure / GDPR DSR                                         | [`pii-inventory-gdpr.md`](./pii-inventory-gdpr.md)                               |
+| Threat model                                                   | [`threat-model-2026-05-18.md`](./threat-model-2026-05-18.md)                     |
+| Infra operator runbook                                         | [`infra/README.md`](../../infra/README.md)                                       |
+| Auto-merge doctrine                                            | [`docs/operations/auto-merge-doctrine.md`](../operations/auto-merge-doctrine.md) |

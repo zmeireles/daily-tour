@@ -1,6 +1,6 @@
 # Daily Tour — São Miguel guesthouse companion PWA
 
-> A multilingual, AI-powered PWA that turns a guesthouse host's local knowledge into a personalized daily companion for their guests. Built around the unique signal that *a single trusted local* is more valuable than 1000 Tripadvisor reviews.
+> A multilingual, AI-powered PWA that turns a guesthouse host's local knowledge into a personalized daily companion for their guests. Built around the unique signal that _a single trusted local_ is more valuable than 1000 Tripadvisor reviews.
 
 ## What it is
 
@@ -15,7 +15,8 @@ Once authed, they can:
 - **Public landing** — at `/`, tokenless visitors see the guesthouse pitch + sample places + locale switch (EN, pt-PT, de, es, fr, pt-BR)
 
 Owners get an Authentik-protected `/admin` shell with:
-- Place CRUD with media upload (pre-signed PUT to MinIO via media-svc)
+
+- Place CRUD with media upload (pre-signed PUT to the Garage S3 store via media-svc)
 - Owner profile + Guesthouse CRUD
 - Beta dashboard (during the beta period)
 
@@ -47,13 +48,14 @@ Owners get an Authentik-protected `/admin` shell with:
                             └──────────────┘
 ```
 
-Backed by PostgreSQL 16 + pgvector + Redis + RabbitMQ + MinIO + Authentik + Traefik + n8n + OSRM. Observability via Prometheus + Grafana.
+Backed by PostgreSQL 16 + pgvector + Redis + RabbitMQ + Garage (S3) + Authentik + Traefik + n8n + OSRM. Observability via Prometheus + Grafana.
 
 ## Status
 
 **Implementation-complete.** Plan-001 closed 99/100 tasks; Plan-002 hardening retrospective closed; Plan-003 beta-readiness in progress. See `docs/implementation-plans/`.
 
 **Operational blockers for shipping**:
+
 - QA VPS acquisition (Ubuntu 24, 4-8 vCPU, 16-32 GB RAM)
 - Authentik realm import + first staff user
 - Stitch design system attachment + real mockups
@@ -132,4 +134,4 @@ TBD.
 
 ---
 
-*Built across ~18 hours of autonomous orchestration with Claude Code Sonnet 4.6 + Opus 4.7. 114+ PRs merged. Plan-001 (the original 100-task roadmap) implementation-complete. Plans 002-004 take it the rest of the way to scale + monetization.*
+_Built across ~18 hours of autonomous orchestration with Claude Code Sonnet 4.6 + Opus 4.7. 114+ PRs merged. Plan-001 (the original 100-task roadmap) implementation-complete. Plans 002-004 take it the rest of the way to scale + monetization._

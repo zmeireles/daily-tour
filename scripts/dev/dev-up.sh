@@ -142,14 +142,14 @@ if [[ $START_STAGE -le 2 && $END_STAGE -ge 2 ]]; then
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 3 — INFRA (postgres + redis + rabbitmq + minio)
+# STAGE 3 — INFRA (postgres + redis + rabbitmq + garage)
 # ═══════════════════════════════════════════════════════════════════════════════
 COMPOSE_BASE="--env-file $ENV_FILE ${PROJECT:+-p $PROJECT} -f infra/compose/docker-compose.base.yml"
 COMPOSE_APP="-f infra/compose/docker-compose.app.yml"
 COMPOSE_ALL="$COMPOSE_BASE $COMPOSE_APP"
 
 if [[ $START_STAGE -le 3 && $END_STAGE -ge 3 ]]; then
-  stage 3 "INFRA — postgres + redis + rabbitmq + minio"
+  stage 3 "INFRA — postgres + redis + rabbitmq + garage"
 
   info "bringing up infra deps via Compose…"
   if docker compose $COMPOSE_BASE up -d 2>&1 | tail -10; then
@@ -192,14 +192,23 @@ if [[ $START_STAGE -le 3 && $END_STAGE -ge 3 ]]; then
     sleep 1
   done
 
-  # Minio just needs to be up; init container handles bucket
-  info "minio container check…"
-  if docker compose $COMPOSE_BASE ps minio | grep -q Up; then
-    pass "minio up (bucket init handled by minio-init container)"
+  # Garage must be up AND its one-shot init (layout, key, buckets) must have
+  # exited 0 — media-svc depends on both.
+  info "garage container check…"
+  if docker compose $COMPOSE_BASE ps garage | grep -q Up; then
+    pass "garage up"
   else
-    fail "minio not up"
+    fail "garage not up"
     exit 1
   fi
+  info "waiting for garage-init to finish (timeout 90s)…"
+  for i in {1..90}; do
+    init_state=$(docker inspect dt_garage_init --format '{{.State.Status}} {{.State.ExitCode}}' 2>/dev/null || true)
+    [[ "$init_state" == "exited 0" ]] && { pass "garage-init completed (layout, key, buckets)"; break; }
+    [[ "$init_state" == exited* ]] && { fail "garage-init failed ($init_state)"; docker logs dt_garage_init 2>&1 | tail -20; exit 1; }
+    [[ $i -eq 90 ]] && { fail "garage-init did not finish"; exit 1; }
+    sleep 1
+  done
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
