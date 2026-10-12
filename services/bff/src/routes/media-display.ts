@@ -45,8 +45,8 @@ export function pickVariant(
 
 // Public media-display proxy (T-6.C.0 / media foundation). Serves an asset's
 // bytes same-origin so an `<img src="/v1/media/:id">` works in the browser:
-// media-svc only 302-redirects to a MinIO presigned URL on the internal
-// `minio:9000` host, which the browser cannot reach. The BFF follows that
+// media-svc only 302-redirects to a presigned URL on the internal
+// `minio:3900` host (Garage), which the browser cannot reach. The BFF follows that
 // redirect server-side (see media-client.fetchAsset) and streams the bytes.
 //
 // Public by design: images are display assets shown to guests (place heroes,

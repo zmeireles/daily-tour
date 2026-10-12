@@ -66,7 +66,7 @@ The mapping below is _intended_ state; not every route is implemented yet.
 > explicit `OPEN_PATHS` set names the exemptions. media-svc was **allow**-by-default
 > until 2026-08-23 — auth was a `verifyInternal` preHandler each route had to opt
 > into, so `GET /v1/assets/:id` was unauthenticated (measured: 302 + a presigned
-> MinIO URL, to a non-BFF container), and any route added without the preHandler
+> object-store URL, to a non-BFF container), and any route added without the preHandler
 > would have been too, with no test failing. An earlier revision of this file
 > asserted media-svc "reject[ed] any non-health request"; it did not.
 > ⇒ When adding a service on `dt_internal`, copy the **hook**, never the preHandler.

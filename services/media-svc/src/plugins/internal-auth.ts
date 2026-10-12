@@ -16,7 +16,7 @@ import { loadConfig } from "../config.js";
 // (services/bff/src/plugins/media-client.ts). The premise "the only things on
 // dt_internal are ours" stopped holding when qr-bell's containers joined the
 // network to reuse Traefik. Measured 2026-08-23 from `dt_notif_svc`, no header:
-//   GET dt_media_svc:8087/v1/assets/<id> -> 302 + presigned MinIO GET URL
+//   GET dt_media_svc:8087/v1/assets/<id> -> 302 + presigned Garage GET URL
 // i.e. any container on the network could exchange an asset id for bucket
 // bytes. Same finding as dt-tests #36, in the service AUTH_POSTURES.md claimed
 // was already covered.

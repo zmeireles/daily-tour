@@ -67,7 +67,7 @@ export function uploadsRoutes(app: FastifyInstance): void {
     return reply.code(201).send({ put_url: putUrl, asset_id: assetId });
   });
 
-  // Called by the BFF after the client's direct PUT to MinIO succeeds.
+  // Called by the BFF after the client's direct PUT to the object store succeeds.
   // Marks the asset as uploaded and enqueues it for transcoding.
   app.post("/v1/uploads/complete", async (req, reply) => {
     const parse = CompleteBodySchema.safeParse(req.body);
