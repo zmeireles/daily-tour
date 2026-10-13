@@ -308,6 +308,9 @@ copied from `deploy-qa.yml` `env.COMPOSE` (if that list changes, re-copy it):
 
 ```bash
 export COMPOSE="-p dt-qual --env-file .env.qual -f infra/compose/docker-compose.base.yml -f infra/compose/docker-compose.app.yml -f infra/compose/docker-compose.traefik.yml -f infra/compose/docker-compose.authentik.yml -f infra/compose/overlay.qual.yml -f infra/compose/overlay.qual-authentik.yml -f infra/compose/docker-compose.n8n.yml -f infra/compose/overlay.qual-n8n.yml -f infra/compose/overlay.observability.yml"
+# The deploy exports IMAGE_TAG; without it compose resolves the stale `:qual`
+# tag and any `up` recreates services (and their deps) on old images.
+export IMAGE_TAG="$(cat .last_deploy_tag)"
 RCLONE=rclone/rclone:1.74.0@sha256:d2e0e88359d0b2e67cfcd2c43d5405185eb8adfc207079df27c42da82c5207bc
 BUCKETS="media-place media-owner media-tour daily-tour-media backups"
 ```
@@ -382,12 +385,15 @@ Extra objects in NEW do not fail it, but they do fail the size comparison, so ru
 
 ### 3. Cutover: delta pass
 
-Stop writers, copy what changed since §1, re-verify, then bring the app up:
+Stop writers, copy what changed since §1, re-verify, then bring the app up.
+Re-export `IMAGE_TAG` after §1's deploy (it changed), and start the two
+services with `--no-deps` so nothing else is touched:
 
 ```bash
+export IMAGE_TAG="$(cat .last_deploy_tag)"           # the tag §1 just deployed
 docker compose $COMPOSE stop bff media-svc          # no uploads during the delta
 for b in $BUCKETS; do rc copy --checksum "old:$b" "new:$b" || { echo "DELTA FAILED: $b"; break; }; done
-verify && docker compose $COMPOSE up -d bff media-svc
+verify && docker compose $COMPOSE up -d --no-deps bff media-svc
 ```
 
 If `verify` fails, the app stays stopped: fix it or go to §4. Then check a known

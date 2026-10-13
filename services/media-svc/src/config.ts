@@ -6,7 +6,7 @@ const ConfigSchema = z.object({
   HOST: z.string().default("0.0.0.0"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
-  MINIO_ENDPOINT: z.string().url().default("http://minio:9000"),
+  MINIO_ENDPOINT: z.string().url().default("http://minio:3900"),
   MINIO_ACCESS_KEY: z.string().min(1),
   MINIO_SECRET_KEY: z.string().min(1),
   MINIO_BUCKET: z.string().default("daily-tour-media"),

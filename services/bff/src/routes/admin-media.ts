@@ -15,15 +15,15 @@ type OwnerRequest = FastifyRequest & { user: JWTPayload };
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const adminMediaRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // Buffer raw image bodies so the BFF can proxy the upload to MinIO. Scoped
+  // Buffer raw image bodies so the BFF can proxy the upload to the object store. Scoped
   // to this plugin's encapsulation context (the /v1/admin/media/* routes).
   fastify.addContentTypeParser(/^image\//, { parseAs: "buffer" }, (_req, body, done) =>
     done(null, body),
   );
 
   // Same-origin upload proxy: the browser POSTs raw image bytes here and the
-  // BFF runs sign → PUT-to-MinIO → complete server-side. Avoids the browser
-  // having to PUT to the internal `minio:9000` presigned host it can't reach.
+  // BFF runs sign → PUT-to-object-store → complete server-side. Avoids the browser
+  // having to PUT to the internal `minio:3900` presigned host (Garage) it can't reach.
   fastify.post("/v1/admin/media/upload", { config: { auth: "owner" } }, async (req, reply) => {
     const ownerId = (req as OwnerRequest).user.sub;
     if (!ownerId) {

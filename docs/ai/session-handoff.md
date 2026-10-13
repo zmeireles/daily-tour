@@ -1,6 +1,23 @@
 # Session Handoff — 10-11 (**s753 — the whole security backlog merged and live on qual, measured before/after; co-tenant moving to `dt_edge`.**) · 09-28 (**s752 — first session on the tower: post-move check (all closed), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-10-11 (LATEST — session `s753`, `dt:Furnas`, on the tower. Everything merged AND LIVE on qual: the dependency CVEs, the Python auth gate, the bff proxy-trust fix and the `dt_edge` network. Measured on the box, with before/after controls.)**
+> **UPDATE 2026-10-12 (LATEST — `s753` continued, `dt:Furnas`. MinIO replaced by Garage: merged (`#488`, `14ea04a`), deployed and migrated on qual, verified end to end. qr-bell TURN accepted.)**
+>
+> ### State (measured ~01:40Z 10-12)
+>
+> - qual runs `14ea04a` on all 11 app images (deploy run `38191748930`, success). `dt_garage` (v2.4.1) is healthy, and `dt_garage_init` exited 0.
+> - **Migration (runbook in `infra/README.md`):**
+>   - Copied 5 buckets (79 objects, 111.9 MB). `rclone check --download` and the size comparison both passed, before and after the writers were stopped.
+>   - Media outage (old MinIO re-aliased → copy done): about 3 min, 01:23Z–01:26Z.
+> - **Verified on qual:**
+>   - Public `/v1/media/<id>`: 9 of 9 uploaded assets byte-identical to the old store, and an unknown id gives 404.
+>   - A live upload: sign 201, presigned PUT 200, complete 200, all 6 variants written, and a variant served.
+>   - Backup to Garage (`dailytour-20261012T012952Z`) and the restore drill on it: PASSED.
+> - ⚠️ **Runbook bug, hit and fixed live:** the §3 `up -d bff media-svc` had no `IMAGE_TAG`. It recreated bff, media-svc, postgres and token-svc on the stale `:qual` tag for about 3 min, until a re-up with `IMAGE_TAG=14ea04a…`. No data loss: the volumes persist, and Postgres logged no errors after the recreate. Fixed on branch `fix/s753-garage-followups` (`IMAGE_TAG` from `.last_deploy_tag` plus `--no-deps`). That branch also moves the media-svc `MINIO_ENDPOINT` default off `:9000` (latent: compose sets the value) and updates stale MinIO comments. **Not pushed yet; it waits for Zé.**
+> - **Test data left on qual:** 2 `media.asset` rows under test owner `5753e2e0-0000-4000-8000-00000000ab12` (`4e5c77fe…`, a 28-byte non-image; `42092f33…`, a real image copy). They are attached to nothing.
+> - **Rollback window:** `dt_minio` + `dt_minio_init` are left running as orphans, under the alias `minio-old`, with `dt_minio_data` untouched. §5 clean-up comes after a quiet week (not before 2026-10-19). The env-file backup suffix is `.bak-s753-garage`.
+> - **TURN:** Zé accepted qr-bell's host-network coturn; qr-bell runs the ufw change themselves (seq 4059/4061).
+>
+> **UPDATE 2026-10-11 (session `s753`, `dt:Furnas`, on the tower. Everything merged AND LIVE on qual: the dependency CVEs, the Python auth gate, the bff proxy-trust fix and the `dt_edge` network. Measured on the box, with before/after controls.)**
 >
 > ### State (measured ~01:35Z 10-11)
 >

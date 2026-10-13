@@ -15,20 +15,20 @@ export interface MediaAsset {
 }
 
 export interface MediaSvc {
-  // Request a pre-signed PUT URL for a direct client → MinIO upload.
+  // Request a pre-signed PUT URL for a direct client → object-store upload.
   // ownerId: Authentik subject (stub: forwarded from BFF session until T-1.6.x).
   signUpload(ownerId: string, mimeType: string, sizeBytes: number): Promise<MediaSignResult>;
-  // Called after the client's PUT to MinIO succeeds; triggers the transcode worker.
+  // Called after the client's PUT to the object store succeeds; triggers the transcode worker.
   completeUpload(assetId: string): Promise<void>;
   // Fetch an asset's bytes for browser display. media-svc 302-redirects to a
-  // short-lived MinIO presigned URL on the internal `minio:9000` host (not
+  // short-lived presigned URL on the internal `minio:3900` host (Garage) (not
   // browser-reachable); the BFF follows that redirect server-side and buffers
   // the bytes so the public /v1/media/:id route can serve them same-origin.
   // `variant` names a derivative from the asset's own map (dt-tests #37),
   // e.g. "600w_avif". Omitted or unknown → media-svc serves the original.
   fetchAsset(assetId: string, variant?: string): Promise<MediaAsset>;
-  // Server-side upload: sign → PUT to MinIO → complete, all from the BFF.
-  // The presigned PUT URL targets the internal `minio:9000` host, so the
+  // Server-side upload: sign → PUT to the object store → complete, all from the BFF.
+  // The presigned PUT URL targets the internal `minio:3900` host (Garage), so the
   // browser can't PUT to it directly; the BFF proxies the bytes (same reason
   // as fetchAsset). Returns the new asset id.
   uploadAsset(ownerId: string, mimeType: string, body: Buffer): Promise<{ asset_id: string }>;
@@ -79,7 +79,7 @@ function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => voi
     },
 
     async fetchAsset(assetId: string, variant?: string): Promise<MediaAsset> {
-      // fetch follows media-svc's 302 → MinIO presigned GET automatically.
+      // fetch follows media-svc's 302 → the presigned GET automatically.
       // The token is required here too: media-svc is deny-by-default, and this
       // was the one call that omitted the header the BFF already holds.
       const qs = variant ? `?variant=${encodeURIComponent(variant)}` : "";
@@ -104,7 +104,7 @@ function mediaSvcPlugin(fastify: FastifyInstance, _opts: object, done: () => voi
     ): Promise<{ asset_id: string }> {
       const { put_url, asset_id } = await mediaSvc.signUpload(ownerId, mimeType, body.byteLength);
       // The presigned PUT is content-type-bound; the header MUST match the
-      // mime media-svc signed with, or MinIO rejects the signature.
+      // mime media-svc signed with, or the object store rejects the signature.
       const put = await fetch(put_url, {
         method: "PUT",
         headers: { "content-type": mimeType },
