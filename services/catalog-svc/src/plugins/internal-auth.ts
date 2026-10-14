@@ -11,7 +11,9 @@ import { loadConfig } from "../config.js";
 // qr-bell's containers joined the network to reuse Traefik (measured 2026-08-21:
 // 25 containers on dt_internal, `GET /v1/places` answered a qr-bell container
 // with full data, no credential). Network membership is not identity, so the
-// route layer has to check one.
+// route layer has to check one. qr-bell moved to `dt_edge` on 2026-10-11; the
+// gate stays, because another repo can rejoin dt_internal without touching
+// this one (falsifier: services/bff/src/plugins/AUTH_POSTURES.md).
 //
 // /health and /ready stay open: Docker's healthcheck wget sends no headers, and
 // a probe that needs a secret is a probe that gets disabled.
