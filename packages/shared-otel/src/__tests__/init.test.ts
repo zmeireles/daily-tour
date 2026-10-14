@@ -41,6 +41,7 @@ function clearEnv() {
   delete process.env["OTEL_EXPORTER_OTLP_ENDPOINT"];
   delete process.env["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"];
   delete process.env["OTEL_LOG_LEVEL"];
+  delete process.env["OTEL_LOGS_EXPORTER"];
   delete process.env["NODE_ENV"];
 }
 
@@ -103,5 +104,24 @@ describe("initOtel", () => {
     initOtel({ serviceName: "test-svc" });
 
     expect(PeriodicExportingMetricReader).toHaveBeenCalledTimes(1);
+  });
+
+  it("turns the logs exporter off even when a trace endpoint is set", async () => {
+    process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://collector:4318";
+    const initOtel = await importInitOtel();
+
+    initOtel({ serviceName: "test-svc" });
+
+    expect(process.env["OTEL_LOGS_EXPORTER"]).toBe("none");
+  });
+
+  it("keeps an explicit OTEL_LOGS_EXPORTER", async () => {
+    process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://collector:4318";
+    process.env["OTEL_LOGS_EXPORTER"] = "otlp";
+    const initOtel = await importInitOtel();
+
+    initOtel({ serviceName: "test-svc" });
+
+    expect(process.env["OTEL_LOGS_EXPORTER"]).toBe("otlp");
   });
 });
