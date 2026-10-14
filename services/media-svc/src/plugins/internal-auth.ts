@@ -19,7 +19,9 @@ import { loadConfig } from "../config.js";
 //   GET dt_media_svc:8087/v1/assets/<id> -> 302 + presigned Garage GET URL
 // i.e. any container on the network could exchange an asset id for bucket
 // bytes. Same finding as dt-tests #36, in the service AUTH_POSTURES.md claimed
-// was already covered.
+// was already covered. qr-bell moved to `dt_edge` on 2026-10-11; the gate
+// stays, because another repo can rejoin dt_internal without touching this one
+// (falsifier: services/bff/src/plugins/AUTH_POSTURES.md).
 //
 // /health and /ready stay open: Docker's healthcheck wget sends no headers, and
 // a probe that needs a secret is a probe that gets disabled.

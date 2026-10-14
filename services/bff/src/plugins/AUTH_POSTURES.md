@@ -56,6 +56,20 @@ The mapping below is _intended_ state; not every route is implemented yet.
 > ⚠️ **`X-Internal-Token` is a shared secret on `dt_internal`, not a proof the caller is the BFF.**
 > It became load-bearing the day another product's containers (qr-bell) joined
 > `dt_internal` to reuse Traefik — network membership stopped implying "the BFF".
+> qr-bell left for `dt_edge` on 2026-10-11 (plan 009), and **the gate stays**:
+> another repo can attach to `dt_internal` again without changing a line here.
+> Measured 2026-10-14: 24 containers attached, all compose project `dt-qual`.
+>
+> ⟲ **Falsifier for "only Daily Tour is on `dt_internal`"** — on the qual host, any
+> line printed here means a foreign container is back on the network:
+>
+> ```
+> for id in $(docker network inspect dt_internal --format '{{range $k, $v := .Containers}}{{$k}} {{end}}'); do
+>   docker inspect "$id" --format '{{.Name}} {{index .Config.Labels "com.docker.compose.project"}}'
+> done | grep -v ' dt-qual$'
+> ```
+>
+> Positive control: drop the `grep -v` and `/dt_traefik dt-qual` must appear.
 > Both catalog-svc (`plugins/internal-auth.ts`, dt-tests #36) and media-svc
 > (same filename, 2026-08-23) gate **every** route with a service-wide
 > `onRequest` hook. `/health` and `/ready` stay open because Docker's healthcheck
