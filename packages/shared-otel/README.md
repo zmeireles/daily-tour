@@ -30,14 +30,15 @@ await import("./app.js"); // dynamic-import the app
 
 ## Environment variables
 
-| Variable                              | Default                 | Description                                                                           |
-| ------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
-| `OTEL_SERVICE_NAME`                   | _(required)_            | Service name reported to the collector. Can be passed as an override to `initOtel()`. |
-| `OTEL_SERVICE_VERSION`                | `0.0.0`                 | Service version attribute.                                                            |
-| `OTEL_DEPLOYMENT_ENVIRONMENT`         | `development`           | Deployment environment attribute.                                                     |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`         | `http://localhost:4318` | Base URL for the OTLP trace exporter. Unset + `NODE_ENV=test` → traces disabled.      |
-| `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | _(unset)_               | OTLP metrics endpoint. If unset, the metrics exporter is not registered.              |
-| `OTEL_LOG_LEVEL`                      | `INFO`                  | OTel diagnostic log level: `DEBUG \| INFO \| WARN \| ERROR \| NONE`.                  |
+| Variable                              | Default                 | Description                                                                              |
+| ------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
+| `OTEL_SERVICE_NAME`                   | _(required)_            | Service name reported to the collector. Can be passed as an override to `initOtel()`.    |
+| `OTEL_SERVICE_VERSION`                | `0.0.0`                 | Service version attribute.                                                               |
+| `OTEL_DEPLOYMENT_ENVIRONMENT`         | `development`           | Deployment environment attribute.                                                        |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`         | `http://localhost:4318` | Base URL for the OTLP trace exporter. Unset + `NODE_ENV=test` → traces disabled.         |
+| `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | _(unset)_               | OTLP metrics endpoint. If unset, the metrics exporter is not registered.                 |
+| `OTEL_LOG_LEVEL`                      | `INFO`                  | OTel diagnostic log level: `DEBUG \| INFO \| WARN \| ERROR \| NONE`.                     |
+| `OTEL_LOGS_EXPORTER`                  | `none`                  | Log export is off by default (the collector has no logs pipeline). Set `otlp` to opt in. |
 
 ## Auto-instrumentations enabled by default
 

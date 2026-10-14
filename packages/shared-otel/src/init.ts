@@ -49,11 +49,10 @@ export function initOtel(overrides?: Partial<OtelConfig>): { shutdown: () => Pro
   if (config.metricsEndpoint === null) {
     process.env["OTEL_METRICS_EXPORTER"] ??= "none";
   }
-  // Logs aren't part of OtelConfig yet, but the auto-config bundle picks
-  // OTEL_EXPORTER_OTLP_ENDPOINT for logs too; silence it the same way.
-  if (config.traceEndpoint === null && config.metricsEndpoint === null) {
-    process.env["OTEL_LOGS_EXPORTER"] ??= "none";
-  }
+  // Logs are off unless explicitly enabled. Our collector has no logs
+  // pipeline, so the SDK's default OTLP logs exporter (fed by the pino
+  // instrumentation) got a 404 on every batch.
+  process.env["OTEL_LOGS_EXPORTER"] ??= "none";
 
   diag.setLogger(new DiagConsoleLogger(), config.logLevel);
 
