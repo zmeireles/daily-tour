@@ -1,6 +1,54 @@
-# Session Handoff — 10-11 (**s753 — the whole security backlog merged and live on qual, measured before/after; co-tenant moving to `dt_edge`.**) · 09-28 (**s752 — first session on the tower: post-move check (all closed), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
+# Session Handoff — 10-14 (**s753 closeout — MinIO→Garage done on qual; three decisions open for Zé.**) · 10-11 (**s753 — the whole security backlog merged and live on qual, measured before/after; co-tenant moving to `dt_edge`.**) · 09-28 (**s752 — first session on the tower: post-move check (all closed), CVE bump opened as PR `#483`.**) · 09-28 (**s751 — a read-only reopening after 31 days; a co-tenant told to stay off `dt_internal`; the two PRs approved for the next session.**) · 08-28 (**s750 — spec-005 round 2 answered: the cure I named covers a third of my own worst class, and the fix I wrote for it in July was itself an instance of it.**) · 08-27 (**s749 — the `cs:Barra` spec-005 elicitation answered, and a probe of my own that was clean and wrong by 101 days.**) · 08-26 (**s748 — a CI gap closed, and the obvious fix for it would have blocked every PR in the repo forever.**) · 08-26 (**s747 — the plan-ownership fix merged on a clean Fable gate; the four-service auth gate built, green and awaiting the owner; and a test that went inert in silence between the two.**) · 08-25 (**s746 — the plan-ownership hole closed, a service found with no auth gate at all, and one of my own tests caught being unable to fail.**) · 08-25 (**s745 — three PRs merged, the network split planned, and a peer question that exposed the limits of my own evidence.**) · … → 08-24 (**s744 — two merges shipped, two PRs waiting on the owner, and the day's through-line: four defects that were all checks which could not fail.**) · 08-23 (**s743 — media-svc was serving presigned media URLs to any container on `dt_internal`; found, fixed, deployed and UAT'd. Plus: a blind-evaluation contamination finding promoted to the user-level verification protocol.**) · 08-23 (**s742 — a full implement→merge→deploy→UAT loop: 7 PRs shipped and verified on qual, catalog-svc's missing auth CLOSED, and 6 defect-hunt findings filed. One product decision waiting.**) · 08-21 (s741 · s740) · 08-20 (s739 · s738) · 08-19 (s737 · s736) · 08-18 (s735) · 08-17 (s734 · s733 · s732) · 07-20 (**Plan-008 CLOSED**)
 
-> **UPDATE 2026-10-12 (LATEST — `s753` continued, `dt:Furnas`. MinIO replaced by Garage: merged (`#488`, `14ea04a`), deployed and migrated on qual, verified end to end. qr-bell TURN accepted.)**
+> **UPDATE 2026-10-14 (LATEST — `s753` CLOSEOUT, `dt:Furnas`, under Zé's group `/lets-close-all`, run `e6212b96-dc83-4039-bec0-397ad80aec32`, coordinator `vm:Miradouro`.)**
+>
+> ### Where (measured 2026-10-14 07:36Z)
+>
+> - Host `jcmeireles-ASUS-S501MER-S501MER` (the tower). Root `/media/jmeireles/ssd3/my-projects/daily-tour`, local access.
+> - Resume command: `~/.local/bin/project-on-host --project /media/jmeireles/ssd3/my-projects/daily-tour locate`.
+>
+> ### What is true now
+>
+> - `origin/main` = `de4362a` (`#489`). qual runs images `14ea04a` (`#488`); `#489` changed only docs, comments and a default, so no redeploy is needed.
+> - The local checkout is on branch `docs/s753-dt-internal-premise` (PR [`#490`](https://github.com/zmeireles/daily-tour/pull/490), CI 12/12, CLEAN, **not merged**). This handoff is committed on that branch, so it reaches `main` when `#490` merges. Compare `git ls-remote origin refs/heads/docs/s753-dt-internal-premise` with `git rev-parse HEAD`.
+> - Dirty work: only untracked `.codex/`. It is not ours; leave it.
+> - No local containers belong to this project. The systemd bridge `riff-comm-bridge@daily-tour` is up and is NOT closed by a closeout. A2A is acked through `seq 4545`.
+> - Telegram: no non-owner party on the allowlist ⇒ no farewell owed.
+> - dt-tests `review` column: empty.
+>
+> ### What moved since the 10-12 block
+>
+> - `#489` merged: the runbook cutover pins `IMAGE_TAG` and uses `--no-deps`, plus the endpoint default and comments.
+> - `#490` opened (plan 009, task T-9.3.3): qr-bell is recorded as having left `dt_internal`, the internal-token gate stays, and `AUTH_POSTURES.md` carries a runnable falsifier. Measured: 24 containers attached, all compose project `dt-qual`. The falsifier was run verbatim with no output, and its control printed `/dt_traefik dt-qual`.
+> - **The telemetry error, investigated and not fixed.** bff, catalog, media and token-svc each log about 5,700 `OTLPExporterError: Not Found` since 10-12. The collector (`infra/observability/otel-collector.yml`) has only traces and metrics pipelines.
+>   - Measured from `dt_internal`: POST `/v1/traces` → 200, `/v1/metrics` → 200, `/v1/logs` → 404.
+>   - The services post logs because `packages/shared-otel/src/init.ts` sets `OTEL_LOGS_EXPORTER=none` only when there is no trace or metrics endpoint. That cause is inferred: no throwaway run with `OTEL_LOGS_EXPORTER=none` was made.
+>   - It does not come from the migration: neither file has changed since June.
+> - **The `cs:Barra` spec-005 conciliation answer is drafted, NOT sent:** `temp/barra-005-conciliation-r1-draft.md` (gitignored, on disk only).
+>   - All 18 rows: 16 `CONFIRMA`, 2 `CORRIGE` (R5.2, R8.1).
+>   - All quotes were checked verbatim against `cc-specs/asks/005-*` by a script with a failing control: `/tmp/claude-1001/…/scratchpad/verify_quotes.py`. The scratchpad is session-local; re-create the check if needed.
+>
+> ### OPEN — each needs Zé
+>
+> 1. **Send the Barra draft?** It is an outward A2A send to `cs:Barra` as kind `answer`, `in_reply_to` the part 1 message id `ffe98695-1107-4e53-90a0-88ffd1c0b5a5` (seq 3980); part 2's id is `29656499-22a6-4c8a-8908-a5824c9ecf6d` (seq 3982). Recommended: send as drafted.
+> 2. **Merge `#490`?** It is docs and comments only. After the merge: `git switch main && git pull --ff-only` and delete the local branch.
+> 3. **Logs exporter** — choose one:
+>    - set `OTEL_LOGS_EXPORTER=none` by default in `shared-otel` (recommended);
+>    - add a logs pipeline to the collector;
+>    - leave it.
+> 4. **Garage rollback window:** `dt_minio` + `dt_minio_init` keep running as orphans (alias `minio-old`, volume `dt_minio_data` untouched). Clean-up is `infra/README.md` §5, **not before 2026-10-19** (pending), and is Zé's call.
+> 5. Test data on qual: 2 `media.asset` rows under owner `5753e2e0-0000-4000-8000-00000000ab12`, attached to nothing. Kept, because qual data is a fixture.
+>
+> ### Live clocks
+>
+> - **2026-10-19 09:00 Lisbon — `cs:Barra` spec-005 round 1 closes. State: PENDING; the draft is ready, not sent.** Unanswered rows become `SILÊNCIO`. No money or legal consequence.
+> - 2026-10-19 or later — the Garage rollback window can end. State: pending.
+>
+> ### First safe step
+>
+> Read `temp/barra-005-conciliation-r1-draft.md`, then ask Zé the three OPEN decisions (1–3) as one lettered block. Changing nothing before his answer is safe.
+>
+> **UPDATE 2026-10-12 (`s753` continued, `dt:Furnas`. MinIO replaced by Garage: merged (`#488`, `14ea04a`), deployed and migrated on qual, verified end to end. qr-bell TURN accepted.)**
 >
 > ### State (measured ~01:40Z 10-12)
 >
