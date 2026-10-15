@@ -21,6 +21,7 @@
 >   - The collector's own telemetry (`:8888`, `otelcol_receiver_accepted_spans`) is not configured.
 >   - **The logs-exporter item is CLOSED.**
 > - **G1 done (17:51Z):** drop-in `/etc/systemd/system/actions-runner-qual.service.d/killmode.conf` sets `KillMode=mixed` (VPS-only, not in the repo; to undo: delete it + `daemon-reload`). Controlled restart: systemd SIGKILLed run-helper 990169 + listener 990173; the "remains running" line is a race in the same microsecond, and 990173 is gone after. Now one tree, 1122733 › 1122739 › 1122743, "Listening for Jobs", `qual-vps` online. ⚠️ Trade-off: a stop or restart during a running job now kills that job.
+> - **qr-bell ask (A2A seq 4728, `qb:Aldraba`, 18:23Z):** at 18:22:52Z they ran `docker network connect qrb_site_edge dt_traefik` on qual as a stopgap, and ask us to make it durable in our compose. The right file is `infra/compose/overlay.qual.yml` (next to `dt_edge`), not the one they named. Measured: `dt_traefik` is on `dt_edge`, `dt_internal` and `qrb_site_edge`; that network holds only `dt_traefik`, with no `qrb-site`/`qrb-bff` yet. Risk: an `external: true` network makes our Traefik fail to (re)create if qr-bell removes it. Replied (seq 4729); **waiting on Zé.**
 > - Still pending: the Garage rollback-window clean-up (not before 2026-10-19, Zé's call). The 2 test `media.asset` rows on qual stay.
 
 > **UPDATE 2026-10-14 (`s753` CLOSEOUT, `dt:Furnas`, under Zé's group `/lets-close-all`, run `e6212b96-dc83-4039-bec0-397ad80aec32`, coordinator `vm:Miradouro`.)**

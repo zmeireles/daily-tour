@@ -73,6 +73,15 @@ networks:
   # Created by this compose project; co-tenants declare it `external: true`.
   dt_edge:
     name: dt_edge
+  # qr-bell's own site ingress network (qrb-site + qrb-bff + our Traefik only).
+  # OWNED BY QR-BELL, created by them — we only attach Traefik to it.
+  # ⚠️ external: if it is missing, dt_traefik cannot be (re)created and ALL our
+  # ingress goes down at the next deploy. qr-bell has committed (A2A seq 4730,
+  # 2026-10-14) not to remove/rename it without coordinating with daily-tour.
+  # Check before deploying: `docker network inspect qrb_site_edge`.
+  qrb_site_edge:
+    name: qrb_site_edge
+    external: true
 
 services:
   # ───────────────────────────────────────────────────────────────────────────
@@ -280,10 +289,12 @@ services:
     ports: !override
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"
-    # Also on dt_edge, the co-tenant ingress network declared above.
+    # Also on dt_edge, the co-tenant ingress network, and on qr-bell's
+    # qrb_site_edge (both declared above).
     networks:
       - dt_internal
       - dt_edge
+      - qrb_site_edge
     # Append-merges with the base traefik volumes: a qual-only dynamic config
     # mounted into the watched /etc/traefik/dynamic dir, providing the HTTP→HTTPS
     # redirect (catch-all router + redirectScheme middleware). dev doesn't get
